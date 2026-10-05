@@ -108,6 +108,40 @@ describe('ObservationRecord', () => {
     });
   });
 
+  describe('value precision', () => {
+    // None of these survive a round trip through 32-bit floats.
+    const values = [12.34, 0.1, 1234567.891, -9999.99];
+    const times = values.map((_, i) => Date.UTC(2025, 0, 1, i));
+    let rec: ObservationRecord;
+    beforeEach(async () => {
+      rec = new ObservationRecord({ datetimes: times, dataValues: values });
+      await rec.reload();
+    });
+
+    it('keeps loaded values exact', () => {
+      expect(Array.from(rec.dataY)).toEqual(values);
+    });
+
+    it('keeps unedited values exact through edits that reallocate', async () => {
+      await rec.dispatch(EnumEditOperations.ADD_POINTS, [[times[0]! + 1, 5.55]]);
+      expect(Array.from(rec.dataY)).toEqual([12.34, 5.55, 0.1, 1234567.891, -9999.99]);
+
+      await rec.dispatch([
+        [EnumFilterOperations.SELECTION, [1]],
+        [EnumEditOperations.DELETE_POINTS],
+      ]);
+      expect(Array.from(rec.dataY)).toEqual(values);
+    });
+
+    it('computes edited values in double precision', async () => {
+      await rec.dispatch([
+        [EnumFilterOperations.SELECTION, [0]],
+        [EnumEditOperations.CHANGE_VALUES, Operator.ADD, 0.1],
+      ]);
+      expect(Array.from(rec.dataY)).toEqual([12.34 + 0.1, 0.1, 1234567.891, -9999.99]);
+    });
+  });
+
   describe('beginTime / endTime', () => {
     it('reflects the first and last datetime', async () => {
       const rec = new ObservationRecord(mockRawData);
@@ -178,7 +212,7 @@ describe('ObservationRecord', () => {
       await rec.applyWindow(t(0), t(9));
       const full = {
         datetimes: Float64Array.from(grid.datetimes),
-        dataValues: Float32Array.from(grid.dataValues),
+        dataValues: Float64Array.from(grid.dataValues),
       };
       const gapped = {
         datetimes: full.datetimes.filter((_, i) => i < 3 || i > 6),

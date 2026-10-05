@@ -22,7 +22,7 @@ introduce its own server-side bottleneck.
 | Tier                          | Bottleneck                                                                |
 |-------------------------------|---------------------------------------------------------------------------|
 | Network fetch                 | HydroServer columnar pagination at 50,000 obs / page. Linear in dataset size. |
-| Memory                        | `SharedArrayBuffer` holding `Float64Array` + `Float32Array` per plotted stream. |
+| Memory                        | `SharedArrayBuffer` holding two `Float64Array`s (times and values) per plotted stream. |
 | Filter / edit compute         | qc-utils worker pool or inline kernel, routed by per-device calibration. |
 | Plot redraw                   | Plotly downsamples on zoom; sustained interactive perf is the main cost. |
 | Save / load script            | JSON serialize / parse. Linear in history length, not dataset size.       |
@@ -32,9 +32,9 @@ introduce its own server-side bottleneck.
 Each plotted stream allocates two typed arrays:
 
 - `Float64Array` for timestamps (8 bytes / point)
-- `Float32Array` for values (4 bytes / point)
+- `Float64Array` for values (8 bytes / point)
 
-So **12 bytes per observation, per plotted stream**, plus a 20k-slot
+So **16 bytes per observation, per plotted stream**, plus a 20k-slot
 growth headroom (`INCREASE_AMOUNT` in `qc-utils`) when SAB-backed buffers
 need to grow without copying.
 
@@ -42,10 +42,10 @@ Order-of-magnitude envelope:
 
 | Dataset size      | Memory per stream | Notes                                                                  |
 |-------------------|-------------------|------------------------------------------------------------------------|
-| 50k obs           | ~0.6 MB           | Instant on any device. Inline kernels.                                 |
-| 500k obs          | ~6 MB             | Comfortable. Worker layer engages on big edits.                        |
-| 5 million obs     | ~60 MB            | Still feasible on a modern desktop. Initial fetch is the long pole.    |
-| 50 million obs    | ~600 MB           | Browser tab approaching its memory budget. Avoid plotting more than 1 stream. Performance becomes dominated by Plotly redraw, not qc-utils. |
+| 50k obs           | ~0.8 MB           | Instant on any device. Inline kernels.                                 |
+| 500k obs          | ~8 MB             | Comfortable. Worker layer engages on big edits.                        |
+| 5 million obs     | ~80 MB            | Still feasible on a modern desktop. Initial fetch is the long pole.    |
+| 50 million obs    | ~800 MB           | Browser tab approaching its memory budget. Avoid plotting more than 1 stream. Performance becomes dominated by Plotly redraw, not qc-utils. |
 
 The architecture caps the plot at **4 checked streams** in the UI, plus the
 datastream being edited and its source, to keep the multi-axis chart readable

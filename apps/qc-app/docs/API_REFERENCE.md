@@ -12,7 +12,7 @@ utils) and the external HydroServer REST endpoints the app consumes.
   and the QC History JSON file format.
 - **JSON over the wire, typed arrays in memory.** The app fetches
   observations in HydroServer's columnar JSON format and inflates them
-  to `Float64Array` + `Float32Array` inside `ObservationRecord`.
+  to `Float64Array`s inside `ObservationRecord`.
 - **History is the contract.** The QC History file format is the
   durable record of edits. It is not pinned to a datastream id, so the
   same script can be replayed against many datastreams.
@@ -594,7 +594,7 @@ Fetches + caches observation windows and inflates them into
 | Name                       | Kind     | Type / signature                                  | Notes |
 |----------------------------|----------|---------------------------------------------------|-------|
 | `observations`             | state    | `Record<string, ObservationRecord>`               | Per-datastream record; reused across rebuilds. |
-| `observationsRaw`          | state    | `Record<string, ObservationData>`                 | Typed-array cache (`Float64Array` datetimes + `Float32Array` values). |
+| `observationsRaw`          | state    | `Record<string, ObservationData>`                 | Typed-array cache (`Float64Array` datetimes and values). |
 | `fetchObservationsInRange` | action   | `(ds: Datastream, b: Date, e: Date, exclude?: { begin: Date; end: Date }) => Promise<ObservationRecord>` | Fetches only the parts of `[b, e]` never asked for before, skipping `exclude`, and returns the shared record windowed to `[b, e]`. Requests for one datastream run in order, so the record ends on the latest requested window; a request matching the last queued one shares its promise. |
 | `fetchDetachedRecord`      | action   | `(ds: Datastream, b: Date, e: Date) => Promise<ObservationRecord>` | Fills the same cache through the same per-datastream queue, but returns a record of its own windowed to `[b, e]`. For working copies and snapshots: never re-windows the shared record the plot draws. |
 | `forget`                   | action   | `(datastreamId: string) => void`                                   | Drops a datastream's cached observations so the next load asks the server again. Called by `commit()` after its upload; a load already in flight discards its result and retries. |

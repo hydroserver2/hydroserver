@@ -5,7 +5,7 @@
  * thin "message in / message out" check (see `workers.spec.ts`).
  *
  * Cores are deliberately framework-free and accept plain typed arrays, so
- * these tests build buffers from raw `Float32Array` / `Float64Array` rather
+ * these tests build buffers from raw `Float64Array`s rather
  * than `SharedArrayBuffer`. Semantics are identical and happy-dom doesn't
  * require the cross-origin-isolation headers SAB would.
  */
@@ -27,13 +27,12 @@ import {
   valueThresholdCore,
 } from '../operation-cores'
 
-const f32 = (v: number[]) => Float32Array.from(v)
 const f64 = (v: number[]) => Float64Array.from(v)
 
 // =====================================================================
 
 describe('valueThresholdCore', () => {
-  const y = f32([1, 5, 10, 15, 20])
+  const y = f64([1, 5, 10, 15, 20])
 
   it('supports every opcode variant', () => {
     const cases: Array<[ThresholdOp, number, number[]]> = [
@@ -74,7 +73,7 @@ describe('valueThresholdCore', () => {
 
 describe('changeCore', () => {
   // y = [10, 20, 21, 10]; Δ at i=1..3 = 10, 1, -11
-  const y = f32([10, 20, 21, 10])
+  const y = f64([10, 20, 21, 10])
 
   it('handles every comparator', () => {
     const cases: Array<[string, number, number[]]> = [
@@ -98,7 +97,7 @@ describe('changeCore', () => {
 
 describe('rateOfChangeCore', () => {
   // y = [10, 20, 15] → rates at i=1..2: (20-10)/10=1.0, (15-20)/20=-0.25
-  const y = f32([10, 20, 15])
+  const y = f64([10, 20, 15])
 
   it('selects indexes by every comparator', () => {
     expect(rateOfChangeCore(y, 1, y.length, 'Greater than', 0.5)).toEqual([1])
@@ -138,16 +137,16 @@ describe('findGapsCore', () => {
 
 describe('persistenceCore', () => {
   it('emits (startIndex, length, value) triplets per run of equal y', () => {
-    const y = f32([1, 1, 2, 3, 3, 3])
+    const y = f64([1, 1, 2, 3, 3, 3])
     expect(persistenceCore(y, 0, y.length)).toEqual([0, 2, 1, 2, 1, 2, 3, 3, 3])
   })
 
   it('returns [] when start >= end', () => {
-    expect(persistenceCore(f32([1, 2, 3]), 2, 2)).toEqual([])
+    expect(persistenceCore(f64([1, 2, 3]), 2, 2)).toEqual([])
   })
 
   it('emits a single run when every value is identical', () => {
-    expect(persistenceCore(f32([7, 7, 7, 7]), 0, 4)).toEqual([0, 4, 7])
+    expect(persistenceCore(f64([7, 7, 7, 7]), 0, 4)).toEqual([0, 4, 7])
   })
 })
 
@@ -158,9 +157,9 @@ describe('fillGapsCore', () => {
     // x=[0, 1000, 11000] y=[0, 10, 110]. Gap at (1,2), fillDelta=2000.
     // Expected fills at 3000, 5000, 7000, 9000 with y = 30, 50, 70, 90.
     const sourceX = f64([0, 1000, 11000])
-    const sourceY = f32([0, 10, 110])
+    const sourceY = f64([0, 10, 110])
     const outX = new Float64Array(7)
-    const outY = new Float32Array(7)
+    const outY = new Float64Array(7)
     const written = fillGapsCore(
       sourceX,
       sourceY,
@@ -181,9 +180,9 @@ describe('fillGapsCore', () => {
 
   it('uses fillValue when interpolate is false', () => {
     const sourceX = f64([0, 10_000])
-    const sourceY = f32([1, 2])
+    const sourceY = f64([1, 2])
     const outX = new Float64Array(4)
-    const outY = new Float32Array(4)
+    const outY = new Float64Array(4)
     fillGapsCore(
       sourceX,
       sourceY,
@@ -202,9 +201,9 @@ describe('fillGapsCore', () => {
 
   it('emits no fill when the gap is narrower than fillDelta', () => {
     const sourceX = f64([0, 500])
-    const sourceY = f32([1, 2])
+    const sourceY = f64([1, 2])
     const outX = new Float64Array(2)
-    const outY = new Float32Array(2)
+    const outY = new Float64Array(2)
     const written = fillGapsCore(
       sourceX,
       sourceY,
@@ -228,9 +227,9 @@ describe('fillGapsCore', () => {
 describe('addDataPointsCore', () => {
   it('merges originals with sorted insertions preserving datetime order', () => {
     const sourceX = f64([10, 20, 30])
-    const sourceY = f32([1, 2, 3])
+    const sourceY = f64([1, 2, 3])
     const outX = new Float64Array(5)
-    const outY = new Float32Array(5)
+    const outY = new Float64Array(5)
     const written = addDataPointsCore(
       sourceX,
       sourceY,
@@ -251,9 +250,9 @@ describe('addDataPointsCore', () => {
 
   it('breaks datetime ties in favor of the original (findLastLessOrEqual)', () => {
     const sourceX = f64([10, 20])
-    const sourceY = f32([1, 2])
+    const sourceY = f64([1, 2])
     const outX = new Float64Array(3)
-    const outY = new Float32Array(3)
+    const outY = new Float64Array(3)
     addDataPointsCore(sourceX, sourceY, [[20, 99]], outX, outY, 0, 2, 0)
     expect(Array.from(outX)).toEqual([10, 20, 20])
     expect(Array.from(outY)).toEqual([1, 2, 99])
@@ -261,9 +260,9 @@ describe('addDataPointsCore', () => {
 
   it('appends trailing insertions when originals are exhausted', () => {
     const sourceX = f64([10])
-    const sourceY = f32([1])
+    const sourceY = f64([1])
     const outX = new Float64Array(3)
-    const outY = new Float32Array(3)
+    const outY = new Float64Array(3)
     addDataPointsCore(
       sourceX,
       sourceY,
@@ -283,9 +282,9 @@ describe('addDataPointsCore', () => {
 
   it('honors outStart so multiple segments can share an output buffer', () => {
     const sourceX = f64([10, 20])
-    const sourceY = f32([1, 2])
+    const sourceY = f64([1, 2])
     const outX = new Float64Array(4)
-    const outY = new Float32Array(4)
+    const outY = new Float64Array(4)
     addDataPointsCore(sourceX, sourceY, [], outX, outY, 0, 2, 2)
     expect(Array.from(outX)).toEqual([0, 0, 10, 20])
     expect(Array.from(outY)).toEqual([0, 0, 1, 2])
@@ -297,9 +296,9 @@ describe('addDataPointsCore', () => {
 describe('deleteDataPointsCore', () => {
   it('copies [readStart, readEnd] skipping deleted indexes', () => {
     const sourceX = f64([10, 20, 30, 40, 50])
-    const sourceY = f32([1, 2, 3, 4, 5])
+    const sourceY = f64([1, 2, 3, 4, 5])
     const outX = new Float64Array(3)
-    const outY = new Float32Array(3)
+    const outY = new Float64Array(3)
     const written = deleteDataPointsCore(
       sourceX,
       sourceY,
@@ -317,9 +316,9 @@ describe('deleteDataPointsCore', () => {
 
   it('honors outStart so multiple segments can share an output buffer', () => {
     const sourceX = f64([10, 20, 30])
-    const sourceY = f32([1, 2, 3])
+    const sourceY = f64([1, 2, 3])
     const outX = new Float64Array(5)
-    const outY = new Float32Array(5)
+    const outY = new Float64Array(5)
     deleteDataPointsCore(sourceX, sourceY, [], outX, outY, 0, 2, 2)
     expect(Array.from(outX)).toEqual([0, 0, 10, 20, 30])
     expect(Array.from(outY)).toEqual([0, 0, 1, 2, 3])
@@ -333,7 +332,7 @@ describe('shiftDatetimesCollection', () => {
 
   it('shifts by a fixed span', () => {
     const x = f64([1_000_000, 2_000_000, 3_000_000])
-    const y = f32([1, 2, 3])
+    const y = f64([1, 2, 3])
     expect(shiftDatetimesCollection(x, y, [0, 2], fixed)).toEqual([
       [1_500_000, 1],
       [3_500_000, 3],
@@ -344,7 +343,7 @@ describe('shiftDatetimesCollection', () => {
     // Jan 15, 9 AM MST to Jul 15, 9 AM MDT.
     const [shifted] = shiftDatetimesCollection(
       f64([Date.UTC(2026, 0, 15, 16)]),
-      f32([42]),
+      f64([42]),
       [0],
       { months: 6, deltaMs: 0, timeZone: 'America/Denver' }
     )
@@ -355,7 +354,7 @@ describe('shiftDatetimesCollection', () => {
     // Feb 1, 01:00Z is still Jan 31, 6 PM in Denver.
     const [[x]] = shiftDatetimesCollection(
       f64([Date.UTC(2026, 1, 1, 1)]),
-      f32([0]),
+      f64([0]),
       [0],
       { months: 1, deltaMs: 0, timeZone: 'America/Denver' }
     )
@@ -364,7 +363,7 @@ describe('shiftDatetimesCollection', () => {
 
   it('clamps to the last day of a shorter month', () => {
     const shift = (ms: number, months: number) =>
-      shiftDatetimesCollection(f64([ms]), f32([0]), [0], {
+      shiftDatetimesCollection(f64([ms]), f64([0]), [0], {
         months,
         deltaMs: 0,
         timeZone: 'UTC',
@@ -379,7 +378,7 @@ describe('shiftDatetimesCollection', () => {
     // Jan 31, 22:00 at -0700 is Feb 1 in UTC.
     const [[x]] = shiftDatetimesCollection(
       f64([Date.UTC(2026, 1, 1, 5)]),
-      f32([0]),
+      f64([0]),
       [0],
       { months: 1, deltaMs: 0, timeZone: '-0700' }
     )
@@ -387,7 +386,7 @@ describe('shiftDatetimesCollection', () => {
   })
 
   it('returns an empty array for empty index list', () => {
-    expect(shiftDatetimesCollection(f64([1]), f32([1]), [], fixed)).toEqual([])
+    expect(shiftDatetimesCollection(f64([1]), f64([1]), [], fixed)).toEqual([])
   })
 })
 
@@ -397,7 +396,7 @@ describe('interpolateCore', () => {
   it('linearly interpolates group indexes between their anchors', () => {
     // Uniform x [0..4]. y=[0,10,?,?,40]. Group [2,3] anchored on 1 and 4 → 20, 30.
     const x = f64([0, 1, 2, 3, 4])
-    const y = f32([0, 10, 999, 999, 40])
+    const y = f64([0, 10, 999, 999, 40])
     interpolateCore(x, y, [{ indexes: [2, 3], lowerIdx: 1, upperIdx: 4 }])
     expect(+y[2].toFixed(3)).toBe(20)
     expect(+y[3].toFixed(3)).toBe(30)
@@ -405,13 +404,13 @@ describe('interpolateCore', () => {
 
   it('collapses to the lower anchor when xSpan is zero', () => {
     const x = f64([5, 5, 5])
-    const y = f32([1, 999, 3])
+    const y = f64([1, 999, 3])
     interpolateCore(x, y, [{ indexes: [1], lowerIdx: 0, upperIdx: 2 }])
     expect(y[1]).toBe(1)
   })
 
   it('is a no-op for an empty group list', () => {
-    const y = f32([1, 2, 3])
+    const y = f64([1, 2, 3])
     const before = Array.from(y)
     interpolateCore(f64([0, 1, 2]), y, [])
     expect(Array.from(y)).toEqual(before)
@@ -423,7 +422,7 @@ describe('interpolateCore', () => {
 describe('driftCorrectionCore', () => {
   it('applies y_n += value * (x - startDatetime) / extent over each range', () => {
     const x = f64([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-    const y = f32(Array(x.length).fill(0))
+    const y = f64(Array(x.length).fill(0))
     // range [start=0, end=9, value=9] → extent = x[9]-x[0] = 9, so per-point
     // offset = 9 * (i - 0) / 9 = i. End index is exclusive in the write loop.
     driftCorrectionCore(x, y, [[0, 9, 9]])
@@ -433,14 +432,14 @@ describe('driftCorrectionCore', () => {
 
   it('skips ranges with non-positive extent', () => {
     const x = f64([0, 0, 0])
-    const y = f32([1, 2, 3])
+    const y = f64([1, 2, 3])
     driftCorrectionCore(x, y, [[0, 2, 10]]) // extent = 0
     expect(Array.from(y)).toEqual([1, 2, 3])
   })
 
   it('skips ranges where end <= start', () => {
     const x = f64([0, 1, 2])
-    const y = f32([1, 2, 3])
+    const y = f64([1, 2, 3])
     driftCorrectionCore(x, y, [[2, 2, 10]])
     expect(Array.from(y)).toEqual([1, 2, 3])
   })
@@ -460,20 +459,20 @@ describe('changeValuesCore', () => {
       ['ASSIGN', 99, [99, 99, 30, 40]],
     ]
     for (const [op, v, expected] of cases) {
-      const y = f32(y0)
+      const y = f64(y0)
       changeValuesCore(y, [0, 1], op, v)
       expect(Array.from(y)).toEqual(expected)
     }
   })
 
   it('is a no-op for an unknown operator', () => {
-    const y = f32(y0)
+    const y = f64(y0)
     changeValuesCore(y, [0, 1], 'XYZ', 99)
     expect(Array.from(y)).toEqual(y0)
   })
 
   it('is a no-op for an empty index list', () => {
-    const y = f32(y0)
+    const y = f64(y0)
     changeValuesCore(y, [], 'ADD', 5)
     expect(Array.from(y)).toEqual(y0)
   })

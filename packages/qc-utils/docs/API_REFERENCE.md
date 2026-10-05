@@ -52,7 +52,7 @@ dedicated client.
 
 ### `class ObservationRecord`
 
-The single state holder. Owns `dataX` (Float64), `dataY` (Float32),
+The single state holder. Owns `dataX` (Float64), `dataY` (Float64),
 `history`, and `redoStack`. All mutation goes through it.
 
 **Construction**
@@ -60,7 +60,7 @@ The single state holder. Owns `dataX` (Float64), `dataY` (Float32),
 ```ts
 new ObservationRecord({
   datetimes: number[] | Float64Array,    // epoch ms
-  dataValues: number[] | Float32Array,
+  dataValues: number[] | Float64Array,
 })
 ```
 
@@ -74,7 +74,7 @@ call `reload()` once construction is done to initialize.
 | Name        | Type                            | Notes                                                             |
 |-------------|---------------------------------|-------------------------------------------------------------------|
 | `dataX`     | `Float64Array`                  | Timestamps (ms epoch) of the **current window** (see `applyWindow`). |
-| `dataY`     | `Float32Array`                  | Values of the current window.                                    |
+| `dataY`     | `Float64Array`                  | Values of the current window.                                    |
 | `rawData`   | `{ datetimes, dataValues }`     | The full series (source of truth); `dataX`/`dataY` are its windowed slice. |
 | `windowBegin` / `windowEnd` | `number`          | Inclusive epoch-ms bounds materialized into `dataX`/`dataY`. `±Infinity` = full series. |
 | `history`   | `HistoryItem[]`                 | Append-only log since the last `reload()` / window change.        |

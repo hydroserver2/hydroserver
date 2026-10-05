@@ -16,7 +16,7 @@ what a Web Worker host provides. It powers
 but any browser-shaped JavaScript environment can consume it.
 
 The single state container is `ObservationRecord` — a paired
-`Float64Array` (datetimes, ms epoch) + `Float32Array` (values) with a
+`Float64Array` (datetimes, ms epoch) + `Float64Array` (values) with a
 replayable, undo / redo-able edit history.
 
 ## Stack and reasoning
@@ -47,7 +47,7 @@ exists in two places at the consumer's discretion:
    decides where to put the bytes. See [QC_HISTORY.md](./QC_HISTORY.md).
 
 The in-memory data path uses `SharedArrayBuffer`-backed
-`Float64Array` / `Float32Array` when COOP / COEP are present, falling
+`Float64Array`s when COOP / COEP are present, falling
 back to plain `ArrayBuffer` otherwise. The worker code paths gracefully
 degrade to inline kernels when SAB is unavailable, so consumers without
 cross-origin isolation still get correct (just slower) results.
@@ -65,7 +65,7 @@ cross-origin isolation still get correct (just slower) results.
             │  ObservationRecord    │  (state container)
             │  ────────────────     │
             │  dataX (Float64Array) │
-            │  dataY (Float32Array) │
+            │  dataY (Float64Array) │
             │  history[]            │
             │  redoStack[]          │
             │  dispatch(...)        │

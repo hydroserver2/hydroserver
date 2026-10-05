@@ -11,7 +11,7 @@ export async function recordFrom(
 ): Promise<ObservationRecord> {
   const record = new ObservationRecord({
     datetimes: Float64Array.from(datetimes),
-    dataValues: Float32Array.from(dataValues),
+    dataValues: Float64Array.from(dataValues),
   })
   // The constructor starts loading without awaiting it.
   await record.reload()

@@ -29,7 +29,7 @@ the end-user perspective, see [USER_GUIDE.md](./USER_GUIDE.md).
 lives in three places, in increasing order of authority:
 
 1. **In-memory typed arrays**: every loaded observation window is held in a
-   pair of `Float64Array` (datetimes, ms epoch) + `Float32Array` (values),
+   pair of `Float64Array` (datetimes, ms epoch) + `Float64Array` (values),
    backed by a `SharedArrayBuffer` when COOP/COEP are on so worker kernels
    can scan the same memory without copying. Lives in `ObservationRecord`
    (qc-utils). Lost on reload, by design.

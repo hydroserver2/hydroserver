@@ -7,7 +7,7 @@ but the runtime has no Vue / app dependencies — anywhere you can run a
 modern browser bundle is fair game.
 
 The package wraps a paired `Float64Array` (timestamps, ms epoch) and
-`Float32Array` (values) in an `ObservationRecord` and exposes a single
+`Float64Array` (values) in an `ObservationRecord` and exposes a single
 history-driven dispatch surface. Every edit and filter is logged as a
 `HistoryItem` you can replay, undo / redo, calibrate against the host
 machine, and serialize to disk as a JSON "QC history".
@@ -106,7 +106,7 @@ window in epoch ms; `DATETIME_RANGE`'s args ARE the window.
 
 Every long-running kernel ships in two flavours: an inline core
 (`changeValuesCore`, `fillGapsCore`, …) and a worker pool that scans
-shared `Float64Array` / `Float32Array` views in parallel.
+shared `Float64Array` views in parallel.
 [`shouldUseWorker`](./src/utils/plotting/calibration.ts) picks per
 call:
 
@@ -228,7 +228,7 @@ dedicated client.
   (`dist/index.js` + `dist/index.cjs`).
 - `SharedArrayBuffer` for the worker fast path (graceful inline fallback
   when unavailable; see Calibration above).
-- `Float64Array` / `Float32Array` typed-array `resize()` /
+- `Float64Array` typed-array `resize()` /
   `SharedArrayBuffer.grow()` — Chrome 111+, Firefox 119+, Safari 16.4+.
 
 ## Contributing

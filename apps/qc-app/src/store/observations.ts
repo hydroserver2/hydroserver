@@ -11,7 +11,7 @@ import {
 
 export type ObservationData = {
   datetimes: Float64Array<ArrayBuffer>
-  dataValues: Float32Array<ArrayBuffer>
+  dataValues: Float64Array<ArrayBuffer>
 }
 
 type FetchedChunk = { datetimes: number[]; dataValues: number[] }
@@ -30,7 +30,7 @@ function mergeObservations(
   const oldX = cached.datetimes
   const oldY = cached.dataValues
   const x = new Float64Array(oldX.length + addedX.length)
-  const y = new Float32Array(oldY.length + addedY.length)
+  const y = new Float64Array(oldY.length + addedY.length)
   let i = 0
   let j = 0
   let n = 0
@@ -131,7 +131,7 @@ export const useObservationStore = defineStore(
       exclude?: Exclude
     ): Promise<ObservationData> => {
       const id = datastream.id
-      const empty = { datetimes: new Float64Array(0), dataValues: new Float32Array(0) }
+      const empty = { datetimes: new Float64Array(0), dataValues: new Float64Array(0) }
       // Nothing to ask for yet, and nothing to remember: it may gain data.
       if (!datastream.phenomenonBeginTime || !datastream.phenomenonEndTime) {
         return observationsRaw.value[id] ?? empty

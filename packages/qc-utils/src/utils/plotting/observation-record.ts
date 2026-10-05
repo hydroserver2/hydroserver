@@ -171,7 +171,7 @@ export class ObservationRecord {
     source: {
       // Store datetimes in a Float64Array because plotly can't parse BigInts correctly.
       x: Float64Array<ArrayBufferLike>;
-      y: Float32Array<ArrayBufferLike>;
+      y: Float64Array<ArrayBufferLike>;
     };
   } = {
       source: {
@@ -181,10 +181,10 @@ export class ObservationRecord {
             INCREASE_AMOUNT * Float64Array.BYTES_PER_ELEMENT,
           ),
         ),
-        y: new Float32Array(
+        y: new Float64Array(
           makeBuffer(
-            INCREASE_AMOUNT * Float32Array.BYTES_PER_ELEMENT,
-            INCREASE_AMOUNT * Float32Array.BYTES_PER_ELEMENT,
+            INCREASE_AMOUNT * Float64Array.BYTES_PER_ELEMENT,
+            INCREASE_AMOUNT * Float64Array.BYTES_PER_ELEMENT,
           ),
         ),
       },
@@ -226,7 +226,7 @@ export class ObservationRecord {
   isLoading: boolean = true;
   rawData: {
     datetimes: Float64Array<ArrayBuffer> | number[];
-    dataValues: Float32Array<ArrayBuffer> | number[];
+    dataValues: Float64Array<ArrayBuffer> | number[];
   };
 
   /**
@@ -241,7 +241,7 @@ export class ObservationRecord {
 
   constructor(dataArrays: {
     datetimes: Float64Array<ArrayBuffer> | number[];
-    dataValues: Float32Array<ArrayBuffer> | number[];
+    dataValues: Float64Array<ArrayBuffer> | number[];
   }) {
     this.history = [];
     this.rawData = dataArrays;
@@ -250,7 +250,7 @@ export class ObservationRecord {
 
   async loadData(dataArrays: {
     datetimes: Float64Array<ArrayBuffer> | number[];
-    dataValues: Float32Array<ArrayBuffer> | number[];
+    dataValues: Float64Array<ArrayBuffer> | number[];
   }) {
     if (!dataArrays) {
       return;
@@ -342,7 +342,7 @@ export class ObservationRecord {
       this.dataset.source.x.buffer,
     ).subarray(0, length);
 
-    this.dataset.source.y = new Float32Array(
+    this.dataset.source.y = new Float64Array(
       this.dataset.source.y.buffer,
     ).subarray(0, length);
   }
@@ -372,11 +372,11 @@ export class ObservationRecord {
 
       const outputBufferY = makeBuffer(
         this.dataY.buffer.byteLength,
-        maxByteLengthNeeded * Float32Array.BYTES_PER_ELEMENT,
+        maxByteLengthNeeded * Float64Array.BYTES_PER_ELEMENT,
       );
 
       const outputArrayX = new Float64Array(outputBufferX);
-      const outputArrayY = new Float32Array(outputBufferY);
+      const outputArrayY = new Float64Array(outputBufferY);
       outputArrayX.set(this.dataX);
       outputArrayY.set(this.dataY);
 
@@ -390,7 +390,7 @@ export class ObservationRecord {
       newLength * Float64Array.BYTES_PER_ELEMENT
     ) {
       growBuffer(this.dataX.buffer, newLength * Float64Array.BYTES_PER_ELEMENT);
-      growBuffer(this.dataY.buffer, newLength * Float32Array.BYTES_PER_ELEMENT);
+      growBuffer(this.dataY.buffer, newLength * Float64Array.BYTES_PER_ELEMENT);
     }
   }
 
@@ -1166,7 +1166,7 @@ export class ObservationRecord {
 
     // Output buffers hold the shifted (x, y) pairs for the selection, in the same order as `index`
     const outputBufferX = makeBuffer(N * Float64Array.BYTES_PER_ELEMENT);
-    const outputBufferY = makeBuffer(N * Float32Array.BYTES_PER_ELEMENT);
+    const outputBufferY = makeBuffer(N * Float64Array.BYTES_PER_ELEMENT);
 
     const numWorkers = Math.min(navigator.hardwareConcurrency || 1, N);
     const chunkSize = Math.ceil(N / numWorkers);
@@ -1209,7 +1209,7 @@ export class ObservationRecord {
 
     // Build the [x, y] collection from the shifted buffers for re-insertion.
     const shiftedX = new Float64Array(outputBufferX);
-    const shiftedY = new Float32Array(outputBufferY);
+    const shiftedY = new Float64Array(outputBufferY);
     const collection: [number, number][] = new Array(N);
     for (let i = 0; i < N; i++) {
       collection[i] = [shiftedX[i], shiftedY[i]];
@@ -1307,7 +1307,7 @@ export class ObservationRecord {
     // Output buffers sized for the new length — same allocation in
     // both the inline and worker paths.
     const newByteLengthX = newLength * Float64Array.BYTES_PER_ELEMENT;
-    const newByteLengthY = newLength * Float32Array.BYTES_PER_ELEMENT;
+    const newByteLengthY = newLength * Float64Array.BYTES_PER_ELEMENT;
     const outputBufferX = makeBuffer(
       newByteLengthX,
       Math.max(this.dataX.buffer.maxByteLength, newByteLengthX),
@@ -1327,7 +1327,7 @@ export class ObservationRecord {
     });
     if (!decision.useWorker) {
       const outX = new Float64Array(outputBufferX);
-      const outY = new Float32Array(outputBufferY);
+      const outY = new Float64Array(outputBufferY);
       fillGapsCore(
         this.dataX,
         this.dataY,
@@ -1414,7 +1414,7 @@ export class ObservationRecord {
     workers.forEach((worker) => worker.terminate());
 
     this.dataset.source.x = new Float64Array(outputBufferX);
-    this.dataset.source.y = new Float32Array(outputBufferY);
+    this.dataset.source.y = new Float64Array(outputBufferY);
     this._resizeTo(newLength);
     return insertedIndices;
   }
@@ -1467,7 +1467,7 @@ export class ObservationRecord {
         this.dataY.buffer.maxByteLength,
       );
       const outX = new Float64Array(outputBufferX);
-      const outY = new Float32Array(outputBufferY);
+      const outY = new Float64Array(outputBufferY);
       deleteDataPointsCore(
         this.dataX,
         this.dataY,
@@ -1557,7 +1557,7 @@ export class ObservationRecord {
     workers.forEach((worker) => worker.terminate()); // Important to terminate the workers
 
     this.dataset.source.x = new Float64Array(outputBufferX);
-    this.dataset.source.y = new Float32Array(outputBufferY);
+    this.dataset.source.y = new Float64Array(outputBufferY);
     this._resizeTo(newLength);
   }
 
@@ -1738,7 +1738,7 @@ export class ObservationRecord {
 
     // Output buffers sized for the new length
     const newByteLengthX = newLength * Float64Array.BYTES_PER_ELEMENT;
-    const newByteLengthY = newLength * Float32Array.BYTES_PER_ELEMENT;
+    const newByteLengthY = newLength * Float64Array.BYTES_PER_ELEMENT;
     const outputBufferX = makeBuffer(
       newByteLengthX,
       Math.max(this.dataX.buffer.maxByteLength, newByteLengthX),
@@ -1760,7 +1760,7 @@ export class ObservationRecord {
     });
     if (!decision.useWorker) {
       const outX = new Float64Array(outputBufferX);
-      const outY = new Float32Array(outputBufferY);
+      const outY = new Float64Array(outputBufferY);
       addDataPointsCore(
         this.dataX,
         this.dataY,
@@ -1839,7 +1839,7 @@ export class ObservationRecord {
     workers.forEach((worker) => worker.terminate());
 
     this.dataset.source.x = new Float64Array(outputBufferX);
-    this.dataset.source.y = new Float32Array(outputBufferY);
+    this.dataset.source.y = new Float64Array(outputBufferY);
     this._resizeTo(newLength);
     return insertedIndices;
   }

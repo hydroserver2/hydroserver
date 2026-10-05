@@ -32,7 +32,7 @@ export const enum ThresholdOp {
  * circuits on first match per element (matches worker semantics).
  */
 export function valueThresholdCore(
-  arrayY: Float32Array | Float32Array<SharedArrayBuffer>,
+  arrayY: Float64Array | Float64Array<SharedArrayBuffer>,
   start: number,
   end: number,
   ops: number[],
@@ -69,7 +69,7 @@ export function valueThresholdCore(
  * the worker exactly (FilterOperation enum values).
  */
 export function changeCore(
-  arrayY: Float32Array | Float32Array<SharedArrayBuffer>,
+  arrayY: Float64Array | Float64Array<SharedArrayBuffer>,
   start: number,
   end: number,
   comparator: string,
@@ -105,7 +105,7 @@ export function changeCore(
  * comparator semantics as `changeCore`.
  */
 export function rateOfChangeCore(
-  arrayY: Float32Array | Float32Array<SharedArrayBuffer>,
+  arrayY: Float64Array | Float64Array<SharedArrayBuffer>,
   start: number,
   end: number,
   comparator: string,
@@ -168,7 +168,7 @@ export function findGapsCore(
  * adjacent chunk triplets before applying the min-run-length filter.
  */
 export function persistenceCore(
-  arrayY: Float32Array | Float32Array<SharedArrayBuffer>,
+  arrayY: Float64Array | Float64Array<SharedArrayBuffer>,
   start: number,
   end: number
 ): number[] {
@@ -204,10 +204,10 @@ export function persistenceCore(
  */
 export function fillGapsCore(
   sourceX: Float64Array | Float64Array<SharedArrayBuffer>,
-  sourceY: Float32Array | Float32Array<SharedArrayBuffer>,
+  sourceY: Float64Array | Float64Array<SharedArrayBuffer>,
   gaps: ReadonlyArray<[number, number]>,
   outX: Float64Array | Float64Array<SharedArrayBuffer>,
-  outY: Float32Array | Float32Array<SharedArrayBuffer>,
+  outY: Float64Array | Float64Array<SharedArrayBuffer>,
   start: number,
   end: number,
   outStart: number,
@@ -262,10 +262,10 @@ export function fillGapsCore(
  */
 export function addDataPointsCore(
   sourceX: Float64Array | Float64Array<SharedArrayBuffer>,
-  sourceY: Float32Array | Float32Array<SharedArrayBuffer>,
+  sourceY: Float64Array | Float64Array<SharedArrayBuffer>,
   insertions: ReadonlyArray<[number, number]>,
   outX: Float64Array | Float64Array<SharedArrayBuffer>,
-  outY: Float32Array | Float32Array<SharedArrayBuffer>,
+  outY: Float64Array | Float64Array<SharedArrayBuffer>,
   origStart: number,
   origEnd: number,
   outStart: number
@@ -313,10 +313,10 @@ export function addDataPointsCore(
  */
 export function deleteDataPointsCore(
   sourceX: Float64Array | Float64Array<SharedArrayBuffer>,
-  sourceY: Float32Array | Float32Array<SharedArrayBuffer>,
+  sourceY: Float64Array | Float64Array<SharedArrayBuffer>,
   deleteIndices: ArrayLike<number>,
   outX: Float64Array | Float64Array<SharedArrayBuffer>,
-  outY: Float32Array | Float32Array<SharedArrayBuffer>,
+  outY: Float64Array | Float64Array<SharedArrayBuffer>,
   readStart: number,
   readEnd: number,
   outStart: number
@@ -362,7 +362,7 @@ export function shiftDatetime(x: number, params: ShiftDatetimesParams): number {
  */
 export function shiftDatetimesCollection(
   arrayX: Float64Array | Float64Array<SharedArrayBuffer>,
-  arrayY: Float32Array | Float32Array<SharedArrayBuffer>,
+  arrayY: Float64Array | Float64Array<SharedArrayBuffer>,
   indexes: ArrayLike<number>,
   params: ShiftDatetimesParams
 ): [number, number][] {
@@ -391,7 +391,7 @@ export interface InterpolateGroup {
  */
 export function interpolateCore(
   arrayX: Float64Array | Float64Array<SharedArrayBuffer>,
-  arrayY: Float32Array | Float32Array<SharedArrayBuffer>,
+  arrayY: Float64Array | Float64Array<SharedArrayBuffer>,
   groups: InterpolateGroup[]
 ): void {
   for (let gi = 0; gi < groups.length; gi++) {
@@ -427,7 +427,7 @@ export function interpolateCore(
  */
 export function driftCorrectionCore(
   arrayX: Float64Array | Float64Array<SharedArrayBuffer>,
-  arrayY: Float32Array | Float32Array<SharedArrayBuffer>,
+  arrayY: Float64Array | Float64Array<SharedArrayBuffer>,
   ranges: [number, number, number][]
 ): void {
   for (let r = 0; r < ranges.length; r++) {
@@ -449,7 +449,7 @@ export function driftCorrectionCore(
  * `indexes`. Operator strings match `Operator` enum values.
  */
 export function changeValuesCore(
-  arrayY: Float32Array | Float32Array<SharedArrayBuffer>,
+  arrayY: Float64Array | Float64Array<SharedArrayBuffer>,
   indexes: ArrayLike<number>,
   operator: string,
   value: number

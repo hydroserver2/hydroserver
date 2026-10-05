@@ -116,7 +116,7 @@ for the consumer-side upgrade flow.
 ## Running independently
 
 `@uwrl/qc-utils` works in any modern browser context that exposes
-`Float64Array` / `Float32Array` with `resize()` and (optionally)
+`Float64Array` with `resize()` and (optionally)
 `SharedArrayBuffer` with `grow()`. The realistic targets are:
 
 - **Browser SPA** — the canonical case. COOP/COEP unlocks SAB; without

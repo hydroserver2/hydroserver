@@ -14,4 +14,10 @@ describe('recordFrom', () => {
     record.dataY[0] = 99
     expect(dataValues[0]).toBe(10)
   })
+
+  it('keeps values at full precision', async () => {
+    const record = await recordFrom([1, 2], [12.34, 0.1])
+
+    expect(Array.from(record.dataY)).toEqual([12.34, 0.1])
+  })
 })

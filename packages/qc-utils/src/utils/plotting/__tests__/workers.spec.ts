@@ -69,15 +69,15 @@ function bufferX(values: number[]): SharedArrayBuffer {
   return buf
 }
 function bufferY(values: number[]): SharedArrayBuffer {
-  const buf = new SharedArrayBuffer(values.length * Float32Array.BYTES_PER_ELEMENT)
-  new Float32Array(buf).set(values)
+  const buf = new SharedArrayBuffer(values.length * Float64Array.BYTES_PER_ELEMENT)
+  new Float64Array(buf).set(values)
   return buf
 }
 function emptyBufferX(length: number): SharedArrayBuffer {
   return new SharedArrayBuffer(length * Float64Array.BYTES_PER_ELEMENT)
 }
 function emptyBufferY(length: number): SharedArrayBuffer {
-  return new SharedArrayBuffer(length * Float32Array.BYTES_PER_ELEMENT)
+  return new SharedArrayBuffer(length * Float64Array.BYTES_PER_ELEMENT)
 }
 
 // ---------------------------------------------------------------------
@@ -129,7 +129,7 @@ describe('core-backed worker wiring', () => {
       value: 5,
     })
     expect(posted).toEqual(['Done'])
-    expect(Array.from(new Float32Array(yBuf))).toEqual([15, 20, 35])
+    expect(Array.from(new Float64Array(yBuf))).toEqual([15, 20, 35])
   })
 
   it('change.worker posts the core output array', () => {
@@ -190,7 +190,7 @@ describe('core-backed worker wiring', () => {
       fillValue: -9999,
     })
     expect(posted).toEqual(['Done'])
-    expect(Array.from(new Float32Array(outY))).toEqual([1, -9999, -9999, -9999])
+    expect(Array.from(new Float64Array(outY))).toEqual([1, -9999, -9999, -9999])
   })
 
   it('interpolate.worker posts Done and mutates Y in place', () => {
@@ -201,7 +201,7 @@ describe('core-backed worker wiring', () => {
       groups: [{ indexes: [1], lowerIdx: 0, upperIdx: 2 }],
     })
     expect(posted).toEqual(['Done'])
-    expect(new Float32Array(yBuf)[1]).toBe(10)
+    expect(new Float64Array(yBuf)[1]).toBe(10)
   })
 
   it('value-threshold.worker posts the core output array', () => {
@@ -229,7 +229,7 @@ describe('shift-datetimes.worker', () => {
       outStart: 0,
       ...params,
     })
-    return [Array.from(new Float64Array(outX)), Array.from(new Float32Array(outY))]
+    return [Array.from(new Float64Array(outX)), Array.from(new Float64Array(outY))]
   }
 
   it('shifts by a fixed span', () => {
@@ -268,7 +268,7 @@ describe('drift-correction.worker', () => {
         { chunkStart: 5, chunkEnd: 10, startDatetime: 0, value: 10, extent: 10 },
       ],
     })
-    const result = Array.from(new Float32Array(yBuf))
+    const result = Array.from(new Float64Array(yBuf))
     expect(result.slice(0, 10)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
     expect(result[10]).toBe(0)
   })
