@@ -496,7 +496,7 @@ Apply a linear drift correction across each consecutive group in the selection. 
 
 ![Drift correction panel](./images/panel-driftCorrection.png)
 
-The panel lists every consecutive group it found in your selection, each with its first-point timestamp. **Drift amount** is the offset to apply linearly from the start to the end of each group. The radio at the bottom selects the method (today the only option is "Linear drift correction"). Drift correction needs **two or more consecutive points**; the Apply button stays disabled until that's true.
+The panel lists every consecutive group it found in your selection, each with its first-point timestamp. **Drift amount** is the offset to apply linearly from the start to the end of each group: the first point is unchanged and the last point moves by the full amount. The radio at the bottom selects the method (today the only option is "Linear drift correction"). Drift correction needs **two or more consecutive points**; the Apply button stays disabled until that's true.
 
 #### Interpolate
 

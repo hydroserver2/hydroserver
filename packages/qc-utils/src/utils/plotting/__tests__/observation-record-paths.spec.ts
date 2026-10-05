@@ -143,6 +143,18 @@ describe('ObservationRecord — worker paths', () => {
     expect(last.execution.mode).toBe('worker')
   })
 
+  it('DRIFT_CORRECTION on workers corrects through the last selected point', async () => {
+    await rec.dispatch([
+      [EnumFilterOperations.SELECTION, [2, 3, 4, 8, 9]],
+      [EnumEditOperations.DRIFT_CORRECTION, 3],
+    ])
+    await flushMicrotasks()
+    expect(rec.history[rec.history.length - 1].execution.mode).toBe('worker')
+    expect([2, 3, 4, 8, 9].map((i) => rec.dataY[i])).toEqual([
+      20, 31.5, 43, 80, 93,
+    ])
+  })
+
   it('CHANGE_VALUES stays inline when calibration says useWorker=false', async () => {
     // Flip the calibration mock to the "inline wins" branch — that's
     // the path the uncalibrated default profile produces for any
@@ -581,18 +593,13 @@ describe('ObservationRecord — internal helpers via dispatch', () => {
     expect(rec.dataY[10]).not.toBe(999)
   })
 
-  it('DRIFT_CORRECTION emits one range per consecutive group in the selection', async () => {
-    // Same idea: with selection [2, 3, 8, 9] the
-    // `_driftCorrectionFromSelection` builder emits two range
-    // tuples, one per group, by walking the grouped output.
+  it('DRIFT_CORRECTION corrects each consecutive group through its last point', async () => {
     await rec.dispatch([
       [EnumFilterOperations.SELECTION, [2, 3, 8, 9]],
       [EnumEditOperations.DRIFT_CORRECTION, 1],
     ])
-    // No assertion on exact values — the relevant invariant is
-    // that the dispatch completed without throwing, which means
-    // both groups were processed.
-    const last = rec.history[rec.history.length - 1]
-    expect(last.execution.status).not.toBe('failed')
+    expect([rec.dataY[2], rec.dataY[3], rec.dataY[8], rec.dataY[9]]).toEqual([
+      20, 31, 80, 91,
+    ])
   })
 })

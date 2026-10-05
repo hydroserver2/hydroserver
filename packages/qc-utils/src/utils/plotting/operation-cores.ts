@@ -414,8 +414,8 @@ export function interpolateCore(
 }
 
 /**
- * Apply linear drift correction over one or more `[start, end, value]`
- * ranges in place on `arrayY`, using `arrayX` only to compute each
+ * Apply linear drift correction over one or more inclusive `[start, end,
+ * value]` ranges in place on `arrayY`, using `arrayX` only to compute each
  * range's time anchors. Per-point formula:
  *
  *     y_i += value * (x_i - startDatetime) / extent
@@ -438,7 +438,7 @@ export function driftCorrectionCore(
     const startDatetime = arrayX[start]
     const extent = arrayX[end] - startDatetime
     if (extent === 0) continue
-    for (let i = start; i < end; i++) {
+    for (let i = start; i <= end; i++) {
       arrayY[i] = arrayY[i] + value * ((arrayX[i] - startDatetime) / extent)
     }
   }

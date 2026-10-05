@@ -444,8 +444,8 @@ describe('ObservationRecord', () => {
       });
       await local.reload();
 
-      // Drift value = 18 over indexes [0, 9] (exclusive end) →
-      // y += 18 * (x - x0) / (x9 - x0). Worker loops i < end, so y[9] is untouched.
+      // Drift value = 18 over indexes [0, 9] →
+      // y += 18 * (x - x0) / (x9 - x0), so y[9] gets the full 18.
       const baseY = Array.from(local.dataY);
       // Build a selection covering [0..9] consecutively so the
       // wrapper's `_getConsecutiveGroups` collapses it back into one
@@ -458,7 +458,7 @@ describe('ObservationRecord', () => {
       ]);
 
       expect(+local.dataY[0].toFixed(3)).toBe(+baseY[0].toFixed(3));
-      expect(+local.dataY[9].toFixed(3)).toBe(+baseY[9].toFixed(3));
+      expect(+local.dataY[9].toFixed(3)).toBe(+(baseY[9] + 18).toFixed(3));
       expect(+local.dataY[5].toFixed(3)).toBe(+(baseY[5] + 10).toFixed(3));
       expect(+local.dataY[8].toFixed(3)).toBe(+(baseY[8] + 16).toFixed(3));
     });

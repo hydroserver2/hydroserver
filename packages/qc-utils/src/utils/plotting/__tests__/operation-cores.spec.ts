@@ -424,10 +424,16 @@ describe('driftCorrectionCore', () => {
     const x = f64([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
     const y = f64(Array(x.length).fill(0))
     // range [start=0, end=9, value=9] → extent = x[9]-x[0] = 9, so per-point
-    // offset = 9 * (i - 0) / 9 = i. End index is exclusive in the write loop.
+    // offset = 9 * (i - 0) / 9 = i, through the end index.
     driftCorrectionCore(x, y, [[0, 9, 9]])
-    expect(Array.from(y).slice(0, 9)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8])
-    expect(y[9]).toBe(0)
+    expect(Array.from(y)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0])
+  })
+
+  it('corrects both points of a two-point range', () => {
+    const x = f64([0, 1])
+    const y = f64([10, 10])
+    driftCorrectionCore(x, y, [[0, 1, 3]])
+    expect(Array.from(y)).toEqual([10, 13])
   })
 
   it('skips ranges with non-positive extent', () => {

@@ -1584,7 +1584,7 @@ export class ObservationRecord {
   }
 
   /**
-   * Multi-threaded drift correction over one or more [start, end, value] ranges.
+   * Multi-threaded drift correction over one or more inclusive [start, end, value] ranges.
    *  1. Main thread reads each range's anchors (startDatetime, extent) once and chunks the range.
    *  2. All chunks across all ranges are flattened into jobs and distributed round-robin across a fixed pool of workers.
    *  3. Each worker applies y_n = y_0 + value * ((x_i - startDatetime) / extent) in place on its jobs.
@@ -1602,7 +1602,7 @@ export class ObservationRecord {
     // range) this skips `numWorkers` worker spawns entirely.
     let totalWork = 0;
     for (const [start, end] of ranges) {
-      if (end > start) totalWork += end - start;
+      if (end > start) totalWork += end - start + 1;
     }
     const decision = shouldUseWorker(EnumEditOperations.DRIFT_CORRECTION, {
       datasetSize: xData.length,
@@ -1629,12 +1629,13 @@ export class ObservationRecord {
       const extent = xData[end] - startDatetime;
       if (extent === 0) continue;
 
-      const total = end - start;
+      // `end` is the last selected index; chunks are half-open.
+      const total = end - start + 1;
       const chunkSize = Math.max(1, Math.ceil(total / hwConcurrency));
-      for (let s = start; s < end; s += chunkSize) {
+      for (let s = start; s <= end; s += chunkSize) {
         jobs.push({
           chunkStart: s,
-          chunkEnd: Math.min(s + chunkSize, end),
+          chunkEnd: Math.min(s + chunkSize, end + 1),
           startDatetime,
           value,
           extent,
