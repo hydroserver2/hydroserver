@@ -108,6 +108,46 @@ describe('ObservationRecord', () => {
     });
   });
 
+  describe('revision', () => {
+    const make = async () => {
+      const rec = new ObservationRecord(buildUniformData(10));
+      await rec.reload();
+      return rec;
+    };
+
+    it('changes when an edit runs and when the data is reloaded', async () => {
+      const rec = await make();
+      const loaded = rec.revision;
+      await rec.dispatch([
+        [EnumFilterOperations.SELECTION, [1]],
+        [EnumEditOperations.CHANGE_VALUES, Operator.ADD, 1],
+      ]);
+      const edited = rec.revision;
+      expect(edited).not.toBe(loaded);
+      await rec.reload();
+      expect(rec.revision).not.toBe(edited);
+    });
+
+    it('changes on undo and redo', async () => {
+      const rec = await make();
+      await rec.dispatch(EnumEditOperations.ADD_POINTS, [[rec.dataX[0] + 1, 5]]);
+      const before = rec.revision;
+      await rec.undo();
+      const undone = rec.revision;
+      expect(undone).not.toBe(before);
+      await rec.redo();
+      expect(rec.revision).not.toBe(undone);
+    });
+
+    it('stays put for selections and filters', async () => {
+      const rec = await make();
+      const before = rec.revision;
+      await rec.dispatch(EnumFilterOperations.SELECTION, [1, 2]);
+      await rec.dispatch(EnumFilterOperations.FIND_GAPS, 1, TimeUnit.HOUR);
+      expect(rec.revision).toBe(before);
+    });
+  });
+
   describe('no-data values', () => {
     const ND = -9999;
     const hour = 60 * 60 * 1000;

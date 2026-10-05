@@ -171,7 +171,7 @@ import {
 import { usePlotlyStore } from '@/store/plotly'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
-import { EnumEditOperations, EnumFilterOperations } from '@uwrl/qc-utils'
+import { EnumEditOperations, EnumFilterOperations, Snackbar } from '@uwrl/qc-utils'
 import { formatDateTime } from '@/utils/time'
 import { fromWallParts, wallParts } from '@/utils/timeZone'
 import { useDataSelection } from '@/composables/useDataSelection'
@@ -255,6 +255,28 @@ watch(
 // Keyed by row index. Values are y-numbers / epoch-ms.
 const valueEdits = reactive(new Map<number, number>())
 const datetimeEdits = reactive(new Map<number, number>())
+
+// Row indices only mean the points they were staged on until the data
+// changes, so any change to the record drops them rather than applying them
+// to whatever point now sits at that row. Sync, so nothing reads stale rows.
+watch(
+  () => [selectedSeries.value?.data, selectedSeries.value?.data?.revision],
+  () => {
+    if (isSaving.value) return
+    dropStagedEdits('because the data changed')
+  },
+  { flush: 'sync' }
+)
+
+// The table unmounts when the user switches tabs, taking staged edits with it.
+onBeforeUnmount(() => dropStagedEdits('when the table was closed'))
+
+function dropStagedEdits(reason: string) {
+  const n = pendingEditCount.value
+  if (!n) return
+  discardEdits()
+  Snackbar.info(`${n} unsaved table edit${n === 1 ? ' was' : 's were'} discarded ${reason}.`)
+}
 
 const headers = [
   { title: '', align: 'start' as const, key: 'actions', width: '50px' },

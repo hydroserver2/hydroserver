@@ -60,6 +60,7 @@ vi.mock('@/composables/useDataSelection', () => ({
   useDataSelection: () => ({ clearSelected }),
 }))
 
+const snackInfo = vi.hoisted(() => vi.fn())
 vi.mock('@uwrl/qc-utils', async (importOriginal) => {
   // The real time zone math, which the app's date helpers use.
   const { offsetMs, toWall, fromWall, toWallArray } =
@@ -69,6 +70,7 @@ vi.mock('@uwrl/qc-utils', async (importOriginal) => {
     toWall,
     fromWall,
     toWallArray,
+    Snackbar: { info: snackInfo },
     EnumEditOperations: {
       ASSIGN_VALUES_BULK: 'ASSIGN_VALUES_BULK',
       ASSIGN_DATETIMES_BULK: 'ASSIGN_DATETIMES_BULK',
@@ -524,6 +526,80 @@ describe('DataTable.vue discardEdits', () => {
     await discardBtn.trigger('click')
     await flushPromises()
     expect(wrapper.text()).not.toContain('unsaved')
+  })
+})
+
+describe('DataTable.vue staged edits when the data changes', () => {
+  beforeEach(() => {
+    isUpdating.value = false
+    selectedData.value = null
+    qcDatastream.value = { id: 'ds-1' }
+    selectedSeries.value = {
+      data: {
+        dataX: [1000, 2000, 3000],
+        dataY: [10, 20, 30],
+        revision: 0,
+        dispatch: vi.fn().mockResolvedValue(undefined),
+      },
+    }
+    vi.clearAllMocks()
+  })
+
+  const stageOne = async () => {
+    const wrapper = createWrapperWithSlots()
+    await flushPromises()
+    valueCell(wrapper, 0).vm.$emit('save', '99')
+    await flushPromises()
+    expect(wrapper.text()).toContain('1 unsaved')
+    return wrapper
+  }
+
+  it('drops staged edits and says so when an operation changes the data', async () => {
+    const wrapper = await stageOne()
+    selectedSeries.value.data.revision++
+    await flushPromises()
+    expect(wrapper.text()).not.toContain('unsaved')
+    expect(snackInfo).toHaveBeenCalledWith(
+      '1 unsaved table edit was discarded because the data changed.'
+    )
+  })
+
+  it('drops staged edits when the record is replaced', async () => {
+    const wrapper = await stageOne()
+    selectedSeries.value = { data: { ...selectedSeries.value.data } }
+    await flushPromises()
+    expect(wrapper.text()).not.toContain('unsaved')
+    expect(snackInfo).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps its own save from discarding the edits it applies', async () => {
+    const dispatch = vi.fn(async () => {
+      selectedSeries.value.data.revision++
+    })
+    selectedSeries.value.data.dispatch = dispatch
+    const wrapper = await stageOne()
+    valueCell(wrapper, 1).vm.$emit('save', '42')
+    datetimeCell(wrapper, 2).vm.$emit('save', '2030-01-01T00:00:00')
+    await flushPromises()
+    const saveBtn = wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('Save changes'))!
+    await saveBtn.trigger('click')
+    await flushPromises()
+    expect(dispatch).toHaveBeenCalledTimes(2)
+    expect(dispatch.mock.calls[0]![0]).toEqual([
+      ['SELECTION', [0, 1]],
+      ['ASSIGN_VALUES_BULK', [99, 42]],
+    ])
+    expect(snackInfo).not.toHaveBeenCalled()
+  })
+
+  it('says so when closing the table drops staged edits', async () => {
+    const wrapper = await stageOne()
+    wrapper.unmount()
+    expect(snackInfo).toHaveBeenCalledWith(
+      '1 unsaved table edit was discarded when the table was closed.'
+    )
   })
 })
 

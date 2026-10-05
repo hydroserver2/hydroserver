@@ -241,6 +241,14 @@ export class ObservationRecord {
   windowEnd: number = Infinity;
 
   /**
+   * Bumped whenever the data may have changed: every load (including the
+   * reloads behind undo, redo and preview) and every edit operation.
+   * Filters and selections leave it alone. Lets a consumer holding
+   * index-keyed state tell that the points under those indices moved.
+   */
+  revision = 0;
+
+  /**
    * The datastream's placeholder for a missing reading. Arithmetic and
    * drift edits skip it, and interpolation never anchors on it. Null treats
    * every value as a measurement.
@@ -281,6 +289,7 @@ export class ObservationRecord {
     this.history.length = 0;
     this.previewIndex = null;
     this.isLoading = false;
+    this.revision++;
   }
 
   /**
@@ -707,6 +716,8 @@ export class ObservationRecord {
         }
       }
     }
+    // A failed edit may still have moved points before throwing.
+    this.revision++;
 
     return newSelection;
   }

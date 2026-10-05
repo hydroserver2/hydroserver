@@ -7,7 +7,7 @@
 import { expect, test } from '@playwright/test'
 import { installMocks } from './support/mocks'
 import { COMMITTED_SESSION_ID } from './support/fixtures'
-import { setupEditView } from './support/app'
+import { openOp, setupEditView } from './support/app'
 import { selectAllPoints } from './support/ops'
 
 test('a read-only cell does not look editable on hover', async ({ page }) => {
@@ -35,6 +35,34 @@ test('an editable cell shows the edit affordance on hover', async ({ page }) => 
   await cell.hover()
 
   await expect(cell).not.toHaveCSS('border-top-color', 'rgba(0, 0, 0, 0)')
+})
+
+test('an operation run from the drawer drops staged table edits', async ({
+  page,
+}) => {
+  await installMocks(page, { qcHistories: true })
+  await setupEditView(page)
+  await page.getByRole('button', { name: 'Table' }).click()
+
+  // Each row renders its datetime cell, then its value cell.
+  await page
+    .locator('.editable-cell__display:not(.editable-cell__display--readonly)')
+    .nth(1)
+    .click()
+  const input = page.locator('.editable-cell__input')
+  await input.fill('12345')
+  await input.press('Enter')
+  await expect(page.getByText('1 unsaved')).toBeVisible()
+
+  await openOp(page, 'addPoints')
+  const panel = page.getByTestId('operation-panel-addPoints')
+  await panel.getByRole('spinbutton', { name: 'Value' }).fill('5')
+  await panel.getByRole('button', { name: /^Add \d+ point/ }).click()
+
+  await expect(
+    page.getByText('1 unsaved table edit was discarded because the data changed.')
+  ).toBeVisible()
+  await expect(page.getByText(/\d+ unsaved/)).toHaveCount(0)
 })
 
 test('the selection is still shown after a trip to the table', async ({

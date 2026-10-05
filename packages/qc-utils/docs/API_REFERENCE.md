@@ -87,6 +87,8 @@ that holds it. Omitted or `null`, every value is treated as a measurement.
 | `windowBegin` / `windowEnd` | `number`          | Inclusive epoch-ms bounds materialized into `dataX`/`dataY`. `±Infinity` = full series. |
 | `history`   | `HistoryItem[]`                 | Append-only log since the last `reload()` / window change.        |
 | `redoStack` | `HistoryItem[]`                 | Items popped by `undo()`, available to `redo()`.                  |
+| `revision`  | `number`                        | Bumped by every load (including undo, redo and preview) and every edit operation; filters and selections leave it. Index-keyed state is stale once it changes. |
+| `noDataValue` | `number \| null`              | The datastream's missing-reading placeholder (see Construction).  |
 
 **Methods**
 
