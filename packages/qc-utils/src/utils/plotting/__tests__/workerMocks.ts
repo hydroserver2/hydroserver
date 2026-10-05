@@ -10,6 +10,8 @@
  * Worker API contract).
  */
 
+import { fillGapsCore } from '../operation-cores';
+
 type MockWorkerInstance = {
   onmessage: ((event: { data: any }) => void) | null;
   postMessage: (data: any) => void;
@@ -156,12 +158,13 @@ export const MockInterpolateWorker = makeMockWorker((data) => {
 });
 
 export const MockDriftCorrectionWorker = makeMockWorker((data) => {
-  const { bufferX, bufferY, jobs } = data;
+  const { bufferX, bufferY, jobs, noDataValue } = data;
   const arrayX = new Float64Array(bufferX);
   const arrayY = new Float64Array(bufferY);
   for (let j = 0; j < jobs.length; j++) {
     const { chunkStart, chunkEnd, startDatetime, value, extent } = jobs[j];
     for (let i = chunkStart; i < chunkEnd; i++) {
+      if (arrayY[i] === noDataValue) continue;
       arrayY[i] = arrayY[i] + value * ((arrayX[i] - startDatetime) / extent);
     }
   }
@@ -224,42 +227,22 @@ export const MockFillGapsWorker = makeMockWorker((data) => {
     fillDelta,
     interpolate,
     fillValue,
+    noDataValue,
   } = data;
-  const arrayX = new Float64Array(bufferX);
-  const arrayY = new Float64Array(bufferY);
-  const outputArrayX = new Float64Array(outputBufferX);
-  const outputArrayY = new Float64Array(outputBufferY);
-
-  let gapPtr = 0;
-  let writePtr = startTarget;
-
-  for (let readPtr = start; readPtr <= end; readPtr++) {
-    outputArrayX[writePtr] = arrayX[readPtr];
-    outputArrayY[writePtr] = arrayY[readPtr];
-    writePtr++;
-
-    if (gapPtr < gapsSegment.length && readPtr === gapsSegment[gapPtr][0]) {
-      const leftIdx = gapsSegment[gapPtr][0];
-      const rightIdx = gapsSegment[gapPtr][1];
-      const leftDatetime = arrayX[leftIdx];
-      const rightDatetime = arrayX[rightIdx];
-      const leftValue = arrayY[leftIdx];
-      const rightValue = arrayY[rightIdx];
-      const span = rightDatetime - leftDatetime;
-      const valueSpan = rightValue - leftValue;
-
-      let nextFillDatetime = leftDatetime + fillDelta;
-      while (nextFillDatetime < rightDatetime) {
-        outputArrayX[writePtr] = nextFillDatetime;
-        outputArrayY[writePtr] = interpolate
-          ? leftValue + ((nextFillDatetime - leftDatetime) * valueSpan) / span
-          : fillValue;
-        writePtr++;
-        nextFillDatetime += fillDelta;
-      }
-      gapPtr++;
-    }
-  }
+  fillGapsCore(
+    new Float64Array(bufferX),
+    new Float64Array(bufferY),
+    gapsSegment,
+    new Float64Array(outputBufferX),
+    new Float64Array(outputBufferY),
+    start,
+    end,
+    startTarget,
+    fillDelta,
+    interpolate,
+    fillValue,
+    noDataValue,
+  );
   return 'Done';
 });
 

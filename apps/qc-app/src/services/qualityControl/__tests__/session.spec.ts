@@ -70,8 +70,8 @@ describe('startOrResumeSession', () => {
 })
 
 describe('loadLatestBase', () => {
-  const managed = { id: 'm-1' } as unknown as Datastream
-  const source = { id: 's-1' } as unknown as Datastream
+  const managed = { id: 'm-1', noDataValue: -1 } as unknown as Datastream
+  const source = { id: 's-1', noDataValue: -9999 } as unknown as Datastream
   const day = (m: number, d: number) => Date.UTC(2025, m, d)
   const rec = (points: [number, number][]) =>
     ({
@@ -116,6 +116,19 @@ describe('loadLatestBase', () => {
     expect(points(base)).toEqual([[day(0, 10), 3]])
     expect(fetchInRange).toHaveBeenCalledTimes(1)
     expect(fetchInRange.mock.calls[0]![0]).toBe(source)
+  })
+
+  it("takes the source's no-data value", async () => {
+    const base = await loadLatestBase(
+      fetchFrom({ 's-1': rec([]) }),
+      managed,
+      source,
+      new Date(day(0, 1)),
+      new Date(day(0, 31)),
+      []
+    )
+
+    expect(base.noDataValue).toBe(-9999)
   })
 
   it('fills the uncommitted part of the window from the source', async () => {

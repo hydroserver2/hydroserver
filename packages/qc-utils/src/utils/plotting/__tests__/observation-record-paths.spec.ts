@@ -155,6 +155,70 @@ describe('ObservationRecord — worker paths', () => {
     ])
   })
 
+  describe('no-data values on workers', () => {
+    const ND = -9999
+    const hour = 60 * 60 * 1000
+    const make = async (dataValues: number[]) => {
+      const r = new ObservationRecord(
+        { datetimes: dataValues.map((_, i) => i * hour), dataValues },
+        { noDataValue: ND }
+      )
+      await r.reload()
+      return r
+    }
+
+    it('CHANGE_VALUES skips no-data points', async () => {
+      const r = await make([10, ND, 30])
+      await r.dispatch([
+        [EnumFilterOperations.SELECTION, [0, 1, 2]],
+        [EnumEditOperations.CHANGE_VALUES, Operator.ADD, 1],
+      ])
+      await flushMicrotasks()
+      expect(r.history[r.history.length - 1].execution.mode).toBe('worker')
+      expect(Array.from(r.dataY)).toEqual([11, ND, 31])
+    })
+
+    it('DRIFT_CORRECTION skips no-data points', async () => {
+      const r = await make([10, ND, 30, 40, ND, 60])
+      await r.dispatch([
+        [EnumFilterOperations.SELECTION, [0, 1, 2, 3, 4, 5]],
+        [EnumEditOperations.DRIFT_CORRECTION, 5],
+      ])
+      await flushMicrotasks()
+      expect(r.history[r.history.length - 1].execution.mode).toBe('worker')
+      expect(Array.from(r.dataY)).toEqual([10, ND, 32, 43, ND, 65])
+    })
+
+    it('INTERPOLATE anchors past no-data points', async () => {
+      const r = await make([10, ND, 0, 0, ND, 60])
+      await r.dispatch([
+        [EnumFilterOperations.SELECTION, [2, 3]],
+        [EnumEditOperations.INTERPOLATE],
+      ])
+      await flushMicrotasks()
+      expect(r.history[r.history.length - 1].execution.mode).toBe('worker')
+      expect(Array.from(r.dataY)).toEqual([10, ND, 30, 40, ND, 60])
+    })
+
+    it('FILL_GAPS uses the fill value when a gap edge is no-data', async () => {
+      const r = new ObservationRecord(
+        { datetimes: [0, 3 * hour, 4 * hour, 7 * hour], dataValues: [10, ND, 40, 70] },
+        { noDataValue: ND }
+      )
+      await r.reload()
+      await r.dispatch(
+        EnumEditOperations.FILL_GAPS,
+        [90, TimeUnit.MINUTE],
+        [1, TimeUnit.HOUR],
+        true,
+        ND
+      )
+      await flushMicrotasks()
+      expect(r.history[r.history.length - 1].execution.mode).toBe('worker')
+      expect(Array.from(r.dataY)).toEqual([10, ND, ND, ND, 40, 50, 60, 70])
+    })
+  })
+
   it('CHANGE_VALUES stays inline when calibration says useWorker=false', async () => {
     // Flip the calibration mock to the "inline wins" branch — that's
     // the path the uncalibrated default profile produces for any

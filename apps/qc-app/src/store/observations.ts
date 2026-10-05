@@ -178,7 +178,9 @@ export const useObservationStore = defineStore(
         async () => {
           const raw = await loadMissing(datastream, beginTime, endTime, exclude)
           if (!observations.value[id]) {
-            observations.value[id] = new ObservationRecord(raw)
+            observations.value[id] = new ObservationRecord(raw, {
+              noDataValue: datastream.noDataValue,
+            })
           }
           const obsRecord = observations.value[id] as ObservationRecord
           // A no-op when neither the window nor the cache changed, so
@@ -204,7 +206,9 @@ export const useObservationStore = defineStore(
         requestKey('detached', beginTime, endTime),
         () => loadMissing(datastream, beginTime, endTime)
       )
-      const record = new ObservationRecord(raw)
+      const record = new ObservationRecord(raw, {
+        noDataValue: datastream.noDataValue,
+      })
       await record.applyWindow(beginTime.getTime(), endTime.getTime())
       return record
     }

@@ -58,16 +58,24 @@ The single state holder. Owns `dataX` (Float64), `dataY` (Float64),
 **Construction**
 
 ```ts
-new ObservationRecord({
-  datetimes: number[] | Float64Array,    // epoch ms
-  dataValues: number[] | Float64Array,
-})
+new ObservationRecord(
+  {
+    datetimes: number[] | Float64Array,    // epoch ms
+    dataValues: number[] | Float64Array,
+  },
+  { noDataValue?: number | null },        // the datastream's missing-reading placeholder
+)
 ```
 
 `datetimes` and `dataValues` must be parallel and the same length. The
 record copies the inputs into SAB-backed buffers if available, plain
 `ArrayBuffer` otherwise. Construction does not yet build any history;
 call `reload()` once construction is done to initialize.
+
+`noDataValue` marks missing readings. `CHANGE_VALUES` (except `ASSIGN`) and
+`DRIFT_CORRECTION` skip points holding it, `INTERPOLATE` never anchors on it,
+and `FILL_GAPS` writes `fillValue` instead of interpolating across a gap edge
+that holds it. Omitted or `null`, every value is treated as a measurement.
 
 **Properties**
 

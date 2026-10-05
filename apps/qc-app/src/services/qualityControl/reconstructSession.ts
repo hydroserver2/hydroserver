@@ -138,7 +138,7 @@ export async function reconstructCommittedSession(
   const committed: Interval[] = []
   const replay = async (index: number, ops: QualityControlOperation[]) => {
     const base = composeBase(managed, sourceRecord, windows[index]!, committed)
-    const record = await recordFrom(base.dataX, base.dataY)
+    const record = await recordFrom(base.dataX, base.dataY, source.noDataValue)
     const report = await applyHistory(record, historyOf(chain[index]!, ops))
     return { record, report }
   }

@@ -492,7 +492,7 @@ These change values or timestamps at the current selection. The drawer disables 
 
 #### Drift correction
 
-Apply a linear drift correction across each consecutive group in the selection. Use this when a sensor has drifted from a known reference.
+Apply a linear drift correction across each consecutive group in the selection. Use this when a sensor has drifted from a known reference. Points holding the datastream's no-data value are left as they are.
 
 ![Drift correction panel](./images/panel-driftCorrection.png)
 
@@ -500,13 +500,13 @@ The panel lists every consecutive group it found in your selection, each with it
 
 #### Interpolate
 
-Replace each consecutive group in the selection with linearly interpolated values from the surrounding good points.
+Replace each consecutive group in the selection with linearly interpolated values from the surrounding good points. The anchors are the nearest unselected points that are not the datastream's no-data value; a group with real values on one side only is filled flat from that side, and a group with none is left as it is. Selected no-data points are filled, which is how you replace missing readings.
 
 ![Interpolate panel](./images/panel-interpolate.png)
 
 #### Change values
 
-Apply an arithmetic operator at each selected index. The toggle row is `+ − × ÷ =`. The label below the toggle reminds you of the operation: `New value = old <op> input`.
+Apply an arithmetic operator at each selected index. The toggle row is `+ − × ÷ =`. The label below the toggle reminds you of the operation: `New value = old <op> input`. `+ − × ÷` skip points holding the datastream's no-data value; `=` sets them too, so it can replace a missing reading.
 
 ![Change values panel](./images/panel-changeValues.png)
 
@@ -542,7 +542,7 @@ The first row is seeded with the last selected point's timestamp (or the last ob
 
 #### Fill gaps
 
-Detect gaps over a threshold and fill them with interpolated values or a constant NoData value at a chosen cadence.
+Detect gaps over a threshold and fill them with interpolated values or a constant NoData value at a chosen cadence. A gap whose edge holds the datastream's no-data value is filled with the constant instead of being interpolated.
 
 ![Fill gaps panel](./images/panel-fillGaps.png)
 

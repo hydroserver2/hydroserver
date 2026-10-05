@@ -7,12 +7,16 @@ import { ObservationRecord } from '@uwrl/qc-utils'
  */
 export async function recordFrom(
   datetimes: ArrayLike<number>,
-  dataValues: ArrayLike<number>
+  dataValues: ArrayLike<number>,
+  noDataValue: number | null
 ): Promise<ObservationRecord> {
-  const record = new ObservationRecord({
-    datetimes: Float64Array.from(datetimes),
-    dataValues: Float64Array.from(dataValues),
-  })
+  const record = new ObservationRecord(
+    {
+      datetimes: Float64Array.from(datetimes),
+      dataValues: Float64Array.from(dataValues),
+    },
+    { noDataValue }
+  )
   // The constructor starts loading without awaiting it.
   await record.reload()
   return record

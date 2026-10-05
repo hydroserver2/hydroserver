@@ -44,6 +44,7 @@ import {
   fillGapsCore,
   findGapsCore,
   interpolateCore,
+  type InterpolateGroup,
   persistenceCore,
   rateOfChangeCore,
   shiftDatetimesCollection,
@@ -239,10 +240,21 @@ export class ObservationRecord {
   windowBegin: number = -Infinity;
   windowEnd: number = Infinity;
 
-  constructor(dataArrays: {
-    datetimes: Float64Array<ArrayBuffer> | number[];
-    dataValues: Float64Array<ArrayBuffer> | number[];
-  }) {
+  /**
+   * The datastream's placeholder for a missing reading. Arithmetic and
+   * drift edits skip it, and interpolation never anchors on it. Null treats
+   * every value as a measurement.
+   */
+  noDataValue: number | null = null;
+
+  constructor(
+    dataArrays: {
+      datetimes: Float64Array<ArrayBuffer> | number[];
+      dataValues: Float64Array<ArrayBuffer> | number[];
+    },
+    options: { noDataValue?: number | null } = {},
+  ) {
+    this.noDataValue = options.noDataValue ?? null;
     this.history = [];
     this.rawData = dataArrays;
     this.loadData(this.rawData);
@@ -886,10 +898,17 @@ export class ObservationRecord {
     operator: Operator,
     value: number,
   ): Promise<number[]> {
-    const selection = this.history[this.history.length - 2]?.selected;
-    if (!selection || selection.length === 0) return [];
+    const selected = this.history[this.history.length - 2]?.selected;
+    if (!selected || selected.length === 0) return [];
 
+    // Setting a value is how a missing reading gets filled; arithmetic on a
+    // no-data placeholder would only disguise it as a measurement.
+    const selection =
+      operator === Operator.ASSIGN || this.noDataValue === null
+        ? selected
+        : selected.filter((i) => this.dataY[i] !== this.noDataValue);
     const N = selection.length;
+    if (N === 0) return [];
 
     // Fast path: for small selections, the worker-startup cost dominates
     // the actual work. The calibration layer predicts the crossover per-
@@ -1034,11 +1053,8 @@ export class ObservationRecord {
     if (groups.length === 0 || groups[0].length === 0) return;
 
     const len = this.dataset.source.y.length;
-    const preparedGroups = groups.map((g) => ({
-      indexes: g,
-      lowerIdx: Math.max(0, g[0] - 1),
-      upperIdx: Math.min(len - 1, g[g.length - 1] + 1),
-    }));
+    const preparedGroups = this._interpolationGroups(groups);
+    if (preparedGroups.length === 0) return;
 
     // Inline fast path: for small selections the worker-per-group-bucket
     // orchestration dominates. `selectionSize` is the point count we
@@ -1089,6 +1105,46 @@ export class ObservationRecord {
     }
 
     workers.forEach((worker) => worker.terminate());
+  }
+
+  /**
+   * Anchor each consecutive group on the nearest point on either side that
+   * is neither selected nor no-data, so anchors are never rewritten by the
+   * same edit. A group with one anchor fills flat from it (`lowerIdx ===
+   * upperIdx`); a group with none is left out.
+   */
+  private _interpolationGroups(groups: number[][]): InterpolateGroup[] {
+    const y = this.dataY;
+    const len = y.length;
+    const isAnchor = (i: number) => y[i] !== this.noDataValue;
+    const prepared: InterpolateGroup[] = [];
+    for (let k = 0; k < groups.length; k++) {
+      let lower = groups[k][0] - 1;
+      for (let p = k - 1; lower >= 0; ) {
+        if (p >= 0 && lower === groups[p][groups[p].length - 1]) {
+          lower = groups[p][0] - 1;
+          p--;
+        } else if (isAnchor(lower)) break;
+        else lower--;
+      }
+      let upper = groups[k][groups[k].length - 1] + 1;
+      for (let n = k + 1; upper < len; ) {
+        if (n < groups.length && upper === groups[n][0]) {
+          upper = groups[n][groups[n].length - 1] + 1;
+          n++;
+        } else if (isAnchor(upper)) break;
+        else upper++;
+      }
+      const hasLower = lower >= 0;
+      const hasUpper = upper < len;
+      if (!hasLower && !hasUpper) continue;
+      prepared.push({
+        indexes: groups[k],
+        lowerIdx: hasLower ? lower : upper,
+        upperIdx: hasUpper ? upper : lower,
+      });
+    }
+    return prepared;
   }
 
   /**
@@ -1339,7 +1395,8 @@ export class ObservationRecord {
         0,
         fillDelta,
         interpolateValues,
-        fillValue
+        fillValue,
+        this.noDataValue
       );
       this.dataset.source.x = outX;
       this.dataset.source.y = outY;
@@ -1399,6 +1456,7 @@ export class ObservationRecord {
             fillDelta,
             interpolate: interpolateValues,
             fillValue,
+            noDataValue: this.noDataValue,
           });
           worker.onmessage = (event: MessageEvent) => {
             resolve(event.data);
@@ -1609,7 +1667,7 @@ export class ObservationRecord {
       selectionSize: totalWork,
     });
     if (!decision.useWorker) {
-      driftCorrectionCore(xData, this.dataY, ranges);
+      driftCorrectionCore(xData, this.dataY, ranges, this.noDataValue);
       return;
     }
     this._pendingExecutionMode = "worker";
@@ -1666,6 +1724,7 @@ export class ObservationRecord {
             bufferX: this.dataX.buffer,
             bufferY: this.dataY.buffer,
             jobs: bucket,
+            noDataValue: this.noDataValue,
           });
           worker.onmessage = (event: MessageEvent) => {
             resolve(event.data);

@@ -80,7 +80,8 @@ export async function loadLatestBase(
     fromSource.length ? fetchInRange(source, start, end) : undefined,
   ])
   const base = composeBase(managedRecord, sourceRecord, window, committed)
-  return recordFrom(base.dataX, base.dataY)
+  // Placeholders come from the source; managed datastreams copy its metadata.
+  return recordFrom(base.dataX, base.dataY, source.noDataValue)
 }
 
 /**

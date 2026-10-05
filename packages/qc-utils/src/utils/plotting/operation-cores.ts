@@ -195,8 +195,8 @@ export function persistenceCore(
  * `[leftIdx, rightIdx]` pairs, sorted by left index. `fillDelta` is
  * the spacing between inserted points in the same unit as `sourceX`.
  * When `interpolate` is true the filled Y values are linearly
- * interpolated between the gap's endpoints; otherwise `fillValue` is
- * written (used for "sentinel" -9999 fills).
+ * interpolated between the gap's endpoints; otherwise, or when either
+ * endpoint holds `noDataValue`, `fillValue` is written.
  *
  * Shared by the `FillGapsWorker`'s per-segment write and the inline
  * full-array path. Returns the number of elements written so callers
@@ -213,7 +213,8 @@ export function fillGapsCore(
   outStart: number,
   fillDelta: number,
   interpolate: boolean,
-  fillValue: number
+  fillValue: number,
+  noDataValue: number | null = null
 ): number {
   let gapPtr = 0
   let writePtr = outStart
@@ -231,11 +232,13 @@ export function fillGapsCore(
       const rightValue = sourceY[rightIdx]
       const span = rightDatetime - leftDatetime
       const valueSpan = rightValue - leftValue
+      const canInterpolate =
+        interpolate && leftValue !== noDataValue && rightValue !== noDataValue
 
       let nextFillDatetime = leftDatetime + fillDelta
       while (nextFillDatetime < rightDatetime) {
         outX[writePtr] = nextFillDatetime
-        outY[writePtr] = interpolate
+        outY[writePtr] = canInterpolate
           ? leftValue + ((nextFillDatetime - leftDatetime) * valueSpan) / span
           : fillValue
         writePtr++
@@ -422,13 +425,14 @@ export function interpolateCore(
  *
  * where `startDatetime = x[start]` and `extent = x[end] - x[start]`.
  * Ranges with non-positive extent are skipped to match the worker's
- * behaviour. The whole operation is O(total range length) — no
+ * behaviour, and so are points holding `noDataValue`. The whole operation is O(total range length) — no
  * chunking or spawning, suitable for the inline calibration path.
  */
 export function driftCorrectionCore(
   arrayX: Float64Array | Float64Array<SharedArrayBuffer>,
   arrayY: Float64Array | Float64Array<SharedArrayBuffer>,
-  ranges: [number, number, number][]
+  ranges: [number, number, number][],
+  noDataValue: number | null = null
 ): void {
   for (let r = 0; r < ranges.length; r++) {
     const start = ranges[r][0]
@@ -439,6 +443,7 @@ export function driftCorrectionCore(
     const extent = arrayX[end] - startDatetime
     if (extent === 0) continue
     for (let i = start; i <= end; i++) {
+      if (arrayY[i] === noDataValue) continue
       arrayY[i] = arrayY[i] + value * ((arrayX[i] - startDatetime) / extent)
     }
   }

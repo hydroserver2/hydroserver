@@ -13,6 +13,7 @@ self.onmessage = (e) => {
     fillDelta,
     interpolate,
     fillValue,
+    noDataValue,
   } = e.data
   const arrayX = new Float64Array(bufferX)
   const arrayY = new Float64Array(bufferY)
@@ -29,7 +30,8 @@ self.onmessage = (e) => {
     startTarget,
     fillDelta,
     interpolate,
-    fillValue
+    fillValue,
+    noDataValue
   )
   self.postMessage('Done')
 }

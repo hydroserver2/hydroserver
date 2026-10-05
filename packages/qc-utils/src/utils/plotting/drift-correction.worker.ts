@@ -1,5 +1,5 @@
 self.onmessage = (e) => {
-  const { bufferX, bufferY, jobs } = e.data
+  const { bufferX, bufferY, jobs, noDataValue } = e.data
   const arrayX = new Float64Array(bufferX)
   const arrayY = new Float64Array(bufferY)
 
@@ -7,6 +7,7 @@ self.onmessage = (e) => {
   for (let j = 0; j < jobs.length; j++) {
     const { chunkStart, chunkEnd, startDatetime, value, extent } = jobs[j]
     for (let i = chunkStart; i < chunkEnd; i++) {
+      if (arrayY[i] === noDataValue) continue
       arrayY[i] = arrayY[i] + value * ((arrayX[i] - startDatetime) / extent)
     }
   }

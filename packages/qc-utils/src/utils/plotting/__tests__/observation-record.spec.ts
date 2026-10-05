@@ -108,6 +108,118 @@ describe('ObservationRecord', () => {
     });
   });
 
+  describe('no-data values', () => {
+    const ND = -9999;
+    const hour = 60 * 60 * 1000;
+    const times = (n: number) => Array.from({ length: n }, (_, i) => i * hour);
+    const make = async (dataValues: number[], noDataValue: number | null = ND) => {
+      const rec = new ObservationRecord(
+        { datetimes: times(dataValues.length), dataValues },
+        { noDataValue },
+      );
+      await rec.reload();
+      return rec;
+    };
+    const all = (n: number) => Array.from({ length: n }, (_, i) => i);
+
+    it('arithmetic changes skip no-data points', async () => {
+      const rec = await make([10, ND, 30]);
+      await rec.dispatch([
+        [EnumFilterOperations.SELECTION, all(3)],
+        [EnumEditOperations.CHANGE_VALUES, Operator.ADD, 1],
+      ]);
+      expect(Array.from(rec.dataY)).toEqual([11, ND, 31]);
+    });
+
+    it('setting a value replaces a no-data point', async () => {
+      const rec = await make([10, ND, 30]);
+      await rec.dispatch([
+        [EnumFilterOperations.SELECTION, [1]],
+        [EnumEditOperations.CHANGE_VALUES, Operator.ASSIGN, 20],
+      ]);
+      expect(Array.from(rec.dataY)).toEqual([10, 20, 30]);
+    });
+
+    it('treats the value as data when the record has no no-data value', async () => {
+      const rec = await make([10, ND], null);
+      await rec.dispatch([
+        [EnumFilterOperations.SELECTION, all(2)],
+        [EnumEditOperations.CHANGE_VALUES, Operator.ADD, 1],
+      ]);
+      expect(Array.from(rec.dataY)).toEqual([11, ND + 1]);
+    });
+
+    it('drift correction skips no-data points but keeps the ramp', async () => {
+      const rec = await make([10, ND, 30, 40, ND, 60]);
+      await rec.dispatch([
+        [EnumFilterOperations.SELECTION, all(6)],
+        [EnumEditOperations.DRIFT_CORRECTION, 5],
+      ]);
+      expect(Array.from(rec.dataY)).toEqual([10, ND, 32, 43, ND, 65]);
+    });
+
+    it('interpolation anchors on the nearest real values outside the selection', async () => {
+      const rec = await make([10, ND, 0, 0, ND, 60]);
+      await rec.dispatch([
+        [EnumFilterOperations.SELECTION, [2, 3]],
+        [EnumEditOperations.INTERPOLATE],
+      ]);
+      expect(Array.from(rec.dataY)).toEqual([10, ND, 30, 40, ND, 60]);
+    });
+
+    it('interpolation fills a selected no-data point', async () => {
+      const rec = await make([10, ND, 30]);
+      await rec.dispatch([
+        [EnumFilterOperations.SELECTION, [1]],
+        [EnumEditOperations.INTERPOLATE],
+      ]);
+      expect(Array.from(rec.dataY)).toEqual([10, 20, 30]);
+    });
+
+    it('interpolation does not anchor on another selected group', async () => {
+      const rec = await make([0, 999, ND, 999, 40]);
+      await rec.dispatch([
+        [EnumFilterOperations.SELECTION, [1, 3]],
+        [EnumEditOperations.INTERPOLATE],
+      ]);
+      expect(Array.from(rec.dataY)).toEqual([0, 10, ND, 30, 40]);
+    });
+
+    it('interpolation with one anchor fills flat from it', async () => {
+      const rec = await make([999, 999, 10, ND]);
+      await rec.dispatch([
+        [EnumFilterOperations.SELECTION, [0, 1]],
+        [EnumEditOperations.INTERPOLATE],
+      ]);
+      expect(Array.from(rec.dataY)).toEqual([10, 10, 10, ND]);
+    });
+
+    it('interpolation without any anchor leaves the group alone', async () => {
+      const rec = await make([999, 999, ND]);
+      await rec.dispatch([
+        [EnumFilterOperations.SELECTION, [0, 1]],
+        [EnumEditOperations.INTERPOLATE],
+      ]);
+      expect(Array.from(rec.dataY)).toEqual([999, 999, ND]);
+    });
+
+    it('fill gaps uses the fill value when a gap edge is no-data', async () => {
+      const rec = new ObservationRecord(
+        { datetimes: [0, 3 * hour, 4 * hour, 7 * hour], dataValues: [10, ND, 40, 70] },
+        { noDataValue: ND },
+      );
+      await rec.reload();
+      await rec.dispatch(
+        EnumEditOperations.FILL_GAPS,
+        [90, TimeUnit.MINUTE],
+        [1, TimeUnit.HOUR],
+        true,
+        ND,
+      );
+      expect(Array.from(rec.dataY)).toEqual([10, ND, ND, ND, 40, 50, 60, 70]);
+    });
+  });
+
   describe('value precision', () => {
     // None of these survive a round trip through 32-bit floats.
     const values = [12.34, 0.1, 1234567.891, -9999.99];
