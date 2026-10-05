@@ -113,12 +113,11 @@ you need to verify the published package artifacts.
 
 ## Documentation gaps
 
-1. **Result qualifiers are partial.** The `QualifyingComments` op panel
-   exists and writes to the in-memory history, but the commit path
-   (`services/qualityControl/observationsBody.ts`) currently serializes only
-   `phenomenonTime` and `result`; qualifier codes are deferred pending the
-   HydroServer API adding a workable columnar response. The note in
-   `observationsBody.ts` points at this.
+1. **Result qualifiers are hidden.** The `QualifyingComments` panel stored
+   flags only in the browser, keyed by array index, so it is turned off with
+   `QUALIFIER_TOOL_ENABLED` in `store/qualifiers.ts` until qualifiers can be
+   saved as session operations. Commits still send only `phenomenonTime` and
+   `result` (see [QUALITY.md](./QUALITY.md)).
 2. **No load-testing artifacts.** "How big a datastream can you QC in
    one session?" is answered empirically per browser via the calibration
    pass, but there is no published "this is the supported envelope"

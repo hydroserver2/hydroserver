@@ -81,6 +81,7 @@ const applications: Array<{ qualifierId: string; index: number; appliedAt: strin
 const qualifierById: Record<string, { code: string; description: string }> = {}
 
 vi.mock('@/store/qualifiers', () => ({
+  QUALIFIER_TOOL_ENABLED: false,
   useQualifierStore: () => ({
     getApplicationsForDatastream: (_id: string) => applications,
     qualifierById,
@@ -220,6 +221,14 @@ describe('createPlotlyOption', () => {
     expect(opts.traces.length).toBe(0)
     expect(opts.layout).toBeDefined()
     expect(opts.config).toBeDefined()
+  })
+
+  it('draws no qualifier band while the qualifier tool is disabled', () => {
+    qcDatastream.value = { id: 'qc' }
+    qualifierById['q1'] = { code: 'A', description: 'alpha' }
+    applications.push({ qualifierId: 'q1', index: 0, appliedAt: 't', appliedBy: 'u' })
+    const opts = createPlotlyOption([makeSeries({ id: 'qc' })])
+    expect(opts.traces.some((t: any) => t.name === 'A')).toBe(false)
   })
 
   it('assigns QC series to primary y (yaxis) and non-QC to yaxis2+', () => {

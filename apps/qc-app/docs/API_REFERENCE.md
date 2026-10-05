@@ -87,10 +87,9 @@ observations. Incremental submission is not implemented today.
 
 ### Result qualifier codes
 
-Listed via `fetchWorkspaceResultQualifiers`. The QC App tracks selected
-qualifiers in `store/qualifiers.ts`, but **does not yet serialize them on
-commit** (see [QUALITY.md](./QUALITY.md) tech-debt section and the note
-in `services/qualityControl/observationsBody.ts`).
+Listed via `fetchWorkspaceResultQualifiers`. Applying qualifiers is hidden
+behind `QUALIFIER_TOOL_ENABLED`, and commits **do not serialize qualifier
+codes** (see [QUALITY.md](./QUALITY.md) tech-debt section).
 
 ## Internal: composables
 
@@ -660,7 +659,8 @@ defaults are reseeded from the datastream on each mount.
 ### `useQualifierStore()` (`src/store/qualifiers.ts`)
 
 Workspace-scoped qualifier dictionary plus the per-observation
-applications added via the Qualifying Comments panel.
+applications added via the Qualifying Comments panel. The panel and every
+view of the applications are off while `QUALIFIER_TOOL_ENABLED` is `false`.
 
 Persistence: `applied` only; the dictionary is reloaded on every
 workspace change.

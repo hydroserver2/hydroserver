@@ -11,7 +11,7 @@ import type {
 } from 'plotly.js-dist'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
-import { useQualifierStore } from '@/store/qualifiers'
+import { QUALIFIER_TOOL_ENABLED, useQualifierStore } from '@/store/qualifiers'
 import { useUIStore } from '@/store/userInterface'
 import { findFirstGreaterOrEqual, findLastLessOrEqual } from '@uwrl/qc-utils'
 import { DENSITY_HIDE_MARKERS, Y_AXIS_KEY_RE } from './internal'
@@ -762,7 +762,7 @@ export const createPlotlyOption = (
   const axisSuffix: string | number = ''
 
   // Qualifier flag band at the bottom of the plot.
-  const qualifierBand = !isPreview && seriesArray.length
+  const qualifierBand = QUALIFIER_TOOL_ENABLED && !isPreview && seriesArray.length
     ? buildQualifierBand(
       seriesArray,
       qcDatastream?.value?.id,

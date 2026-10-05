@@ -175,7 +175,7 @@ import { EnumEditOperations, EnumFilterOperations } from '@uwrl/qc-utils'
 import { formatDateTime } from '@/utils/time'
 import { fromWallParts, wallParts } from '@/utils/timeZone'
 import { useDataSelection } from '@/composables/useDataSelection'
-import { useQualifierStore } from '@/store/qualifiers'
+import { QUALIFIER_TOOL_ENABLED, useQualifierStore } from '@/store/qualifiers'
 import EditableCell from '@/components/VisualizeData/EditableCell.vue'
 import { useEditLock } from '@/composables/useEditLock'
 
@@ -260,7 +260,9 @@ const headers = [
   { title: '', align: 'start' as const, key: 'actions', width: '50px' },
   { title: 'Datetime', align: 'start' as const, key: 'datetime' },
   { title: 'Value', align: 'end' as const, key: 'value' },
-  { title: 'Qualifiers', align: 'start' as const, key: 'qualifiers' },
+  ...(QUALIFIER_TOOL_ENABLED
+    ? [{ title: 'Qualifiers', align: 'start' as const, key: 'qualifiers' }]
+    : []),
 ]
 
 const qualifierApplicationsAt = (index: number) => {

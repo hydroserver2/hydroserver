@@ -290,16 +290,6 @@ test.describe('docs screenshots', () => {
     await snapEl(panel, 'panel-date-range-mask.png')
   })
 
-  test('add panel: qualifyingComments', async ({ page }) => {
-    await page.setViewportSize(TALL_VIEWPORT)
-    await installMocks(page, { qcHistories: true })
-    await setupEditView(page)
-    await selectAllPoints(page)
-    await openOp(page, 'qualifyingComments')
-    const panel = page.getByTestId('operation-panel-qualifyingComments')
-    await snapEl(panel, 'panel-qualifyingComments.png')
-  })
-
   test('add panel: addPoints', async ({ page }) => {
     await page.setViewportSize(TALL_VIEWPORT)
     await installMocks(page, { qcHistories: true })

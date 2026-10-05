@@ -47,7 +47,11 @@ vi.mock('@/store/dataVisualization', () => ({
   useDataVisStore: () => ({ selectedData, qcDatastream }),
 }))
 
+const qualifierTool = vi.hoisted(() => ({ enabled: false }))
 vi.mock('@/store/qualifiers', () => ({
+  get QUALIFIER_TOOL_ENABLED() {
+    return qualifierTool.enabled
+  },
   useQualifierStore: () => ({ qualifierById, applied }),
 }))
 
@@ -96,7 +100,7 @@ import DataTable from '@/components/VisualizeData/DataTable.vue'
 function virtualTableStub() {
   return {
     name: 'VDataTableVirtualStub',
-    props: ['items', 'rowProps'],
+    props: ['items', 'rowProps', 'headers'],
     template: `
       <div class="vdtv-stub">
         <div
@@ -106,10 +110,9 @@ function virtualTableStub() {
           :data-index="index"
           :class="resolveRowClass(index)"
         >
-          <slot name="item.actions" :index="index" />
-          <slot name="item.datetime" :index="index" />
-          <slot name="item.value" :index="index" />
-          <slot name="item.qualifiers" :index="index" />
+          <template v-for="h in headers" :key="h.key">
+            <slot :name="'item.' + h.key" :index="index" />
+          </template>
         </div>
       </div>
     `,
@@ -538,7 +541,21 @@ describe('DataTable.vue qualifier rendering (qualifierApplicationsAt, Code, Tool
     qcDatastream.value = { id: 'ds-1' }
     qualifierById.value = {}
     applied.value = {}
+    qualifierTool.enabled = true
     vi.clearAllMocks()
+  })
+
+  afterEach(() => {
+    qualifierTool.enabled = false
+  })
+
+  it('hides the column while the qualifier tool is disabled', async () => {
+    qualifierTool.enabled = false
+    applied.value = { 'ds-1': { 0: [{ qualifierId: 'q1', appliedAt: 't', appliedBy: 'u' }] } }
+    qualifierById.value = { q1: { code: 'ABC', description: 'desc' } }
+    const wrapper = createWrapperWithSlots()
+    await flushPromises()
+    expect(wrapper.text()).not.toContain('ABC')
   })
 
   it('renders nothing when qcDatastream is null', async () => {

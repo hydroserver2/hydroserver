@@ -16,7 +16,7 @@ The QC App is the operator's view of HydroServer's quality control pipeline. Wit
 2. **Plot up to four datastreams** on a synchronized multi-axis chart for visual context, keeping the fifth plot slot for the datastream you edit.
 3. **Pick one datastream to edit with its row's Edit button.** Plotted datastreams are read-only context.
 4. **Filter** suspicious points using value thresholds, time windows, change detection, rate-of-change limits, gap detection, or persistence runs.
-5. **Edit** the selected points: change values, interpolate, drift-correct, shift datetimes, delete, fill gaps, add points, attach qualifier flags.
+5. **Edit** the selected points: change values, interpolate, drift-correct, shift datetimes, delete, fill gaps, add points.
 6. **Save** your work to the session as you go. Saved operations are stored in HydroServer with who applied them, so anyone with access can pick the session up.
 7. **Commit** the session to write the cleaned observations to the managed datastream. The source datastream is never changed.
 
@@ -306,8 +306,6 @@ What you can do here:
 - **Edit timestamps inline.** Click a `Datetime` cell to open a `datetime-local` picker; the same edit-then-commit flow applies.
 - **Bulk-select for an operation.** The leading checkbox column toggles a row in or out of the selection. Selected rows match the selection on the plot, so you can stage a Delete points / Change values / Interpolate edit from the table just as you would from a box-select on the chart.
 - **Track pending edits.** The toolbar chip `N unsaved` lights up whenever the table has uncommitted edits. **Discard** rolls every pending edit back; **Save changes** flushes them through the same history machinery as a Change-values or Shift-datetimes operation (one history entry per cell type).
-- **Inspect qualifiers.** The `Qualifiers` column shows the qualifier codes attached to each observation (set via the
-  Qualifying comments panel). Hover a chip for its description.
 - **Jump to a range.** The editor opens with the table scrolled to the first observation of the edit session's window, matching the plot's initial zoom.
 
 The table is the fastest path for a small number of targeted edits. For anything wider (a hundred points, a window of bad values, a drift correction) the plot's box-select gestures + Edit drawer are faster.
@@ -413,7 +411,7 @@ The Edit drawer is a vertical column of operation rows, grouped into three colla
 |-------|------|---------|
 | **Filter Data** | Blue | Select points without changing values. The result is a selection on the plot. |
 | **Edit Data** | Blue (or amber for "needs selection") | Change values or timestamps on the current selection. Amber rows disable themselves until you make a selection. |
-| **Add Data** | Green | Insert new points (Add Points, Fill Gaps) or attach data qualifiers without changing values. |
+| **Add Data** | Green | Insert new points (Add Points, Fill Gaps). |
 
 Click a row to open its panel on the right; click the same row again to dismiss it.
 
@@ -533,16 +531,6 @@ Drop the selected points from the series entirely. The warning banner repeats th
 The deletion is recorded in history and can be undone from there.
 
 ### Add operations
-
-#### Qualifying comments
-
-Attach qualifier flags (e.g., "Ice affected", "Estimated") to the selected points. Pick one or more qualifiers from the autocomplete. Existing qualifiers already applied to the selection are listed below in chip form.
-
-![Qualifying comments panel](./images/panel-qualifyingComments.png)
-
-The **New qualifier** button opens a small dialog where you can register a new data qualifier code + description against the workspace.
-
-> **Note:** qualifier codes are tracked locally in your browser and are POSTed to the workspace's qualifier list, but the per-point qualifier applications themselves are not yet serialized to the backend on Save. See [QUALITY.md](./QUALITY.md) for the status.
 
 #### Add points
 

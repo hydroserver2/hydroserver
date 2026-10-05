@@ -82,17 +82,19 @@ entrypoint so QC and Data Management share the same session.
 These are real, named, worth flagging up front. Not exhaustive, but
 the items most likely to bite a new team in the first three months.
 
-### 1. Result-qualifier commit path is partial
+### 1. Result qualifiers are not supported yet
 
-`store/qualifiers.ts` and `components/EditData/QualifyingComments.vue`
-collect qualifier codes per selection, but
-`services/qualityControl/observationsBody.ts` only serializes
-`['phenomenonTime', 'result']` on the bulk POST a commit sends. The row format would
-carry qualifiers, but it times out on >35k-point fetches today (see
-`src/utils/observations.ts:24`). Resolution is blocked on the
-HydroServer API team either making the columnar response carry
-qualifiers via opt-in (`include=resultQualifierCodes`) or speeding up
-the row mode. Tracked inline as a TODO.
+The Qualifying comments panel (`components/EditData/QualifyingComments.vue`)
+kept its flags in `store/qualifiers.ts`, in the browser only and keyed by
+array index, so edits that moved points moved the flags too and commits
+never included them. `QUALIFIER_TOOL_ENABLED` turns off the panel, the plot's
+qualifier band and the table's Qualifiers column until qualifiers are saved
+as session operations, which needs qualifier operation types in the API.
+
+Commits also do not carry the codes already on observations:
+`services/qualityControl/observationsBody.ts` sends only
+`['phenomenonTime', 'result']`, so a replace clears `resultQualifierCodes` on
+the managed observations in the session window.
 
 ### 2. A large SFC not yet unit-tested
 
