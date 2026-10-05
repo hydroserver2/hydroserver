@@ -483,11 +483,7 @@ async function handleQcSessions(
       return json(route, { data: session })
     }
     if (method === 'DELETE') {
-      if (inHistory.some((s) => s.dependencyIds.includes(session.id))) {
-        return refuse(
-          'This session cannot be deleted because other sessions depend on it.'
-        )
-      }
+      if (!inProgress) return refuse('Only in-progress sessions can be deleted.')
       state.splice(state.indexOf(session), 1)
       return noContent()
     }

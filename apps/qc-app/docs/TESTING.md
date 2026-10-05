@@ -325,8 +325,8 @@ The QC session and operation routes are stateful. They start from the
 session fixtures and apply the app's creates, saves, commits and deletes, so
 a spec can pass a `qcSessionState` array and assert on what was persisted
 (see `submit.spec.ts`). They refuse what the API refuses, with the same 400:
-a second in-progress session, commits and operation changes on a committed
-session, and deleting a session another one depends on. A new session
+a second in-progress session, and commits, operation changes and deletes on a
+committed session. A new session
 depends on the committed sessions its window overlaps, and `ancestor_of`
 lists those dependencies transitively, as the API does.
 

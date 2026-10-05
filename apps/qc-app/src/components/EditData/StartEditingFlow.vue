@@ -351,8 +351,8 @@ async function onChooserDelete(option: ManagedDatastreamOption) {
   }
 }
 
-// The chooser only offers the newest session, which nothing builds on, so
-// the managed datastream and its earlier sessions remain.
+// The chooser only offers the in-progress session, so the managed datastream
+// and its committed sessions remain.
 async function onChooserDeleteSession(
   option: ManagedDatastreamOption,
   sessionId: string

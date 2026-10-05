@@ -240,12 +240,16 @@ class QCSessionService(ServiceUtils):
         history: uuid.UUID | QCHistory,
         session: uuid.UUID | QCSession,
     ) -> None:
-        """Delete a session."""
+        """Delete an in-progress session.
+
+        A committed session's edits are already on the managed datastream and nothing
+        rolls them back, so the session stays as their record.
+        """
 
         session = self.get(history=history, session=session, principal=principal, action="edit")
 
-        if session.dependents.exists():
-            raise ValueError("This session cannot be deleted because other sessions depend on it.")
+        if session.status != SessionStatus.IN_PROGRESS:
+            raise ValueError("Only in-progress sessions can be deleted.")
 
         session.delete()
 

@@ -74,10 +74,7 @@ export function useManagedDatastreams() {
     }
   }
 
-  /**
-   * Delete one session. The server refuses a session that others were built
-   * on, so callers only offer sessions without dependents.
-   */
+  /** Delete the in-progress session. The server refuses a committed one. */
   async function deleteSession(
     historyId: string,
     sessionId: string

@@ -88,7 +88,7 @@
             </SessionTimelineItem>
 
             <SessionTimelineItem
-              v-for="(s, i) in orderedSessions(opt.sessions)"
+              v-for="s in orderedSessions(opt.sessions)"
               :key="s.id"
               :kind="s.status"
               :data-testid="`chooser-session-${s.id}`"
@@ -133,10 +133,10 @@
                 >
                   Continue
                 </v-btn>
-                <!-- Only the newest session can be deleted: anything older may
-                     have sessions built on it. -->
+                <!-- A committed session's edits are already on the managed
+                     datastream, so only the in-progress one can be deleted. -->
                 <v-btn
-                  v-if="i === opt.sessions.length - 1"
+                  v-if="s.status === 'in_progress'"
                   icon="mdi-trash-can-outline"
                   size="x-small"
                   variant="text"
@@ -202,8 +202,9 @@
 
       <v-card-text class="pt-2 pb-4 px-6">
         <p v-if="pendingDelete.session" class="text-body-medium mb-3">
-          "{{ sessionLabel(pendingDelete.session) }}" and the record of its
-          operations are removed. Earlier sessions are untouched.
+          "{{ sessionLabel(pendingDelete.session) }}" and its saved operations
+          are removed. Nothing in it was committed, so the managed datastream's
+          observations and earlier sessions are untouched.
         </p>
         <p v-else class="text-body-medium mb-3">
           "{{ pendingDelete.option.managed.name }}", its observations and its

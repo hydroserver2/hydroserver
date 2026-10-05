@@ -659,19 +659,18 @@ Things worth knowing:
 ## Deleting a session
 
 The **Edit** chooser shows every session on a managed datastream as a
-timeline, oldest first. Only the last row, the most recent session, carries a
-trash icon. When no session is open, the timeline is headed by a **Start new
-session** node.
+timeline, oldest first. Only the in-progress session carries a trash icon.
+When no session is open, the timeline is headed by a **Start new session**
+node.
 
-Sessions build on each other: a session started after a commit records that it
-began from that commit's result. Deleting an older session would therefore have
-to delete every session built on top of it, so the chooser does not offer it.
-The most recent session cannot have anything built on it, which makes it the
-only one safe to remove. It can be in progress or committed. To unwind further,
-delete the newest session, then the next, one at a time.
+Committed sessions cannot be deleted. Their edits are already on the managed
+datastream, and the session is the record of how those values got there.
+Deleting an in-progress session removes only its saved operations, since
+nothing in it has been committed yet.
 
 The confirmation dialog names the session and says its operations go with it.
-Earlier sessions are untouched. **This cannot be undone.**
+The managed datastream's observations and earlier sessions are untouched.
+**This cannot be undone.**
 
 If the server rejects the delete, you see why, and the chooser reloads from
 the server so the list reflects what actually survived.

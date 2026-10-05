@@ -100,8 +100,8 @@ describe('useManagedDatastreams.loadForSource', () => {
   })
 
   it('deleteSession throws the server message when the delete is refused', async () => {
-    deleteSessionCall.mockResolvedValue({ ok: false, message: 'has dependents' })
+    deleteSessionCall.mockResolvedValue({ ok: false, message: 'Only in-progress sessions can be deleted.' })
     const { deleteSession } = useManagedDatastreams()
-    await expect(deleteSession('h-1', 'qcs-1')).rejects.toThrow('has dependents')
+    await expect(deleteSession('h-1', 'qcs-1')).rejects.toThrow('Only in-progress sessions can be deleted.')
   })
 })

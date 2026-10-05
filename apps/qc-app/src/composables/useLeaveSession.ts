@@ -22,7 +22,6 @@ import { useQcSessionStore } from '@/store/qcSession'
 import { useWorkingCopiesStore } from '@/store/workingCopies'
 import { useEditSession } from '@/composables/useEditSession'
 import { useManagedDatastreams } from '@/composables/useManagedDatastreams'
-import { hasDependents } from '@/utils/sessionGraph'
 
 /** What the user stands to lose by leaving right now. */
 export type LeaveCase =
@@ -158,13 +157,6 @@ async function discardSessionAndLeave(): Promise<void> {
   if (leaveWork.value || !session || !historyId) return
   leaveWork.value = 'discard-session'
   try {
-    // The in-progress session is normally the newest, so nothing is built on
-    // it. If something is, refuse rather than cascade the delete into it.
-    if (hasDependents(store.sessions, session.id)) {
-      throw new Error(
-        'Another session was built on this one, so it cannot be discarded.'
-      )
-    }
     await useManagedDatastreams().deleteSession(historyId, session.id)
   } catch (e) {
     Snackbar.error(messageOf(e, 'Could not discard the session.'))

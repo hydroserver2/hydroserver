@@ -204,9 +204,8 @@ and `LeaveSessionDialog.vue`, mounted once in `App.vue`, shows it.
 - `keepSession()` / `discardSessionAndLeave()`: the `'empty'` answers.
   `keepSession()` is also the `'saved'` answer, keeping the session as it is.
   Discarding deletes the session through
-  `useManagedDatastreams().deleteSession`, and refuses if another
-  session was somehow built on it. A failed delete keeps the user in the
-  session.
+  `useManagedDatastreams().deleteSession`. A failed delete keeps the user in
+  the session.
 - `cancelLeave()`: stay, with the zoom, staged band and unsaved edits intact.
 - `forgetSession()`: drop the resume pointer only. For exits that unmount the
   editor, where clearing the edit target would have the editor's URL writer
@@ -361,9 +360,9 @@ in-progress/committed sessions.
 
 - `deleteManaged(historyId, managedId)`: removes the QC history, then the
   managed datastream.
-- `deleteSession(historyId, sessionId)`: removes one session and throws the
-  server's message when it refuses (the session has dependents). Callers only
-  offer the newest session, or an empty in-progress one.
+- `deleteSession(historyId, sessionId)`: removes the in-progress session and
+  throws the server's message when it refuses. The server refuses a committed
+  session, since its edits are already on the managed datastream.
 
 ### `useDatastreamMetadata()`
 

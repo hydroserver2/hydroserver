@@ -25,7 +25,7 @@ const {
     qcDatastream: r<{ id: string; name?: string } | null>(null),
     resumeDatastreamId: r<string | null>(null),
     historyId: r<string | null>('h-1'),
-    sessions: r<Array<{ id: string; dependencyIds?: string[] }>>([]),
+    sessions: r<Array<{ id: string }>>([]),
     inProgressSession: r<{ id: string; name?: string } | null>(null),
     isReadOnly: r(false),
     hasSessionOperations: r(false),
@@ -288,25 +288,6 @@ describe('requestLeave', () => {
     // The store no longer lists a session the server does not have.
     expect(applySessions).toHaveBeenCalledWith('h-1', [])
     expect(await pending).toBe(true)
-  })
-
-  it('refuses to discard a session another one was built on', async () => {
-    emptySession()
-    sessions.value = [
-      { id: 'qcs-1' },
-      { id: 'qcs-2', dependencyIds: ['qcs-1'] },
-    ]
-    const { requestLeave, discardSessionAndLeave, leavePrompt, cancelLeave } =
-      useLeaveSession()
-    const pending = requestLeave()
-
-    await discardSessionAndLeave()
-
-    expect(deleteSession).not.toHaveBeenCalled()
-    expect(error).toHaveBeenCalled()
-    expect(leavePrompt.value?.kind).toBe('empty')
-    cancelLeave()
-    expect(await pending).toBe(false)
   })
 
   it('keeps the user in the session when the delete fails', async () => {

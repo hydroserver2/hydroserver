@@ -126,9 +126,8 @@ describe('StartEditingDialog', () => {
     expect(item('s-0').find('.mdi-check').exists()).toBe(true)
   })
 
-  it('offers delete only on the most recent session', () => {
+  it('offers delete only on the in-progress session', () => {
     const w = mountDialog()
-    // s-1 is the newest, so nothing can be built on it.
     expect(w.find('[data-testid="delete-session-s-1"]').exists()).toBe(true)
     expect(w.find('[data-testid="delete-session-s-0"]').exists()).toBe(false)
     expect(w.find('[data-testid="continue-session-s-0"]').exists()).toBe(false)
@@ -169,7 +168,9 @@ describe('StartEditingDialog', () => {
     const dialog = inDialog('delete-session-dialog')!
     expect(dialog.textContent).toContain('Delete this session?')
     expect(dialog.textContent).toContain('cannot be undone')
-    // Only the newest session is deletable, so nothing cascades.
+    expect(dialog.textContent).toContain(
+      "managed datastream's observations and earlier sessions are untouched"
+    )
     expect(inDialog('delete-session-chain')).toBeNull()
     expect(inDialog('delete-session-dependents-note')).toBeNull()
     expect(inDialog('delete-session-acknowledge')).toBeNull()
@@ -279,7 +280,7 @@ describe('StartEditingDialog session deletion', () => {
     return w
   }
 
-  it('offers delete on the newest session only, whatever came before', () => {
+  it('offers delete on the in-progress session only, never a commit', () => {
     const w = mountChained()
     expect(w.find('[data-testid="delete-session-s-2"]').exists()).toBe(true)
     expect(w.find('[data-testid="delete-session-s-1"]').exists()).toBe(false)
@@ -306,7 +307,7 @@ describe('StartEditingDialog session deletion', () => {
     ).toBe('Delete this session')
   })
 
-  it('offers delete on the only session of a managed datastream', () => {
+  it('does not offer delete on a committed session, even the newest', () => {
     const lone = [
       {
         historyId: 'h-9',
@@ -325,8 +326,9 @@ describe('StartEditingDialog session deletion', () => {
       },
     ] as any
     const w = mountDialog({ options: lone })
-    expect(w.find('[data-testid="delete-session-s-solo"]').exists()).toBe(true)
-    // The managed datastream keeps its own delete, separate from the session.
+    expect(w.find('[data-testid="delete-session-s-solo"]').exists()).toBe(false)
+    // The managed datastream keeps its own delete, which removes its
+    // observations along with every session.
     expect(w.find('[data-testid="delete-managed-mgd-9"]').exists()).toBe(true)
   })
 })

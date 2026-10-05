@@ -645,7 +645,7 @@ describe('StartEditingFlow deletes', () => {
   })
 
   it('shows a failed session delete even when reloading the chooser fails too', async () => {
-    deleteSession.mockRejectedValue(new Error('Has dependents'))
+    deleteSession.mockRejectedValue(new Error('Only in-progress sessions can be deleted.'))
     const option = optionWith([committed, inProgress])
     const chooser = await openChooser(option)
     loadForSource.mockRejectedValue(new Error('Offline'))
@@ -653,6 +653,6 @@ describe('StartEditingFlow deletes', () => {
     chooser.vm.$emit('deleteSession', option, 's-1')
     await flushPromises()
 
-    expect(error).toHaveBeenCalledWith('Has dependents')
+    expect(error).toHaveBeenCalledWith('Only in-progress sessions can be deleted.')
   })
 })

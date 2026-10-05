@@ -123,7 +123,7 @@ src/
 │  ├─ timeRangePresets.ts       Preset definitions, resolved back from the context data's end, or around the session window while editing.
 │  ├─ observations.ts           Observation fetch helpers (paged columnar fetch).
 │  ├─ sessionWindow.ts          Rules and presets for a new session's window.
-│  ├─ sessionGraph.ts           Session order and dependencies.
+│  ├─ sessionGraph.ts           Session commit order.
 │  ├─ share.ts                  Share-link encoding.
 │  ├─ snapshotId.ts, contextSeriesId.ts  Ids for series that are not datastreams.
 │  ├─ qcHistory.ts              Typed reads off QC history and session shapes.
@@ -407,14 +407,13 @@ Two contract notes worth keeping in mind:
   `description`. Continuing work after a commit means starting a new session;
   the backend links it to every committed session its window overlaps, which
   is how the DAG gets built.
-- **Only a session with no dependents can be deleted.** The API allows
-  deleting any session with no dependents, committed or not, and rejects one
-  that still has them. `StartEditingDialog.vue` therefore only offers the
-  trash icon on the newest session in the timeline, which by construction has
-  none, and `useManagedDatastreams().deleteSession()` removes that one session.
-  Sessions carry `dependencyIds` (their ancestors) on an `expand_related: true`
-  listing; `utils/sessionGraph.ts` inverts that so the leave flow can refuse to
-  discard a session something was built on. Reopening the most recent commit
+- **Only an in-progress session can be deleted.** A committed session's edits
+  are already on the managed datastream, and deleting the session would not
+  roll them back, so the API refuses it. `StartEditingDialog.vue` only offers
+  the trash icon on the in-progress session, and
+  `useManagedDatastreams().deleteSession()` removes it. An in-progress session
+  never has dependents, since new sessions only depend on committed ones.
+  Reopening the most recent commit
   is a pending backend ask (see the TODO in `store/qcSession.ts`) and needs
   more than lifting the status guard, since a commit also writes observations
   to the managed datastream and rolls the history's checksum and extent
