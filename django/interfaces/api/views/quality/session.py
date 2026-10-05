@@ -3,7 +3,7 @@ import uuid
 from ninja import Router, Path, Query
 
 from interfaces.api.http.request import HydroServerHttpRequest
-from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
+from interfaces.auth.security import session_auth, oidc_read_auth, oidc_write_auth, apikey_auth, basic_auth
 from interfaces.api.services.quality.session import QCSessionAPIService
 from interfaces.api.schemas import PaginatedResponse, ItemResponse, CreatedResponse
 from interfaces.api.schemas.quality.session import (
@@ -20,7 +20,7 @@ qc_session_service = QCSessionAPIService()
 
 @qc_session_router.get(
     "",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_read_auth, apikey_auth, basic_auth],
     response={
         200: PaginatedResponse[QualityControlSessionResponse],
         401: str,
@@ -48,7 +48,7 @@ def get_qc_sessions(
 
 @qc_session_router.post(
     "",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
     response={201: CreatedResponse, 400: str, 401: str, 403: str, 404: str},
     by_alias=True,
 )
@@ -68,7 +68,7 @@ def create_qc_session(
 
 @qc_session_router.get(
     "/{session_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_read_auth, apikey_auth, basic_auth],
     response={
         200: ItemResponse[QualityControlSessionResponse],
         401: str,
@@ -92,7 +92,7 @@ def get_qc_session(
 
 @qc_session_router.patch(
     "/{session_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
     response={204: None, 400: str, 401: str, 403: str, 404: str},
     by_alias=True,
 )
@@ -116,7 +116,7 @@ def update_qc_session(
 
 @qc_session_router.delete(
     "/{session_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
     response={204: None, 401: str, 403: str, 404: str},
     by_alias=True,
 )
@@ -136,7 +136,7 @@ def delete_qc_session(
 
 @qc_session_router.post(
     "/{session_id}/commit",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
     response={204: None, 400: str, 401: str, 403: str, 404: str},
     by_alias=True,
 )

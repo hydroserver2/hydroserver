@@ -1,4 +1,7 @@
+from django.utils.translation import gettext_lazy as _
 from allauth.idp.oidc.adapter import DefaultOIDCAdapter
+
+from core.iam.auth.scopes import DATA_READ, DATA_WRITE
 
 
 class HydroServerOIDCAdapter(DefaultOIDCAdapter):
@@ -10,6 +13,12 @@ class HydroServerOIDCAdapter(DefaultOIDCAdapter):
     Kept out of the ID token to keep it lean and only returned to clients
     that request the standard "profile" scope.
     """
+
+    scope_display = {
+        **DefaultOIDCAdapter.scope_display,
+        DATA_READ: _("View your HydroServer data"),
+        DATA_WRITE: _("Create, modify, and delete your HydroServer data"),
+    }
 
     def get_claims(self, purpose, user, client, scopes, email=None, **kwargs):
         claims = super().get_claims(

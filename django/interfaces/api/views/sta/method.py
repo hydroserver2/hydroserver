@@ -3,7 +3,7 @@ import uuid
 from ninja import Router, Path, Query
 from django.db import transaction
 
-from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth
+from interfaces.auth.security import session_auth, oidc_read_auth, oidc_write_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.services.sta import MethodAPIService
 from interfaces.api.schemas import (
@@ -23,7 +23,7 @@ method_service = MethodAPIService()
 
 @method_router.get(
     "",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
+    auth=[session_auth, oidc_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: PaginatedResponse[MethodResponse],
         400: str,
@@ -51,7 +51,7 @@ def get_methods(
 
 @method_router.post(
     "",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
         400: str,
@@ -77,7 +77,7 @@ def create_method(
 
 @method_router.get(
     "/{method_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
+    auth=[session_auth, oidc_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: ItemResponse[MethodResponse],
         400: str,
@@ -105,7 +105,7 @@ def get_method(
 
 @method_router.patch(
     "/{method_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
         400: str,
@@ -135,7 +135,7 @@ def update_method(
 
 @method_router.delete(
     "/{method_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,

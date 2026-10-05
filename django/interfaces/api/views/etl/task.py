@@ -3,7 +3,7 @@ import uuid
 from ninja import Router, Path, Query
 
 from interfaces.api.http.request import HydroServerHttpRequest
-from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
+from interfaces.auth.security import session_auth, oidc_read_auth, oidc_write_auth, apikey_auth, basic_auth
 from processing.orchestration.models import TaskRun
 from interfaces.api.services.etl.task import EtlTaskAPIService
 from processing.etl.tasks import run_etl_task
@@ -23,7 +23,7 @@ etl_task_service = EtlTaskAPIService()
 
 @etl_task_router.get(
     "",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_read_auth, apikey_auth, basic_auth],
     response={
         200: PaginatedResponse[EtlTaskResponse],
         401: str,
@@ -51,7 +51,7 @@ def get_etl_tasks(
 
 @etl_task_router.post(
     "",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
         400: str,
@@ -74,7 +74,7 @@ def create_etl_task(
 
 @etl_task_router.get(
     "/{task_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_read_auth, apikey_auth, basic_auth],
     response={
         200: ItemResponse[EtlTaskResponse],
         401: str,
@@ -99,7 +99,7 @@ def get_etl_task(
 
 @etl_task_router.patch(
     "/{task_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
         400: str,
@@ -125,7 +125,7 @@ def update_etl_task(
 
 @etl_task_router.delete(
     "/{task_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,
@@ -152,7 +152,7 @@ def delete_etl_task(
 
 @etl_task_router.post(
     "/{task_id}/trigger",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
     response={
         202: TaskRunResponse,
         401: str,
@@ -181,7 +181,7 @@ def trigger_etl_task(
 
 @etl_task_router.get(
     "/{task_id}/runs",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_read_auth, apikey_auth, basic_auth],
     response={
         200: PaginatedResponse[TaskRunResponse],
         401: str,
@@ -223,7 +223,7 @@ def get_etl_task_runs(
 
 @etl_task_router.get(
     "/{task_id}/runs/{run_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_read_auth, apikey_auth, basic_auth],
     response={
         200: TaskRunResponse,
         401: str,

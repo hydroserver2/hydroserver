@@ -478,11 +478,32 @@ SENSORTHINGS_V1_1_SERVICE_URL = f"{PROXY_BASE_URL}/api/sensorthings"
 SENSORTHINGS_V1_1_BACKEND_ADAPTER = "interfaces.sensorthings.adapter.HydroServerAdapter"
 SENSORTHINGS_V1_1_DEFAULT_AUTH_HANDLER = [
     "interfaces.auth.security.session_auth",
-    "interfaces.auth.security.oidc_auth",
+    "interfaces.auth.security.oidc_read_auth",
     "interfaces.auth.security.basic_auth",
     "interfaces.auth.security.apikey_auth",
     "interfaces.auth.security.anonymous_auth",
 ]
+SENSORTHINGS_V1_1_WRITE_AUTH_HANDLER = [
+    "interfaces.auth.security.session_auth",
+    "interfaces.auth.security.oidc_write_auth",
+    "interfaces.auth.security.basic_auth",
+    "interfaces.auth.security.apikey_auth",
+    "interfaces.auth.security.anonymous_auth",
+]
+SENSORTHINGS_V1_1_AUTH_HANDLERS = {
+    f"{action}_{entity}_entity": SENSORTHINGS_V1_1_WRITE_AUTH_HANDLER
+    for action in ("create", "update", "delete")
+    for entity in (
+        "thing",
+        "location",
+        "historical_location",
+        "datastream",
+        "sensor",
+        "observed_property",
+        "observation",
+        "feature_of_interest",
+    )
+} | {"process_batch": SENSORTHINGS_V1_1_WRITE_AUTH_HANDLER}
 SENSORTHINGS_V1_1_ID_TYPE = UUID
 SENSORTHINGS_V1_1_ID_DELIMITER = "'"
 SENSORTHINGS_V1_1_MAX_TOP = env.int("SENSORTHINGS_V1_1_MAX_TOP", default=1000)

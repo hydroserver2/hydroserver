@@ -3,7 +3,7 @@ import uuid
 from ninja import Router, Path, Query
 from django.db import transaction
 
-from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth
+from interfaces.auth.security import session_auth, oidc_read_auth, oidc_write_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.services.sta import UnitAPIService
 from interfaces.api.schemas import (
@@ -23,7 +23,7 @@ unit_service = UnitAPIService()
 
 @unit_router.get(
     "",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
+    auth=[session_auth, oidc_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: PaginatedResponse[UnitResponse],
         400: str,
@@ -51,7 +51,7 @@ def get_units(
 
 @unit_router.post(
     "",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
         400: str,
@@ -76,7 +76,7 @@ def create_unit(
 
 @unit_router.get(
     "/{unit_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
+    auth=[session_auth, oidc_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: ItemResponse[UnitResponse],
         400: str,
@@ -104,7 +104,7 @@ def get_unit(
 
 @unit_router.patch(
     "/{unit_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
         400: str,
@@ -134,7 +134,7 @@ def update_unit(
 
 @unit_router.delete(
     "/{unit_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,

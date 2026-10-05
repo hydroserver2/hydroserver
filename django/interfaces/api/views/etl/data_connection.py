@@ -4,7 +4,7 @@ from ninja import Router, Path, Query
 
 from core.types import Unset
 from interfaces.api.http.request import HydroServerHttpRequest
-from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
+from interfaces.auth.security import session_auth, oidc_read_auth, oidc_write_auth, apikey_auth, basic_auth
 from interfaces.api.services.etl.data_connection import DataConnectionAPIService
 from interfaces.api.schemas import (
     DataConnectionResponse,
@@ -23,7 +23,7 @@ data_connection_service = DataConnectionAPIService()
 
 @data_connection_router.get(
     "",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_read_auth, apikey_auth, basic_auth],
     response={
         200: PaginatedResponse[DataConnectionResponse],
         401: str,
@@ -50,7 +50,7 @@ def get_data_connections(
 
 @data_connection_router.post(
     "",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
         400: str,
@@ -88,7 +88,7 @@ def create_data_connection(
 
 @data_connection_router.get(
     "/{data_connection_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_read_auth, apikey_auth, basic_auth],
     response={
         200: ItemResponse[DataConnectionResponse],
         401: str,
@@ -115,7 +115,7 @@ def get_data_connection(
 
 @data_connection_router.patch(
     "/{data_connection_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
         400: str,
@@ -156,7 +156,7 @@ def update_data_connection(
 
 @data_connection_router.delete(
     "/{data_connection_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,

@@ -3,7 +3,7 @@ import uuid
 from ninja import Router, Path, Query
 
 from interfaces.api.http.request import HydroServerHttpRequest
-from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
+from interfaces.auth.security import session_auth, oidc_read_auth, oidc_write_auth, apikey_auth, basic_auth
 from interfaces.api.services.quality.operation import QCOperationAPIService, OperationInput
 from interfaces.api.schemas import PaginatedResponse, ItemResponse, CreatedResponse
 from interfaces.api.schemas.quality.operation import (
@@ -20,7 +20,7 @@ qc_operation_service = QCOperationAPIService()
 
 @qc_operation_router.get(
     "",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_read_auth, apikey_auth, basic_auth],
     response={200: PaginatedResponse[QualityControlOperationResponse], 401: str, 403: str, 404: str},
     by_alias=True,
 )
@@ -44,7 +44,7 @@ def get_qc_operations(
 
 @qc_operation_router.post(
     "",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
     response={201: list[CreatedResponse], 400: str, 401: str, 403: str, 404: str},
     by_alias=True,
 )
@@ -66,7 +66,7 @@ def create_qc_operations(
 
 @qc_operation_router.get(
     "/{operation_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_read_auth, apikey_auth, basic_auth],
     response={200: ItemResponse[QualityControlOperationResponse], 401: str, 403: str, 404: str},
     by_alias=True,
 )
@@ -89,7 +89,7 @@ def get_qc_operation(
 
 @qc_operation_router.patch(
     "/{operation_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
     response={204: None, 400: str, 401: str, 403: str, 404: str},
     by_alias=True,
 )
@@ -115,7 +115,7 @@ def update_qc_operation(
 
 @qc_operation_router.delete(
     "/{operation_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
     response={204: None, 401: str, 403: str, 404: str},
     by_alias=True,
 )

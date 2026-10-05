@@ -3,7 +3,7 @@ import uuid
 from ninja import Router, Path, Query
 from django.db import transaction
 
-from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth
+from interfaces.auth.security import session_auth, oidc_read_auth, oidc_write_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.services.sta import LinkedResourceTypeAPIService
 from interfaces.api.schemas import PaginatedResponse, ItemResponse, CreatedResponse
@@ -23,7 +23,7 @@ linked_resource_type_service = LinkedResourceTypeAPIService()
 
 @linked_resource_type_router.get(
     "",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
+    auth=[session_auth, oidc_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: PaginatedResponse[LinkedResourceTypeResponse],
         400: str,
@@ -50,7 +50,7 @@ def get_linked_resource_types(
 
 @linked_resource_type_router.post(
     "",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
         401: str,
@@ -75,7 +75,7 @@ def create_linked_resource_type(
 
 @linked_resource_type_router.get(
     "/{linked_resource_type_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
+    auth=[session_auth, oidc_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: ItemResponse[LinkedResourceTypeResponse],
         400: str,
@@ -102,7 +102,7 @@ def get_linked_resource_type(
 
 @linked_resource_type_router.patch(
     "/{linked_resource_type_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,
@@ -130,7 +130,7 @@ def update_linked_resource_type(
 
 @linked_resource_type_router.delete(
     "/{linked_resource_type_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,

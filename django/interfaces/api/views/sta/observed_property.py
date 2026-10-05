@@ -3,7 +3,7 @@ import uuid
 from ninja import Router, Path, Query
 from django.db import transaction
 
-from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth
+from interfaces.auth.security import session_auth, oidc_read_auth, oidc_write_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.services.sta import ObservedPropertyAPIService
 from interfaces.api.schemas import (
@@ -23,7 +23,7 @@ observed_property_service = ObservedPropertyAPIService()
 
 @observed_property_router.get(
     "",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
+    auth=[session_auth, oidc_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: PaginatedResponse[ObservedPropertyResponse],
         400: str,
@@ -51,7 +51,7 @@ def get_observed_properties(
 
 @observed_property_router.post(
     "",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
         400: str,
@@ -77,7 +77,7 @@ def create_observed_property(
 
 @observed_property_router.get(
     "/{observed_property_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
+    auth=[session_auth, oidc_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: ItemResponse[ObservedPropertyResponse],
         400: str,
@@ -105,7 +105,7 @@ def get_observed_property(
 
 @observed_property_router.patch(
     "/{observed_property_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
         400: str,
@@ -135,7 +135,7 @@ def update_observed_property(
 
 @observed_property_router.delete(
     "/{observed_property_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,
