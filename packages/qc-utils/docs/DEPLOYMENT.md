@@ -49,7 +49,7 @@ CI.
 # 1. Make sure main is green and your local checkout is up to date
 git checkout main
 git pull
-npm ci                      # clean install
+npm ci --workspaces=false   # clean install from this package's lockfile
 npm run coverage            # match CI locally
 npm run lint
 npm run build               # rebuilds dist/ — published artifact

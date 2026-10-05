@@ -93,16 +93,20 @@ For a self-hosted instance pointed at your own HydroServer:
 # 1. Build with your config baked in
 git clone https://github.com/hydroserver2/hydroserver.git
 cd hydroserver
-npm ci
 
 cat > apps/qc-app/.env.local <<'EOF'
 VITE_APP_DISABLE_COOP=                 # leave blank unless backend lacks CORP
 EOF
 
-cd packages/qc-utils
+cd packages/hydroserver-ts
+npm ci
+
+cd ../qc-utils
+npm ci --workspaces=false
 npm run build
 
 cd ../../apps/qc-app
+npm ci --workspaces=false
 npm run build                          # → dist/
 
 # 2. Serve dist/ behind a CDN or nginx
@@ -192,14 +196,16 @@ npm, so every build ships the qc-utils on the same commit. Publishing it
 to npm is separate and only matters to other consumers.
 
 Build qc-utils before installing or building the app, as CI and the
-release workflow do:
+release workflow do. The repository root declares both as npm workspaces,
+so pass `--workspaces=false`: without it `npm ci` installs from the root
+lockfile instead of each package's own, which is the one CI tests.
 
 ```bash
 cd packages/qc-utils
-npm ci
+npm ci --workspaces=false
 npm run build
 cd ../../apps/qc-app
-npm ci
+npm ci --workspaces=false
 npm run build
 ```
 
