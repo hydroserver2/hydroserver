@@ -12,6 +12,7 @@
 import { ref } from 'vue'
 import {
   fromWall as zoneFromWall,
+  fromWallArray as zoneFromWallArray,
   offsetMs as zoneOffsetMs,
   toWall as zoneToWall,
   toWallArray as zoneToWallArray,
@@ -59,6 +60,13 @@ export const toWallArray = <T extends ArrayLike<number>>(
   xs: T,
   z: DisplayZone = displayZone.value
 ): T | Float64Array => zoneToWallArray(xs, zoneId(z))
+
+/** `fromWall` over an ascending array. The input itself comes back when
+ *  nothing moves (UTC). */
+export const fromWallArray = <T extends ArrayLike<number>>(
+  walls: T,
+  z: DisplayZone = displayZone.value
+): T | Float64Array => zoneFromWallArray(walls, zoneId(z))
 
 /** The zone's clock at `ms`, with a 0-based month. */
 export function wallParts(ms: number, z: DisplayZone = displayZone.value) {

@@ -16,7 +16,7 @@ import { useUIStore } from '@/store/userInterface'
 import { findFirstGreaterOrEqual, findLastLessOrEqual } from '@uwrl/qc-utils'
 import { DENSITY_HIDE_MARKERS, Y_AXIS_KEY_RE } from './internal'
 import { formatDateTime } from '@/utils/time'
-import { fromPlot, plotCoord, plotCoordToDate, toPlotDate, toPlotX } from './plotTime'
+import { fromPlot, plotCoordToDate, plotX, toPlotDate, toPlotX } from './plotTime'
 import { undoZoom, redoZoom } from './zoom'
 import { fitXaxisToVisible, fitYaxisToVisible } from './operations'
 
@@ -337,12 +337,14 @@ const resetAxesClick = (gd: unknown): void => {
   let xMin = Infinity
   let xMax = -Infinity
   for (const t of root.data ?? []) {
-    const xs = t?.x
-    if (!xs || !xs.length) continue
-    const first = plotCoord((xs as ArrayLike<number | string>)[0] as number | string)
-    const last = plotCoord(
-      (xs as ArrayLike<number | string>)[xs.length - 1] as number | string
-    )
+    if (!t?.x?.length) continue
+    // Only the ends: the series is time-sorted.
+    const ends = plotX([
+      (t.x as ArrayLike<number>)[0]!,
+      (t.x as ArrayLike<number>)[t.x.length - 1]!,
+    ])
+    const first = ends[0]!
+    const last = ends[1]!
     if (Number.isFinite(first) && first < xMin) xMin = first
     if (Number.isFinite(last) && last > xMax) xMax = last
   }

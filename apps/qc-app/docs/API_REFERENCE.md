@@ -843,14 +843,20 @@ the view back and redraws the stage band.
 
 ### `src/utils/plotting/plotTime.ts`
 
-Plotly has no time zones and reads epoch ms as UTC, so trace x values go in
-as wall values (`toPlotX`), which makes its axis, ticks and `%{x}` hover
-read in the chosen zone. Ranges, shapes and tick values are written as
-Plotly date strings (`toPlotDate`, `plotCoordToDate`): Plotly reads a bare
-number there as browser-local time, which shifted every programmatic zoom
-by the browser's UTC offset. `plotCoord` reads a range or shape value in
-Plotly's own frame, for comparing with trace values, and `fromPlot` turns
-any Plotly x back into an instant. Values the app keeps (zoom history,
+Plotly has no time zones. Its own frame on a date axis is a clock's fields
+read as UTC, and that frame holds the chosen zone's wall values, so its
+axis, ticks and `%{x}` hover read in that zone. Ranges, shapes and tick
+values are written as Plotly date strings (`toPlotDate`,
+`plotCoordToDate`), which it reads as written. A trace's numeric x it reads
+as the browser's local clock (`new Date(ms)`), so `toPlotX` hands it the
+instant whose browser-local clock shows the wall time: in the browser's own
+zone the instants go in untouched, with no copy. `plotX` reads trace x back
+as Plotly draws it; `traceXAsNumbers` uses it, so the visible-points
+counter and Fit X / Fit Y compare against the points on screen. A wall time
+the browser's clock skips (its daylight saving gap) has no such instant, so
+with another zone chosen a point there draws beside it. `plotCoord` reads a
+range or shape value in Plotly's frame, and `fromPlot` turns any Plotly x
+back into an instant. Values the app keeps (zoom history,
 share-link zoom, the stage band, hover readout) are real instants.
 
 ### `src/utils/dateMath.ts`

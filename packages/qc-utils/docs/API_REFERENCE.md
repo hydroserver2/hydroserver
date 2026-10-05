@@ -365,6 +365,7 @@ offsetMs(ms: number, zone: string): number       // the zone's offset at ms
 toWall(ms: number, zone: string): number         // ms moved to the zone's clock
 fromWall(wall: number, zone: string): number     // back to an instant
 toWallArray(xs, zone): typeof xs | Float64Array  // xs itself when nothing moves
+fromWallArray(walls, zone): typeof walls | Float64Array  // fromWall over an array; walls itself when nothing moves
 addCalendarMonths(ms: number, months: number, zone: string): number
 ```
 

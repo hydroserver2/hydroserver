@@ -1,9 +1,9 @@
 /**
- * Reading the main plot's x values back as instants. The app hands Plotly
- * wall values in the display zone (see `src/utils/plotting/plotTime.ts`),
- * and that zone is the browser's unless a spec picks another. So a trace
- * value comes back by removing the browser's offset, and a range string,
- * which is that zone's clock, parses as browser-local time.
+ * Reading the main plot's x values back as instants. In the browser's own
+ * zone, which every spec here uses unless it picks another, the app hands
+ * Plotly the instants themselves (see `src/utils/plotting/plotTime.ts`),
+ * and a range string, which is that zone's clock, parses as browser-local
+ * time.
  */
 
 import type { Page } from '@playwright/test'
@@ -39,8 +39,6 @@ export function traceXExtent(page: Page, id: string): Promise<[number, number] |
     const gd = document.querySelector('[data-testid="main-plot"]') as PlotRoot
     const xs = (gd?.data ?? []).find((t) => t.id === traceId)?.x
     if (!xs?.length) return null
-    const instant = (wall: number) =>
-      wall + new Date(wall).getTimezoneOffset() * 60_000
-    return [instant(xs[0]!), instant(xs[xs.length - 1]!)] as [number, number]
+    return [xs[0]!, xs[xs.length - 1]!] as [number, number]
   }, id)
 }

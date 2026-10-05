@@ -146,6 +146,33 @@ export function toWallArray<T extends ArrayLike<number>>(
   return out ?? xs
 }
 
+/** `fromWall` over an ascending array, walking the offset segments like
+ *  `toWallArray`. The input itself comes back when nothing moves (UTC). */
+export function fromWallArray<T extends ArrayLike<number>>(
+  walls: T,
+  zone: string
+): T | Float64Array {
+  let out: Float64Array | null = null
+  let wallSeg: Segment | null = null
+  let guessSeg: Segment | null = null
+  for (let i = 0; i < walls.length; i++) {
+    const wall = walls[i]!
+    if (!wallSeg || wall < wallSeg.from || wall >= wallSeg.until) {
+      wallSeg = segmentAt(wall, zone)
+    }
+    const guess = wall - wallSeg.offset
+    if (!guessSeg || guess < guessSeg.from || guess >= guessSeg.until) {
+      guessSeg = segmentAt(guess, zone)
+    }
+    if (guessSeg.offset !== 0 && !out) {
+      out = new Float64Array(walls.length)
+      for (let j = 0; j < i; j++) out[j] = walls[j]!
+    }
+    if (out) out[i] = wall - guessSeg.offset
+  }
+  return out ?? walls
+}
+
 /** `ms` moved by whole calendar months on the zone's clock, keeping the
  *  clock time. A day past the end of the target month clamps to its last
  *  day, so Jan 31 plus a month is Feb 28 (29 in a leap year). */

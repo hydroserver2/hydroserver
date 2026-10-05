@@ -7,7 +7,7 @@
 import { expect, test, type Page } from '@playwright/test'
 import { installMocks } from './support/mocks'
 import { setupEditView } from './support/app'
-import { FIXTURE_OBS_START_MS } from './support/fixtures'
+import { FIXTURE_OBS_START_MS, MANAGED_DATASTREAM_ID } from './support/fixtures'
 
 test.use({ timezoneId: 'Asia/Tokyo' })
 
@@ -89,4 +89,58 @@ test('shows times in the chosen zone, and keeps the choice', async ({
   await expect(page.getByTestId('nav-rail-time-zone')).toContainText('UTC', {
     timeout: 30_000,
   })
+})
+
+/** Points of the edit target Plotly draws inside the live x range, from its
+ *  own computed positions, beside the visible-points counter. */
+const drawnAndCounted = (page: Page) =>
+  page.evaluate((id) => {
+    const gd = document.querySelector('[data-testid="main-plot"]') as any
+    const parse = (v: string) => Date.parse(`${v.replace(' ', 'T')}Z`)
+    const [lo, hi] = (gd.layout.xaxis.range as string[]).map(parse)
+    const i = gd.data.findIndex((t: any) => t.id === id)
+    const drawn = (gd.calcdata[i]?.[0]?.t?.x ?? []) as number[]
+    const counter = document
+      .querySelector('[data-testid="tooltips-counter"]')
+      ?.textContent?.split('/')[0]
+      ?.replace(/\D/g, '')
+    return {
+      drawn: drawn.filter((x) => x >= lo! && x <= hi!).length,
+      counted: Number(counter),
+    }
+  }, MANAGED_DATASTREAM_ID)
+
+// Plotly reads a trace's numeric x as the browser's local clock; the points
+// it draws must be the ones the app counts against the view.
+test('counts the points it draws, in any zone', async ({ page }) => {
+  await setupEditView(page)
+  const zoomToHalf = () =>
+    page.evaluate(async () => {
+      const gd = document.querySelector('[data-testid="main-plot"]') as any
+      const [lo, hi] = (gd.layout.xaxis.range as string[]).map((v) =>
+        Date.parse(`${v.replace(' ', 'T')}Z`)
+      )
+      const fmt = (v: number) =>
+        new Date(v).toISOString().replace('T', ' ').replace('Z', '')
+      await (window as any).Plotly.relayout(gd, {
+        'xaxis.range': [fmt(lo!), fmt(lo! + (hi! - lo!) / 2)],
+      })
+    })
+
+  await zoomToHalf()
+  await expect
+    .poll(async () => {
+      const { drawn, counted } = await drawnAndCounted(page)
+      return drawn > 0 && drawn === counted
+    })
+    .toBe(true)
+
+  await pickUtc(page)
+  await zoomToHalf()
+  await expect
+    .poll(async () => {
+      const { drawn, counted } = await drawnAndCounted(page)
+      return drawn > 0 && drawn === counted
+    })
+    .toBe(true)
 })

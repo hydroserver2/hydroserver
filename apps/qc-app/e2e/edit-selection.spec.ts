@@ -68,11 +68,9 @@ function tracesOf(page: Page, id: string) {
     const gd = document.querySelector('[data-testid="main-plot"]') as
       | (HTMLElement & { data?: DrawnTrace[] })
       | null
-    // Trace values are wall values in the display zone, the browser's here.
+    // In the browser's own zone, trace values are the instants themselves.
     const ms = (v: number | string) =>
-      typeof v === 'number'
-        ? v + new Date(v).getTimezoneOffset() * 60_000
-        : Date.parse(v)
+      typeof v === 'number' ? v : Date.parse(v)
     return (gd?.data ?? [])
       .filter((t) => t.id === id || t._partOf === id)
       .map((t) => {

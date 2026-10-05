@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   addCalendarMonths,
   fromWall,
+  fromWallArray,
   isValidTimeZone,
   offsetMs,
   toWall,
@@ -45,6 +46,21 @@ describe('time zone offsets', () => {
       SPRING - 5 * HOUR,
     ])
     expect(toWallArray(xs, 'UTC')).toBe(xs)
+  })
+
+  it('moves wall values back to instants across a transition', () => {
+    const xs = new Float64Array([SPRING - HOUR, SPRING + HOUR])
+    expect(Array.from(fromWallArray(toWallArray(xs, DENVER), DENVER))).toEqual(
+      Array.from(xs)
+    )
+    expect(fromWallArray(xs, 'UTC')).toBe(xs)
+  })
+
+  it('matches fromWall point by point, skipped hour included', () => {
+    const walls = Array.from({ length: 12 }, (_, i) => SPRING - 9 * HOUR + i * 30 * 60_000)
+    expect(Array.from(fromWallArray(walls, DENVER))).toEqual(
+      walls.map((w) => fromWall(w, DENVER))
+    )
   })
 
   it('knows a zone from a typo', () => {
