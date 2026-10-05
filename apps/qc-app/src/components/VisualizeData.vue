@@ -632,7 +632,7 @@ const initialView = initialShareState.editView
   : DrawerType.Select
 
 // Reopens the session after a page reload; waits for the catalog to land.
-useResumeEditSession(async (id) => {
+const { settled: resumeSettled } = useResumeEditSession(async (id) => {
   await flowMounted
   await startEditing.value?.resume(id, initialView)
 })
@@ -793,6 +793,12 @@ function requestClose() {
   void closeEditor()
 }
 
+const isHydrated = ref(false)
+
+// Until the link is restored the page shows a half-loaded state, so the URL
+// stays as it came in; a reload meanwhile then lands where the link points.
+const isUrlRestored = computed(() => isHydrated.value && resumeSettled.value)
+
 // Hydrate state from the URL once datastream metadata is available.
 const hydrateFromUrl = () => {
   const state = decodeShareState(route.query as Record<string, unknown>)
@@ -902,6 +908,8 @@ const hydrateFromUrl = () => {
       }
     )
   }
+
+  isHydrated.value = true
 }
 
 if (datastreams.value.length) {
@@ -927,6 +935,7 @@ const SHARE_KEYS = [
 
 watch(
   [
+    isUrlRestored,
     plottedDatastreams,
     qcDatastreamId,
     currentView,
@@ -940,12 +949,14 @@ watch(
     selectedWorkspaceId,
     hiddenTraceIds,
     hiddenAxisIds,
+    pendingShareZoom,
     currentZoom,
     tooltipsMode,
     tooltipsManualEnabled,
     tooltipsMaxDataPoints,
   ],
   () => {
+    if (!isUrlRestored.value) return
     // Snapshots travel in their own key; `ds` stays real plotted datastreams
     // so the visibility bitmasks line up.
     const plotted = plottedDatastreams.value
@@ -979,7 +990,8 @@ watch(
       processingLevelNames: isEdit ? [] : selectedProcessingLevelNames.value,
       traceVisibility: ids.map((id) => !hiddenTraceIds.value.has(id)),
       axisVisibility: ids.map((id) => !hiddenAxisIds.value.has(id)),
-      zoom: currentZoom.value ?? undefined,
+      // The link's zoom holds until the first draw with data applies it.
+      zoom: pendingShareZoom.value ?? currentZoom.value ?? undefined,
       dataPointsMode:
         tooltipsMode.value === 'auto'
           ? 'auto'

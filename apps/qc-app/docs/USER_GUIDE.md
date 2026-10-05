@@ -343,6 +343,8 @@ The URL encodes everything needed to reproduce what the sender is looking at - q
 - **Plot zoom**: X zoom (`z`) plus optional per-Y-axis zoom (`yz`) for axes that aren't at their default fit.
 - **Data points mode** (`dp`) and **threshold** (`th`) when they differ from the app defaults.
 
+Reloading the page reopens exactly this view: the editor reopens under an "Opening the edit session…" overlay, and the address bar keeps the link unchanged until the view, tab and zoom are restored, so reloading again mid-load lands in the same place.
+
 Defaults are elided to keep URLs short. Sidebar filters (things / observed properties / processing levels) are kept in the
 URL only on the Select view, because they drive the datastreams table rather than the plot.
 

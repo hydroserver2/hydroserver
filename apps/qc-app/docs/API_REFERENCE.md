@@ -140,7 +140,10 @@ below), and share-link hydration (the `ed` query param).
   `startSessionOver` instead; with a `window`, starts the session
   immediately. `view` is the layout to land on, `Edit` by default; a share
   link made from the Select view passes `Select`, so the session reopens
-  behind it. Called on the target already open, with no `window`, it only
+  behind it. The view shows as soon as the entry starts, with
+  `qcSession.openingDatastreamId` set until the session has loaded, so the
+  plot shows a loading state; a view the user switches to meanwhile is kept.
+  Called on the target already open, with no `window`, it only
   shows that view: nothing about the session is re-entered. Taking over from
   another open session first asks `useLeaveSession().requestLeave()`, and
   returns `'kept'` when the user keeps the open one. The create step in
@@ -216,10 +219,14 @@ and `LeaveSessionDialog.vue`, mounted once in `App.vue`, shows it.
 ### `useResumeEditSession()`
 
 ```ts
-useResumeEditSession(async (id) => {
+const { settled } = useResumeEditSession(async (id) => {
   await startEditing.value?.resume(id) // StartEditingFlow
 })
 ```
+
+`settled` turns true once the resume has finished (or failed), or the catalog
+landed with nothing to resume. `VisualizeData.vue` holds the share URL as it
+came in until then.
 
 Reopens the editor after a page reload, using the persisted
 `qcSession.resumeDatastreamId`: waits for the workspace catalog to arrive
@@ -569,7 +576,7 @@ handles, live chart caches).
 | `zoomUndoStack`            | state    | `ZoomState[]`                                     | Captured viewports for the modebar's Undo zoom button. |
 | `zoomRedoStack`            | state    | `ZoomState[]`                                     | Cleared on every new user-initiated zoom. |
 | `suppressZoomHistory`      | state    | `boolean`                                         | Flipped on during programmatic restores so the recorder doesn't double-capture. |
-| `pendingShareZoom`         | state    | `ZoomState \| null`                               | URL-hydrated zoom; applied once on mount then cleared. |
+| `pendingShareZoom`         | state    | `ZoomState \| null`                               | URL-hydrated zoom; applied once by the first draw with data, recorded in the zoom history, then cleared. The share URL keeps writing it until then. |
 | `shareZoomEditTarget`      | state    | `string \| null`                                  | The `ed` target of that link, when it carried one: the one session window the share zoom outranks. |
 | `canUndoZoom`              | computed | `boolean`                                         | `zoomUndoStack.length > 1`. |
 | `canRedoZoom`              | computed | `boolean`                                         | `zoomRedoStack.length > 0`. |
@@ -743,6 +750,7 @@ puts the editor in read-only mode.
 | `currentSessionId`  | state    | `string \| null`                        | The single in-progress (editable) session. |
 | `viewedSessionId`   | state    | `string \| null`                        | The session currently being viewed. |
 | `isSwitchingSession`| state    | `boolean`                               | True while another session's data and operations load. The operations panel renders a loading state instead of the outgoing session's entries, which would otherwise linger and read as the incoming session's. |
+| `openingDatastreamId`| state   | `string \| null`                        | Managed datastream whose editor is loading its history, sessions and working copy, set by `enterEdit`. `DataVisualization.vue` shows "Opening the edit session…" over the plot while it matches the edit target. Keyed by id since entries can overlap. |
 | `savedEdits`        | state    | `HistoryItem[]`                         | Edit history entries (by reference) at the last load or save. `useEditSession` compares the working copy against it for `hasUnsavedChanges`; kept in the store so the editor footer and the leave flow agree. |
 | `savedComments`     | state    | `string[]`                              | Comment text of `savedEdits`, since comments are edited in place. |
 | `isReadOnly`        | computed | `boolean`                               | True when sessions exist and the viewed one isn't the in-progress session. Guarded on `sessions.length` so plain editing outside the session workflow isn't treated as read-only. |

@@ -6,7 +6,7 @@
  * mount and stops.
  */
 
-import { watch } from 'vue'
+import { ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { Snackbar } from '@uwrl/qc-utils'
 import { useDataVisStore } from '@/store/dataVisualization'
@@ -19,6 +19,8 @@ export function useResumeEditSession(
   const { resumeDatastreamId } = storeToRefs(useQcSessionStore())
 
   let attempted = false
+  /** True once the resume finished or there was nothing to resume. */
+  const settled = ref(false)
 
   async function run(): Promise<void> {
     const id = resumeDatastreamId.value
@@ -44,13 +46,22 @@ export function useResumeEditSession(
     (list) => {
       if (attempted || !list.length) return
       attempted = true
-      if (!resumeDatastreamId.value) return
-      run().catch((e) => {
-        Snackbar.error(
-          e instanceof Error ? e.message : 'Could not reopen the edit session.'
-        )
-      })
+      if (!resumeDatastreamId.value) {
+        settled.value = true
+        return
+      }
+      run()
+        .catch((e) => {
+          Snackbar.error(
+            e instanceof Error ? e.message : 'Could not reopen the edit session.'
+          )
+        })
+        .finally(() => {
+          settled.value = true
+        })
     },
     { immediate: true }
   )
+
+  return { settled }
 }

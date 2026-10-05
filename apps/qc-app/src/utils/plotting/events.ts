@@ -235,6 +235,10 @@ const drawPlot = async (
         newElement as unknown as Plotly.Root,
         update as unknown as Partial<Plotly.Layout>
       )
+      // The zoom recorder isn't attached yet, so record the shared zoom
+      // here; the share URL reads it from the history.
+      const applied = captureCurrentZoomState('user')
+      if (applied) usePlotlyStore().pushZoomState(applied)
     }
     pendingShareZoom.value = null
   }

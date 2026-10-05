@@ -13,6 +13,7 @@ const {
   selectedDrawer,
   isDrawerOpen,
   resumeDatastreamId,
+  openingDatastreamId,
   success,
   error,
   requestLeave,
@@ -37,6 +38,7 @@ const {
     selectedDrawer: r('Select'),
     isDrawerOpen: r(false),
     resumeDatastreamId,
+    openingDatastreamId: r<string | null>(null),
     success: vi.fn(),
     error: vi.fn(),
     requestLeave: vi.fn(),
@@ -83,7 +85,10 @@ vi.mock('@/composables/useLeaveSession', () => ({
 vi.mock('@/store/qcSession', async () => {
   const { defineStore } = await import('pinia')
   return {
-    useQcSessionStore: defineStore('qcSession', () => ({ resumeDatastreamId })),
+    useQcSessionStore: defineStore('qcSession', () => ({
+      resumeDatastreamId,
+      openingDatastreamId,
+    })),
   }
 })
 
@@ -112,6 +117,7 @@ beforeEach(() => {
   selectedDrawer.value = 'Select'
   isDrawerOpen.value = false
   resumeDatastreamId.value = null
+  openingDatastreamId.value = null
   qcDatastream.value = null
   setEditTarget.mockImplementation(async (id: string) => {
     qcDatastream.value = { id }
@@ -279,6 +285,37 @@ describe('useEditEntry', () => {
     expect(currentView.value).toBe('Select')
     expect(selectedDrawer.value).toBe('Select')
     expect(resumeDatastreamId.value).toBe('mgd')
+  })
+
+  it('shows the view while the session opens, flagged as opening', async () => {
+    let finish!: (v: string) => void
+    beginEditing.mockReturnValueOnce(new Promise((r) => (finish = r)))
+    const entering = useEditEntry().enterEdit('mgd')
+    await vi.waitFor(() => expect(beginEditing).toHaveBeenCalled())
+    expect(currentView.value).toBe('Edit')
+    expect(openingDatastreamId.value).toBe('mgd')
+
+    finish('resumed')
+    expect(await entering).toBe('editing')
+    expect(openingDatastreamId.value).toBeNull()
+  })
+
+  it('keeps a view the user switched to while the session opened', async () => {
+    let finish!: (v: string) => void
+    beginEditing.mockReturnValueOnce(new Promise((r) => (finish = r)))
+    const entering = useEditEntry().enterEdit('mgd', undefined, DrawerType.Select)
+    await vi.waitFor(() => expect(beginEditing).toHaveBeenCalled())
+    currentView.value = 'Edit'
+
+    finish('resumed')
+    await entering
+    expect(currentView.value).toBe('Edit')
+  })
+
+  it('clears the opening flag when the session fails to open', async () => {
+    beginEditing.mockRejectedValueOnce(new Error('offline'))
+    await expect(useEditEntry().enterEdit('mgd')).rejects.toThrow('offline')
+    expect(openingDatastreamId.value).toBeNull()
   })
 
   it('shows the editor again without re-entering its own target', async () => {

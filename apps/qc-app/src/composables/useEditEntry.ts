@@ -39,7 +39,9 @@ export function useEditEntry() {
   const { qcDatastream } = storeToRefs(dataVis)
   const { setEditTarget, clearEditTarget } = dataVis
   const { showView } = useUIStore()
-  const { resumeDatastreamId } = storeToRefs(useQcSessionStore())
+  const { resumeDatastreamId, openingDatastreamId } = storeToRefs(
+    useQcSessionStore()
+  )
   const { beginEditing, startSession } = useEditSession()
   const { requestLeave, forgetSession } = useLeaveSession()
 
@@ -118,6 +120,10 @@ export function useEditEntry() {
       return 'editing'
     }
     if (takenOver(managedId) && !(await requestLeave())) return 'kept'
+    // Show the view now, under a loading state, so the user lands where they
+    // asked; a view they switch to while it loads is theirs to keep.
+    showView(view)
+    openingDatastreamId.value = managedId
     let begun
     try {
       await setEditTarget(managedId)
@@ -129,6 +135,10 @@ export function useEditEntry() {
       if (!(e instanceof ResumeSupersededError)) throw e
       if (!wasClosed) Snackbar.error(e.message)
       return 'superseded'
+    } finally {
+      if (openingDatastreamId.value === managedId) {
+        openingDatastreamId.value = null
+      }
     }
     if (!owns(managedId)) return 'superseded'
     if (begun === 'not-managed') {
@@ -136,7 +146,6 @@ export function useEditEntry() {
       Snackbar.error('This datastream is not set up for QC editing.')
       return 'not-managed'
     }
-    showView(view)
     resumeDatastreamId.value = managedId
     if (begun === 'resumed') return 'editing'
     if (!window) return 'needs-window'

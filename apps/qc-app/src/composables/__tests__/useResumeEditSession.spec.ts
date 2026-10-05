@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest'
-import { defineComponent } from 'vue'
+import { defineComponent, type Ref } from 'vue'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 
@@ -42,11 +42,13 @@ let pinia: ReturnType<typeof createPinia>
 // mounted keeps watching them and resumes again in the next test.
 let hosts: ReturnType<typeof mount>[] = []
 
+let settled: Ref<boolean>
+
 const mountHost = () => {
   const wrapper = mount(
     defineComponent({
       setup() {
-        useResumeEditSession(resume)
+        settled = useResumeEditSession(resume).settled
         return () => null
       },
     }),
@@ -147,5 +149,36 @@ describe('useResumeEditSession', () => {
 
     expect(error).toHaveBeenCalledWith('boom')
     expect(resumeDatastreamId.value).toBeNull()
+  })
+
+  it('settles once the resume finishes', async () => {
+    let finish!: () => void
+    resume.mockReturnValueOnce(new Promise<void>((r) => (finish = r)))
+    resumeDatastreamId.value = 'mgd-1'
+    mountHost()
+    datastreams.value = [{ id: 'mgd-1' }]
+    await flushPromises()
+    expect(settled.value).toBe(false)
+
+    finish()
+    await flushPromises()
+    expect(settled.value).toBe(true)
+  })
+
+  it('settles at once when there is nothing to resume', async () => {
+    mountHost()
+    expect(settled.value).toBe(false)
+    datastreams.value = [{ id: 'mgd-1' }]
+    await flushPromises()
+    expect(settled.value).toBe(true)
+  })
+
+  it('settles after a failed resume', async () => {
+    resumeDatastreamId.value = 'mgd-1'
+    resume.mockRejectedValueOnce(new Error('boom'))
+    mountHost()
+    datastreams.value = [{ id: 'mgd-1' }]
+    await flushPromises()
+    expect(settled.value).toBe(true)
   })
 })

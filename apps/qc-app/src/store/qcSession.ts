@@ -29,6 +29,9 @@ export const useQcSessionStore = defineStore('qcSession', () => {
   /** The session currently being viewed. */
   const viewedSessionId = ref<string | null>(null)
   const isSwitchingSession = ref(false)
+  /** Managed datastream whose editor is loading its history, sessions and
+   *  working copy. Keyed by id since entries can overlap. */
+  const openingDatastreamId = ref<string | null>(null)
   /** Edit history entries (by reference) at the last load or save, the
    *  baseline `useEditSession` compares against for unsaved edits. Kept here
    *  so the editor and the leave flow agree. */
@@ -129,6 +132,7 @@ export const useQcSessionStore = defineStore('qcSession', () => {
     currentSessionId,
     viewedSessionId,
     isSwitchingSession,
+    openingDatastreamId,
     savedEdits,
     savedComments,
     isReadOnly,

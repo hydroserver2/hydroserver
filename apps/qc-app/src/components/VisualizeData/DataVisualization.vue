@@ -14,13 +14,18 @@
           indeterminate
           class="mb-4"
         />
-        <div class="text-title-medium font-weight-bold mb-1">
-          Loading observations…
-        </div>
-        <div class="text-body-small text-medium-emphasis">
-          Fetching data for
-          {{ loadingCount }}
-          datastream{{ loadingCount === 1 ? '' : 's' }}
+        <template v-if="loadingCount">
+          <div class="text-title-medium font-weight-bold mb-1">
+            Loading observations…
+          </div>
+          <div class="text-body-small text-medium-emphasis">
+            Fetching data for
+            {{ loadingCount }}
+            datastream{{ loadingCount === 1 ? '' : 's' }}
+          </div>
+        </template>
+        <div v-else class="text-title-medium font-weight-bold">
+          Opening the edit session…
         </div>
       </div>
     </template>
@@ -136,18 +141,30 @@ import { useDataVisStore } from '@/store/dataVisualization'
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { usePlotlyStore } from '@/store/plotly'
+import { useQcSessionStore } from '@/store/qcSession'
 import Plot from '@/components/VisualizeData/Plot.vue'
 import TimeRangeMenu from '@/components/VisualizeData/TimeRangeMenu.vue'
 
 const { plotlyOptions } = storeToRefs(usePlotlyStore())
 
-const { loadingStates, seriesDatastreams } = storeToRefs(useDataVisStore())
+const { loadingStates, seriesDatastreams, qcDatastreamId } = storeToRefs(
+  useDataVisStore()
+)
+const { openingDatastreamId } = storeToRefs(useQcSessionStore())
 
 // Only what is fetching: the edit target never is.
 const loadingCount = computed(
   () => Array.from(loadingStates.value.values()).filter(Boolean).length
 )
-const isUpdating = computed(() => loadingCount.value > 0)
+// The edit target loads with its session instead.
+const isOpeningSession = computed(
+  () =>
+    !!openingDatastreamId.value &&
+    openingDatastreamId.value === qcDatastreamId.value
+)
+const isUpdating = computed(
+  () => loadingCount.value > 0 || isOpeningSession.value
+)
 
 // The editor draws its target and source even with nothing else plotted.
 const isDataAvailable = computed(() => {
