@@ -192,7 +192,7 @@ export const cropXaxisRange = async () => {
  * points. Mirror of `fitYaxisToVisible`: for each trace we consider the
  * points already within the live x-range, keep those whose y also falls
  * inside the trace's live y-range, and shrink the x-axis to span their
- * min/max x (with 10% padding, same amount as the Y variant).
+ * min/max x.
  * @param _eventData unused; preserved for the modebar click signature.
  */
 export const fitXaxisToVisible = async (_eventData?: unknown) => {
@@ -258,9 +258,7 @@ export const fitXaxisToVisible = async (_eventData?: unknown) => {
 
     if (!Number.isFinite(xMin) || !Number.isFinite(xMax) || xMin === xMax) return
 
-    // Fit X means fit; no padding. The Y variant pads because tight
-    // bounds clip marker glyphs; on a date axis there's nothing to clip
-    // and any padding reads as a margin Plotly conjured up.
+    // Fit X means fit; no padding.
     await Plotly.relayout(gd as Plotly.Root, {
       'xaxis.range': [plotCoordToDate(xMin), plotCoordToDate(xMax)],
       'xaxis.autorange': false,
@@ -272,84 +270,74 @@ export const fitXaxisToVisible = async (_eventData?: unknown) => {
 
 /**
  * Crops the QC trace's y axis to the extent of its currently visible
- * points. Only the primary `yaxis` (where QC always lives, per
+ * points: those inside both the live x-range and the live y-range.
+ * Only the primary `yaxis` (where QC always lives, per
  * `createPlotlyOption`) is rescaled; every non-QC overlay keeps the
- * range the user set on it, so clicking this button never reshuffles
- * the companion axes. The data considered is exclusively the QC
- * trace's y-values within the current live x-range.
- * @param _eventData unused; preserved for the original modebar click signature.
+ * range the user set on it.
+ * @param _eventData unused; preserved for the modebar click signature.
  */
 export const fitYaxisToVisible = async (_eventData?: unknown) => {
-  const { plotlyOptions, plotlyRef, isUpdating } = storeToRefs(usePlotlyStore())
+  const { plotlyRef, isUpdating } = storeToRefs(usePlotlyStore())
   const { qcDatastream } = storeToRefs(useDataVisStore())
 
   isUpdating.value = true
 
   try {
+    const gd = plotlyRef.value
+    if (!gd) return
     const qcId = qcDatastream.value?.id
     if (!qcId) return
 
-    const qcTraceIndex =
-      plotlyRef.value?.data.findIndex(
-        (t) => (t as AppPlotlyTrace).id === qcId
-      ) ?? -1
-    if (qcTraceIndex < 0) return
-
-    const qcTrace = plotlyRef.value?.data[qcTraceIndex] as
-      | AppPlotlyTrace
-      | undefined
-    const visible = qcTrace?.visible as unknown
+    const qcIndex = (gd.data ?? []).findIndex(
+      (t) => (t as AppPlotlyTrace).id === qcId
+    )
+    if (qcIndex < 0) return
+    const qcTrace = gd.data[qcIndex] as AppPlotlyTrace
+    const visible = qcTrace.visible as unknown
     if (visible === false || visible === 'legendonly') return
 
-    const yAxis = (plotlyOptions.value.layout as Record<string, Partial<LayoutAxis>>)
-      .yaxis
-    if (!yAxis) return
-
+    // Read the live layout, never `plotlyOptions`: the stored layout
+    // stops tracking the plot once any update replaces an axis object.
+    const liveLayout = gd.layout as unknown as
+      | Record<string, Partial<LayoutAxis> | unknown>
+      | undefined
     const liveXRange = (
-      plotlyRef.value?.layout.xaxis.range as Array<string | number> | undefined
+      (liveLayout?.xaxis as Partial<LayoutAxis> | undefined)?.range as
+      | Array<string | number>
+      | undefined
     )?.map(plotCoord)
 
-    const xs = traceXAsNumbers(plotlyRef.value, qcTraceIndex)
+    const xs = traceXAsNumbers(gd, qcIndex)
     const startIdx = findFirstGreaterOrEqual(xs, liveXRange?.[0] ?? -Infinity)
     const endIdx = findFirstGreaterOrEqual(xs, liveXRange?.[1] ?? Infinity)
     if (endIdx - startIdx <= 0) return
 
-    const yData =
-      ((plotlyRef.value?.data[qcTraceIndex] as Partial<PlotData> | undefined)?.y ??
-        []) as ArrayLike<number>
-
-    // Clamp to the QC axis's stored range to keep edge outliers
-    // (Infinity / sentinel values) from blowing the crop open. Strict
-    // inequalities match the original seam so a finite point exactly
-    // at the stored bound is still excluded as a likely sentinel.
-    const yRange = yAxis.range ?? []
+    // Points above or below the current view are not visible, so they
+    // don't count; this also keeps off-screen outliers out of the fit.
+    const liveYAxis = liveLayout?.yaxis as Partial<LayoutAxis> | undefined
+    const yRange = (liveYAxis?.range ?? []) as Array<number>
     const yRangeMin = Number(yRange[0])
     const yRangeMax = Number(yRange[1])
+    const hasYClamp = Number.isFinite(yRangeMin) && Number.isFinite(yRangeMax)
+    const yData = (qcTrace.y ?? []) as ArrayLike<number>
 
     let yMin = Infinity
     let yMax = -Infinity
     for (let j = startIdx; j < endIdx; j++) {
       const val = Number(yData[j])
-      if (yMin > val && val > yRangeMin) yMin = val
-      if (yMax < val && val < yRangeMax) yMax = val
+      if (!Number.isFinite(val)) continue
+      if (hasYClamp && (val < yRangeMin || val > yRangeMax)) continue
+      if (val < yMin) yMin = val
+      if (val > yMax) yMax = val
     }
 
-    if (yMax === yMin || !Number.isFinite(yMin) || !Number.isFinite(yMax)) return
+    if (!Number.isFinite(yMin) || !Number.isFinite(yMax) || yMin === yMax) return
 
-    // Fit Y means fit; no padding. Mirrors `fitXaxisToVisible`: any
-    // padding reads as a margin Plotly conjured up.
-    // Reuse the Plotly.update layout-object form (same shape the old
-    // loop-over-all-axes seam used). A previous attempt with
-    // Plotly.relayout + dot-path keys silently no-op'd in some cases
-    // and left the y-axis showing the whole extent.
-    const layoutUpdates: Partial<Layout> & Record<string, Partial<LayoutAxis>> = {
-      yaxis: {
-        ...yAxis,
-        range: [yMin, yMax],
-        autorange: false,
-      },
-    }
-    await Plotly.update(plotlyRef.value as Plotly.Root, {}, layoutUpdates)
+    // Fit Y means fit; no padding, same as `fitXaxisToVisible`.
+    await Plotly.relayout(gd as Plotly.Root, {
+      'yaxis.range': [yMin, yMax],
+      'yaxis.autorange': false,
+    } as unknown as Partial<Layout>)
   } finally {
     isUpdating.value = false
   }
