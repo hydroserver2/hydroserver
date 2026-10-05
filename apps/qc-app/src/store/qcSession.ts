@@ -10,6 +10,7 @@
 import { defineStore, storeToRefs } from 'pinia'
 import { computed, ref } from 'vue'
 import { useHydroServer } from '@/store/hydroserver'
+import { useEditResumeStore } from '@/store/editResume'
 import { unwrap } from '@/services/qualityControl'
 import { commitOrder } from '@/utils/sessionGraph'
 import type { Datastream, QualityControlSession } from '@hydroserver/client'
@@ -18,9 +19,10 @@ import { sessionOperations } from '@/utils/qcHistory'
 
 export const useQcSessionStore = defineStore('qcSession', () => {
   const historyId = ref<string | null>(null)
-  /** Managed datastream the editor was last open on. The only persisted
-   *  field; everything else is re-fetched on resume. */
-  const resumeDatastreamId = ref<string | null>(null)
+  /** Managed datastream the editor was last open on. The only field that
+   *  survives a reload (see `editResume`); everything else is re-fetched on
+   *  resume. */
+  const { resumeDatastreamId } = storeToRefs(useEditResumeStore())
   /** Raw datastream behind the managed one, resolved when editing begins. */
   const sourceDatastream = ref<Datastream | null>(null)
   const sessions = ref<QualityControlSession[]>([])
@@ -145,11 +147,4 @@ export const useQcSessionStore = defineStore('qcSession', () => {
     returnToCurrent,
     reset,
   }
-}, {
-  // Only the datastream id survives a reload. Sessions, operations and the
-  // read-only flag are all re-derived from the server on resume, so
-  // persisting them would just risk showing stale state.
-  persist: {
-    pick: ['resumeDatastreamId'],
-  },
 })

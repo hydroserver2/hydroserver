@@ -228,13 +228,5 @@ export const useObservationStore = defineStore(
       fetchDetachedRecord,
       forget,
     }
-  },
-  {
-    persist: {
-      pick: [
-        // TODO: enable only in development mode
-        // 'observationsRaw', // TODO: can not save buffers correctly
-      ],
-    },
   }
 )

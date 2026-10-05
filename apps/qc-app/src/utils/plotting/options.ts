@@ -809,6 +809,10 @@ export const createPlotlyOption = (
     ...yaxis,
     dragmode: 'pan',
     hovermode: 'closest',
+    // No Plotly spikes (the crosshair is drawn by `Plot.vue`). The default
+    // (-1, unlimited) makes every hover that misses a point scan every
+    // point of every trace, which freezes the page on large series.
+    ...({ spikedistance: 0 } as object),
     title: undefined,
     margin: isPreview
       ? { l: 24, r: 24, t: 28, b: 64, pad: 0 }

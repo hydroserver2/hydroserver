@@ -1210,7 +1210,7 @@ describe('useDataVisStore persisted preset', () => {
 
   it('restores the persisted preset id', async () => {
     localStorage.setItem(
-      'dataVisualization',
+      'qc:preferences:v1',
       JSON.stringify({ selectedDateBtnId: 5 })
     )
     installPinia()
@@ -1226,7 +1226,7 @@ describe('useDataVisStore persisted preset', () => {
 
   it('restores a persisted Custom id (-1) as the default preset', async () => {
     localStorage.setItem(
-      'dataVisualization',
+      'qc:preferences:v1',
       JSON.stringify({ selectedDateBtnId: -1 })
     )
     installPinia()
@@ -1236,7 +1236,7 @@ describe('useDataVisStore persisted preset', () => {
 
   it('restores an unknown persisted id as the default preset', async () => {
     localStorage.setItem(
-      'dataVisualization',
+      'qc:preferences:v1',
       JSON.stringify({ selectedDateBtnId: 9 })
     )
     installPinia()

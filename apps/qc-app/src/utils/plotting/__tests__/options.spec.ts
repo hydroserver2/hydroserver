@@ -223,6 +223,13 @@ describe('createPlotlyOption', () => {
     expect(opts.config).toBeDefined()
   })
 
+  // An unlimited spike distance makes every hover that misses a point scan
+  // every point of every trace.
+  it('turns off the hover spike search', () => {
+    const layout = createPlotlyOption([]).layout as Record<string, unknown>
+    expect(layout.spikedistance).toBe(0)
+  })
+
   it('draws no qualifier band while the qualifier tool is disabled', () => {
     qcDatastream.value = { id: 'qc' }
     qualifierById['q1'] = { code: 'A', description: 'alpha' }

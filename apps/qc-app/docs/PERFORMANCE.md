@@ -157,6 +157,21 @@ cost. Practical guidance:
   `src/utils/plotting/relayout.ts`.
 - **Programmatic restyle is selection-only.** Full redraws push new x/y
   arrays only when the underlying data changes.
+- **No Plotly spike search.** The layout sets `spikedistance: 0`; the
+  crosshair is drawn by `Plot.vue`. Plotly's default (-1, unlimited)
+  makes every hover that misses a point rescan every point of every
+  hover-enabled trace. Hover turns on once few points are visible, but
+  the trace still holds the whole series, so on a 400k-point edit target
+  each mouse move during a pan cost seconds.
+- **A zoom leaves the selection alone.** `handleSelected` re-syncs
+  `selectedData` on a relayout only when the plot's selected points
+  changed, so zooming or fitting with a large selection neither rebuilds
+  nor re-dispatches it.
+- **Stores holding data are never persisted.** Persisting deep-watches a
+  store's whole state on every change; on a 400k-point series with a
+  selection, that made each Fit X / Fit Y (and every hover update) walk
+  the selection and the record history, freezing the page for seconds.
+  See the store persistence note in `docs/ARCHITECTURE.md`.
 
 ## Architectural fit for small-to-medium deployments
 

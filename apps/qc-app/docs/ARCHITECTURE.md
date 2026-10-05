@@ -156,12 +156,20 @@ goes one direction.
 | `uiLayout.ts`         | Drawer widths, table heights: persisted UI geometry.                  |
 | `workingCopies.ts`    | Working copy per managed datastream, keyed by its in-progress session.|
 | `qcSession.ts`        | The open history's sessions, which one is current and which viewed, the saved-edits baseline, and the resume pointer. |
-| `qcPreferences.ts`    | Last-used processing level for the create form (persisted).           |
+| `qcPreferences.ts`    | Persisted preferences: create-form processing level, display zone, data-points mode, range presets, source context. |
+| `editResume.ts`       | The managed datastream to reopen after a reload (persisted).          |
 
 The persisted stores use `pinia-plugin-persistedstate` with explicit
 `storage: localStorage` and an explicit `paths` list. **Never** persist
 ephemeral state (drawer open flags during a single session are fine; the
 current plot ref or fetched observations are not; they belong in memory).
+
+**Never persist a store that holds data.** Persisting deep-watches the
+store's entire state on every change, not just the picked keys, so a store
+holding series, records or selections walks the whole dataset each time
+(with 400k points and a selection, every zoom stalled the page for
+seconds). Put the preference in `qcPreferences` (or a store like
+`editResume`) and expose its ref from the data store.
 
 ## Data flow: a QC edit
 

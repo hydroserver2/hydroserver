@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { ref } from 'vue'
+import { ref, toRaw } from 'vue'
 
 vi.mock('@uwrl/qc-utils', () => ({
   EnumFilterOperations: { SELECTION: 'SELECTION' },
@@ -150,6 +150,35 @@ describe('handleSelected', () => {
     plotlyRef.value = makePlot('qc', [2], 100)
     await handleSelected({ points: [] } as any)
     expect(dispatchFilter).toHaveBeenCalledWith('SELECTION', [102])
+  })
+
+  // A Fit or a y-only zoom relayouts with keys the zoom guard doesn't know;
+  // the selection it leaves behind is the stored one, so nothing is rebuilt.
+  it('leaves an unchanged selection alone on a relayout', async () => {
+    qcDatastream.value = { id: 'qc' }
+    selectedSeries.value = { data: { dispatchFilter } }
+    plotlyRef.value = makePlot('qc', [2, 3], 100)
+    const stored = [102, 103]
+    selectedData.value = stored
+    suppressedEchoSelection.value = [102, 103]
+    await handleSelected({ 'yaxis.range': [0, 1] } as any, {
+      fromRelayout: true,
+    })
+    expect(dispatchFilter).not.toHaveBeenCalled()
+    expect(toRaw(selectedData.value)).toBe(stored)
+    expect(suppressedEchoSelection.value).toBeNull()
+  })
+
+  it('treats a missing and an empty selection as the same on a relayout', async () => {
+    qcDatastream.value = { id: 'qc' }
+    selectedSeries.value = { data: { dispatchFilter } }
+    plotlyRef.value = makePlot('qc', undefined)
+    selectedData.value = []
+    await handleSelected({ 'xaxis.range': [0, 1] } as any, {
+      fromRelayout: true,
+    })
+    expect(dispatchFilter).not.toHaveBeenCalled()
+    expect(selectedData.value).toEqual([])
   })
 
 describe('handleSelected on a committed session', () => {

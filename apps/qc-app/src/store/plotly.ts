@@ -5,6 +5,7 @@ import { HistoryItem } from "@uwrl/qc-utils"
 import type { ObservationRecord } from "@uwrl/qc-utils"
 import type { LayoutAxis, PlotData } from 'plotly.js-dist'
 import { useDataVisStore } from './dataVisualization'
+import { useQcPreferencesStore } from './qcPreferences'
 
 import {
   applyTraceUpdate,
@@ -36,24 +37,13 @@ export const usePlotlyStore = defineStore('Plotly', () => {
   const showLegend = ref(true)
   const showTooltip = ref(false)
   const isUpdating = ref(false)
-  // Persisted as a user preference. Large plots are cheap on fast machines
-  // and expensive on slow ones, so let the user pick. Bounded in the UI
-  // but not hard-clamped here so power users can override via storage.
-  // Persistence is wired through pinia-plugin-persistedstate at the
-  // bottom of this store.
-  const tooltipsMaxDataPoints = ref<number>(10 * 1000)
+  // Data-point rendering / hover preferences, persisted by their own store
+  // (see `qcPreferences`). Large plots are cheap on fast machines and
+  // expensive on slow ones, so the user picks the cutoff. 'manual' follows
+  // `tooltipsManualEnabled` and ignores the cutoff.
+  const { tooltipsMaxDataPoints, tooltipsMode, tooltipsManualEnabled } =
+    storeToRefs(useQcPreferencesStore())
   const visiblePoints: Ref<number> = ref(0)
-  // Two-mode toggle for individual data-point rendering / hover.
-  //   - 'manual': user controls on/off via `tooltipsManualEnabled`.
-  //                Threshold ignored.
-  //   - 'auto':   threshold-driven: on while visiblePoints <=
-  //                threshold, off otherwise. Default keeps backward
-  //                behavior for existing users.
-  const tooltipsMode = ref<'manual' | 'auto'>('auto')
-  // Persisted on/off state for `manual` mode. Ignored when mode is
-  // `auto`. Defaults to `true` so the first manual click feels like
-  // an explicit toggle off.
-  const tooltipsManualEnabled = ref(true)
   // Derived "is hover currently rendering?", read by the relayout
   // pipeline and the toolbar UI. Auto mode reads the live threshold;
   // manual mode reads the user's explicit on/off.
@@ -593,12 +583,4 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     clearZoomHistory,
     pushZoomState,
   }
-}, {
-  // `plotlyRef` / `graphSeriesArray` / Plotly shape caches are all
-  // ephemeral (DOM handles, live chart data). Only persist the small
-  // user preference so reloads keep the chosen tooltip threshold.
-  persist: {
-    key: 'qc.plot.tooltipsMaxDataPoints',
-    pick: ['tooltipsMaxDataPoints', 'tooltipsMode', 'tooltipsManualEnabled'],
-  },
 })

@@ -437,15 +437,21 @@ The "Persistence" line at the top of each store cites the
 `pinia-plugin-persistedstate` config: the storage key and the
 specific slice picked. Stores with no Persistence line are session-only.
 
+Persisting a store deep-watches all of its state (pinia's `$subscribe`),
+whatever `pick` says, so every change walks the whole store. Stores that
+hold series, records or selections are therefore never persisted: their
+preferences live in small persisted stores (`qcPreferences`, `editResume`)
+and the data stores expose those same refs.
+
 ### `useDataVisStore()` (`src/store/dataVisualization.ts`)
 
 Catalog data (sites, datastreams, taxonomy), sidebar filters, plotted
 set + edit target, time-range window. The orchestrator for everything in
 the Select drawer and the rebuild pipeline that owns `rebuildPlot()`.
 
-Persistence: `selectedDateBtnId` only (so the user's preset choice
-survives reload); catalogs, filters, and in-flight maps refetch cleanly
-on boot.
+Not persisted. `selectedDateBtnId`, `contextPresetId` and
+`showSourceContext` are `qcPreferences` refs, so they survive a reload
+there; catalogs, filters, and in-flight maps refetch cleanly on boot.
 
 | Name                                | Kind     | Type / signature                                  | Notes |
 |-------------------------------------|----------|---------------------------------------------------|-------|
@@ -477,11 +483,11 @@ on boot.
 | `trackPlotWork`                     | action   | `(work: () => Promise<void>) => Promise<void>`    | Run `work` counted as pending plot work for `isEditorReady`. Plot loads and `setEditRecord` use it, and `Plot.vue` counts its first draw from the moment the plot element appears. |
 | `beginDate` / `endDate`             | state    | `Date`                                            | Active loaded window. A preset re-resolves it on every plot rebuild: around the edit session's window while one is set (`presetAroundWindow`), otherwise back from the context data's (`seriesDatastreams` minus the edit target) end (`presetWindow`). It also re-resolves when the edit session's window loads or changes. A custom range stays fixed. |
 | `selectedDateBtnId`                 | state    | `number`                                          | The Select view's Time range preset id (default `1`, 1m); `-1` (`CUSTOM_PRESET_ID`) for a manual range. Presets are defined in `utils/timeRangePresets.ts`. |
-| `contextPresetId`                   | state    | `number`                                          | The editor's Context range preset id, remembered apart from `selectedDateBtnId` so neither moves the other. Persisted. |
+| `contextPresetId`                   | state    | `number`                                          | The editor's Context range preset id, remembered apart from `selectedDateBtnId` so neither moves the other. Persisted by `qcPreferences`. |
 | `activePresetId`                    | computed | `number` (writable)                               | The preset the loaded range follows: `contextPresetId` while an edit target is set, else `selectedDateBtnId`. `onDateBtnClick` and a custom `setDateRange` write it. |
 | `editSessionWindow`                 | computed | `TimeWindow \| null`                             | The viewed session's window, else the in-progress one's; null without an edit target. |
 | `editSourceDatastream`              | computed | `Datastream \| null`                             | The edit target's source datastream, however it is drawn. |
-| `showSourceContext`                 | state    | `boolean`                                         | Whether the edit target's source is drawn around it as context (default `true`). Persisted with `selectedDateBtnId`. |
+| `showSourceContext`                 | state    | `boolean`                                         | Whether the edit target's source is drawn around it as context (default `true`). Persisted by `qcPreferences`. |
 | `setShowSourceContext`              | action   | `(show: boolean) => Promise<void>`                | Turn the source context on or off from the Context menu; rebuilds the plot while editing. |
 | `matchesSelectedThing`              | action   | `(ds) => boolean`                                 | Filter predicate; exposed so the table can reuse it on row updates. |
 | `matchesSelectedObservedProperty`   | action   | `(ds) => boolean`                                 | Same shape as above. |
@@ -540,10 +546,10 @@ Owns the Plotly DOM ref, the per-series array driving the chart,
 viewport state (tooltips, crosshair, hover, zoom history), and the
 redraw / restyle plumbing.
 
-Persistence: `tooltipsMaxDataPoints`, `tooltipsMode`, and
-`tooltipsManualEnabled` (key `qc.plot.tooltipsMaxDataPoints`): the
-user's data-points-mode preference. Everything else is ephemeral (DOM
-handles, live chart caches).
+Not persisted. `tooltipsMaxDataPoints`, `tooltipsMode`, and
+`tooltipsManualEnabled` are `qcPreferences` refs, so the user's
+data-points-mode preference survives a reload there. Everything else is
+ephemeral (DOM handles, live chart caches).
 
 | Name                       | Kind     | Type / signature                                  | Notes |
 |----------------------------|----------|---------------------------------------------------|-------|
@@ -745,7 +751,7 @@ puts the editor in read-only mode.
 | Name                | Kind     | Type / signature                        | Notes |
 |---------------------|----------|-----------------------------------------|-------|
 | `historyId`         | state    | `string \| null`                        | The managed datastream's QC history being navigated. |
-| `resumeDatastreamId`| state    | `string \| null`                        | Managed datastream the editor was last open on. The only persisted field: a page reload replots it and resumes its session from the last save. Set on entering the editor, cleared on exit. |
+| `resumeDatastreamId`| state    | `string \| null`                        | Managed datastream the editor was last open on. The `editResume` store's ref, persisted there under `qc:editResume:v1`: a page reload replots it and resumes its session from the last save. Set on entering the editor, cleared on exit. |
 | `sessions`          | state    | `QualityControlSession[]`               | Committed + in-progress sessions for the history. |
 | `currentSessionId`  | state    | `string \| null`                        | The single in-progress (editable) session. |
 | `viewedSessionId`   | state    | `string \| null`                        | The session currently being viewed. |
@@ -765,14 +771,25 @@ puts the editor in read-only mode.
 
 ### `useQcPreferencesStore()` (`src/store/qcPreferences.ts`)
 
-Persisted QC preferences. Persistence: key `qc:preferences:v1`,
-`pick: ['processingLevelId', 'displayZone']`. `main.ts` creates the store
-at startup so the zone is restored before anything is formatted.
+Persisted QC preferences. Persistence: key `qc:preferences:v1`, the whole
+store. A preset id that isn't a real preset (Custom, or stale) is reset to
+the default on hydration, since it comes back with no window to resolve
+against. `main.ts` creates the store at startup so the zone is restored
+before anything is formatted.
 
 | Name                | Kind  | Type / signature | Notes |
 |---------------------|-------|------------------|-------|
 | `processingLevelId` | state | `string \| null` | Last-used processing level for the Create-Datastream-for-Editing form; null on first use (no assumed default). |
 | `displayZone`       | state | `DisplayZone`    | The time zone dates are shown in; the same ref `utils/timeZone.ts` exports. Defaults to the browser's IANA zone. |
+| `tooltipsMaxDataPoints` / `tooltipsMode` / `tooltipsManualEnabled` | state | `number` / `'auto' \| 'manual'` / `boolean` | Data-points mode; exposed by `usePlotlyStore`. |
+| `selectedDateBtnId` / `contextPresetId` | state | `number` | Select view and editor Context range presets; exposed by `useDataVisStore`. |
+| `showSourceContext` | state | `boolean`        | Source context toggle; exposed by `useDataVisStore`. |
+
+### `useEditResumeStore()` (`src/store/editResume.ts`)
+
+Persistence: key `qc:editResume:v1`, the whole store. Holds only
+`resumeDatastreamId`, which `useQcSessionStore` exposes; a store of its own
+so `qcSession`, with its sessions and saved edits, is never persisted.
 
 ## Internal: utilities
 

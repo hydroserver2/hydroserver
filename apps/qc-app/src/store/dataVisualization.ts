@@ -7,7 +7,6 @@ import { handleNewPlot } from '@/utils/plotting/plotly'
 import { subtractMonths } from '@/utils/dateMath'
 import {
   CUSTOM_PRESET_ID,
-  DEFAULT_PRESET_ID,
   dataExtent,
   findPreset,
   presetAroundWindow,
@@ -18,6 +17,7 @@ import { isSnapshotId } from '@/utils/snapshotId'
 import { contextTargetId, makeContextId } from '@/utils/contextSeriesId'
 import { useWorkingCopiesStore } from '@/store/workingCopies'
 import { useQcSessionStore } from '@/store/qcSession'
+import { useQcPreferencesStore } from '@/store/qcPreferences'
 import type { SnapshotMeta } from '@/types'
 import type { ObservationRecord } from '@uwrl/qc-utils'
 import {
@@ -162,9 +162,9 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
       : null
   )
 
-  /** Whether the edit target's source is drawn around it as context. A
-   *  user preference, like the context range. */
-  const showSourceContext = ref(true)
+  // User preferences, persisted by their own store (see `qcPreferences`).
+  const { selectedDateBtnId, contextPresetId, showSourceContext } =
+    storeToRefs(useQcPreferencesStore())
 
   /** Turn the source context on or off, redrawing when editing. */
   async function setShowSourceContext(show: boolean) {
@@ -231,11 +231,6 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   // data to anchor a preset to, so the window is a placeholder.
   const endDate = ref<Date>(new Date())
   const beginDate = ref<Date>(subtractMonths(endDate.value, 1))
-  /** The Select view's Time range preset. */
-  const selectedDateBtnId = ref(DEFAULT_PRESET_ID)
-  /** The editor's Context range preset, remembered apart from the Select
-   *  view's so neither moves the other. */
-  const contextPresetId = ref(DEFAULT_PRESET_ID)
   /** The preset the loaded range follows: Context while an edit target is
    *  set, else the Select view's Time range. */
   const activePresetId = computed({
@@ -965,25 +960,4 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     rebuildPlot,
     // updateOrFetchGraphSeries,
   }
-}, {
-  // Persist only the user's preset choice. Catalogs, loading maps and
-  // filters refetch cleanly on every load; the window resolves from the data.
-  persist: {
-    pick: ['selectedDateBtnId', 'contextPresetId', 'showSourceContext'],
-    // A persisted Custom id (or a stale/unknown one) comes back with no
-    // window to resolve against, so the placeholder range would apply
-    // instead. Only a real preset survives hydration.
-    afterHydrate: (ctx) => {
-      const store = ctx.store as unknown as {
-        selectedDateBtnId: number
-        contextPresetId: number
-      }
-      if (!findPreset(store.selectedDateBtnId)) {
-        store.selectedDateBtnId = DEFAULT_PRESET_ID
-      }
-      if (!findPreset(store.contextPresetId)) {
-        store.contextPresetId = DEFAULT_PRESET_ID
-      }
-    },
-  },
 })

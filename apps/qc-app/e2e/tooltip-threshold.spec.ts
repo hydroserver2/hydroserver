@@ -66,12 +66,11 @@ test.describe('data-points combobox', () => {
   test.beforeEach(async ({ page }) => {
     await installMocks(page, { qcHistories: true })
     await setupEditView(page)
-    // Reset the persisted preference bag so each test starts in auto
-    // mode at the default threshold. The store persists `tooltipsMode`,
-    // `tooltipsMaxDataPoints`, and `tooltipsManualEnabled` under a
-    // single key, so clearing it resets all three.
+    // Reset the persisted preferences so each test starts in auto mode at
+    // the default threshold. `qcPreferences` keeps `tooltipsMode`,
+    // `tooltipsMaxDataPoints` and `tooltipsManualEnabled` under one key.
     await page.evaluate(() =>
-      localStorage.removeItem('qc.plot.tooltipsMaxDataPoints')
+      localStorage.removeItem('qc:preferences:v1')
     )
     await page.reload()
     // The reload resumes the session; the counter shows before that settles.

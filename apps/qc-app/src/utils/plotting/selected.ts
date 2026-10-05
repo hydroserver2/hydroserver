@@ -1,6 +1,7 @@
 import { usePlotlyStore } from '@/store/plotly'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { storeToRefs } from 'pinia'
+import { toRaw } from 'vue'
 import { useEditLock } from '@/composables/useEditLock'
 import type {
   PlotMouseEvent,
@@ -54,6 +55,18 @@ export const handleSelected = async (
   // populates it from a number array, so the cast is safe.
   const windowOffset = trace?._windowStartIdx ?? 0
   const rawSelected = trace?.selectedpoints as number[] | undefined
+
+  // A relayout that left the plot's selection as it was (a zoom, a fit, a
+  // redraw) has nothing to sync. Rebuilding and re-dispatching a large
+  // selection on every one of them stalls the page.
+  if (
+    opts.fromRelayout &&
+    matchesSelection(toRaw(selectedData.value), rawSelected, windowOffset)
+  ) {
+    suppressedEchoSelection.value = null
+    return
+  }
+
   selectedData.value = rawSelected?.length
     ? rawSelected.map((i) => i + windowOffset)
     : null
@@ -93,6 +106,21 @@ export const handleSelected = async (
       selectedData.value ?? []
     )
   }
+}
+
+/** Whether `stored` already holds the plot's `selectedpoints`, shifted by
+ *  `offset`. Empty and missing are the same. */
+const matchesSelection = (
+  stored: number[] | null | undefined,
+  plotted: number[] | undefined,
+  offset: number
+): boolean => {
+  const n = plotted?.length ?? 0
+  if ((stored?.length ?? 0) !== n) return false
+  for (let i = 0; i < n; i++) {
+    if (stored![i] !== plotted![i]! + offset) return false
+  }
+  return true
 }
 
 /** Order-preserving equality for selection payloads. Selection
