@@ -4,7 +4,7 @@ from ninja import Router, Path, Query
 from django.http import HttpResponse
 from django.db import transaction
 
-from interfaces.auth.security import session_auth, oidc_read_auth, oidc_write_auth, apikey_auth, basic_auth, anonymous_auth
+from interfaces.auth.security import session_auth, oidc_data_read_auth, oidc_data_write_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.services.sta import ObservationAPIService
 from interfaces.api.schemas import (
@@ -29,7 +29,7 @@ observation_service = ObservationAPIService()
 
 @observation_router.get(
     "",
-    auth=[session_auth, oidc_read_auth, apikey_auth, basic_auth, anonymous_auth],
+    auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: PaginatedResponse[ObservationResponse]
         | ObservationRowResponse
@@ -63,7 +63,7 @@ def get_observations(
 
 @observation_router.post(
     "",
-    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
         400: str,
@@ -90,7 +90,7 @@ def create_observation(
 
 @observation_router.post(
     "/bulk-create",
-    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={201: None, 400: str, 403: str, 404: str},
 )
 @transaction.atomic
@@ -113,7 +113,7 @@ def insert_observations(
 
 @observation_router.post(
     "/bulk-delete",
-    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={204: None, 403: str, 404: str},
 )
 @transaction.atomic
@@ -132,7 +132,7 @@ def delete_observations(
 
 @observation_router.get(
     "/{observation_id}",
-    auth=[session_auth, oidc_read_auth, apikey_auth, basic_auth, anonymous_auth],
+    auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: ItemResponse[ObservationResponse],
         401: str,
@@ -158,7 +158,7 @@ def get_observation(
 
 @observation_router.delete(
     "/{observation_id}",
-    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,

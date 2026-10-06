@@ -9,10 +9,30 @@ from ninja.errors import HttpError
 from allauth.core.context import request_context
 from allauth.idp.oidc.models import Client, Token
 
+from allauth.idp.oidc.forms import AuthorizationForm
+
 from core.iam.auth.oidc_adapter import HydroServerOIDCAdapter
-from core.iam.auth.scopes import DATA_READ, DATA_WRITE
-from interfaces.auth.security import OIDCAuth, oidc_read_auth, oidc_write_auth
-from tests.core.iam.factories import UserFactory
+from core.iam.auth.scopes import (
+    SCOPES,
+    DATA_READ,
+    DATA_WRITE,
+    WORKSPACE_READ,
+    WORKSPACE_WRITE,
+    IAM_READ,
+    IAM_WRITE,
+    TASK_READ,
+    TASK_WRITE,
+    TASK_RUN,
+)
+from interfaces.auth.security import (
+    OIDCAuth,
+    oidc_data_read_auth,
+    oidc_data_write_auth,
+    oidc_iam_write_auth,
+    oidc_task_run_auth,
+    oidc_workspace_read_auth,
+)
+from tests.core.iam.factories import UserFactory, WorkspaceFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -24,7 +44,7 @@ def oidc_client():
         name="Test OIDC Client",
         type=Client.Type.PUBLIC,
     )
-    client.set_scopes(["openid", "profile", "email", DATA_READ, DATA_WRITE])
+    client.set_scopes(["openid", "profile", "email", *SCOPES])
     client.set_grant_types(
         [Client.GrantType.AUTHORIZATION_CODE, Client.GrantType.REFRESH_TOKEN]
     )
@@ -64,7 +84,7 @@ def test_oidc_auth_authenticates_valid_access_token(oidc_client):
     request = _bearer_request("valid-token")
 
     with request_context(request):
-        result = oidc_read_auth(request)
+        result = oidc_data_read_auth(request)
 
     assert result == user
     assert request.principal == user
@@ -74,7 +94,7 @@ def test_oidc_auth_returns_none_without_authorization_header():
     request = _bearer_request(None)
 
     with request_context(request):
-        result = oidc_read_auth(request)
+        result = oidc_data_read_auth(request)
 
     assert result is None
     assert not hasattr(request, "principal")
@@ -84,7 +104,7 @@ def test_oidc_auth_returns_none_for_unknown_token():
     request = _bearer_request("does-not-exist")
 
     with request_context(request):
-        result = oidc_read_auth(request)
+        result = oidc_data_read_auth(request)
 
     assert result is None
 
@@ -100,7 +120,7 @@ def test_oidc_auth_returns_none_for_expired_token(oidc_client):
     request = _bearer_request("expired-token")
 
     with request_context(request):
-        result = oidc_read_auth(request)
+        result = oidc_data_read_auth(request)
 
     assert result is None
 
@@ -111,7 +131,7 @@ def test_oidc_auth_returns_none_for_inactive_users_token(oidc_client):
     request = _bearer_request("inactive-user-token")
 
     with request_context(request):
-        result = oidc_read_auth(request)
+        result = oidc_data_read_auth(request)
 
     assert result is None
 
@@ -119,10 +139,13 @@ def test_oidc_auth_returns_none_for_inactive_users_token(oidc_client):
 @pytest.mark.parametrize(
     "auth, scopes",
     [
-        (oidc_read_auth, []),
-        (oidc_read_auth, ["openid", DATA_WRITE]),
-        (oidc_write_auth, []),
-        (oidc_write_auth, ["openid", DATA_READ]),
+        (oidc_data_read_auth, []),
+        (oidc_data_read_auth, ["openid", DATA_WRITE]),
+        (oidc_data_write_auth, []),
+        (oidc_data_write_auth, ["openid", DATA_READ]),
+        (oidc_workspace_read_auth, ["openid", DATA_READ]),
+        (oidc_iam_write_auth, ["openid", DATA_WRITE, WORKSPACE_WRITE]),
+        (oidc_task_run_auth, ["openid", TASK_READ, TASK_WRITE]),
     ],
 )
 def test_oidc_auth_rejects_token_missing_required_scope(oidc_client, auth, scopes):
@@ -145,7 +168,7 @@ def test_oidc_write_auth_authenticates_write_scoped_token(oidc_client):
     request = _bearer_request("write-token")
 
     with request_context(request):
-        result = oidc_write_auth(request)
+        result = oidc_data_write_auth(request)
 
     assert result == user
     assert request.principal == user
@@ -159,25 +182,30 @@ def _bearer(value):
 
 
 @pytest.mark.parametrize(
-    "path",
-    ["/api/data/workspaces", "/api/sensorthings/v1.1/Things"],
+    "path, scope, other_scope",
+    [
+        ("/api/data/workspaces", WORKSPACE_READ, DATA_READ),
+        ("/api/data/monitoring-sites", DATA_READ, WORKSPACE_READ),
+        ("/api/sensorthings/v1.1/Things", DATA_READ, WORKSPACE_READ),
+    ],
 )
-def test_read_endpoint_scope_enforcement(client, oidc_client, path):
+def test_read_endpoint_scope_enforcement(client, oidc_client, path, scope, other_scope):
     user = UserFactory()
-    _access_token(oidc_client, user, "read-token", scopes=["openid", DATA_READ])
-    _access_token(oidc_client, user, "write-token", scopes=["openid", DATA_WRITE])
+    _access_token(oidc_client, user, "read-token", scopes=["openid", scope])
+    _access_token(oidc_client, user, "other-token", scopes=["openid", other_scope])
     _access_token(oidc_client, user, "no-scope-token", scopes=["openid"])
 
     assert client.get(path, **_bearer("read-token")).status_code == 200
-    assert client.get(path, **_bearer("write-token")).status_code == 403
+    assert client.get(path, **_bearer("other-token")).status_code == 403
     assert client.get(path, **_bearer("no-scope-token")).status_code == 403
     assert client.get(path).status_code == 200  # anonymous access is unaffected
 
 
-def test_data_api_write_endpoint_scope_enforcement(client, oidc_client):
+def test_workspace_create_requires_workspace_write_scope(client, oidc_client):
     user = UserFactory()
-    _access_token(oidc_client, user, "read-token", scopes=["openid", DATA_READ])
-    _access_token(oidc_client, user, "write-token", scopes=["openid", DATA_WRITE])
+    _access_token(oidc_client, user, "data-token", scopes=["openid", DATA_WRITE])
+    _access_token(oidc_client, user, "read-token", scopes=["openid", WORKSPACE_READ])
+    _access_token(oidc_client, user, "write-token", scopes=["openid", WORKSPACE_WRITE])
 
     def create_workspace(token):
         return client.post(
@@ -187,8 +215,55 @@ def test_data_api_write_endpoint_scope_enforcement(client, oidc_client):
             **_bearer(token),
         )
 
+    assert create_workspace("data-token").status_code == 403
     assert create_workspace("read-token").status_code == 403
     assert create_workspace("write-token").status_code == 201
+
+
+def test_workspace_delete_requires_workspace_write_scope(client, oidc_client):
+    user = UserFactory()
+    workspace = WorkspaceFactory(owner=user)
+    _access_token(oidc_client, user, "iam-token", scopes=["openid", IAM_WRITE])
+    _access_token(oidc_client, user, "write-token", scopes=["openid", WORKSPACE_WRITE])
+    url = f"/api/data/workspaces/{workspace.id}"
+
+    assert client.delete(url, **_bearer("iam-token")).status_code == 403
+    assert client.delete(url, **_bearer("write-token")).status_code == 204
+
+
+@pytest.mark.parametrize(
+    "method, path",
+    [
+        ("post", "/api/data/workspaces/{workspace_id}/service-accounts"),
+        ("put", "/api/data/workspaces/{workspace_id}/service-accounts/{other_id}/regenerate"),
+        ("post", "/api/data/workspaces/{workspace_id}/collaborators"),
+        ("post", "/api/data/workspaces/{workspace_id}/transfer"),
+        ("post", "/api/data/etl-tasks/{other_id}/trigger"),
+        ("post", "/api/data/monitoring-tasks/{other_id}/trigger"),
+        ("post", "/api/data/data-product-tasks/{other_id}/trigger"),
+    ],
+)
+def test_data_and_workspace_scopes_cannot_reach_iam_or_task_run_endpoints(
+    client, oidc_client, method, path
+):
+    """A token approved for data and workspace edits must not be able to mint
+    API keys, change access, transfer ownership, or run tasks."""
+    user = UserFactory()
+    workspace = WorkspaceFactory(owner=user)
+    _access_token(
+        oidc_client,
+        user,
+        "broad-token",
+        scopes=["openid", DATA_READ, DATA_WRITE, WORKSPACE_READ, WORKSPACE_WRITE, TASK_WRITE],
+    )
+    url = path.format(workspace_id=workspace.id, other_id=workspace.id)
+
+    response = getattr(client, method)(
+        url, {}, content_type="application/json", **_bearer("broad-token")
+    )
+
+    assert response.status_code == 403
+    assert "missing the required scope" in response.json()["detail"]
 
 
 @pytest.mark.parametrize(
@@ -218,16 +293,108 @@ def _api_operations(api):
                 yield f"{prefix}/{path}", operation
 
 
-@pytest.mark.parametrize(
-    "api_module",
-    ["interfaces.api.urls", "sensorthings.versions.v1_1.urls"],
-)
-def test_every_endpoint_requires_matching_oidc_scope(api_module):
-    """Guards against new endpoints accepting OIDC tokens without a scope, or
-    accepting read-scoped tokens for writes."""
-    from importlib import import_module
+# Every Data Management API collection, keyed by router prefix, with the scope
+# its GET routes and its write routes require. ROUTE_SCOPE_OVERRIDES lists the
+# routes that differ from their collection's default. A router missing from
+# this table fails the test, so new collections must pick their scopes here.
+COLLECTION_SCOPES = {
+    "workspaces": (WORKSPACE_READ, WORKSPACE_WRITE),
+    "workspaces/{workspace_id}/collaborators": (IAM_READ, IAM_WRITE),
+    "workspaces/{workspace_id}/service-accounts": (IAM_READ, IAM_WRITE),
+    "roles": (IAM_READ, IAM_WRITE),
+    "monitoring-sites": (DATA_READ, DATA_WRITE),
+    "monitoring-site-types": (DATA_READ, DATA_WRITE),
+    "linked-resource-types": (DATA_READ, DATA_WRITE),
+    "datastreams": (DATA_READ, DATA_WRITE),
+    "datastream-statuses": (DATA_READ, DATA_WRITE),
+    "aggregation-statistics": (DATA_READ, DATA_WRITE),
+    "observations": (DATA_READ, DATA_WRITE),
+    "observed-properties": (DATA_READ, DATA_WRITE),
+    "observed-property-types": (DATA_READ, DATA_WRITE),
+    "units": (DATA_READ, DATA_WRITE),
+    "unit-types": (DATA_READ, DATA_WRITE),
+    "methods": (DATA_READ, DATA_WRITE),
+    "method-types": (DATA_READ, DATA_WRITE),
+    "processing-levels": (DATA_READ, DATA_WRITE),
+    "result-qualifiers": (DATA_READ, DATA_WRITE),
+    "sampled-mediums": (DATA_READ, DATA_WRITE),
+    "quality-control/histories": (DATA_READ, DATA_WRITE),
+    "quality-control/histories/{history_id}/sessions": (DATA_READ, DATA_WRITE),
+    "quality-control/histories/{history_id}/sessions/{session_id}/operations": (
+        DATA_READ,
+        DATA_WRITE,
+    ),
+    "etl-data-connections": (TASK_READ, TASK_WRITE),
+    "etl-tasks": (TASK_READ, TASK_WRITE),
+    "etl-mappings": (TASK_READ, TASK_WRITE),
+    "monitoring-tasks": (TASK_READ, TASK_WRITE),
+    "monitoring-rules": (TASK_READ, TASK_WRITE),
+    "data-product-tasks": (TASK_READ, TASK_WRITE),
+    "data-product-transformations": (TASK_READ, TASK_WRITE),
+    "data-product-rating-curves": (TASK_READ, TASK_WRITE),
+}
 
-    api = import_module(api_module).api
+ROUTE_SCOPE_OVERRIDES = {
+    ("POST", "workspaces/{workspace_id}/transfer"): IAM_WRITE,
+    ("PUT", "workspaces/{workspace_id}/transfer"): IAM_WRITE,
+    ("DELETE", "workspaces/{workspace_id}/transfer"): IAM_WRITE,
+    ("GET", "monitoring-sites/task-summaries"): TASK_READ,
+    ("POST", "etl-tasks/{task_id}/trigger"): TASK_RUN,
+    ("POST", "monitoring-tasks/{task_id}/trigger"): TASK_RUN,
+    ("POST", "data-product-tasks/{task_id}/trigger"): TASK_RUN,
+}
+
+
+def _route_path(prefix, path):
+    return "/".join(part for part in f"{prefix}/{path}".split("/") if part)
+
+
+def test_every_data_api_endpoint_requires_its_listed_oidc_scope():
+    """Guards against new endpoints accepting OIDC tokens without a deliberate
+    scope choice, or accepting a scope other than the one listed above."""
+    from interfaces.api.urls import api
+
+    checked = 0
+    used_overrides = set()
+
+    for prefix, router in api._routers:
+        for path, path_view in router.path_operations.items():
+            for operation in path_view.operations:
+                auths = _oidc_auths(operation)
+                if not auths:
+                    continue
+
+                route = _route_path(prefix, path)
+                assert prefix in COLLECTION_SCOPES, (
+                    f"{route} accepts OIDC tokens but its collection {prefix!r} has no "
+                    f"entry in COLLECTION_SCOPES"
+                )
+                read_scope, write_scope = COLLECTION_SCOPES[prefix]
+
+                for method in operation.methods:
+                    key = (method, route)
+                    if key in ROUTE_SCOPE_OVERRIDES:
+                        expected = ROUTE_SCOPE_OVERRIDES[key]
+                        used_overrides.add(key)
+                    else:
+                        expected = read_scope if method == "GET" else write_scope
+
+                    for auth in auths:
+                        assert auth.required_scope == expected, (
+                            f"{method} {route} requires {auth.required_scope!r}, "
+                            f"expected {expected!r}"
+                        )
+                        checked += 1
+
+    assert checked > 0
+    assert used_overrides == set(ROUTE_SCOPE_OVERRIDES), (
+        f"Stale ROUTE_SCOPE_OVERRIDES entries: {set(ROUTE_SCOPE_OVERRIDES) - used_overrides}"
+    )
+
+
+def test_every_sensorthings_endpoint_requires_data_scope():
+    from sensorthings.versions.v1_1.urls import api
+
     checked = 0
 
     for path, operation in _api_operations(api):
@@ -253,6 +420,45 @@ def test_oidc_authorization_form_uses_clear_consent_language(oidc_client):
     assert "Review the permissions below before continuing." in rendered
     assert "Authorize" in rendered
     assert "Cancel" in rendered
+
+
+def _render_consent(oidc_client, requested_scopes):
+    form = AuthorizationForm(
+        user=UserFactory(),
+        requested_scopes=requested_scopes,
+        initial={"request": "{}"},
+    )
+    return render_to_string(
+        "idp/oidc/authorization_form.html",
+        {"client": oidc_client, "form": form},
+        request=RequestFactory().get("/identity/o/authorize"),
+    )
+
+
+def test_consent_screen_warns_about_iam_write_scope(oidc_client):
+    rendered = _render_consent(oidc_client, ["openid", IAM_WRITE])
+
+    assert str(SCOPES[IAM_WRITE].label) in rendered
+    assert "hs-alert--danger" in rendered
+    assert "keep working after you revoke this app" in rendered
+
+
+def test_consent_screen_notes_that_tasks_can_write_data(oidc_client):
+    rendered = _render_consent(oidc_client, ["openid", TASK_WRITE])
+
+    assert "hs-alert--warning" in rendered
+    assert "Tasks can write observations to your datastreams" in rendered
+    assert "hs-alert--danger" not in rendered
+
+
+def test_consent_screen_shows_no_warning_for_read_scopes(oidc_client):
+    rendered = _render_consent(
+        oidc_client, ["openid", DATA_READ, WORKSPACE_READ, IAM_READ, TASK_READ]
+    )
+
+    assert "hs-scope__warning" not in rendered
+    for scope in (DATA_READ, WORKSPACE_READ, IAM_READ, TASK_READ):
+        assert str(SCOPES[scope].label) in rendered
 
 
 # --- HydroServerOIDCAdapter (core/iam/auth/oidc_adapter.py) ------------------------
@@ -282,11 +488,11 @@ def test_userinfo_omits_custom_claims_without_profile_scope(oidc_client):
     assert "organization" not in claims
 
 
-def test_adapter_describes_data_scopes_on_consent_screen():
+def test_adapter_describes_every_hydroserver_scope_on_consent_screen():
     scope_display = HydroServerOIDCAdapter.scope_display
 
-    assert DATA_READ in scope_display
-    assert DATA_WRITE in scope_display
+    for scope, definition in SCOPES.items():
+        assert scope_display[scope] == definition.label
     assert "openid" in scope_display
 
 

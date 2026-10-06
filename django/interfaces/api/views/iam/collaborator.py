@@ -3,7 +3,7 @@ import uuid
 from ninja import Router, Path, Query
 from django.db import transaction
 
-from interfaces.auth.security import session_auth, oidc_read_auth, oidc_write_auth, apikey_auth, basic_auth, anonymous_auth
+from interfaces.auth.security import session_auth, oidc_iam_read_auth, oidc_iam_write_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.services.iam import CollaboratorAPIService
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.schemas import (
@@ -21,7 +21,7 @@ collaborator_service = CollaboratorAPIService()
 
 @collaborator_router.get(
     "",
-    auth=[session_auth, oidc_read_auth, apikey_auth, basic_auth, anonymous_auth],
+    auth=[session_auth, oidc_iam_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: PaginatedResponse[CollaboratorResponse],
         401: str,
@@ -51,7 +51,7 @@ def get_collaborators(
 
 @collaborator_router.post(
     "",
-    auth=[session_auth, oidc_write_auth, basic_auth],
+    auth=[session_auth, oidc_iam_write_auth, basic_auth],
     response={
         201: CollaboratorCreatedResponse,
         401: str,
@@ -79,7 +79,7 @@ def add_collaborator(
 
 @collaborator_router.put(
     "",
-    auth=[session_auth, oidc_write_auth, basic_auth],
+    auth=[session_auth, oidc_iam_write_auth, basic_auth],
     response={
         204: None,
         401: str,
@@ -109,7 +109,7 @@ def edit_collaborator_role(
 
 @collaborator_router.delete(
     "",
-    auth=[session_auth, oidc_write_auth, basic_auth],
+    auth=[session_auth, oidc_iam_write_auth, basic_auth],
     response={
         204: None,
         401: str,

@@ -3,7 +3,7 @@ import uuid
 from ninja import Router, Path, Query
 from django.db import transaction
 
-from interfaces.auth.security import session_auth, oidc_read_auth, oidc_write_auth, apikey_auth, basic_auth, anonymous_auth
+from interfaces.auth.security import session_auth, oidc_data_read_auth, oidc_data_write_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.services.sta import ObservedPropertyTypeAPIService
 from interfaces.api.schemas import PaginatedResponse, ItemResponse, CreatedResponse
@@ -23,7 +23,7 @@ observed_property_type_service = ObservedPropertyTypeAPIService()
 
 @observed_property_type_router.get(
     "",
-    auth=[session_auth, oidc_read_auth, apikey_auth, basic_auth, anonymous_auth],
+    auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: PaginatedResponse[ObservedPropertyTypeResponse],
         400: str,
@@ -50,7 +50,7 @@ def get_observed_property_types(
 
 @observed_property_type_router.post(
     "",
-    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
         401: str,
@@ -75,7 +75,7 @@ def create_observed_property_type(
 
 @observed_property_type_router.get(
     "/{observed_property_type_id}",
-    auth=[session_auth, oidc_read_auth, apikey_auth, basic_auth, anonymous_auth],
+    auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: ItemResponse[ObservedPropertyTypeResponse],
         400: str,
@@ -102,7 +102,7 @@ def get_observed_property_type(
 
 @observed_property_type_router.patch(
     "/{observed_property_type_id}",
-    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,
@@ -130,7 +130,7 @@ def update_observed_property_type(
 
 @observed_property_type_router.delete(
     "/{observed_property_type_id}",
-    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,

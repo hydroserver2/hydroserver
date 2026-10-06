@@ -3,7 +3,7 @@ import uuid
 from ninja import Router, Path, Query
 
 from interfaces.api.http.request import HydroServerHttpRequest
-from interfaces.auth.security import session_auth, oidc_read_auth, oidc_write_auth, apikey_auth, basic_auth
+from interfaces.auth.security import session_auth, oidc_task_read_auth, oidc_task_write_auth, apikey_auth, basic_auth
 from interfaces.api.services.products.transformation import DataProductTransformationAPIService
 from interfaces.api.schemas import PaginatedResponse, ItemResponse, CreatedResponse
 from interfaces.api.schemas.products.transformation import (
@@ -20,7 +20,7 @@ _service = DataProductTransformationAPIService()
 
 @data_product_transformation_router.get(
     "",
-    auth=[session_auth, oidc_read_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_task_read_auth, apikey_auth, basic_auth],
     response={
         200: PaginatedResponse[DataProductTransformationResponse],
         401: str,
@@ -47,7 +47,7 @@ def get_data_product_transformations(
 
 @data_product_transformation_router.post(
     "",
-    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_task_write_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
         400: str,
@@ -71,7 +71,7 @@ def create_data_product_transformation(
 
 @data_product_transformation_router.get(
     "/{transformation_id}",
-    auth=[session_auth, oidc_read_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_task_read_auth, apikey_auth, basic_auth],
     response={
         200: ItemResponse[DataProductTransformationResponse],
         401: str,
@@ -96,7 +96,7 @@ def get_data_product_transformation(
 
 @data_product_transformation_router.patch(
     "/{transformation_id}",
-    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_task_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
         400: str,
@@ -124,7 +124,7 @@ def update_data_product_transformation(
 
 @data_product_transformation_router.delete(
     "/{transformation_id}",
-    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_task_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,

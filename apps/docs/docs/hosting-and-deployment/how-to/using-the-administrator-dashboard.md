@@ -215,6 +215,27 @@ see in metadata forms:
 Workspace-scoped metadata such as observed properties, units, processing levels, methods, and result qualifiers can also
 be reviewed in the admin dashboard. When a record has no workspace, it is available as system-level metadata.
 
+## Registering OIDC Clients
+
+HydroServer can act as an OpenID Connect provider, so third-party apps can sign users in and call the HydroServer
+APIs on their behalf. To register an app:
+
+- Navigate to **OpenID Connect IdP** > **Clients** > **Add Client**.
+- Enter the app's client ID and name. The name is shown to users on the consent screen.
+- Choose the client type. Use **Public** for browser and mobile apps that can't keep a secret, and **Confidential**
+  for server-side apps.
+- Add the grant types (usually `authorization_code`, plus `refresh_token` if the app should renew tokens), the
+  response type `code`, and the app's redirect URIs.
+- Under **Scopes**, list each scope the app may request, one per line. Scopes not listed here are dropped from the
+  app's tokens. Along with `openid`, `profile`, and `email`, HydroServer defines `data:read`, `data:write`,
+  `workspace:read`, `workspace:write`, `iam:read`, `iam:write`, `task:read`, `task:write`, and `task:run`. See
+  [Using OIDC Scopes](/developing-and-contributing/how-to/using-oidc-scopes) for what each one grants.
+
+Allow `iam:write` only for apps you trust to manage workspace access. Service accounts and collaborators an app creates
+with it keep working after a user revokes the app.
+
+To end an app's access immediately, delete its tokens under **OpenID Connect IdP** > **Tokens**, or delete the client.
+
 ## Third-Party Identity Providers
 
 To enable authentication through third-party identity providers, do the following:

@@ -3,7 +3,7 @@ import uuid
 from ninja import Router, Path, Query
 
 from interfaces.api.http.request import HydroServerHttpRequest
-from interfaces.auth.security import session_auth, oidc_read_auth, oidc_write_auth, apikey_auth, basic_auth
+from interfaces.auth.security import session_auth, oidc_task_read_auth, oidc_task_write_auth, apikey_auth, basic_auth
 from interfaces.api.services.monitoring.rule import MonitoringRuleAPIService
 from interfaces.api.schemas import PaginatedResponse, ItemResponse, CreatedResponse
 from interfaces.api.schemas.monitoring.rule import (
@@ -20,7 +20,7 @@ monitoring_rule_service = MonitoringRuleAPIService()
 
 @monitoring_rule_router.get(
     "",
-    auth=[session_auth, oidc_read_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_task_read_auth, apikey_auth, basic_auth],
     response={
         200: PaginatedResponse[MonitoringRuleResponse],
         401: str,
@@ -49,7 +49,7 @@ def get_monitoring_rules(
 
 @monitoring_rule_router.post(
     "",
-    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_task_write_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
         400: str,
@@ -75,7 +75,7 @@ def create_monitoring_rule(
 
 @monitoring_rule_router.get(
     "/{rule_id}",
-    auth=[session_auth, oidc_read_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_task_read_auth, apikey_auth, basic_auth],
     response={
         200: ItemResponse[MonitoringRuleResponse],
         401: str,
@@ -102,7 +102,7 @@ def get_monitoring_rule(
 
 @monitoring_rule_router.patch(
     "/{rule_id}",
-    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_task_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
         400: str,
@@ -132,7 +132,7 @@ def update_monitoring_rule(
 
 @monitoring_rule_router.delete(
     "/{rule_id}",
-    auth=[session_auth, oidc_write_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_task_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,

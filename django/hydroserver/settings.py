@@ -141,6 +141,7 @@ TEMPLATES = [
         "OPTIONS": {
             "libraries": {
                 "account_navigation": "core.iam.templatetags.account_navigation",
+                "oidc_scopes": "core.iam.templatetags.oidc_scopes",
             },
             "context_processors": [
                 "django.template.context_processors.debug",
@@ -478,14 +479,14 @@ SENSORTHINGS_V1_1_SERVICE_URL = f"{PROXY_BASE_URL}/api/sensorthings"
 SENSORTHINGS_V1_1_BACKEND_ADAPTER = "interfaces.sensorthings.adapter.HydroServerAdapter"
 SENSORTHINGS_V1_1_DEFAULT_AUTH_HANDLER = [
     "interfaces.auth.security.session_auth",
-    "interfaces.auth.security.oidc_read_auth",
+    "interfaces.auth.security.oidc_data_read_auth",
     "interfaces.auth.security.basic_auth",
     "interfaces.auth.security.apikey_auth",
     "interfaces.auth.security.anonymous_auth",
 ]
 SENSORTHINGS_V1_1_WRITE_AUTH_HANDLER = [
     "interfaces.auth.security.session_auth",
-    "interfaces.auth.security.oidc_write_auth",
+    "interfaces.auth.security.oidc_data_write_auth",
     "interfaces.auth.security.basic_auth",
     "interfaces.auth.security.apikey_auth",
     "interfaces.auth.security.anonymous_auth",

@@ -2,7 +2,7 @@ import uuid
 
 from ninja import Router, Path, Query
 
-from interfaces.auth.security import session_auth, oidc_read_auth, apikey_auth, basic_auth, anonymous_auth
+from interfaces.auth.security import session_auth, oidc_iam_read_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.services.iam import RoleAPIService
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.schemas import (
@@ -19,7 +19,7 @@ role_service = RoleAPIService()
 
 @role_router.get(
     "",
-    auth=[session_auth, oidc_read_auth, apikey_auth, basic_auth, anonymous_auth],
+    auth=[session_auth, oidc_iam_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: PaginatedResponse[RoleResponse],
         401: str,
@@ -45,7 +45,7 @@ def get_roles(
 
 @role_router.get(
     "/{role_id}",
-    auth=[session_auth, oidc_read_auth, apikey_auth, basic_auth, anonymous_auth],
+    auth=[session_auth, oidc_iam_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: ItemResponse[RoleResponse],
         401: str,
