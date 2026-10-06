@@ -146,7 +146,7 @@ class MonitoringSiteQueryParameters(MonitoringSiteFilterFields, CollectionQueryP
     )
     country: list[str | Literal["null"]] = Query([], description="Filter monitoring sites by country.")
     type: list[str] = Query([], description="Filter monitoring sites by type.")
-    tags: list[str] = Query(
+    tag: list[str] = Query(
         [],
         description="Filter monitoring sites by tag. Format tag filters as {key}:{value}. Repeat "
         "the parameter to require several tags.",

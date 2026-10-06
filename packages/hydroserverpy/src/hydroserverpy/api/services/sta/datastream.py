@@ -66,7 +66,7 @@ class DatastreamService(HydroServerBaseService):
             sampled_medium=sampled_medium,
             status=status,
             result_type=result_type,
-            tags=[f"{tag[0]}:{tag[1]}"] if tag is not ... else tag,
+            tag=[f"{tag[0]}:{tag[1]}"] if tag is not ... else tag,
             is_private=is_private,
             value_count_max=value_count_max,
             value_count_min=value_count_min,
@@ -75,7 +75,6 @@ class DatastreamService(HydroServerBaseService):
         )
 
         collection.filters.pop("datetime", None)
-        collection.filters.pop("tags", None)
         collection.filters.update({
             k: v
             for k, v in {

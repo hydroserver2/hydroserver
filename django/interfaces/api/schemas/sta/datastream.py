@@ -213,7 +213,7 @@ class DatastreamQueryParameters(DatastreamFilterFields, CollectionQueryParameter
     )
     status: list[str | Literal["null"]] = Query([], description="Filter datastreams by status.")
     result_type: list[str] = Query([], description="Filter monitoring_sites by result type.")
-    tags: list[str] = Query(
+    tag: list[str] = Query(
         [],
         description="Filter datastreams by tag. Format tag filters as {key}:{value}. Repeat the "
         "parameter to require several tags.",

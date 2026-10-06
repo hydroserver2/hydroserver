@@ -42,12 +42,11 @@ class MonitoringSiteService(HydroServerBaseService):
             admin_area_2=admin_area_2,
             country=country,
             type=type,
-            tags=[f"{tag[0]}:{tag[1]}"] if tag is not ... else tag,
+            tag=[f"{tag[0]}:{tag[1]}"] if tag is not ... else tag,
             is_private=is_private,
             fetch_all=False,
         )
 
-        collection.filters.pop("tags", None)
         if tag is not ...:
             collection.filters["tag"] = tag
 

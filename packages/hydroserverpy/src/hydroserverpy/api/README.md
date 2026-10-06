@@ -638,7 +638,7 @@ processing_level = datastream.processing_level
 
 #### Example: Get Observations of a Datastream
 ```python
-from datetime import datetime
+from datetime import datetime, timezone
 
 ...
 
@@ -647,14 +647,14 @@ datastream = hs_api.datastreams.get(uid='00000000-0000-0000-0000-000000000000')
 
 # Get observations of a datastream between two timestamps
 observations_df = datastream.get_observations(
-    start_time=datetime(year=2023, month=1, day=1),
-    end_time=datetime(year=2023, month=12, day=31)
-)
+    phenomenon_time_min=datetime(year=2023, month=1, day=1, tzinfo=timezone.utc),
+    phenomenon_time_max=datetime(year=2023, month=12, day=31, tzinfo=timezone.utc)
+).dataframe
 
 # Get observations all observations of a datastream
 full_observations_df = datastream.get_observations(
     fetch_all=True
-)
+).dataframe
 ```
 
 #### Example: Upload Observations to a Datastream

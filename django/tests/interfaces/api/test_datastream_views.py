@@ -111,7 +111,7 @@ def test_get_datastreams_includes_private_datastream_for_workspace_owner(client)
 
 
 def test_get_datastreams_returns_400_for_malformed_tag(client):
-    response = client.get(DATASTREAMS_URL, {"tags": "no-colon-in-here"})
+    response = client.get(DATASTREAMS_URL, {"tag": "no-colon-in-here"})
 
     assert response.status_code == 400
 

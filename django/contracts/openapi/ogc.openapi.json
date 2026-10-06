@@ -2901,13 +2901,13 @@
             "title": "Status",
             "type": "array"
           },
-          "tags": {
+          "tag": {
             "default": [],
             "description": "Filter datastreams by tag. Format tag filters as {key}:{value}. Repeat the parameter to require several tags.",
             "items": {
               "type": "string"
             },
-            "title": "Tags",
+            "title": "Tag",
             "type": "array"
           },
           "unitId": {
@@ -7275,13 +7275,13 @@
             "title": "Sortby",
             "type": "array"
           },
-          "tags": {
+          "tag": {
             "default": [],
             "description": "Filter monitoring sites by tag. Format tag filters as {key}:{value}. Repeat the parameter to require several tags.",
             "items": {
               "type": "string"
             },
-            "title": "Tags",
+            "title": "Tag",
             "type": "array"
           },
           "type": {
@@ -19017,7 +19017,7 @@
           {
             "description": "Filter datastreams by tag. Format tag filters as {key}:{value}. Repeat the parameter to require several tags.",
             "in": "query",
-            "name": "tags",
+            "name": "tag",
             "required": false,
             "schema": {
               "default": [],
@@ -19025,7 +19025,7 @@
               "items": {
                 "type": "string"
               },
-              "title": "Tags",
+              "title": "Tag",
               "type": "array"
             }
           },
@@ -26097,7 +26097,7 @@
           {
             "description": "Filter monitoring sites by tag. Format tag filters as {key}:{value}. Repeat the parameter to require several tags.",
             "in": "query",
-            "name": "tags",
+            "name": "tag",
             "required": false,
             "schema": {
               "default": [],
@@ -26105,7 +26105,7 @@
               "items": {
                 "type": "string"
               },
-              "title": "Tags",
+              "title": "Tag",
               "type": "array"
             }
           },

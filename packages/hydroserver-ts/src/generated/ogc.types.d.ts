@@ -3202,11 +3202,11 @@ export interface components {
              */
             status: (string | "null")[];
             /**
-             * Tags
+             * Tag
              * @description Filter datastreams by tag. Format tag filters as {key}:{value}. Repeat the parameter to require several tags.
              * @default []
              */
-            tags: string[];
+            tag: string[];
             /**
              * Unitid
              * @description Filter datastreams by unit ID.
@@ -4766,11 +4766,11 @@ export interface components {
              */
             sortby: ("name" | "code" | "type" | "isPrivate" | "latitude" | "longitude" | "elevationM" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "-name" | "-code" | "-type" | "-isPrivate" | "-latitude" | "-longitude" | "-elevationM" | "-elevationDatum" | "-adminArea1" | "-adminArea2" | "-country" | "+name" | "+code" | "+type" | "+isPrivate" | "+latitude" | "+longitude" | "+elevationM" | "+elevationDatum" | "+adminArea1" | "+adminArea2" | "+country")[];
             /**
-             * Tags
+             * Tag
              * @description Filter monitoring sites by tag. Format tag filters as {key}:{value}. Repeat the parameter to require several tags.
              * @default []
              */
-            tags: string[];
+            tag: string[];
             /**
              * Type
              * @description Filter monitoring sites by type.
@@ -9023,7 +9023,7 @@ export interface operations {
                 /** @description Filter monitoring_sites by result type. */
                 resultType?: string[];
                 /** @description Filter datastreams by tag. Format tag filters as {key}:{value}. Repeat the parameter to require several tags. */
-                tags?: string[];
+                tag?: string[];
                 /** @description Controls whether the datastreams should be private or public. */
                 isPrivate?: boolean | null;
                 /** @description Sets the maximum value count of filtered datastreams. */
@@ -11930,7 +11930,7 @@ export interface operations {
                 /** @description Filter monitoring sites by type. */
                 type?: string[];
                 /** @description Filter monitoring sites by tag. Format tag filters as {key}:{value}. Repeat the parameter to require several tags. */
-                tags?: string[];
+                tag?: string[];
                 /** @description Controls whether the returned monitoring sites should be private or public. */
                 isPrivate?: boolean | null;
             };

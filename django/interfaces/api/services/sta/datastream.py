@@ -161,7 +161,7 @@ class DatastreamAPIService(APIService):
         queryset = self.apply_datetime_interval(
             queryset, datetime_interval, "phenomenon_begin_time", "phenomenon_end_time"
         )
-        queryset = self.apply_tag_filter(queryset, filtering.get("tags"))
+        queryset = self.apply_tag_filter(queryset, filtering.get("tag"))
         queryset, has_search = self.apply_search(queryset, filtering.get("q"))
         queryset = self.apply_sorting(
             queryset,

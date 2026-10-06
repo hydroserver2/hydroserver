@@ -423,14 +423,14 @@ datastream.get_observations(
     phenomenon_time_min=None,
     phenomenon_time_max=None,
     result_qualifiers=None,
-    page=1,
-    page_size=100000,
+    offset=0,
+    limit=100000,
     sortby=None,
     fetch_all=False,
 ) -> ObservationCollection
 ```
 
-Returns an `ObservationCollection` with a `dataframe` property containing a pandas DataFrame with `phenomenon_time` (timezone-aware datetime) and `result` (float) columns.
+Returns an `ObservationCollection` with a `dataframe` property containing a pandas DataFrame with `phenomenon_time` (timezone-aware datetime), `result` (float), and `result_qualifiers` (list of qualifier names) columns.
 
 ```python
 datastream.load_observations(observations, mode='insert') -> None
@@ -438,7 +438,7 @@ datastream.load_observations(observations, mode='insert') -> None
 
 `observations` must be a pandas DataFrame with `phenomenon_time` and `result` columns. `phenomenon_time` must be timezone-aware. `mode` is `"insert"` (skip existing timestamps) or `"replace"` (overwrite all observations in the datastream).
 
-To load observations with result qualifiers, include a `result_qualifiers` column containing a list of qualifier name strings per row (the column name remains unchanged):
+To load observations with result qualifiers, include a `result_qualifiers` column containing a list of qualifier name strings per row:
 
 ```python
 df = pd.DataFrame({

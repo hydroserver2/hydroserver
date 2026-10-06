@@ -265,7 +265,7 @@ def test_get_monitoring_sites_returns_400_for_invalid_datetime(client):
 
 
 def test_get_monitoring_sites_returns_400_for_malformed_tag(client):
-    response = client.get(MONITORING_SITES_URL, {"tags": "no-colon-in-here"})
+    response = client.get(MONITORING_SITES_URL, {"tag": "no-colon-in-here"})
 
     assert response.status_code == 400
 

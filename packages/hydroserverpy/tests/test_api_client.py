@@ -195,7 +195,7 @@ def test_list_sends_camel_case_params_and_keeps_public_filter_names(fake_session
     params = fake_session_factory[0].last_kwargs["params"]
     assert params["workspaceId"] == "00000000-0000-0000-0000-000000000001"
     assert params["isPrivate"] == "false"
-    assert params["tags"] == ["river:green"]
+    assert params["tag"] == ["river:green"]
     assert not any("_" in key for key in params)
     assert collection.filters["workspace"] == "00000000-0000-0000-0000-000000000001"
     assert collection.filters["tag"] == ("river", "green")

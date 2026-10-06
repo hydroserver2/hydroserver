@@ -56,7 +56,7 @@ qc-utils service layer lives under `packages/qc-utils/src/services/`.
 ### Observation read
 
 Paged GET against `/api/ogc/collections/observations/items` with
-`datastream_id={id}`, `format=column`, `sortby=phenomenonTime`,
+`datastreamId={id}`, `format=column`, `sortby=phenomenonTime`,
 `limit=50000`, and a `datetime` interval (`start/end`, RFC 3339). The app
 paginates client-side and caches the merged window in
 `useObservationStore`.
