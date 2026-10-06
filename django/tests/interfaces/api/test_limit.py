@@ -46,7 +46,7 @@ def test_get_observations_row_format_uses_the_maximum(client, max_limit_of_two):
 
     response = client.get(
         "/api/ogc/collections/observations/items",
-        {"datastream_id": str(datastream.id), "format": "row", "limit": 5},
+        {"datastreamId": str(datastream.id), "format": "row", "limit": 5},
     )
 
     assert response.status_code == 200

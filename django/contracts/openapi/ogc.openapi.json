@@ -330,14 +330,14 @@
             "title": "Properties",
             "type": "array"
           },
-          "role_id": {
+          "roleId": {
             "default": [],
             "description": "Filter collaborators by role ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Role Id",
+            "title": "Roleid",
             "type": "array"
           },
           "sortby": {
@@ -810,13 +810,13 @@
             "description": "Number of items to skip.",
             "title": "Offset"
           },
-          "payload_type": {
+          "payloadType": {
             "default": [],
             "description": "Filter data connections by payload type.",
             "items": {
               "type": "string"
             },
-            "title": "Payload Type",
+            "title": "Payloadtype",
             "type": "array"
           },
           "properties": {
@@ -890,14 +890,14 @@
             "title": "Sortby",
             "type": "array"
           },
-          "workspace_id": {
+          "workspaceId": {
             "default": [],
             "description": "Filter data connections by workspace ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Workspace Id",
+            "title": "Workspaceid",
             "type": "array"
           }
         },
@@ -1353,17 +1353,17 @@
             "title": "Include",
             "type": "array"
           },
-          "input_datastream_id": {
+          "inputDatastreamId": {
             "default": [],
             "description": "Filter data product tasks by input datastream ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Input Datastream Id",
+            "title": "Inputdatastreamid",
             "type": "array"
           },
-          "latest_run_status": {
+          "latestRunStatus": {
             "default": [],
             "description": "Filter data product tasks by their most recent run status.",
             "items": {
@@ -1377,7 +1377,7 @@
                 }
               ]
             },
-            "title": "Latest Run Status",
+            "title": "Latestrunstatus",
             "type": "array"
           },
           "limit": {
@@ -1388,14 +1388,14 @@
             "title": "Limit",
             "type": "integer"
           },
-          "monitoring_site_id": {
+          "monitoringSiteId": {
             "default": [],
             "description": "Filter data product tasks by monitoring_site ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Monitoring Site Id",
+            "title": "Monitoringsiteid",
             "type": "array"
           },
           "offset": {
@@ -1412,14 +1412,14 @@
             "description": "Number of items to skip.",
             "title": "Offset"
           },
-          "output_datastream_id": {
+          "outputDatastreamId": {
             "default": [],
             "description": "Filter data product tasks by output datastream ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Output Datastream Id",
+            "title": "Outputdatastreamid",
             "type": "array"
           },
           "properties": {
@@ -1452,7 +1452,7 @@
             "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
             "title": "Q"
           },
-          "rating_curve_id": {
+          "ratingCurveId": {
             "default": [],
             "description": "Filter data product tasks by rating curve ID.",
             "items": {
@@ -1467,7 +1467,7 @@
                 }
               ]
             },
-            "title": "Rating Curve Id",
+            "title": "Ratingcurveid",
             "type": "array"
           },
           "sortby": {
@@ -1508,23 +1508,23 @@
             "title": "Sortby",
             "type": "array"
           },
-          "transformation_type": {
+          "transformationType": {
             "default": [],
             "description": "Filter data product tasks by transformation type.",
             "items": {
               "type": "string"
             },
-            "title": "Transformation Type",
+            "title": "Transformationtype",
             "type": "array"
           },
-          "workspace_id": {
+          "workspaceId": {
             "default": [],
             "description": "Filter data product tasks by workspace ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Workspace Id",
+            "title": "Workspaceid",
             "type": "array"
           }
         },
@@ -1982,14 +1982,14 @@
             "title": "Include",
             "type": "array"
           },
-          "input_datastream_id": {
+          "inputDatastreamId": {
             "default": [],
             "description": "Filter transformations by input datastream ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Input Datastream Id",
+            "title": "Inputdatastreamid",
             "type": "array"
           },
           "limit": {
@@ -2014,14 +2014,14 @@
             "description": "Number of items to skip.",
             "title": "Offset"
           },
-          "output_datastream_id": {
+          "outputDatastreamId": {
             "default": [],
             "description": "Filter transformations by output datastream ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Output Datastream Id",
+            "title": "Outputdatastreamid",
             "type": "array"
           },
           "properties": {
@@ -2068,33 +2068,33 @@
             "title": "Sortby",
             "type": "array"
           },
-          "task_id": {
+          "taskId": {
             "default": [],
             "description": "Filter transformations by data product task ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Task Id",
+            "title": "Taskid",
             "type": "array"
           },
-          "transformation_type": {
+          "transformationType": {
             "default": [],
             "description": "Filter transformations by type.",
             "items": {
               "type": "string"
             },
-            "title": "Transformation Type",
+            "title": "Transformationtype",
             "type": "array"
           },
-          "workspace_id": {
+          "workspaceId": {
             "default": [],
             "description": "Filter transformations by workspace ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Workspace Id",
+            "title": "Workspaceid",
             "type": "array"
           }
         },
@@ -2673,7 +2673,7 @@
             "title": "Include",
             "type": "array"
           },
-          "is_private": {
+          "isPrivate": {
             "anyOf": [
               {
                 "type": "boolean"
@@ -2683,7 +2683,7 @@
               }
             ],
             "description": "Controls whether the datastreams should be private or public.",
-            "title": "Is Private"
+            "title": "Isprivate"
           },
           "limit": {
             "default": 100,
@@ -2693,43 +2693,43 @@
             "title": "Limit",
             "type": "integer"
           },
-          "method_id": {
+          "methodId": {
             "default": [],
             "description": "Filter datastreams by method ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Method Id",
+            "title": "Methodid",
             "type": "array"
           },
-          "monitoring_site_id": {
+          "monitoringSiteId": {
             "default": [],
             "description": "Filter datastreams by monitoring_site ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Monitoring Site Id",
+            "title": "Monitoringsiteid",
             "type": "array"
           },
-          "observation_type": {
+          "observationType": {
             "default": [],
             "description": "Filter monitoring_sites by observation type.",
             "items": {
               "type": "string"
             },
-            "title": "Observation Type",
+            "title": "Observationtype",
             "type": "array"
           },
-          "observed_property_id": {
+          "observedPropertyId": {
             "default": [],
             "description": "Filter datastreams by observed property ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Observed Property Id",
+            "title": "Observedpropertyid",
             "type": "array"
           },
           "offset": {
@@ -2746,14 +2746,14 @@
             "description": "Number of items to skip.",
             "title": "Offset"
           },
-          "processing_level_id": {
+          "processingLevelId": {
             "default": [],
             "description": "Filter datastreams by processing level ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Processing Level Id",
+            "title": "Processinglevelid",
             "type": "array"
           },
           "properties": {
@@ -2806,32 +2806,32 @@
             "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
             "title": "Q"
           },
-          "result_qualifier_id": {
+          "resultQualifier": {
             "default": [],
             "description": "Filter datastreams by observation result qualifier ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Result Qualifier Id",
+            "title": "Resultqualifier",
             "type": "array"
           },
-          "result_type": {
+          "resultType": {
             "default": [],
             "description": "Filter monitoring_sites by result type.",
             "items": {
               "type": "string"
             },
-            "title": "Result Type",
+            "title": "Resulttype",
             "type": "array"
           },
-          "sampled_medium": {
+          "sampledMedium": {
             "default": [],
             "description": "Filter monitoring_sites by sampled medium.",
             "items": {
               "type": "string"
             },
-            "title": "Sampled Medium",
+            "title": "Sampledmedium",
             "type": "array"
           },
           "sortby": {
@@ -2901,26 +2901,26 @@
             "title": "Status",
             "type": "array"
           },
-          "tag": {
+          "tags": {
             "default": [],
-            "description": "Filter datastreams by tag. Format tag filters as {key}:{value}",
+            "description": "Filter datastreams by tag. Format tag filters as {key}:{value}. Repeat the parameter to require several tags.",
             "items": {
               "type": "string"
             },
-            "title": "Tag",
+            "title": "Tags",
             "type": "array"
           },
-          "unit_id": {
+          "unitId": {
             "default": [],
             "description": "Filter datastreams by unit ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Unit Id",
+            "title": "Unitid",
             "type": "array"
           },
-          "value_count_max": {
+          "valueCountMax": {
             "anyOf": [
               {
                 "type": "integer"
@@ -2930,9 +2930,9 @@
               }
             ],
             "description": "Sets the maximum value count of filtered datastreams.",
-            "title": "Value Count Max"
+            "title": "Valuecountmax"
           },
-          "value_count_min": {
+          "valueCountMin": {
             "anyOf": [
               {
                 "type": "integer"
@@ -2942,16 +2942,16 @@
               }
             ],
             "description": "Sets the minimum value count of filtered datastreams.",
-            "title": "Value Count Min"
+            "title": "Valuecountmin"
           },
-          "workspace_id": {
+          "workspaceId": {
             "default": [],
             "description": "Filter datastreams by workspace ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Workspace Id",
+            "title": "Workspaceid",
             "type": "array"
           }
         },
@@ -3282,14 +3282,14 @@
       },
       "DatastreamVisualizationBootstrapQueryParameters": {
         "properties": {
-          "workspace_id": {
+          "workspaceId": {
             "default": [],
             "description": "Filter visualization bootstrap datastreams by workspace ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Workspace Id",
+            "title": "Workspaceid",
             "type": "array"
           }
         },
@@ -3441,14 +3441,14 @@
             "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
             "type": "string"
           },
-          "etl_task_id": {
+          "etlTaskId": {
             "default": [],
             "description": "Filter mappings by ETL task ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Etl Task Id",
+            "title": "Etltaskid",
             "type": "array"
           },
           "include": {
@@ -3517,33 +3517,33 @@
             "title": "Sortby",
             "type": "array"
           },
-          "source_identifier": {
+          "sourceIdentifier": {
             "default": [],
             "description": "Filter mappings by source identifier.",
             "items": {
               "type": "string"
             },
-            "title": "Source Identifier",
+            "title": "Sourceidentifier",
             "type": "array"
           },
-          "target_datastream_id": {
+          "targetDatastreamId": {
             "default": [],
             "description": "Filter mappings by target datastream ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Target Datastream Id",
+            "title": "Targetdatastreamid",
             "type": "array"
           },
-          "workspace_id": {
+          "workspaceId": {
             "default": [],
             "description": "Filter mappings by workspace ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Workspace Id",
+            "title": "Workspaceid",
             "type": "array"
           }
         },
@@ -3724,14 +3724,14 @@
             ],
             "type": "array"
           },
-          "data_connection_id": {
+          "dataConnectionId": {
             "default": [],
             "description": "Filter ETL tasks by data connection ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Data Connection Id",
+            "title": "Dataconnectionid",
             "type": "array"
           },
           "datetime": {
@@ -3749,7 +3749,7 @@
             "title": "Include",
             "type": "array"
           },
-          "latest_run_finished_at_max": {
+          "latestRunFinishedAtMax": {
             "anyOf": [
               {
                 "type": "string"
@@ -3763,9 +3763,9 @@
               }
             ],
             "description": "Filter tasks whose latest run finished on or before this datetime.",
-            "title": "Latest Run Finished At Max"
+            "title": "Latestrunfinishedatmax"
           },
-          "latest_run_finished_at_min": {
+          "latestRunFinishedAtMin": {
             "anyOf": [
               {
                 "type": "string"
@@ -3779,9 +3779,9 @@
               }
             ],
             "description": "Filter tasks whose latest run finished on or after this datetime.",
-            "title": "Latest Run Finished At Min"
+            "title": "Latestrunfinishedatmin"
           },
-          "latest_run_started_at_max": {
+          "latestRunStartedAtMax": {
             "anyOf": [
               {
                 "type": "string"
@@ -3795,9 +3795,9 @@
               }
             ],
             "description": "Filter tasks whose latest run started on or before this datetime.",
-            "title": "Latest Run Started At Max"
+            "title": "Latestrunstartedatmax"
           },
-          "latest_run_started_at_min": {
+          "latestRunStartedAtMin": {
             "anyOf": [
               {
                 "type": "string"
@@ -3811,9 +3811,9 @@
               }
             ],
             "description": "Filter tasks whose latest run started on or after this datetime.",
-            "title": "Latest Run Started At Min"
+            "title": "Latestrunstartedatmin"
           },
-          "latest_run_status": {
+          "latestRunStatus": {
             "default": [],
             "description": "Filter ETL tasks by their most recent run status.",
             "items": {
@@ -3827,7 +3827,7 @@
                 }
               ]
             },
-            "title": "Latest Run Status",
+            "title": "Latestrunstatus",
             "type": "array"
           },
           "limit": {
@@ -3838,14 +3838,14 @@
             "title": "Limit",
             "type": "integer"
           },
-          "monitoring_site_id": {
+          "monitoringSiteId": {
             "default": [],
             "description": "Filter ETL tasks by monitoring_site ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Monitoring Site Id",
+            "title": "Monitoringsiteid",
             "type": "array"
           },
           "offset": {
@@ -3931,14 +3931,14 @@
             "title": "Sortby",
             "type": "array"
           },
-          "workspace_id": {
+          "workspaceId": {
             "default": [],
             "description": "Filter ETL tasks by workspace ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Workspace Id",
+            "title": "Workspaceid",
             "type": "array"
           }
         },
@@ -5720,7 +5720,7 @@
             ],
             "type": "array"
           },
-          "datastream_id": {
+          "datastreamId": {
             "default": [],
             "description": "Filter methods by datastream ID.",
             "items": {
@@ -5735,7 +5735,7 @@
                 }
               ]
             },
-            "title": "Datastream Id",
+            "title": "Datastreamid",
             "type": "array"
           },
           "datetime": {
@@ -5762,7 +5762,7 @@
             "title": "Limit",
             "type": "integer"
           },
-          "monitoring_site_id": {
+          "monitoringSiteId": {
             "default": [],
             "description": "Filter methods by monitoring_site ID.",
             "items": {
@@ -5777,7 +5777,7 @@
                 }
               ]
             },
-            "title": "Monitoring Site Id",
+            "title": "Monitoringsiteid",
             "type": "array"
           },
           "offset": {
@@ -5826,7 +5826,7 @@
             "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
             "title": "Q"
           },
-          "sensor_model": {
+          "sensorModel": {
             "default": [],
             "description": "Filter methods by sensor model",
             "items": {
@@ -5840,10 +5840,10 @@
                 }
               ]
             },
-            "title": "Sensor Model",
+            "title": "Sensormodel",
             "type": "array"
           },
-          "sensor_model_manufacturer": {
+          "sensorModelManufacturer": {
             "default": [],
             "description": "Filter methods by sensor model manufacturer",
             "items": {
@@ -5857,7 +5857,7 @@
                 }
               ]
             },
-            "title": "Sensor Model Manufacturer",
+            "title": "Sensormodelmanufacturer",
             "type": "array"
           },
           "sortby": {
@@ -5901,7 +5901,7 @@
             "title": "Type",
             "type": "array"
           },
-          "workspace_id": {
+          "workspaceId": {
             "default": [],
             "description": "Filter methods by workspace ID.",
             "items": {
@@ -5916,7 +5916,7 @@
                 }
               ]
             },
-            "title": "Workspace Id",
+            "title": "Workspaceid",
             "type": "array"
           }
         },
@@ -6318,14 +6318,14 @@
             ],
             "type": "array"
           },
-          "datastream_id": {
+          "datastreamId": {
             "default": [],
             "description": "Filter rules by datastream ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Datastream Id",
+            "title": "Datastreamid",
             "type": "array"
           },
           "datetime": {
@@ -6383,13 +6383,13 @@
             "title": "Properties",
             "type": "array"
           },
-          "rule_type": {
+          "ruleType": {
             "default": [],
             "description": "Filter rules by rule type.",
             "items": {
               "type": "string"
             },
-            "title": "Rule Type",
+            "title": "Ruletype",
             "type": "array"
           },
           "sortby": {
@@ -6415,24 +6415,24 @@
             "title": "Sortby",
             "type": "array"
           },
-          "task_id": {
+          "taskId": {
             "default": [],
             "description": "Filter rules by monitoring task ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Task Id",
+            "title": "Taskid",
             "type": "array"
           },
-          "workspace_id": {
+          "workspaceId": {
             "default": [],
             "description": "Filter rules by workspace ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Workspace Id",
+            "title": "Workspaceid",
             "type": "array"
           }
         },
@@ -6563,7 +6563,7 @@
                 "type",
                 "latitude",
                 "longitude",
-                "elevation_m",
+                "elevationM",
                 "elevationDatum",
                 "adminArea1",
                 "adminArea2",
@@ -6593,14 +6593,14 @@
             "title": "Type",
             "type": "array"
           },
-          "workspace_id": {
+          "workspaceId": {
             "default": [],
             "description": "Filter site summaries by workspace ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Workspace Id",
+            "title": "Workspaceid",
             "type": "array"
           }
         },
@@ -6696,14 +6696,14 @@
             "title": "Type",
             "type": "array"
           },
-          "workspace_id": {
+          "workspaceId": {
             "default": [],
             "description": "Filter markers by workspace ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Workspace Id",
+            "title": "Workspaceid",
             "type": "array"
           }
         },
@@ -6827,7 +6827,7 @@
             ],
             "title": "Elevationdatum"
           },
-          "elevation_m": {
+          "elevationM": {
             "anyOf": [
               {
                 "maximum": 99999.0,
@@ -6842,7 +6842,7 @@
                 "type": "null"
               }
             ],
-            "title": "Elevation M"
+            "title": "Elevationm"
           },
           "isPrivate": {
             "title": "Isprivate",
@@ -6974,7 +6974,7 @@
             ],
             "title": "Elevationdatum"
           },
-          "elevation_m": {
+          "elevationM": {
             "anyOf": [
               {
                 "maximum": 99999.0,
@@ -6989,7 +6989,7 @@
                 "type": "null"
               }
             ],
-            "title": "Elevation M"
+            "title": "Elevationm"
           },
           "id": {
             "anyOf": [
@@ -7074,7 +7074,7 @@
       },
       "MonitoringSiteQueryParameters": {
         "properties": {
-          "admin_area_1": {
+          "adminArea1": {
             "default": [],
             "description": "Filter monitoring sites by admin area 1.",
             "items": {
@@ -7088,10 +7088,10 @@
                 }
               ]
             },
-            "title": "Admin Area 1",
+            "title": "Adminarea1",
             "type": "array"
           },
-          "admin_area_2": {
+          "adminArea2": {
             "default": [],
             "description": "Filter monitoring sites by admin area 2.",
             "items": {
@@ -7105,7 +7105,7 @@
                 }
               ]
             },
-            "title": "Admin Area 2",
+            "title": "Adminarea2",
             "type": "array"
           },
           "bbox": {
@@ -7158,7 +7158,7 @@
             "title": "Include",
             "type": "array"
           },
-          "is_private": {
+          "isPrivate": {
             "anyOf": [
               {
                 "type": "boolean"
@@ -7168,7 +7168,7 @@
               }
             ],
             "description": "Controls whether the returned monitoring sites should be private or public.",
-            "title": "Is Private"
+            "title": "Isprivate"
           },
           "limit": {
             "default": 100,
@@ -7204,7 +7204,7 @@
                 "type",
                 "latitude",
                 "longitude",
-                "elevation_m",
+                "elevationM",
                 "elevationDatum",
                 "adminArea1",
                 "adminArea2",
@@ -7242,7 +7242,7 @@
                 "isPrivate",
                 "latitude",
                 "longitude",
-                "elevation_m",
+                "elevationM",
                 "elevationDatum",
                 "adminArea1",
                 "adminArea2",
@@ -7253,7 +7253,7 @@
                 "-isPrivate",
                 "-latitude",
                 "-longitude",
-                "-elevation_m",
+                "-elevationM",
                 "-elevationDatum",
                 "-adminArea1",
                 "-adminArea2",
@@ -7264,7 +7264,7 @@
                 "+isPrivate",
                 "+latitude",
                 "+longitude",
-                "+elevation_m",
+                "+elevationM",
                 "+elevationDatum",
                 "+adminArea1",
                 "+adminArea2",
@@ -7275,13 +7275,13 @@
             "title": "Sortby",
             "type": "array"
           },
-          "tag": {
+          "tags": {
             "default": [],
-            "description": "Filter monitoring sites by tag. Format tag filters as {key}:{value}",
+            "description": "Filter monitoring sites by tag. Format tag filters as {key}:{value}. Repeat the parameter to require several tags.",
             "items": {
               "type": "string"
             },
-            "title": "Tag",
+            "title": "Tags",
             "type": "array"
           },
           "type": {
@@ -7293,14 +7293,14 @@
             "title": "Type",
             "type": "array"
           },
-          "workspace_id": {
+          "workspaceId": {
             "default": [],
             "description": "Filter monitoring sites by workspace ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Workspace Id",
+            "title": "Workspaceid",
             "type": "array"
           }
         },
@@ -7377,7 +7377,7 @@
             ],
             "title": "Elevationdatum"
           },
-          "elevation_m": {
+          "elevationM": {
             "anyOf": [
               {
                 "maximum": 99999,
@@ -7388,7 +7388,7 @@
                 "type": "null"
               }
             ],
-            "title": "Elevation M"
+            "title": "Elevationm"
           },
           "id": {
             "format": "uuid",
@@ -7468,14 +7468,14 @@
             "title": "Type",
             "type": "array"
           },
-          "workspace_id": {
+          "workspaceId": {
             "default": [],
             "description": "Filter task summaries by workspace ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Workspace Id",
+            "title": "Workspaceid",
             "type": "array"
           }
         },
@@ -7763,14 +7763,14 @@
             ],
             "type": "array"
           },
-          "datastream_id": {
+          "datastreamId": {
             "default": [],
             "description": "Filter monitoring tasks by datastream ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Datastream Id",
+            "title": "Datastreamid",
             "type": "array"
           },
           "datetime": {
@@ -7788,7 +7788,7 @@
             "title": "Include",
             "type": "array"
           },
-          "latest_run_status": {
+          "latestRunStatus": {
             "default": [],
             "description": "Filter monitoring tasks by their most recent run status.",
             "items": {
@@ -7802,7 +7802,7 @@
                 }
               ]
             },
-            "title": "Latest Run Status",
+            "title": "Latestrunstatus",
             "type": "array"
           },
           "limit": {
@@ -7813,14 +7813,14 @@
             "title": "Limit",
             "type": "integer"
           },
-          "monitoring_site_id": {
+          "monitoringSiteId": {
             "default": [],
             "description": "Filter monitoring tasks by monitoring_site ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Monitoring Site Id",
+            "title": "Monitoringsiteid",
             "type": "array"
           },
           "offset": {
@@ -7868,13 +7868,13 @@
             "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
             "title": "Q"
           },
-          "rule_type": {
+          "ruleType": {
             "default": [],
             "description": "Filter monitoring tasks by rule type.",
             "items": {
               "type": "string"
             },
-            "title": "Rule Type",
+            "title": "Ruletype",
             "type": "array"
           },
           "sortby": {
@@ -7915,14 +7915,14 @@
             "title": "Sortby",
             "type": "array"
           },
-          "workspace_id": {
+          "workspaceId": {
             "default": [],
             "description": "Filter monitoring tasks by workspace ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Workspace Id",
+            "title": "Workspaceid",
             "type": "array"
           }
         },
@@ -8113,7 +8113,7 @@
             "title": "Result",
             "type": "array"
           },
-          "resultQualifierCodes": {
+          "resultQualifiers": {
             "default": [],
             "items": {
               "items": {
@@ -8121,7 +8121,7 @@
               },
               "type": "array"
             },
-            "title": "Resultqualifiercodes",
+            "title": "Resultqualifiers",
             "type": "array"
           }
         },
@@ -8197,7 +8197,7 @@
               "enum": [
                 "phenomenonTime",
                 "result",
-                "resultQualifierCodes"
+                "resultQualifiers"
               ],
               "type": "string"
             },
@@ -8249,16 +8249,16 @@
             "title": "Result",
             "type": "array"
           },
-          "resultQualifierCodes": {
+          "resultQualifiers": {
             "items": {},
-            "title": "Resultqualifiercodes",
+            "title": "Resultqualifiers",
             "type": "array"
           }
         },
         "required": [
           "phenomenonTime",
           "result",
-          "resultQualifierCodes"
+          "resultQualifiers"
         ],
         "title": "ObservationColumnarData",
         "type": "object"
@@ -8326,7 +8326,7 @@
                 "datastreamId",
                 "phenomenonTime",
                 "result",
-                "resultQualifierCodes"
+                "resultQualifiers"
               ],
               "type": "string"
             },
@@ -8372,12 +8372,12 @@
             "title": "Result",
             "type": "number"
           },
-          "resultQualifierCodes": {
+          "resultQualifiers": {
             "default": [],
             "items": {
               "type": "string"
             },
-            "title": "Resultqualifiercodes",
+            "title": "Resultqualifiers",
             "type": "array"
           }
         },
@@ -8408,14 +8408,14 @@
             ],
             "type": "array"
           },
-          "datastream_id": {
+          "datastreamId": {
             "default": [],
             "description": "Filter observations by datastream ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Datastream Id",
+            "title": "Datastreamid",
             "type": "array"
           },
           "datetime": {
@@ -8483,20 +8483,20 @@
                 "datastreamId",
                 "phenomenonTime",
                 "result",
-                "resultQualifierCodes"
+                "resultQualifiers"
               ],
               "type": "string"
             },
             "title": "Properties",
             "type": "array"
           },
-          "result_qualifier_code": {
+          "resultQualifiers": {
             "default": [],
-            "description": "Filter observations by result qualifier code.",
+            "description": "Filter observations by result qualifier.",
             "items": {
               "type": "string"
             },
-            "title": "Result Qualifier Code",
+            "title": "Resultqualifiers",
             "type": "array"
           },
           "sortby": {
@@ -8541,12 +8541,12 @@
             "title": "Result",
             "type": "number"
           },
-          "resultQualifierCodes": {
+          "resultQualifiers": {
             "default": [],
             "items": {
               "type": "string"
             },
-            "title": "Resultqualifiercodes",
+            "title": "Resultqualifiers",
             "type": "array"
           },
           "workspaceId": {
@@ -8572,7 +8572,7 @@
               "enum": [
                 "phenomenonTime",
                 "result",
-                "resultQualifierCodes"
+                "resultQualifiers"
               ],
               "type": "string"
             },
@@ -8806,7 +8806,7 @@
             ],
             "type": "array"
           },
-          "datastream_id": {
+          "datastreamId": {
             "default": [],
             "description": "Filter observed properties by datastream ID.",
             "items": {
@@ -8821,7 +8821,7 @@
                 }
               ]
             },
-            "title": "Datastream Id",
+            "title": "Datastreamid",
             "type": "array"
           },
           "datetime": {
@@ -8848,7 +8848,7 @@
             "title": "Limit",
             "type": "integer"
           },
-          "monitoring_site_id": {
+          "monitoringSiteId": {
             "default": [],
             "description": "Filter observed properties by monitoring_site ID.",
             "items": {
@@ -8863,7 +8863,7 @@
                 }
               ]
             },
-            "title": "Monitoring Site Id",
+            "title": "Monitoringsiteid",
             "type": "array"
           },
           "offset": {
@@ -8938,7 +8938,7 @@
             "title": "Type",
             "type": "array"
           },
-          "workspace_id": {
+          "workspaceId": {
             "default": [],
             "description": "Filter observed properties by workspace ID.",
             "items": {
@@ -8953,7 +8953,7 @@
                 }
               ]
             },
-            "title": "Workspace Id",
+            "title": "Workspaceid",
             "type": "array"
           }
         },
@@ -10982,7 +10982,7 @@
             ],
             "type": "array"
           },
-          "datastream_id": {
+          "datastreamId": {
             "default": [],
             "description": "Filter processing levels by datastream ID.",
             "items": {
@@ -10997,7 +10997,7 @@
                 }
               ]
             },
-            "title": "Datastream Id",
+            "title": "Datastreamid",
             "type": "array"
           },
           "datetime": {
@@ -11023,7 +11023,7 @@
             "title": "Limit",
             "type": "integer"
           },
-          "monitoring_site_id": {
+          "monitoringSiteId": {
             "default": [],
             "description": "Filter processing levels by monitoring_site ID.",
             "items": {
@@ -11038,7 +11038,7 @@
                 }
               ]
             },
-            "title": "Monitoring Site Id",
+            "title": "Monitoringsiteid",
             "type": "array"
           },
           "offset": {
@@ -11100,7 +11100,7 @@
             "title": "Sortby",
             "type": "array"
           },
-          "workspace_id": {
+          "workspaceId": {
             "default": [],
             "description": "Filter processing levels by workspace ID.",
             "items": {
@@ -11115,7 +11115,7 @@
                 }
               ]
             },
-            "title": "Workspace Id",
+            "title": "Workspaceid",
             "type": "array"
           }
         },
@@ -11283,14 +11283,14 @@
             "title": "Limit",
             "type": "integer"
           },
-          "managed_datastream_id": {
+          "managedDatastreamId": {
             "default": [],
             "description": "Filter histories by managed datastream ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Managed Datastream Id",
+            "title": "Manageddatastreamid",
             "type": "array"
           },
           "offset": {
@@ -11348,7 +11348,7 @@
             "title": "Sortby",
             "type": "array"
           },
-          "source_datastream_id": {
+          "sourceDatastreamId": {
             "default": [],
             "description": "Filter histories by source datastream ID.",
             "items": {
@@ -11363,7 +11363,7 @@
                 }
               ]
             },
-            "title": "Source Datastream Id",
+            "title": "Sourcedatastreamid",
             "type": "array"
           }
         },
@@ -11822,7 +11822,7 @@
       },
       "QualityControlSessionQueryParameters": {
         "properties": {
-          "ancestor_of": {
+          "ancestorOf": {
             "anyOf": [
               {
                 "format": "uuid",
@@ -11833,7 +11833,7 @@
               }
             ],
             "description": "Return all transitive ancestors of the given session ID.",
-            "title": "Ancestor Of"
+            "title": "Ancestorof"
           },
           "include": {
             "anyOf": [
@@ -11847,10 +11847,10 @@
             "description": "Comma-separated list of related resources to include in the response.",
             "title": "Include"
           },
-          "include_ancestors": {
+          "includeAncestors": {
             "default": false,
             "description": "Also return transitive ancestors of all sessions matched by other filters.",
-            "title": "Include Ancestors",
+            "title": "Includeancestors",
             "type": "boolean"
           },
           "limit": {
@@ -11897,7 +11897,7 @@
             "title": "Properties",
             "type": "array"
           },
-          "range_end": {
+          "rangeEnd": {
             "anyOf": [
               {
                 "type": "string"
@@ -11911,9 +11911,9 @@
               }
             ],
             "description": "Return sessions overlapping with this range end.",
-            "title": "Range End"
+            "title": "Rangeend"
           },
-          "range_start": {
+          "rangeStart": {
             "anyOf": [
               {
                 "type": "string"
@@ -11927,7 +11927,7 @@
               }
             ],
             "description": "Return sessions overlapping with this range start.",
-            "title": "Range Start"
+            "title": "Rangestart"
           },
           "sortby": {
             "default": [],
@@ -12268,14 +12268,14 @@
             "title": "Limit",
             "type": "integer"
           },
-          "monitoring_site_id": {
+          "monitoringSiteId": {
             "default": [],
             "description": "Filter rating curves by monitoring site ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Monitoring Site Id",
+            "title": "Monitoringsiteid",
             "type": "array"
           },
           "offset": {
@@ -12352,14 +12352,14 @@
             "title": "Sortby",
             "type": "array"
           },
-          "workspace_id": {
+          "workspaceId": {
             "default": [],
             "description": "Filter rating curves by workspace ID.",
             "items": {
               "format": "uuid",
               "type": "string"
             },
-            "title": "Workspace Id",
+            "title": "Workspaceid",
             "type": "array"
           }
         },
@@ -12628,7 +12628,7 @@
             "title": "Sortby",
             "type": "array"
           },
-          "workspace_id": {
+          "workspaceId": {
             "default": [],
             "description": "Filter terms by workspace ID.",
             "items": {
@@ -12643,7 +12643,7 @@
                 }
               ]
             },
-            "title": "Workspace Id",
+            "title": "Workspaceid",
             "type": "array"
           }
         },
@@ -12801,7 +12801,7 @@
             "title": "Sortby",
             "type": "array"
           },
-          "workspace_id": {
+          "workspaceId": {
             "default": [],
             "description": "Filter roles by workspace ID.",
             "items": {
@@ -12816,7 +12816,7 @@
                 }
               ]
             },
-            "title": "Workspace Id",
+            "title": "Workspaceid",
             "type": "array"
           }
         },
@@ -13528,7 +13528,7 @@
       },
       "TaskRunQueryParameters": {
         "properties": {
-          "finished_at_max": {
+          "finishedAtMax": {
             "anyOf": [
               {
                 "type": "string"
@@ -13542,9 +13542,9 @@
               }
             ],
             "description": "Filters for task runs finished on or before this date and time.",
-            "title": "Finished At Max"
+            "title": "Finishedatmax"
           },
-          "finished_at_min": {
+          "finishedAtMin": {
             "anyOf": [
               {
                 "type": "string"
@@ -13558,7 +13558,7 @@
               }
             ],
             "description": "Filters for task runs finished on or after this date and time.",
-            "title": "Finished At Min"
+            "title": "Finishedatmin"
           },
           "include": {
             "anyOf": [
@@ -13633,7 +13633,7 @@
             "title": "Sortby",
             "type": "array"
           },
-          "started_at_max": {
+          "startedAtMax": {
             "anyOf": [
               {
                 "type": "string"
@@ -13647,9 +13647,9 @@
               }
             ],
             "description": "Filters for task runs started on or before this date and time.",
-            "title": "Started At Max"
+            "title": "Startedatmax"
           },
-          "started_at_min": {
+          "startedAtMin": {
             "anyOf": [
               {
                 "type": "string"
@@ -13663,7 +13663,7 @@
               }
             ],
             "description": "Filters for task runs started on or after this date and time.",
-            "title": "Started At Min"
+            "title": "Startedatmin"
           },
           "status": {
             "default": [],
@@ -13948,7 +13948,7 @@
             ],
             "type": "array"
           },
-          "datastream_id": {
+          "datastreamId": {
             "default": [],
             "description": "Filter units by datastream ID.",
             "items": {
@@ -13963,7 +13963,7 @@
                 }
               ]
             },
-            "title": "Datastream Id",
+            "title": "Datastreamid",
             "type": "array"
           },
           "datetime": {
@@ -13990,7 +13990,7 @@
             "title": "Limit",
             "type": "integer"
           },
-          "monitoring_site_id": {
+          "monitoringSiteId": {
             "default": [],
             "description": "Filter units by monitoring_site ID.",
             "items": {
@@ -14005,7 +14005,7 @@
                 }
               ]
             },
-            "title": "Monitoring Site Id",
+            "title": "Monitoringsiteid",
             "type": "array"
           },
           "offset": {
@@ -14079,7 +14079,7 @@
             "title": "Type",
             "type": "array"
           },
-          "workspace_id": {
+          "workspaceId": {
             "default": [],
             "description": "Filter units by workspace ID.",
             "items": {
@@ -14094,7 +14094,7 @@
                 }
               ]
             },
-            "title": "Workspace Id",
+            "title": "Workspaceid",
             "type": "array"
           }
         },
@@ -14800,7 +14800,7 @@
             "title": "Include",
             "type": "array"
           },
-          "is_associated": {
+          "isAssociated": {
             "anyOf": [
               {
                 "type": "boolean"
@@ -14810,9 +14810,9 @@
               }
             ],
             "description": "Whether the workspace is associated with the authenticated user",
-            "title": "Is Associated"
+            "title": "Isassociated"
           },
-          "is_private": {
+          "isPrivate": {
             "anyOf": [
               {
                 "type": "boolean"
@@ -14822,7 +14822,7 @@
               }
             ],
             "description": "Whether the returned workspaces should be private or public.",
-            "title": "Is Private"
+            "title": "Isprivate"
           },
           "limit": {
             "default": 100,
@@ -15755,7 +15755,7 @@
           {
             "description": "Filter rating curves by monitoring site ID.",
             "in": "query",
-            "name": "monitoring_site_id",
+            "name": "monitoringSiteId",
             "required": false,
             "schema": {
               "default": [],
@@ -15764,14 +15764,14 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Monitoring Site Id",
+              "title": "Monitoringsiteid",
               "type": "array"
             }
           },
           {
             "description": "Filter rating curves by workspace ID.",
             "in": "query",
-            "name": "workspace_id",
+            "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
@@ -15780,7 +15780,7 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Workspace Id",
+              "title": "Workspaceid",
               "type": "array"
             }
           }
@@ -16394,7 +16394,7 @@
           {
             "description": "Filter data product tasks by monitoring_site ID.",
             "in": "query",
-            "name": "monitoring_site_id",
+            "name": "monitoringSiteId",
             "required": false,
             "schema": {
               "default": [],
@@ -16403,14 +16403,14 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Monitoring Site Id",
+              "title": "Monitoringsiteid",
               "type": "array"
             }
           },
           {
             "description": "Filter data product tasks by workspace ID.",
             "in": "query",
-            "name": "workspace_id",
+            "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
@@ -16419,14 +16419,14 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Workspace Id",
+              "title": "Workspaceid",
               "type": "array"
             }
           },
           {
             "description": "Filter data product tasks by their most recent run status.",
             "in": "query",
-            "name": "latest_run_status",
+            "name": "latestRunStatus",
             "required": false,
             "schema": {
               "default": [],
@@ -16442,14 +16442,14 @@
                   }
                 ]
               },
-              "title": "Latest Run Status",
+              "title": "Latestrunstatus",
               "type": "array"
             }
           },
           {
             "description": "Filter data product tasks by transformation type.",
             "in": "query",
-            "name": "transformation_type",
+            "name": "transformationType",
             "required": false,
             "schema": {
               "default": [],
@@ -16457,14 +16457,14 @@
               "items": {
                 "type": "string"
               },
-              "title": "Transformation Type",
+              "title": "Transformationtype",
               "type": "array"
             }
           },
           {
             "description": "Filter data product tasks by output datastream ID.",
             "in": "query",
-            "name": "output_datastream_id",
+            "name": "outputDatastreamId",
             "required": false,
             "schema": {
               "default": [],
@@ -16473,14 +16473,14 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Output Datastream Id",
+              "title": "Outputdatastreamid",
               "type": "array"
             }
           },
           {
             "description": "Filter data product tasks by input datastream ID.",
             "in": "query",
-            "name": "input_datastream_id",
+            "name": "inputDatastreamId",
             "required": false,
             "schema": {
               "default": [],
@@ -16489,14 +16489,14 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Input Datastream Id",
+              "title": "Inputdatastreamid",
               "type": "array"
             }
           },
           {
             "description": "Filter data product tasks by rating curve ID.",
             "in": "query",
-            "name": "rating_curve_id",
+            "name": "ratingCurveId",
             "required": false,
             "schema": {
               "default": [],
@@ -16513,7 +16513,7 @@
                   }
                 ]
               },
-              "title": "Rating Curve Id",
+              "title": "Ratingcurveid",
               "type": "array"
             }
           }
@@ -17087,7 +17087,7 @@
           {
             "description": "Filters for task runs started on or before this date and time.",
             "in": "query",
-            "name": "started_at_max",
+            "name": "startedAtMax",
             "required": false,
             "schema": {
               "anyOf": [
@@ -17103,13 +17103,13 @@
                 }
               ],
               "description": "Filters for task runs started on or before this date and time.",
-              "title": "Started At Max"
+              "title": "Startedatmax"
             }
           },
           {
             "description": "Filters for task runs started on or after this date and time.",
             "in": "query",
-            "name": "started_at_min",
+            "name": "startedAtMin",
             "required": false,
             "schema": {
               "anyOf": [
@@ -17125,13 +17125,13 @@
                 }
               ],
               "description": "Filters for task runs started on or after this date and time.",
-              "title": "Started At Min"
+              "title": "Startedatmin"
             }
           },
           {
             "description": "Filters for task runs finished on or before this date and time.",
             "in": "query",
-            "name": "finished_at_max",
+            "name": "finishedAtMax",
             "required": false,
             "schema": {
               "anyOf": [
@@ -17147,13 +17147,13 @@
                 }
               ],
               "description": "Filters for task runs finished on or before this date and time.",
-              "title": "Finished At Max"
+              "title": "Finishedatmax"
             }
           },
           {
             "description": "Filters for task runs finished on or after this date and time.",
             "in": "query",
-            "name": "finished_at_min",
+            "name": "finishedAtMin",
             "required": false,
             "schema": {
               "anyOf": [
@@ -17169,7 +17169,7 @@
                 }
               ],
               "description": "Filters for task runs finished on or after this date and time.",
-              "title": "Finished At Min"
+              "title": "Finishedatmin"
             }
           }
         ],
@@ -17569,7 +17569,7 @@
           {
             "description": "Filter transformations by type.",
             "in": "query",
-            "name": "transformation_type",
+            "name": "transformationType",
             "required": false,
             "schema": {
               "default": [],
@@ -17577,14 +17577,14 @@
               "items": {
                 "type": "string"
               },
-              "title": "Transformation Type",
+              "title": "Transformationtype",
               "type": "array"
             }
           },
           {
             "description": "Filter transformations by output datastream ID.",
             "in": "query",
-            "name": "output_datastream_id",
+            "name": "outputDatastreamId",
             "required": false,
             "schema": {
               "default": [],
@@ -17593,14 +17593,14 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Output Datastream Id",
+              "title": "Outputdatastreamid",
               "type": "array"
             }
           },
           {
             "description": "Filter transformations by input datastream ID.",
             "in": "query",
-            "name": "input_datastream_id",
+            "name": "inputDatastreamId",
             "required": false,
             "schema": {
               "default": [],
@@ -17609,14 +17609,14 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Input Datastream Id",
+              "title": "Inputdatastreamid",
               "type": "array"
             }
           },
           {
             "description": "Filter transformations by data product task ID.",
             "in": "query",
-            "name": "task_id",
+            "name": "taskId",
             "required": false,
             "schema": {
               "default": [],
@@ -17625,14 +17625,14 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Task Id",
+              "title": "Taskid",
               "type": "array"
             }
           },
           {
             "description": "Filter transformations by workspace ID.",
             "in": "query",
-            "name": "workspace_id",
+            "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
@@ -17641,7 +17641,7 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Workspace Id",
+              "title": "Workspaceid",
               "type": "array"
             }
           }
@@ -18837,7 +18837,7 @@
           {
             "description": "Filter datastreams by workspace ID.",
             "in": "query",
-            "name": "workspace_id",
+            "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
@@ -18846,14 +18846,14 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Workspace Id",
+              "title": "Workspaceid",
               "type": "array"
             }
           },
           {
             "description": "Filter datastreams by monitoring_site ID.",
             "in": "query",
-            "name": "monitoring_site_id",
+            "name": "monitoringSiteId",
             "required": false,
             "schema": {
               "default": [],
@@ -18862,14 +18862,14 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Monitoring Site Id",
+              "title": "Monitoringsiteid",
               "type": "array"
             }
           },
           {
             "description": "Filter datastreams by method ID.",
             "in": "query",
-            "name": "method_id",
+            "name": "methodId",
             "required": false,
             "schema": {
               "default": [],
@@ -18878,14 +18878,14 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Method Id",
+              "title": "Methodid",
               "type": "array"
             }
           },
           {
             "description": "Filter datastreams by observed property ID.",
             "in": "query",
-            "name": "observed_property_id",
+            "name": "observedPropertyId",
             "required": false,
             "schema": {
               "default": [],
@@ -18894,14 +18894,14 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Observed Property Id",
+              "title": "Observedpropertyid",
               "type": "array"
             }
           },
           {
             "description": "Filter datastreams by processing level ID.",
             "in": "query",
-            "name": "processing_level_id",
+            "name": "processingLevelId",
             "required": false,
             "schema": {
               "default": [],
@@ -18910,14 +18910,14 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Processing Level Id",
+              "title": "Processinglevelid",
               "type": "array"
             }
           },
           {
             "description": "Filter datastreams by unit ID.",
             "in": "query",
-            "name": "unit_id",
+            "name": "unitId",
             "required": false,
             "schema": {
               "default": [],
@@ -18926,14 +18926,14 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Unit Id",
+              "title": "Unitid",
               "type": "array"
             }
           },
           {
             "description": "Filter datastreams by observation result qualifier ID.",
             "in": "query",
-            "name": "result_qualifier_id",
+            "name": "resultQualifier",
             "required": false,
             "schema": {
               "default": [],
@@ -18942,14 +18942,14 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Result Qualifier Id",
+              "title": "Resultqualifier",
               "type": "array"
             }
           },
           {
             "description": "Filter monitoring_sites by observation type.",
             "in": "query",
-            "name": "observation_type",
+            "name": "observationType",
             "required": false,
             "schema": {
               "default": [],
@@ -18957,14 +18957,14 @@
               "items": {
                 "type": "string"
               },
-              "title": "Observation Type",
+              "title": "Observationtype",
               "type": "array"
             }
           },
           {
             "description": "Filter monitoring_sites by sampled medium.",
             "in": "query",
-            "name": "sampled_medium",
+            "name": "sampledMedium",
             "required": false,
             "schema": {
               "default": [],
@@ -18972,7 +18972,7 @@
               "items": {
                 "type": "string"
               },
-              "title": "Sampled Medium",
+              "title": "Sampledmedium",
               "type": "array"
             }
           },
@@ -19002,7 +19002,7 @@
           {
             "description": "Filter monitoring_sites by result type.",
             "in": "query",
-            "name": "result_type",
+            "name": "resultType",
             "required": false,
             "schema": {
               "default": [],
@@ -19010,29 +19010,29 @@
               "items": {
                 "type": "string"
               },
-              "title": "Result Type",
+              "title": "Resulttype",
               "type": "array"
             }
           },
           {
-            "description": "Filter datastreams by tag. Format tag filters as {key}:{value}",
+            "description": "Filter datastreams by tag. Format tag filters as {key}:{value}. Repeat the parameter to require several tags.",
             "in": "query",
-            "name": "tag",
+            "name": "tags",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter datastreams by tag. Format tag filters as {key}:{value}",
+              "description": "Filter datastreams by tag. Format tag filters as {key}:{value}. Repeat the parameter to require several tags.",
               "items": {
                 "type": "string"
               },
-              "title": "Tag",
+              "title": "Tags",
               "type": "array"
             }
           },
           {
             "description": "Controls whether the datastreams should be private or public.",
             "in": "query",
-            "name": "is_private",
+            "name": "isPrivate",
             "required": false,
             "schema": {
               "anyOf": [
@@ -19044,13 +19044,13 @@
                 }
               ],
               "description": "Controls whether the datastreams should be private or public.",
-              "title": "Is Private"
+              "title": "Isprivate"
             }
           },
           {
             "description": "Sets the maximum value count of filtered datastreams.",
             "in": "query",
-            "name": "value_count_max",
+            "name": "valueCountMax",
             "required": false,
             "schema": {
               "anyOf": [
@@ -19062,13 +19062,13 @@
                 }
               ],
               "description": "Sets the maximum value count of filtered datastreams.",
-              "title": "Value Count Max"
+              "title": "Valuecountmax"
             }
           },
           {
             "description": "Sets the minimum value count of filtered datastreams.",
             "in": "query",
-            "name": "value_count_min",
+            "name": "valueCountMin",
             "required": false,
             "schema": {
               "anyOf": [
@@ -19080,7 +19080,7 @@
                 }
               ],
               "description": "Sets the minimum value count of filtered datastreams.",
-              "title": "Value Count Min"
+              "title": "Valuecountmin"
             }
           }
         ],
@@ -20195,7 +20195,7 @@
         "parameters": [
           {
             "in": "query",
-            "name": "workspace_id",
+            "name": "workspaceId",
             "required": false,
             "schema": {
               "anyOf": [
@@ -20207,12 +20207,12 @@
                   "type": "null"
                 }
               ],
-              "title": "Workspace Id"
+              "title": "Workspaceid"
             }
           },
           {
             "in": "query",
-            "name": "datastream_id",
+            "name": "datastreamId",
             "required": false,
             "schema": {
               "anyOf": [
@@ -20224,7 +20224,7 @@
                   "type": "null"
                 }
               ],
-              "title": "Datastream Id"
+              "title": "Datastreamid"
             }
           }
         ],
@@ -20286,7 +20286,7 @@
           {
             "description": "Filter visualization bootstrap datastreams by workspace ID.",
             "in": "query",
-            "name": "workspace_id",
+            "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
@@ -20295,7 +20295,7 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Workspace Id",
+              "title": "Workspaceid",
               "type": "array"
             }
           }
@@ -20534,7 +20534,7 @@
           {
             "description": "Filter data connections by workspace ID.",
             "in": "query",
-            "name": "workspace_id",
+            "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
@@ -20543,14 +20543,14 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Workspace Id",
+              "title": "Workspaceid",
               "type": "array"
             }
           },
           {
             "description": "Filter data connections by payload type.",
             "in": "query",
-            "name": "payload_type",
+            "name": "payloadType",
             "required": false,
             "schema": {
               "default": [],
@@ -20558,7 +20558,7 @@
               "items": {
                 "type": "string"
               },
-              "title": "Payload Type",
+              "title": "Payloadtype",
               "type": "array"
             }
           }
@@ -21128,7 +21128,7 @@
           {
             "description": "Filter mappings by source identifier.",
             "in": "query",
-            "name": "source_identifier",
+            "name": "sourceIdentifier",
             "required": false,
             "schema": {
               "default": [],
@@ -21136,14 +21136,14 @@
               "items": {
                 "type": "string"
               },
-              "title": "Source Identifier",
+              "title": "Sourceidentifier",
               "type": "array"
             }
           },
           {
             "description": "Filter mappings by target datastream ID.",
             "in": "query",
-            "name": "target_datastream_id",
+            "name": "targetDatastreamId",
             "required": false,
             "schema": {
               "default": [],
@@ -21152,14 +21152,14 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Target Datastream Id",
+              "title": "Targetdatastreamid",
               "type": "array"
             }
           },
           {
             "description": "Filter mappings by ETL task ID.",
             "in": "query",
-            "name": "etl_task_id",
+            "name": "etlTaskId",
             "required": false,
             "schema": {
               "default": [],
@@ -21168,14 +21168,14 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Etl Task Id",
+              "title": "Etltaskid",
               "type": "array"
             }
           },
           {
             "description": "Filter mappings by workspace ID.",
             "in": "query",
-            "name": "workspace_id",
+            "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
@@ -21184,7 +21184,7 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Workspace Id",
+              "title": "Workspaceid",
               "type": "array"
             }
           }
@@ -21818,7 +21818,7 @@
           {
             "description": "Filter ETL tasks by monitoring_site ID.",
             "in": "query",
-            "name": "monitoring_site_id",
+            "name": "monitoringSiteId",
             "required": false,
             "schema": {
               "default": [],
@@ -21827,14 +21827,14 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Monitoring Site Id",
+              "title": "Monitoringsiteid",
               "type": "array"
             }
           },
           {
             "description": "Filter ETL tasks by workspace ID.",
             "in": "query",
-            "name": "workspace_id",
+            "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
@@ -21843,14 +21843,14 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Workspace Id",
+              "title": "Workspaceid",
               "type": "array"
             }
           },
           {
             "description": "Filter ETL tasks by data connection ID.",
             "in": "query",
-            "name": "data_connection_id",
+            "name": "dataConnectionId",
             "required": false,
             "schema": {
               "default": [],
@@ -21859,14 +21859,14 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Data Connection Id",
+              "title": "Dataconnectionid",
               "type": "array"
             }
           },
           {
             "description": "Filter ETL tasks by their most recent run status.",
             "in": "query",
-            "name": "latest_run_status",
+            "name": "latestRunStatus",
             "required": false,
             "schema": {
               "default": [],
@@ -21882,14 +21882,14 @@
                   }
                 ]
               },
-              "title": "Latest Run Status",
+              "title": "Latestrunstatus",
               "type": "array"
             }
           },
           {
             "description": "Filter tasks whose latest run started on or after this datetime.",
             "in": "query",
-            "name": "latest_run_started_at_min",
+            "name": "latestRunStartedAtMin",
             "required": false,
             "schema": {
               "anyOf": [
@@ -21905,13 +21905,13 @@
                 }
               ],
               "description": "Filter tasks whose latest run started on or after this datetime.",
-              "title": "Latest Run Started At Min"
+              "title": "Latestrunstartedatmin"
             }
           },
           {
             "description": "Filter tasks whose latest run started on or before this datetime.",
             "in": "query",
-            "name": "latest_run_started_at_max",
+            "name": "latestRunStartedAtMax",
             "required": false,
             "schema": {
               "anyOf": [
@@ -21927,13 +21927,13 @@
                 }
               ],
               "description": "Filter tasks whose latest run started on or before this datetime.",
-              "title": "Latest Run Started At Max"
+              "title": "Latestrunstartedatmax"
             }
           },
           {
             "description": "Filter tasks whose latest run finished on or after this datetime.",
             "in": "query",
-            "name": "latest_run_finished_at_min",
+            "name": "latestRunFinishedAtMin",
             "required": false,
             "schema": {
               "anyOf": [
@@ -21949,13 +21949,13 @@
                 }
               ],
               "description": "Filter tasks whose latest run finished on or after this datetime.",
-              "title": "Latest Run Finished At Min"
+              "title": "Latestrunfinishedatmin"
             }
           },
           {
             "description": "Filter tasks whose latest run finished on or before this datetime.",
             "in": "query",
-            "name": "latest_run_finished_at_max",
+            "name": "latestRunFinishedAtMax",
             "required": false,
             "schema": {
               "anyOf": [
@@ -21971,7 +21971,7 @@
                 }
               ],
               "description": "Filter tasks whose latest run finished on or before this datetime.",
-              "title": "Latest Run Finished At Max"
+              "title": "Latestrunfinishedatmax"
             }
           }
         ],
@@ -22545,7 +22545,7 @@
           {
             "description": "Filters for task runs started on or before this date and time.",
             "in": "query",
-            "name": "started_at_max",
+            "name": "startedAtMax",
             "required": false,
             "schema": {
               "anyOf": [
@@ -22561,13 +22561,13 @@
                 }
               ],
               "description": "Filters for task runs started on or before this date and time.",
-              "title": "Started At Max"
+              "title": "Startedatmax"
             }
           },
           {
             "description": "Filters for task runs started on or after this date and time.",
             "in": "query",
-            "name": "started_at_min",
+            "name": "startedAtMin",
             "required": false,
             "schema": {
               "anyOf": [
@@ -22583,13 +22583,13 @@
                 }
               ],
               "description": "Filters for task runs started on or after this date and time.",
-              "title": "Started At Min"
+              "title": "Startedatmin"
             }
           },
           {
             "description": "Filters for task runs finished on or before this date and time.",
             "in": "query",
-            "name": "finished_at_max",
+            "name": "finishedAtMax",
             "required": false,
             "schema": {
               "anyOf": [
@@ -22605,13 +22605,13 @@
                 }
               ],
               "description": "Filters for task runs finished on or before this date and time.",
-              "title": "Finished At Max"
+              "title": "Finishedatmax"
             }
           },
           {
             "description": "Filters for task runs finished on or after this date and time.",
             "in": "query",
-            "name": "finished_at_min",
+            "name": "finishedAtMin",
             "required": false,
             "schema": {
               "anyOf": [
@@ -22627,7 +22627,7 @@
                 }
               ],
               "description": "Filters for task runs finished on or after this date and time.",
-              "title": "Finished At Min"
+              "title": "Finishedatmin"
             }
           }
         ],
@@ -24075,7 +24075,7 @@
           {
             "description": "Filter methods by workspace ID.",
             "in": "query",
-            "name": "workspace_id",
+            "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
@@ -24092,14 +24092,14 @@
                   }
                 ]
               },
-              "title": "Workspace Id",
+              "title": "Workspaceid",
               "type": "array"
             }
           },
           {
             "description": "Filter methods by monitoring_site ID.",
             "in": "query",
-            "name": "monitoring_site_id",
+            "name": "monitoringSiteId",
             "required": false,
             "schema": {
               "default": [],
@@ -24116,14 +24116,14 @@
                   }
                 ]
               },
-              "title": "Monitoring Site Id",
+              "title": "Monitoringsiteid",
               "type": "array"
             }
           },
           {
             "description": "Filter methods by datastream ID.",
             "in": "query",
-            "name": "datastream_id",
+            "name": "datastreamId",
             "required": false,
             "schema": {
               "default": [],
@@ -24140,7 +24140,7 @@
                   }
                 ]
               },
-              "title": "Datastream Id",
+              "title": "Datastreamid",
               "type": "array"
             }
           },
@@ -24162,7 +24162,7 @@
           {
             "description": "Filter methods by sensor model",
             "in": "query",
-            "name": "sensor_model",
+            "name": "sensorModel",
             "required": false,
             "schema": {
               "default": [],
@@ -24178,14 +24178,14 @@
                   }
                 ]
               },
-              "title": "Sensor Model",
+              "title": "Sensormodel",
               "type": "array"
             }
           },
           {
             "description": "Filter methods by sensor model manufacturer",
             "in": "query",
-            "name": "sensor_model_manufacturer",
+            "name": "sensorModelManufacturer",
             "required": false,
             "schema": {
               "default": [],
@@ -24201,7 +24201,7 @@
                   }
                 ]
               },
-              "title": "Sensor Model Manufacturer",
+              "title": "Sensormodelmanufacturer",
               "type": "array"
             }
           }
@@ -24776,7 +24776,7 @@
           {
             "description": "Filter rules by datastream ID.",
             "in": "query",
-            "name": "datastream_id",
+            "name": "datastreamId",
             "required": false,
             "schema": {
               "default": [],
@@ -24785,14 +24785,14 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Datastream Id",
+              "title": "Datastreamid",
               "type": "array"
             }
           },
           {
             "description": "Filter rules by rule type.",
             "in": "query",
-            "name": "rule_type",
+            "name": "ruleType",
             "required": false,
             "schema": {
               "default": [],
@@ -24800,14 +24800,14 @@
               "items": {
                 "type": "string"
               },
-              "title": "Rule Type",
+              "title": "Ruletype",
               "type": "array"
             }
           },
           {
             "description": "Filter rules by monitoring task ID.",
             "in": "query",
-            "name": "task_id",
+            "name": "taskId",
             "required": false,
             "schema": {
               "default": [],
@@ -24816,14 +24816,14 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Task Id",
+              "title": "Taskid",
               "type": "array"
             }
           },
           {
             "description": "Filter rules by workspace ID.",
             "in": "query",
-            "name": "workspace_id",
+            "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
@@ -24832,7 +24832,7 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Workspace Id",
+              "title": "Workspaceid",
               "type": "array"
             }
           }
@@ -25853,7 +25853,7 @@
                   "type",
                   "latitude",
                   "longitude",
-                  "elevation_m",
+                  "elevationM",
                   "elevationDatum",
                   "adminArea1",
                   "adminArea2",
@@ -25941,7 +25941,7 @@
                   "isPrivate",
                   "latitude",
                   "longitude",
-                  "elevation_m",
+                  "elevationM",
                   "elevationDatum",
                   "adminArea1",
                   "adminArea2",
@@ -25952,7 +25952,7 @@
                   "-isPrivate",
                   "-latitude",
                   "-longitude",
-                  "-elevation_m",
+                  "-elevationM",
                   "-elevationDatum",
                   "-adminArea1",
                   "-adminArea2",
@@ -25963,7 +25963,7 @@
                   "+isPrivate",
                   "+latitude",
                   "+longitude",
-                  "+elevation_m",
+                  "+elevationM",
                   "+elevationDatum",
                   "+adminArea1",
                   "+adminArea2",
@@ -25997,7 +25997,7 @@
           {
             "description": "Filter monitoring sites by workspace ID.",
             "in": "query",
-            "name": "workspace_id",
+            "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
@@ -26006,14 +26006,14 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Workspace Id",
+              "title": "Workspaceid",
               "type": "array"
             }
           },
           {
             "description": "Filter monitoring sites by admin area 1.",
             "in": "query",
-            "name": "admin_area_1",
+            "name": "adminArea1",
             "required": false,
             "schema": {
               "default": [],
@@ -26029,14 +26029,14 @@
                   }
                 ]
               },
-              "title": "Admin Area 1",
+              "title": "Adminarea1",
               "type": "array"
             }
           },
           {
             "description": "Filter monitoring sites by admin area 2.",
             "in": "query",
-            "name": "admin_area_2",
+            "name": "adminArea2",
             "required": false,
             "schema": {
               "default": [],
@@ -26052,7 +26052,7 @@
                   }
                 ]
               },
-              "title": "Admin Area 2",
+              "title": "Adminarea2",
               "type": "array"
             }
           },
@@ -26095,24 +26095,24 @@
             }
           },
           {
-            "description": "Filter monitoring sites by tag. Format tag filters as {key}:{value}",
+            "description": "Filter monitoring sites by tag. Format tag filters as {key}:{value}. Repeat the parameter to require several tags.",
             "in": "query",
-            "name": "tag",
+            "name": "tags",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter monitoring sites by tag. Format tag filters as {key}:{value}",
+              "description": "Filter monitoring sites by tag. Format tag filters as {key}:{value}. Repeat the parameter to require several tags.",
               "items": {
                 "type": "string"
               },
-              "title": "Tag",
+              "title": "Tags",
               "type": "array"
             }
           },
           {
             "description": "Controls whether the returned monitoring sites should be private or public.",
             "in": "query",
-            "name": "is_private",
+            "name": "isPrivate",
             "required": false,
             "schema": {
               "anyOf": [
@@ -26124,7 +26124,7 @@
                 }
               ],
               "description": "Controls whether the returned monitoring sites should be private or public.",
-              "title": "Is Private"
+              "title": "Isprivate"
             }
           }
         ],
@@ -26332,7 +26332,7 @@
                   "type",
                   "latitude",
                   "longitude",
-                  "elevation_m",
+                  "elevationM",
                   "elevationDatum",
                   "adminArea1",
                   "adminArea2",
@@ -27148,7 +27148,7 @@
           {
             "description": "Filter markers by workspace ID.",
             "in": "query",
-            "name": "workspace_id",
+            "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
@@ -27157,7 +27157,7 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Workspace Id",
+              "title": "Workspaceid",
               "type": "array"
             }
           },
@@ -27257,7 +27257,7 @@
           {
             "description": "Filter site summaries by workspace ID.",
             "in": "query",
-            "name": "workspace_id",
+            "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
@@ -27266,7 +27266,7 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Workspace Id",
+              "title": "Workspaceid",
               "type": "array"
             }
           },
@@ -27367,7 +27367,7 @@
         "parameters": [
           {
             "in": "query",
-            "name": "workspace_id",
+            "name": "workspaceId",
             "required": false,
             "schema": {
               "anyOf": [
@@ -27379,12 +27379,12 @@
                   "type": "null"
                 }
               ],
-              "title": "Workspace Id"
+              "title": "Workspaceid"
             }
           },
           {
             "in": "query",
-            "name": "monitoring_site_id",
+            "name": "monitoringSiteId",
             "required": false,
             "schema": {
               "anyOf": [
@@ -27396,7 +27396,7 @@
                   "type": "null"
                 }
               ],
-              "title": "Monitoring Site Id"
+              "title": "Monitoringsiteid"
             }
           }
         ],
@@ -27458,7 +27458,7 @@
           {
             "description": "Filter task summaries by workspace ID.",
             "in": "query",
-            "name": "workspace_id",
+            "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
@@ -27467,7 +27467,7 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Workspace Id",
+              "title": "Workspaceid",
               "type": "array"
             }
           },
@@ -27723,7 +27723,7 @@
           {
             "description": "Filter monitoring tasks by monitoring_site ID.",
             "in": "query",
-            "name": "monitoring_site_id",
+            "name": "monitoringSiteId",
             "required": false,
             "schema": {
               "default": [],
@@ -27732,14 +27732,14 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Monitoring Site Id",
+              "title": "Monitoringsiteid",
               "type": "array"
             }
           },
           {
             "description": "Filter monitoring tasks by workspace ID.",
             "in": "query",
-            "name": "workspace_id",
+            "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
@@ -27748,14 +27748,14 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Workspace Id",
+              "title": "Workspaceid",
               "type": "array"
             }
           },
           {
             "description": "Filter monitoring tasks by their most recent run status.",
             "in": "query",
-            "name": "latest_run_status",
+            "name": "latestRunStatus",
             "required": false,
             "schema": {
               "default": [],
@@ -27771,14 +27771,14 @@
                   }
                 ]
               },
-              "title": "Latest Run Status",
+              "title": "Latestrunstatus",
               "type": "array"
             }
           },
           {
             "description": "Filter monitoring tasks by datastream ID.",
             "in": "query",
-            "name": "datastream_id",
+            "name": "datastreamId",
             "required": false,
             "schema": {
               "default": [],
@@ -27787,14 +27787,14 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Datastream Id",
+              "title": "Datastreamid",
               "type": "array"
             }
           },
           {
             "description": "Filter monitoring tasks by rule type.",
             "in": "query",
-            "name": "rule_type",
+            "name": "ruleType",
             "required": false,
             "schema": {
               "default": [],
@@ -27802,7 +27802,7 @@
               "items": {
                 "type": "string"
               },
-              "title": "Rule Type",
+              "title": "Ruletype",
               "type": "array"
             }
           }
@@ -28377,7 +28377,7 @@
           {
             "description": "Filters for task runs started on or before this date and time.",
             "in": "query",
-            "name": "started_at_max",
+            "name": "startedAtMax",
             "required": false,
             "schema": {
               "anyOf": [
@@ -28393,13 +28393,13 @@
                 }
               ],
               "description": "Filters for task runs started on or before this date and time.",
-              "title": "Started At Max"
+              "title": "Startedatmax"
             }
           },
           {
             "description": "Filters for task runs started on or after this date and time.",
             "in": "query",
-            "name": "started_at_min",
+            "name": "startedAtMin",
             "required": false,
             "schema": {
               "anyOf": [
@@ -28415,13 +28415,13 @@
                 }
               ],
               "description": "Filters for task runs started on or after this date and time.",
-              "title": "Started At Min"
+              "title": "Startedatmin"
             }
           },
           {
             "description": "Filters for task runs finished on or before this date and time.",
             "in": "query",
-            "name": "finished_at_max",
+            "name": "finishedAtMax",
             "required": false,
             "schema": {
               "anyOf": [
@@ -28437,13 +28437,13 @@
                 }
               ],
               "description": "Filters for task runs finished on or before this date and time.",
-              "title": "Finished At Max"
+              "title": "Finishedatmax"
             }
           },
           {
             "description": "Filters for task runs finished on or after this date and time.",
             "in": "query",
-            "name": "finished_at_min",
+            "name": "finishedAtMin",
             "required": false,
             "schema": {
               "anyOf": [
@@ -28459,7 +28459,7 @@
                 }
               ],
               "description": "Filters for task runs finished on or after this date and time.",
-              "title": "Finished At Min"
+              "title": "Finishedatmin"
             }
           }
         ],
@@ -28925,7 +28925,7 @@
                   "datastreamId",
                   "phenomenonTime",
                   "result",
-                  "resultQualifierCodes"
+                  "resultQualifiers"
                 ],
                 "type": "string"
               },
@@ -28992,7 +28992,7 @@
           {
             "description": "Filter observations by datastream ID.",
             "in": "query",
-            "name": "datastream_id",
+            "name": "datastreamId",
             "required": false,
             "schema": {
               "default": [],
@@ -29001,7 +29001,7 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Datastream Id",
+              "title": "Datastreamid",
               "type": "array"
             }
           },
@@ -29054,17 +29054,17 @@
             }
           },
           {
-            "description": "Filter observations by result qualifier code.",
+            "description": "Filter observations by result qualifier.",
             "in": "query",
-            "name": "result_qualifier_code",
+            "name": "resultQualifiers",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter observations by result qualifier code.",
+              "description": "Filter observations by result qualifier.",
               "items": {
                 "type": "string"
               },
-              "title": "Result Qualifier Code",
+              "title": "Resultqualifiers",
               "type": "array"
             }
           }
@@ -29325,7 +29325,7 @@
                   "datastreamId",
                   "phenomenonTime",
                   "result",
-                  "resultQualifierCodes"
+                  "resultQualifiers"
                 ],
                 "type": "string"
               },
@@ -29580,7 +29580,7 @@
           {
             "description": "Filter observed properties by workspace ID.",
             "in": "query",
-            "name": "workspace_id",
+            "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
@@ -29597,14 +29597,14 @@
                   }
                 ]
               },
-              "title": "Workspace Id",
+              "title": "Workspaceid",
               "type": "array"
             }
           },
           {
             "description": "Filter observed properties by monitoring_site ID.",
             "in": "query",
-            "name": "monitoring_site_id",
+            "name": "monitoringSiteId",
             "required": false,
             "schema": {
               "default": [],
@@ -29621,14 +29621,14 @@
                   }
                 ]
               },
-              "title": "Monitoring Site Id",
+              "title": "Monitoringsiteid",
               "type": "array"
             }
           },
           {
             "description": "Filter observed properties by datastream ID.",
             "in": "query",
-            "name": "datastream_id",
+            "name": "datastreamId",
             "required": false,
             "schema": {
               "default": [],
@@ -29645,7 +29645,7 @@
                   }
                 ]
               },
-              "title": "Datastream Id",
+              "title": "Datastreamid",
               "type": "array"
             }
           },
@@ -30753,7 +30753,7 @@
           {
             "description": "Filter processing levels by workspace ID.",
             "in": "query",
-            "name": "workspace_id",
+            "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
@@ -30770,14 +30770,14 @@
                   }
                 ]
               },
-              "title": "Workspace Id",
+              "title": "Workspaceid",
               "type": "array"
             }
           },
           {
             "description": "Filter processing levels by monitoring_site ID.",
             "in": "query",
-            "name": "monitoring_site_id",
+            "name": "monitoringSiteId",
             "required": false,
             "schema": {
               "default": [],
@@ -30794,14 +30794,14 @@
                   }
                 ]
               },
-              "title": "Monitoring Site Id",
+              "title": "Monitoringsiteid",
               "type": "array"
             }
           },
           {
             "description": "Filter processing levels by datastream ID.",
             "in": "query",
-            "name": "datastream_id",
+            "name": "datastreamId",
             "required": false,
             "schema": {
               "default": [],
@@ -30818,7 +30818,7 @@
                   }
                 ]
               },
-              "title": "Datastream Id",
+              "title": "Datastreamid",
               "type": "array"
             }
           }
@@ -31389,7 +31389,7 @@
           {
             "description": "Filter histories by managed datastream ID.",
             "in": "query",
-            "name": "managed_datastream_id",
+            "name": "managedDatastreamId",
             "required": false,
             "schema": {
               "default": [],
@@ -31398,14 +31398,14 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Managed Datastream Id",
+              "title": "Manageddatastreamid",
               "type": "array"
             }
           },
           {
             "description": "Filter histories by source datastream ID.",
             "in": "query",
-            "name": "source_datastream_id",
+            "name": "sourceDatastreamId",
             "required": false,
             "schema": {
               "default": [],
@@ -31422,7 +31422,7 @@
                   }
                 ]
               },
-              "title": "Source Datastream Id",
+              "title": "Sourcedatastreamid",
               "type": "array"
             }
           }
@@ -31926,7 +31926,7 @@
           {
             "description": "Return sessions overlapping with this range start.",
             "in": "query",
-            "name": "range_start",
+            "name": "rangeStart",
             "required": false,
             "schema": {
               "anyOf": [
@@ -31942,13 +31942,13 @@
                 }
               ],
               "description": "Return sessions overlapping with this range start.",
-              "title": "Range Start"
+              "title": "Rangestart"
             }
           },
           {
             "description": "Return sessions overlapping with this range end.",
             "in": "query",
-            "name": "range_end",
+            "name": "rangeEnd",
             "required": false,
             "schema": {
               "anyOf": [
@@ -31964,13 +31964,13 @@
                 }
               ],
               "description": "Return sessions overlapping with this range end.",
-              "title": "Range End"
+              "title": "Rangeend"
             }
           },
           {
             "description": "Return all transitive ancestors of the given session ID.",
             "in": "query",
-            "name": "ancestor_of",
+            "name": "ancestorOf",
             "required": false,
             "schema": {
               "anyOf": [
@@ -31983,18 +31983,18 @@
                 }
               ],
               "description": "Return all transitive ancestors of the given session ID.",
-              "title": "Ancestor Of"
+              "title": "Ancestorof"
             }
           },
           {
             "description": "Also return transitive ancestors of all sessions matched by other filters.",
             "in": "query",
-            "name": "include_ancestors",
+            "name": "includeAncestors",
             "required": false,
             "schema": {
               "default": false,
               "description": "Also return transitive ancestors of all sessions matched by other filters.",
-              "title": "Include Ancestors",
+              "title": "Includeancestors",
               "type": "boolean"
             }
           }
@@ -33373,7 +33373,7 @@
           {
             "description": "Filter terms by workspace ID.",
             "in": "query",
-            "name": "workspace_id",
+            "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
@@ -33390,7 +33390,7 @@
                   }
                 ]
               },
-              "title": "Workspace Id",
+              "title": "Workspaceid",
               "type": "array"
             }
           }
@@ -33912,7 +33912,7 @@
           {
             "description": "Filter roles by workspace ID.",
             "in": "query",
-            "name": "workspace_id",
+            "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
@@ -33929,7 +33929,7 @@
                   }
                 ]
               },
-              "title": "Workspace Id",
+              "title": "Workspaceid",
               "type": "array"
             }
           }
@@ -35261,7 +35261,7 @@
           {
             "description": "Filter units by workspace ID.",
             "in": "query",
-            "name": "workspace_id",
+            "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
@@ -35278,14 +35278,14 @@
                   }
                 ]
               },
-              "title": "Workspace Id",
+              "title": "Workspaceid",
               "type": "array"
             }
           },
           {
             "description": "Filter units by monitoring_site ID.",
             "in": "query",
-            "name": "monitoring_site_id",
+            "name": "monitoringSiteId",
             "required": false,
             "schema": {
               "default": [],
@@ -35302,14 +35302,14 @@
                   }
                 ]
               },
-              "title": "Monitoring Site Id",
+              "title": "Monitoringsiteid",
               "type": "array"
             }
           },
           {
             "description": "Filter units by datastream ID.",
             "in": "query",
-            "name": "datastream_id",
+            "name": "datastreamId",
             "required": false,
             "schema": {
               "default": [],
@@ -35326,7 +35326,7 @@
                   }
                 ]
               },
-              "title": "Datastream Id",
+              "title": "Datastreamid",
               "type": "array"
             }
           },
@@ -35913,7 +35913,7 @@
           {
             "description": "Whether the workspace is associated with the authenticated user",
             "in": "query",
-            "name": "is_associated",
+            "name": "isAssociated",
             "required": false,
             "schema": {
               "anyOf": [
@@ -35925,13 +35925,13 @@
                 }
               ],
               "description": "Whether the workspace is associated with the authenticated user",
-              "title": "Is Associated"
+              "title": "Isassociated"
             }
           },
           {
             "description": "Whether the returned workspaces should be private or public.",
             "in": "query",
-            "name": "is_private",
+            "name": "isPrivate",
             "required": false,
             "schema": {
               "anyOf": [
@@ -35943,7 +35943,7 @@
                 }
               ],
               "description": "Whether the returned workspaces should be private or public.",
-              "title": "Is Private"
+              "title": "Isprivate"
             }
           }
         ],
@@ -36504,7 +36504,7 @@
           {
             "description": "Filter collaborators by role ID.",
             "in": "query",
-            "name": "role_id",
+            "name": "roleId",
             "required": false,
             "schema": {
               "default": [],
@@ -36513,7 +36513,7 @@
                 "format": "uuid",
                 "type": "string"
               },
-              "title": "Role Id",
+              "title": "Roleid",
               "type": "array"
             }
           },

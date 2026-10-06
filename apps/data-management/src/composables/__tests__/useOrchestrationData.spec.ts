@@ -55,11 +55,11 @@ describe('useOrchestrationData', () => {
     expect(data.monitoringTasks.value).toEqual([])
     expect(data.monitoringSites.value.map((item) => item.id)).toEqual(['monitoringSite-1'])
     expect(dataConnectionsListMock).toHaveBeenCalledWith({
-      workspace_id: 'workspace-1',
+      workspaceId: 'workspace-1',
       sortby: 'name',
     })
     expect(monitoringSitesTaskSummariesMock).toHaveBeenCalledWith({
-      workspace_id: ['workspace-1'],
+      workspaceId: ['workspace-1'],
     })
     expect(tasksListMock).not.toHaveBeenCalled()
     expect(dataProductTasksListMock).not.toHaveBeenCalled()
@@ -97,24 +97,24 @@ describe('useOrchestrationData', () => {
     await data.fetchTasksForGroup('ingestion', 'dc-1', 'workspace-1')
     expect(data.workspaceTasks.value.map((item) => item.id)).toEqual(['etl-1'])
     expect(tasksListMock).toHaveBeenCalledWith({
-      workspace_id: ['workspace-1'],
-      data_connection_id: ['dc-1'],
+      workspaceId: ['workspace-1'],
+      dataConnectionId: ['dc-1'],
       sortby: ['name'],
     })
 
     await data.fetchTasksForGroup('aggregation', 'monitoringSite-1', 'workspace-1')
     expect(data.dataProductTasks.value.map((item) => item.id)).toEqual(['dp-1'])
     expect(dataProductTasksListMock).toHaveBeenCalledWith({
-      workspace_id: ['workspace-1'],
-      monitoring_site_id: ['monitoringSite-1'],
+      workspaceId: ['workspace-1'],
+      monitoringSiteId: ['monitoringSite-1'],
       sortby: ['name'],
     })
 
     await data.fetchTasksForGroup('quality', 'monitoringSite-1', 'workspace-1')
     expect(data.monitoringTasks.value.map((item) => item.id)).toEqual(['mon-1'])
     expect(monitoringTasksListMock).toHaveBeenCalledWith({
-      workspace_id: ['workspace-1'],
-      monitoring_site_id: ['monitoringSite-1'],
+      workspaceId: ['workspace-1'],
+      monitoringSiteId: ['monitoringSite-1'],
       sortby: ['name'],
     })
   })

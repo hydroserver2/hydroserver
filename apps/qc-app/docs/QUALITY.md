@@ -88,7 +88,7 @@ collect qualifier codes per selection, but
 carry qualifiers, but it times out on >35k-point fetches today (see
 `src/utils/observations.ts:24`). Resolution is blocked on the
 HydroServer API team either making the columnar response carry
-qualifiers via opt-in (`include=resultQualifierCodes`) or speeding up
+qualifiers via opt-in (`include=resultQualifiers`) or speeding up
 the row mode. Tracked inline as a TODO.
 
 ### 2. Three large SFCs not yet unit-tested

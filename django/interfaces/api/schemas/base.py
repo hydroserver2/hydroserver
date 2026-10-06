@@ -172,7 +172,9 @@ def limit_query():
 
 
 class BaseQueryParameters(Schema):
-    model_config = ConfigDict(populate_by_name=True, str_strip_whitespace=True)
+    model_config = ConfigDict(
+        populate_by_name=True, str_strip_whitespace=True, alias_generator=to_camel
+    )
 
     @field_validator("*", mode="after")
     @classmethod

@@ -422,7 +422,7 @@ hs_api.datastreams.create(name, description, monitoring_site, method, observed_p
 datastream.get_observations(
     phenomenon_time_min=None,
     phenomenon_time_max=None,
-    result_qualifier_code=None,
+    result_qualifiers=None,
     page=1,
     page_size=100000,
     sortby=None,
@@ -438,13 +438,13 @@ datastream.load_observations(observations, mode='insert') -> None
 
 `observations` must be a pandas DataFrame with `phenomenon_time` and `result` columns. `phenomenon_time` must be timezone-aware. `mode` is `"insert"` (skip existing timestamps) or `"replace"` (overwrite all observations in the datastream).
 
-To load observations with result qualifiers, include a `result_qualifier_codes` column containing a list of qualifier name strings per row (the column name remains unchanged):
+To load observations with result qualifiers, include a `result_qualifiers` column containing a list of qualifier name strings per row (the column name remains unchanged):
 
 ```python
 df = pd.DataFrame({
     'phenomenon_time': times,
     'result': values,
-    'result_qualifier_codes': [['PF'], [], ['ICE'], ...]
+    'result_qualifiers': [['PF'], [], ['ICE'], ...]
 })
 datastream.load_observations(df)
 ```

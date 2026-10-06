@@ -71,7 +71,7 @@ async function loadRules() {
     return
   }
   rules.value = await hs.monitoringRules.listAllItems({
-    task_id: props.taskId,
+    taskId: props.taskId,
   } as any)
 }
 

@@ -3,6 +3,7 @@ import uuid
 from typing import TYPE_CHECKING, Type, List, Union
 from datetime import datetime
 from hydroserverpy.api.models.base import HydroServerBaseModel, HydroServerCollection
+from pydantic.alias_generators import to_camel
 from hydroserverpy.api.utils import sortby_to_camel
 
 if TYPE_CHECKING:
@@ -26,7 +27,7 @@ class HydroServerBaseService:
         kwargs = {
             k: v for k, v in kwargs.items() if v is not ...
         }
-        params = kwargs.copy()
+        params = {to_camel(k): v for k, v in kwargs.items()}
         params.update({
             "offset": offset,
             "limit": limit,

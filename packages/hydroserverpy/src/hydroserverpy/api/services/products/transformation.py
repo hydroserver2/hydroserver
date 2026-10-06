@@ -42,15 +42,15 @@ class DataProductTransformationService:
         output_datastream: Optional[Union[UUID, str]] = None,
         input_datastream: Optional[Union[UUID, str]] = None,
     ) -> List[dict]:
-        params = {"transformation_type": transformation_type}
+        params = {"transformationType": transformation_type}
         if task_id is not None:
-            params["task_id"] = normalize_uuid(task_id)
+            params["taskId"] = normalize_uuid(task_id)
         if workspace_id is not None:
-            params["workspace_id"] = normalize_uuid(workspace_id)
+            params["workspaceId"] = normalize_uuid(workspace_id)
         if output_datastream is not None:
-            params["output_datastream_id"] = normalize_uuid(output_datastream)
+            params["outputDatastreamId"] = normalize_uuid(output_datastream)
         if input_datastream is not None:
-            params["input_datastream_id"] = normalize_uuid(input_datastream)
+            params["inputDatastreamId"] = normalize_uuid(input_datastream)
 
         response = self.client.request("get", self._route(), params=params)
 

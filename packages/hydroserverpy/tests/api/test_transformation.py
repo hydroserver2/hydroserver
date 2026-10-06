@@ -102,8 +102,8 @@ def test_list_derivation_filters_by_task_and_type_on_the_flat_route():
 
     args, kwargs = client.request.call_args
     assert args[1] == "//api/ogc/collections/data-product-transformations/items"
-    assert kwargs["params"]["transformation_type"] == "derivation"
-    assert kwargs["params"]["task_id"] == str(task_id)
+    assert kwargs["params"]["transformationType"] == "derivation"
+    assert kwargs["params"]["taskId"] == str(task_id)
 
 
 def test_update_aggregation_patches_flat_route_then_refetches_by_id():

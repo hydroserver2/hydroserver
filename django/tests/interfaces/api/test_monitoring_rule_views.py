@@ -76,7 +76,7 @@ def test_get_monitoring_rules_includes_rule_for_workspace_owner(client):
     rule = MonitoringRuleFactory(task=task, datastream=datastream)
     client.force_login(owner)
 
-    response = client.get(RULES_URL, {"task_id": str(task.id)})
+    response = client.get(RULES_URL, {"taskId": str(task.id)})
 
     assert response.status_code == 200
     assert str(rule.id) in [r["id"] for r in response.json()["data"]]
@@ -92,7 +92,7 @@ def test_get_monitoring_rules_filters_by_workspace_id(client):
     MonitoringRuleFactory(task=task_b, datastream=datastream_b)
     client.force_login(owner)
 
-    response = client.get(RULES_URL, {"workspace_id": str(workspace_a.id)})
+    response = client.get(RULES_URL, {"workspaceId": str(workspace_a.id)})
 
     assert response.status_code == 200
     assert [r["id"] for r in response.json()["data"]] == [str(rule_a.id)]
@@ -105,7 +105,7 @@ def test_get_monitoring_rules_excludes_rules_outside_outsiders_workspaces(client
     outsider = UserFactory()
     client.force_login(outsider)
 
-    response = client.get(RULES_URL, {"workspace_id": str(workspace.id)})
+    response = client.get(RULES_URL, {"workspaceId": str(workspace.id)})
 
     assert response.status_code == 200
     assert response.json()["data"] == []
@@ -124,7 +124,7 @@ def test_get_monitoring_rules_properties_filters_every_item_in_the_list(client):
     MonitoringRuleFactory(task=task, datastream=datastream, rule_type="missing_data")
     client.force_login(owner)
 
-    response = client.get(RULES_URL, {"task_id": str(task.id), "properties": "id,ruleType"})
+    response = client.get(RULES_URL, {"taskId": str(task.id), "properties": "id,ruleType"})
 
     assert response.status_code == 200
     items = response.json()["data"]
@@ -141,7 +141,7 @@ def test_get_monitoring_rules_properties_accepts_repeated_key_style_too(client):
     client.force_login(owner)
 
     response = client.get(
-        RULES_URL, {"task_id": str(task.id), "properties": ["id", "ruleType"]}
+        RULES_URL, {"taskId": str(task.id), "properties": ["id", "ruleType"]}
     )
 
     assert response.status_code == 200
@@ -155,7 +155,7 @@ def test_get_monitoring_rules_properties_rejects_unknown_property(client):
     task, _ = _make_task_with_datastream(workspace)
     client.force_login(owner)
 
-    response = client.get(RULES_URL, {"task_id": str(task.id), "properties": "id,bogus"})
+    response = client.get(RULES_URL, {"taskId": str(task.id), "properties": "id,bogus"})
 
     assert response.status_code == 400
 
@@ -167,7 +167,7 @@ def test_get_monitoring_rules_without_properties_returns_every_field(client):
     MonitoringRuleFactory(task=task, datastream=datastream)
     client.force_login(owner)
 
-    response = client.get(RULES_URL, {"task_id": str(task.id)})
+    response = client.get(RULES_URL, {"taskId": str(task.id)})
 
     assert response.status_code == 200
     item = response.json()["data"][0]
@@ -181,7 +181,7 @@ def test_get_monitoring_rules_has_no_included_key_without_include_param(client):
     MonitoringRuleFactory(task=task, datastream=datastream)
     client.force_login(owner)
 
-    response = client.get(RULES_URL, {"task_id": str(task.id)})
+    response = client.get(RULES_URL, {"taskId": str(task.id)})
 
     assert response.status_code == 200
     assert "included" not in response.json()
@@ -195,7 +195,7 @@ def test_get_monitoring_rules_include_datastream_deduplicates_across_items(clien
     MonitoringRuleFactory(task=task, datastream=datastream, rule_type="persistence")
     client.force_login(owner)
 
-    response = client.get(RULES_URL, {"task_id": str(task.id), "include": "datastream"})
+    response = client.get(RULES_URL, {"taskId": str(task.id), "include": "datastream"})
 
     assert response.status_code == 200
     body = response.json()
@@ -209,7 +209,7 @@ def test_get_monitoring_rules_include_rejects_unknown_relation(client):
     task, _ = _make_task_with_datastream(workspace)
     client.force_login(owner)
 
-    response = client.get(RULES_URL, {"task_id": str(task.id), "include": "bogus"})
+    response = client.get(RULES_URL, {"taskId": str(task.id), "include": "bogus"})
 
     assert response.status_code == 400
 
@@ -221,7 +221,7 @@ def test_get_monitoring_rules_include_accepts_repeated_key_style_too(client):
     MonitoringRuleFactory(task=task, datastream=datastream)
     client.force_login(owner)
 
-    response = client.get(RULES_URL, {"task_id": str(task.id), "include": ["datastream"]})
+    response = client.get(RULES_URL, {"taskId": str(task.id), "include": ["datastream"]})
 
     assert response.status_code == 200
     body = response.json()
@@ -237,7 +237,7 @@ def test_get_monitoring_rules_properties_and_include_together(client):
 
     response = client.get(
         RULES_URL,
-        {"task_id": str(task.id), "properties": "id,ruleType", "include": "datastream"},
+        {"taskId": str(task.id), "properties": "id,ruleType", "include": "datastream"},
     )
 
     assert response.status_code == 200
@@ -255,7 +255,7 @@ def test_get_monitoring_rules_properties_does_not_filter_included_resources(clie
     client.force_login(owner)
 
     response = client.get(
-        RULES_URL, {"task_id": str(task.id), "properties": "ruleType", "include": "datastream"}
+        RULES_URL, {"taskId": str(task.id), "properties": "ruleType", "include": "datastream"}
     )
 
     assert response.status_code == 200
@@ -277,14 +277,14 @@ def test_get_monitoring_rules_include_datastream_does_not_scale_queries_with_rul
     client.force_login(owner)
 
     with CaptureQueriesContext(connection) as small:
-        client.get(RULES_URL, {"task_id": str(task.id), "include": "datastream"})
+        client.get(RULES_URL, {"taskId": str(task.id), "include": "datastream"})
 
     datastream_b = DatastreamFactory(monitoring_site=datastream.monitoring_site)
     for rule_type in ["missing_data", "persistence"]:
         MonitoringRuleFactory(task=task, datastream=datastream_b, rule_type=rule_type)
 
     with CaptureQueriesContext(connection) as large:
-        client.get(RULES_URL, {"task_id": str(task.id), "include": "datastream"})
+        client.get(RULES_URL, {"taskId": str(task.id), "include": "datastream"})
 
     assert len(large.captured_queries) == len(small.captured_queries)
 
@@ -299,7 +299,7 @@ def test_get_monitoring_rules_filters_by_datastream_id(client):
     client.force_login(owner)
 
     response = client.get(
-        RULES_URL, {"task_id": str(task.id), "datastream_id": str(datastream_a.id)}
+        RULES_URL, {"taskId": str(task.id), "datastreamId": str(datastream_a.id)}
     )
 
     assert response.status_code == 200
@@ -314,7 +314,7 @@ def test_get_monitoring_rules_filters_by_rule_type(client):
     MonitoringRuleFactory(task=task, datastream=datastream, rule_type="persistence")
     client.force_login(owner)
 
-    response = client.get(RULES_URL, {"task_id": str(task.id), "rule_type": "missing_data"})
+    response = client.get(RULES_URL, {"taskId": str(task.id), "ruleType": "missing_data"})
 
     assert response.status_code == 200
     assert [r["id"] for r in response.json()["data"]] == [str(rule_a.id)]
@@ -328,7 +328,7 @@ def test_get_monitoring_rules_sorts_by_rule_type(client):
     MonitoringRuleFactory(task=task, datastream=datastream, rule_type="missing_data")
     client.force_login(owner)
 
-    response = client.get(RULES_URL, {"task_id": str(task.id), "sortby": "ruleType"})
+    response = client.get(RULES_URL, {"taskId": str(task.id), "sortby": "ruleType"})
 
     assert response.status_code == 200
     assert [r["ruleType"] for r in response.json()["data"]] == [
@@ -346,7 +346,7 @@ def test_get_monitoring_rules_sorts_by_datastream_id(client):
     MonitoringRuleFactory(task=task, datastream=datastream_b)
     client.force_login(owner)
 
-    response = client.get(RULES_URL, {"task_id": str(task.id), "sortby": "-datastreamId"})
+    response = client.get(RULES_URL, {"taskId": str(task.id), "sortby": "-datastreamId"})
 
     datastream_ids_desc = sorted(
         [str(datastream_a.id), str(datastream_b.id)], reverse=True
@@ -362,7 +362,7 @@ def test_get_monitoring_rules_sortby_rejects_unknown_field(client):
     task, _ = _make_task_with_datastream(workspace)
     client.force_login(owner)
 
-    response = client.get(RULES_URL, {"task_id": str(task.id), "sortby": "bogus"})
+    response = client.get(RULES_URL, {"taskId": str(task.id), "sortby": "bogus"})
 
     assert response.status_code == 400
 

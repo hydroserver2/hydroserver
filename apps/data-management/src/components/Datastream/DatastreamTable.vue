@@ -866,7 +866,7 @@ const { item, items, openEdit, openDelete, openDialog, onUpdate, onDelete } =
   useTableLogic(
     async (monitoringSiteId: string) =>
       await hs.datastreams.listAllItems({
-        monitoring_site_id: [monitoringSiteId],
+        monitoringSiteId: [monitoringSiteId],
       }),
     hs.datastreams.delete,
     Datastream,
@@ -1633,15 +1633,15 @@ const loadLinkedTasks = async () => {
   try {
     const [etlTasks, dataProductTasks, monitoringTasks] = await Promise.all([
       hs.tasks.listAllItems({
-        monitoring_site_id: [site.id],
+        monitoringSiteId: [site.id],
         sortby: ['name'],
       }),
       hs.dataProductTasks.listAllItems({
-        monitoring_site_id: [site.id],
+        monitoringSiteId: [site.id],
         sortby: ['name'],
       }),
       hs.monitoringTasks.listAllItems({
-        monitoring_site_id: [site.id],
+        monitoringSiteId: [site.id],
         sortby: ['name'],
       }),
     ])
@@ -1653,15 +1653,15 @@ const loadLinkedTasks = async () => {
 
     const [mappings, transformations, rules] = await Promise.all([
       etlTaskIds.length
-        ? hs.etlMappings.listAllItems({ etl_task_id: etlTaskIds } as any)
+        ? hs.etlMappings.listAllItems({ etlTaskId: etlTaskIds } as any)
         : Promise.resolve([]),
       dataProductTaskIds.length
         ? hs.dataProductTransformations.listAllItems({
-            task_id: dataProductTaskIds,
+            taskId: dataProductTaskIds,
           } as any)
         : Promise.resolve([]),
       monitoringTaskIds.length
-        ? hs.monitoringRules.listAllItems({ task_id: monitoringTaskIds } as any)
+        ? hs.monitoringRules.listAllItems({ taskId: monitoringTaskIds } as any)
         : Promise.resolve([]),
     ])
     if (requestId !== linkedTasksRequestId) return
@@ -1941,7 +1941,7 @@ async function onObservationsDelete() {
 const loadDatastreams = async () => {
   try {
     items.value = await hs.datastreams.listAllItems({
-      monitoring_site_id: [monitoringSite.value!.id],
+      monitoringSiteId: [monitoringSite.value!.id],
     })
   } catch (e) {
     console.error('Error fetching datastreams', e)

@@ -137,10 +137,10 @@ class DataProductTaskService(HydroServerBaseService):
             "limit": limit,
             "sortby": [sortby_to_camel(o) for o in sortby] if sortby is not ... else sortby,
             "status": status,
-            "started_at_min": started_at_min,
-            "started_at_max": started_at_max,
-            "finished_at_min": finished_at_min,
-            "finished_at_max": finished_at_max,
+            "startedAtMin": started_at_min,
+            "startedAtMax": started_at_max,
+            "finishedAtMin": finished_at_min,
+            "finishedAtMax": finished_at_max,
         }
         params = {k: v for k, v in params.items() if v is not ...}
 

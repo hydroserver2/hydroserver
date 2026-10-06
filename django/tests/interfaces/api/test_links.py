@@ -203,7 +203,7 @@ def test_observation_formats_link_next_from_their_row_count(client, response_for
 
     response = client.get(
         OBSERVATIONS_PATH,
-        {"datastream_id": str(datastream.id), "format": response_format, "limit": 2},
+        {"datastreamId": str(datastream.id), "format": response_format, "limit": 2},
     )
 
     assert response.status_code == 200

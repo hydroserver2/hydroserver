@@ -102,10 +102,10 @@ class MethodQueryParameters(MethodFilterFields, CollectionQueryParameters, Exten
         [], description="Filter methods by workspace ID."
     )
     datastreams__monitoring_site_id: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter methods by monitoring_site ID.", alias="monitoring_site_id"
+        [], description="Filter methods by monitoring_site ID.", alias="monitoringSiteId"
     )
     datastreams__id: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter methods by datastream ID.", alias="datastream_id"
+        [], description="Filter methods by datastream ID.", alias="datastreamId"
     )
     type: list[str] = Query([], description="Filter methods by type")
     sensor_model: list[str | Literal["null"]] = Query([], description="Filter methods by sensor model")

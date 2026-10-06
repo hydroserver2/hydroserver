@@ -136,13 +136,13 @@ def test_hydroserver_encodes_boolean_query_params_in_lowercase(fake_session_fact
     hs.request(
         "get",
         "/api/ogc/collections/workspaces/items",
-        params={"is_private": True, "is_associated": False, "workspace_id": ["a", "null"], "limit": 5},
+        params={"isPrivate": True, "isAssociated": False, "workspaceId": ["a", "null"], "limit": 5},
     )
 
     assert fake_session_factory[0].last_kwargs["params"] == {
-        "is_private": "true",
-        "is_associated": "false",
-        "workspace_id": ["a", "null"],
+        "isPrivate": "true",
+        "isAssociated": "false",
+        "workspaceId": ["a", "null"],
         "limit": 5,
     }
 
@@ -158,8 +158,8 @@ def test_workspace_list_sends_lowercase_booleans(fake_session_factory):
     url = requests.Request(
         "GET", "https://example.com", params=fake_session_factory[0].last_kwargs["params"]
     ).prepare().url
-    assert "is_private=true" in url
-    assert "is_associated=false" in url
+    assert "isPrivate=true" in url
+    assert "isAssociated=false" in url
 
 
 RUN_ID = "01a0e94d-307f-7347-8f40-66fb0327d09e"
@@ -180,3 +180,22 @@ def test_task_trigger_and_get_run_unwrap_the_item_envelope(fake_session_factory,
     assert str(triggered.id) == RUN_ID
     assert triggered.status == "PENDING"
     assert str(fetched.id) == RUN_ID
+
+
+def test_list_sends_camel_case_params_and_keeps_public_filter_names(fake_session_factory):
+    hs = client_module.HydroServer(host="https://example.com", apikey="hs_test_api_key")
+    fake_session_factory[0].queue(
+        "get", FakeResponse(content=b'{"data": [], "meta": {"limit": 100, "offset": 0, "totalCount": 0}}')
+    )
+
+    collection = hs.datastreams.list(
+        workspace="00000000-0000-0000-0000-000000000001", is_private=False, tag=("river", "green")
+    )
+
+    params = fake_session_factory[0].last_kwargs["params"]
+    assert params["workspaceId"] == "00000000-0000-0000-0000-000000000001"
+    assert params["isPrivate"] == "false"
+    assert params["tags"] == ["river:green"]
+    assert not any("_" in key for key in params)
+    assert collection.filters["workspace"] == "00000000-0000-0000-0000-000000000001"
+    assert collection.filters["tag"] == ("river", "green")

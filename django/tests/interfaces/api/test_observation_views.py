@@ -27,7 +27,7 @@ pytestmark = pytest.mark.django_db
 def _observations_url(datastream_id=None, **params):
     query = dict(params)
     if datastream_id is not None:
-        query["datastream_id"] = datastream_id
+        query["datastreamId"] = datastream_id
     if query:
         return f"/api/ogc/collections/observations/items?{urlencode(query, doseq=True)}"
     return "/api/ogc/collections/observations/items"
@@ -152,7 +152,7 @@ def test_get_observations_with_multiple_datastream_ids_unions_results(client):
     client.force_login(owner)
 
     response = client.get(
-        f"/api/ogc/collections/observations/items?{urlencode({'datastream_id': [str(datastream_a.id), str(datastream_b.id)]}, doseq=True)}"
+        f"/api/ogc/collections/observations/items?{urlencode({'datastreamId': [str(datastream_a.id), str(datastream_b.id)]}, doseq=True)}"
     )
 
     assert response.status_code == 200
@@ -198,7 +198,7 @@ def test_get_observations_column_format_returns_400_with_multiple_datastream_ids
     datastream_b = _make_datastream(workspace)
 
     response = client.get(
-        f"/api/ogc/collections/observations/items?{urlencode({'datastream_id': [str(datastream_a.id), str(datastream_b.id)], 'format': 'column'}, doseq=True)}"
+        f"/api/ogc/collections/observations/items?{urlencode({'datastreamId': [str(datastream_a.id), str(datastream_b.id)], 'format': 'column'}, doseq=True)}"
     )
 
     assert response.status_code == 400
@@ -285,7 +285,7 @@ def test_get_observations_default_order_groups_by_datastream_then_time(client):
     client.force_login(owner)
 
     response = client.get(
-        f"/api/ogc/collections/observations/items?{urlencode({'datastream_id': [str(datastream_a.id), str(datastream_b.id)]}, doseq=True)}"
+        f"/api/ogc/collections/observations/items?{urlencode({'datastreamId': [str(datastream_a.id), str(datastream_b.id)]}, doseq=True)}"
     )
 
     assert response.status_code == 200
@@ -546,7 +546,7 @@ def test_create_observation_returns_400_for_invalid_result_qualifier_code(client
             {
                 "phenomenonTime": _iso(timezone.now()),
                 "result": 12.3,
-                "resultQualifierCodes": ["BOGUS"],
+                "resultQualifiers": ["BOGUS"],
             },
         ),
         content_type="application/json",

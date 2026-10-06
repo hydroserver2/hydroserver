@@ -498,7 +498,7 @@ async function loadDatastreams() {
   loadingDatastreams.value = true
   try {
     const items = await hs.datastreams.listAllItems({
-      workspace_id: [workspaceId],
+      workspaceId: [workspaceId],
       sortby: ['name'],
       expand_related: true,
     } as any)
@@ -516,8 +516,8 @@ async function loadExistingTask() {
   const [taskRes, transformationsRes] = await Promise.all([
     hs.dataProductTasks.get(props.editTaskId),
     hs.dataProductTransformations.list({
-      task_id: props.editTaskId,
-      transformation_type: ['derivation'],
+      taskId: props.editTaskId,
+      transformationType: ['derivation'],
     } as any),
   ])
   if (!taskRes.ok) {

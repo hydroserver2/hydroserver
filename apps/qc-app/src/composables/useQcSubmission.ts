@@ -39,7 +39,7 @@ export function useQcSubmission() {
 
     const { dataX, dataY } = selectedSeries.value.data
 
-    // TODO: resultQualifierCodes serialization is deferred — qualifier
+    // TODO: resultQualifiers serialization is deferred — qualifier
     // tracking in useDataVisStore is still stubbed. Submit only
     // phenomenonTime + result for now.
     const body: ObservationBulkPostBody = {

@@ -5,7 +5,7 @@ from uuid import UUID
 from datetime import datetime
 from pydantic.alias_generators import to_camel
 from hydroserverpy.api.models import Datastream, ObservationCollection
-from hydroserverpy.api.utils import normalize_uuid, build_datetime_interval
+from hydroserverpy.api.utils import normalize_uuid, build_datetime_interval, sortby_to_camel
 from ..base import HydroServerBaseService
 
 if TYPE_CHECKING:
@@ -66,7 +66,7 @@ class DatastreamService(HydroServerBaseService):
             sampled_medium=sampled_medium,
             status=status,
             result_type=result_type,
-            tag=[f"{tag[0]}:{tag[1]}"] if tag is not ... else tag,
+            tags=[f"{tag[0]}:{tag[1]}"] if tag is not ... else tag,
             is_private=is_private,
             value_count_max=value_count_max,
             value_count_min=value_count_min,
@@ -75,9 +75,11 @@ class DatastreamService(HydroServerBaseService):
         )
 
         collection.filters.pop("datetime", None)
+        collection.filters.pop("tags", None)
         collection.filters.update({
             k: v
             for k, v in {
+                "tag": tag,
                 "phenomenon_time_max": phenomenon_time_max,
                 "phenomenon_time_min": phenomenon_time_min,
             }.items()
@@ -225,18 +227,18 @@ class DatastreamService(HydroServerBaseService):
         sortby: List[str] = ...,
         phenomenon_time_max: datetime = ...,
         phenomenon_time_min: datetime = ...,
-        result_qualifier_code: str = ...,
+        result_qualifiers: str = ...,
         fetch_all: bool = False,
     ) -> ObservationCollection:
         """Retrieve observations of a datastream."""
 
         params = {
-            "datastream_id": str(uid),
+            "datastreamId": str(uid),
             "offset": offset,
             "limit": limit,
-            "sortby": ",".join(sortby) if sortby is not ... else sortby,
+            "sortby": ",".join(sortby_to_camel(o) for o in sortby) if sortby is not ... else sortby,
             "datetime": build_datetime_interval(phenomenon_time_min, phenomenon_time_max),
-            "result_qualifier_code": result_qualifier_code,
+            "resultQualifiers": result_qualifiers,
             "format": "column"
         }
         params = {
@@ -257,7 +259,7 @@ class DatastreamService(HydroServerBaseService):
                 for k, v in {
                     "phenomenon_time_max": phenomenon_time_max,
                     "phenomenon_time_min": phenomenon_time_min,
-                    "result_qualifier_code": result_qualifier_code,
+                    "result_qualifiers": result_qualifiers,
                 }.items()
                 if v is not ...
             },

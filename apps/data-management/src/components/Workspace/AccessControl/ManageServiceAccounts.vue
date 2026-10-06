@@ -898,7 +898,7 @@ async function copyKey(key: string) {
 async function loadRoles() {
   try {
     const res = await hs.workspaces.getRoles({
-      workspace_id: [workspaceId.value, 'null'],
+      workspaceId: [workspaceId.value, 'null'],
       sortby: ['name'],
     })
     if (!res.ok) {

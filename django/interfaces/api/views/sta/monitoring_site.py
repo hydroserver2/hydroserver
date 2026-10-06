@@ -166,8 +166,8 @@ def create_monitoring_site(
 )
 def get_monitoring_site_tag_keys(
     request: HydroServerHttpRequest,
-    workspace_id: Optional[uuid.UUID] = None,
-    monitoring_site_id: Optional[uuid.UUID] = None,
+    workspace_id: Optional[uuid.UUID] = Query(None, alias="workspaceId"),
+    monitoring_site_id: Optional[uuid.UUID] = Query(None, alias="monitoringSiteId"),
 ):
     """
     Get all existing unique monitoring_site tag keys.

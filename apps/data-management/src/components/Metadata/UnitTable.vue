@@ -80,7 +80,7 @@
     <DeleteMetadataCard
       itemName="unit"
       :itemID="item.id"
-      parameter-name="unit_id"
+      parameter-name="unitId"
       @delete="onDelete"
       @close="openDelete = false"
     />
@@ -125,15 +125,15 @@ const {
   props.workspaceId
     ? useAllScopeTableLogic(
         async (wsId: string) =>
-          await hs.units.listAllItems({ workspace_id: [wsId] }),
-        () => hs.units.listAllItems({ workspace_id: ['null'] }),
+          await hs.units.listAllItems({ workspaceId: [wsId] }),
+        () => hs.units.listAllItems({ workspaceId: ['null'] }),
         hs.units.delete,
         Unit,
         toRef(props, 'workspaceId'),
         toRef(() => props.scope ?? 'workspace')
       )
     : useSystemTableLogic(
-        () => hs.units.listAllItems({ workspace_id: ['null'] }),
+        () => hs.units.listAllItems({ workspaceId: ['null'] }),
         (id: string) => hs.units.delete(id),
         Unit
       )

@@ -32,7 +32,7 @@ class MonitoringSiteService(HydroServerBaseService):
     ) -> List["MonitoringSite"]:
         """Fetch a collection of monitoring_sites."""
 
-        return super().list(
+        collection = super().list(
             offset=offset,
             limit=limit,
             sortby=sortby,
@@ -42,10 +42,19 @@ class MonitoringSiteService(HydroServerBaseService):
             admin_area_2=admin_area_2,
             country=country,
             type=type,
-            tag=[f"{tag[0]}:{tag[1]}"] if tag is not ... else tag,
+            tags=[f"{tag[0]}:{tag[1]}"] if tag is not ... else tag,
             is_private=is_private,
-            fetch_all=fetch_all,
+            fetch_all=False,
         )
+
+        collection.filters.pop("tags", None)
+        if tag is not ...:
+            collection.filters["tag"] = tag
+
+        if fetch_all is True:
+            collection = collection.fetch_all()
+
+        return collection
 
     def create(
         self,
@@ -79,7 +88,7 @@ class MonitoringSiteService(HydroServerBaseService):
             "workspaceId": normalize_uuid(workspace),
             "latitude": latitude,
             "longitude": longitude,
-            "elevation_m": elevation_m,
+            "elevationM": elevation_m,
             "elevationDatum": elevation_datum,
             "adminArea1": admin_area_1,
             "adminArea2": admin_area_2,
@@ -118,7 +127,7 @@ class MonitoringSiteService(HydroServerBaseService):
             "dataDisclaimer": data_disclaimer,
             "latitude": latitude,
             "longitude": longitude,
-            "elevation_m": elevation_m,
+            "elevationM": elevation_m,
             "elevationDatum": elevation_datum,
             "adminArea1": admin_area_1,
             "adminArea2": admin_area_2,

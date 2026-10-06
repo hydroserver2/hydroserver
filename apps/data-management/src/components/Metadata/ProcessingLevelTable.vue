@@ -80,7 +80,7 @@
     <DeleteMetadataCard
       itemName="processing level"
       :itemID="item.id"
-      parameter-name="processing_level_id"
+      parameter-name="processingLevelId"
       @delete="onDelete"
       @close="openDelete = false"
     />
@@ -125,15 +125,15 @@ const {
   props.workspaceId
     ? useAllScopeTableLogic(
         async (wsId: string) =>
-          await hs.processingLevels.listAllItems({ workspace_id: [wsId] }),
-        () => hs.processingLevels.listAllItems({ workspace_id: ['null'] }),
+          await hs.processingLevels.listAllItems({ workspaceId: [wsId] }),
+        () => hs.processingLevels.listAllItems({ workspaceId: ['null'] }),
         hs.processingLevels.delete,
         ProcessingLevel,
         toRef(props, 'workspaceId'),
         toRef(() => props.scope ?? 'workspace')
       )
     : useSystemTableLogic(
-        () => hs.processingLevels.listAllItems({ workspace_id: ['null'] }),
+        () => hs.processingLevels.listAllItems({ workspaceId: ['null'] }),
         (id: string) => hs.processingLevels.delete(id),
         ProcessingLevel
       )

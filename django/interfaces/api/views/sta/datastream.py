@@ -113,8 +113,8 @@ def create_datastream(
 )
 def get_datastream_tag_keys(
     request: HydroServerHttpRequest,
-    workspace_id: Optional[uuid.UUID] = None,
-    datastream_id: Optional[uuid.UUID] = None,
+    workspace_id: Optional[uuid.UUID] = Query(None, alias="workspaceId"),
+    datastream_id: Optional[uuid.UUID] = Query(None, alias="datastreamId"),
 ):
     """
     Get all existing unique datastream tag keys.

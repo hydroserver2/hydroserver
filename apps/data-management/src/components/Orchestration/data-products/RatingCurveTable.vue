@@ -1142,8 +1142,8 @@ async function findTasksUsingRatingCurve(
 ) {
   try {
     const tasks = (await hs.dataProductTasks.listAllItems({
-      workspace_id: [workspaceId],
-      rating_curve_id: [ratingCurveId],
+      workspaceId: [workspaceId],
+      ratingCurveId: [ratingCurveId],
     } as any)) as any[]
 
     return tasks.map((task) => ({

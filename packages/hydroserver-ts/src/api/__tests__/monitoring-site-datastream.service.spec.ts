@@ -245,7 +245,7 @@ describe('MonitoringSiteService', () => {
       expect(url).toMatch(/\/api\/ogc\/collections\/monitoring-sites\/site-summaries$/)
     })
 
-    it('passes workspace_id as a query param and returns summaries', async () => {
+    it('passes workspaceId as a query param and returns summaries', async () => {
       const payload = [
         {
           id: 'monitoringSite-1',
@@ -270,7 +270,7 @@ describe('MonitoringSiteService', () => {
       const [url] = (fetch as any).mock.calls[0]
       const parsed = new URL(url)
       expect(parsed.pathname).toBe('/api/ogc/collections/monitoring-sites/site-summaries')
-      expect(parsed.searchParams.get('workspace_id')).toBe('workspace id')
+      expect(parsed.searchParams.get('workspaceId')).toBe('workspace id')
     })
 
     it('returns ok:false on a failed request', async () => {

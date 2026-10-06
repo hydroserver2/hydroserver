@@ -44,7 +44,7 @@ export function useMetadata(localWorkspace?: Ref<Workspace | undefined>) {
 
   const fetchMetadata = async (id: string | null) => {
     const workspaceFilter = id
-      ? { workspace_id: [id, 'null'] as (string | 'null')[] }
+      ? { workspaceId: [id, 'null'] as (string | 'null')[] }
       : {}
     try {
       const [

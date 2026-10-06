@@ -58,7 +58,7 @@ def test_get_etl_mappings_includes_mapping_for_workspace_owner(client):
     mapping = _make_mapping(task)
     client.force_login(owner)
 
-    response = client.get(MAPPINGS_URL, {"etl_task_id": str(task.id)})
+    response = client.get(MAPPINGS_URL, {"etlTaskId": str(task.id)})
 
     assert response.status_code == 200
     body = response.json()
@@ -77,7 +77,7 @@ def test_get_etl_mappings_filters_by_workspace_id(client):
     _make_mapping(task_b)
     client.force_login(owner)
 
-    response = client.get(MAPPINGS_URL, {"workspace_id": str(workspace_a.id)})
+    response = client.get(MAPPINGS_URL, {"workspaceId": str(workspace_a.id)})
 
     assert response.status_code == 200
     assert [m["id"] for m in response.json()["data"]] == [str(mapping_a.id)]
@@ -90,7 +90,7 @@ def test_get_etl_mappings_excludes_mappings_outside_outsiders_workspaces(client)
     outsider = UserFactory()
     client.force_login(outsider)
 
-    response = client.get(MAPPINGS_URL, {"workspace_id": str(workspace.id)})
+    response = client.get(MAPPINGS_URL, {"workspaceId": str(workspace.id)})
 
     assert response.status_code == 200
     assert response.json()["data"] == []
@@ -278,7 +278,7 @@ def test_get_etl_mappings_include_does_not_scale_queries_with_mapping_count(clie
 
     with CaptureQueriesContext(connection) as small:
         client.get(
-            MAPPINGS_URL, {"etl_task_id": str(task.id), "include": "targetDatastream"}
+            MAPPINGS_URL, {"etlTaskId": str(task.id), "include": "targetDatastream"}
         )
 
     for _ in range(5):
@@ -286,7 +286,7 @@ def test_get_etl_mappings_include_does_not_scale_queries_with_mapping_count(clie
 
     with CaptureQueriesContext(connection) as large:
         client.get(
-            MAPPINGS_URL, {"etl_task_id": str(task.id), "include": "targetDatastream"}
+            MAPPINGS_URL, {"etlTaskId": str(task.id), "include": "targetDatastream"}
         )
 
     assert len(large.captured_queries) == len(small.captured_queries)

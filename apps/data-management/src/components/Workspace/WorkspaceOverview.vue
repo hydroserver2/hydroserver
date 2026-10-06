@@ -149,18 +149,18 @@ async function loadStats(workspace: Workspace) {
     serviceAccountRequest,
   ])
   const metadataResults = Promise.allSettled([
-    hs.methods.list({ workspace_id: [workspace.id], fetch_all: true }),
+    hs.methods.list({ workspaceId: [workspace.id], fetch_all: true }),
     hs.observedProperties.list({
-      workspace_id: [workspace.id],
+      workspaceId: [workspace.id],
       fetch_all: true,
     }),
     hs.processingLevels.list({
-      workspace_id: [workspace.id],
+      workspaceId: [workspace.id],
       fetch_all: true,
     }),
-    hs.units.list({ workspace_id: [workspace.id], fetch_all: true }),
+    hs.units.list({ workspaceId: [workspace.id], fetch_all: true }),
     hs.resultQualifiers.list({
-      workspace_id: [workspace.id],
+      workspaceId: [workspace.id],
       fetch_all: true,
     }),
   ])

@@ -336,7 +336,7 @@ const locationItems = computed(() => {
     { label: 'Site Type', value: t.type },
     { label: 'Latitude', value: l.latitude },
     { label: 'Longitude', value: l.longitude },
-    { label: 'Elevation (m)', value: l.elevation_m },
+    { label: 'Elevation (m)', value: l.elevationM },
     { label: 'Elevation Datum', value: l.elevationDatum },
     { label: 'State/Province/Region', value: l.adminArea1 },
     { label: 'County/District', value: l.adminArea2 },

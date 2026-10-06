@@ -105,7 +105,7 @@ def test_boolean_values(client, value, expected):
     MonitoringSiteFactory(workspace__owner=owner, is_private=False)
     client.force_login(owner)
 
-    response = client.get(SITES_PATH, {"is_private": value})
+    response = client.get(SITES_PATH, {"isPrivate": value})
 
     assert response.status_code == 200
     assert [s["isPrivate"] for s in response.json()["data"]] == [expected]

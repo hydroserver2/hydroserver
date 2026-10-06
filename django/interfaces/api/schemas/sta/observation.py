@@ -30,7 +30,7 @@ from interfaces.api.schemas.sta.result_qualifier import ResultQualifierResponse
 class ObservationFields(Schema):
     phenomenon_time: ISODatetime
     result: float
-    result_qualifier_codes: list[str] = []
+    result_qualifiers: list[str] = []
 
 
 OBSERVATION_INCLUDE_RELATIONS = {
@@ -48,7 +48,7 @@ OBSERVATION_INCLUDE_RELATIONS = {
         "bucket": "resultQualifiers",
         "response_schema": ResultQualifierResponse,
         "scoped_vocabulary_model": ResultQualifier,
-        "value_field": "result_qualifier_codes",
+        "value_field": "result_qualifiers",
         "workspace_path": "datastream__monitoring_site__workspace_id",
     },
 }
@@ -107,10 +107,8 @@ class ObservationQueryParameters(ObservationFilterFields, CollectionQueryParamet
         description="Controls the format of the observations response.",
         alias="format",
     )
-    result_qualifier_codes: list[str] = Query(
-        [],
-        description="Filter observations by result qualifier code.",
-        alias="result_qualifier_code",
+    result_qualifiers: list[str] = Query(
+        [], description="Filter observations by result qualifier."
     )
 
 
@@ -153,7 +151,7 @@ class ObservationFormatResponse(Schema, Generic[T]):
 
 
 class ObservationRowData(BaseGetResponse):
-    fields: list[Literal["phenomenonTime", "result", "resultQualifierCodes"]]
+    fields: list[Literal["phenomenonTime", "result", "resultQualifiers"]]
     rows: list[list]
 
     @property
@@ -164,7 +162,7 @@ class ObservationRowData(BaseGetResponse):
 class ObservationColumnarData(BaseGetResponse):
     phenomenon_time: list
     result: list
-    result_qualifier_codes: list
+    result_qualifiers: list
 
     @property
     def row_count(self) -> int:
@@ -199,7 +197,7 @@ class ObservationBulkPostQueryParameters(Schema):
 
 class ObservationBulkPostBody(BasePostBody):
     datastream_id: uuid.UUID
-    fields: list[Literal["phenomenonTime", "result", "resultQualifierCodes"]]
+    fields: list[Literal["phenomenonTime", "result", "resultQualifiers"]]
     data: list[list]
 
     @model_validator(mode="after")
@@ -227,28 +225,28 @@ class ObservationBulkColumnarPostBody(BasePostBody):
     datastream_id: uuid.UUID
     phenomenon_time: list[ISODatetime]
     result: list[Optional[float]]
-    result_qualifier_codes: list[list[str]] = []
+    result_qualifiers: list[list[str]] = []
 
     @model_validator(mode="after")
     def validate_lengths(self):
         n = len(self.phenomenon_time)
         if len(self.result) != n:
             raise ValueError("result must have the same length as phenomenonTime")
-        if self.result_qualifier_codes and len(self.result_qualifier_codes) != n:
+        if self.result_qualifiers and len(self.result_qualifiers) != n:
             raise ValueError(
-                "resultQualifierCodes must have the same length as phenomenonTime"
+                "resultQualifiers must have the same length as phenomenonTime"
             )
-        if not self.result_qualifier_codes:
-            self.result_qualifier_codes = [[] for _ in range(n)]
+        if not self.result_qualifiers:
+            self.result_qualifiers = [[] for _ in range(n)]
         return self
 
     @property
     def fields(self) -> list[str]:
-        return ["phenomenonTime", "result", "resultQualifierCodes"]
+        return ["phenomenonTime", "result", "resultQualifiers"]
 
     @property
     def data(self) -> list[tuple]:
-        return list(zip(self.phenomenon_time, self.result, self.result_qualifier_codes))
+        return list(zip(self.phenomenon_time, self.result, self.result_qualifiers))
 
 
 class ObservationBulkDeleteBody(BasePostBody):

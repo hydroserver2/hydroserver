@@ -105,7 +105,7 @@ def test_list_fetch_all_keeps_the_phenomenon_time_bounds():
 
 def test_get_observations_sends_a_datetime_interval_and_pages_with_the_same_bounds():
     columnar = {
-        "data": {"phenomenonTime": [], "result": [], "resultQualifierCodes": []},
+        "data": {"phenomenonTime": [], "result": [], "resultQualifiers": []},
         "meta": {"offset": 0, "limit": 1, "totalCount": 0},
     }
     service, client = make_service(columnar, columnar)

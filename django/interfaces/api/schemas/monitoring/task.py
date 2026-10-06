@@ -106,16 +106,16 @@ class MonitoringTaskQueryParameters(MonitoringTaskFilterFields, CollectionQueryP
         "whitespace-separated words within a term are combined with AND.",
     )
     monitoring_site: list[uuid.UUID] = Query(
-        [], description="Filter monitoring tasks by monitoring_site ID.", alias="monitoring_site_id"
+        [], description="Filter monitoring tasks by monitoring_site ID.", alias="monitoringSiteId"
     )
     workspace: list[uuid.UUID] = Query(
-        [], description="Filter monitoring tasks by workspace ID.", alias="workspace_id"
+        [], description="Filter monitoring tasks by workspace ID.", alias="workspaceId"
     )
     latest_run_status: list[str | Literal["null"]] = Query(
         [], description="Filter monitoring tasks by their most recent run status."
     )
     datastream: list[uuid.UUID] = Query(
-        [], description="Filter monitoring tasks by datastream ID.", alias="datastream_id"
+        [], description="Filter monitoring tasks by datastream ID.", alias="datastreamId"
     )
     rule_type: list[str] = Query(
         [], description="Filter monitoring tasks by rule type."

@@ -80,7 +80,7 @@
     <DeleteMetadataCard
       itemName="observedProperty"
       :itemID="item.id"
-      parameter-name="observed_property_id"
+      parameter-name="observedPropertyId"
       @delete="onDelete"
       @close="openDelete = false"
       v-bind="{
@@ -130,15 +130,15 @@ const {
   props.workspaceId
     ? useAllScopeTableLogic(
         async (wsId: string) =>
-          await hs.observedProperties.listAllItems({ workspace_id: [wsId] }),
-        () => hs.observedProperties.listAllItems({ workspace_id: ['null'] }),
+          await hs.observedProperties.listAllItems({ workspaceId: [wsId] }),
+        () => hs.observedProperties.listAllItems({ workspaceId: ['null'] }),
         hs.observedProperties.delete,
         ObservedProperty,
         toRef(props, 'workspaceId'),
         toRef(() => props.scope ?? 'workspace')
       )
     : useSystemTableLogic(
-        () => hs.observedProperties.listAllItems({ workspace_id: ['null'] }),
+        () => hs.observedProperties.listAllItems({ workspaceId: ['null'] }),
         (id: string) => hs.observedProperties.delete(id),
         ObservedProperty
       )

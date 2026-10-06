@@ -50,11 +50,11 @@ const datastreams = ref<Datastream[]>([])
 const loaded = ref(false)
 
 type DatastreamFilterKey =
-  | 'unit_id'
-  | 'method_id'
-  | 'observed_property_id'
-  | 'processing_level_id'
-  | 'result_qualifier_id'
+  | 'unitId'
+  | 'methodId'
+  | 'observedPropertyId'
+  | 'processingLevelId'
+  | 'resultQualifier'
 
 const emit = defineEmits(['delete', 'close'])
 const props = defineProps<{

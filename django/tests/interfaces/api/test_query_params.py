@@ -101,7 +101,7 @@ def test_aliased_parameters_are_accepted(client):
 
     response = client.get(
         "/api/ogc/collections/observations/items",
-        {"datastream_id": str(datastream.id), "format": "row", "result_qualifier_code": "A"},
+        {"datastreamId": str(datastream.id), "format": "row", "resultQualifiers": "A"},
     )
 
     assert response.status_code == 200

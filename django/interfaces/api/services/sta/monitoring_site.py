@@ -376,7 +376,7 @@ class MonitoringSiteAPIService(APIService):
         queryset = self.apply_visible_datastream_datetime(
             principal, queryset, datetime_interval, "monitoring_site_id"
         )
-        queryset = self.apply_tag_filter(queryset, filtering.get("tag"))
+        queryset = self.apply_tag_filter(queryset, filtering.get("tags"))
         queryset, has_search = self.apply_search(queryset, filtering.get("q"))
         queryset = self.apply_sorting(
             queryset,

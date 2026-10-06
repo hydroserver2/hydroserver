@@ -127,7 +127,7 @@ def test_get_transformations_includes_transformation_for_workspace_owner(client)
     transformation = _make_rating_curve_transformation(task, monitoring_site)
     client.force_login(owner)
 
-    response = client.get(TRANSFORMATIONS_URL, {"task_id": str(task.id)})
+    response = client.get(TRANSFORMATIONS_URL, {"taskId": str(task.id)})
 
     assert response.status_code == 200
     assert str(transformation.id) in [t["id"] for t in response.json()["data"]]
@@ -143,7 +143,7 @@ def test_get_transformations_filters_by_workspace_id(client):
     _make_rating_curve_transformation(task_b, site_b)
     client.force_login(owner)
 
-    response = client.get(TRANSFORMATIONS_URL, {"workspace_id": str(workspace_a.id)})
+    response = client.get(TRANSFORMATIONS_URL, {"workspaceId": str(workspace_a.id)})
 
     assert response.status_code == 200
     assert [t["id"] for t in response.json()["data"]] == [str(transformation_a.id)]
@@ -156,7 +156,7 @@ def test_get_transformations_excludes_transformations_outside_outsiders_workspac
     outsider = UserFactory()
     client.force_login(outsider)
 
-    response = client.get(TRANSFORMATIONS_URL, {"workspace_id": str(workspace.id)})
+    response = client.get(TRANSFORMATIONS_URL, {"workspaceId": str(workspace.id)})
 
     assert response.status_code == 200
     assert response.json()["data"] == []
@@ -183,7 +183,7 @@ def test_get_transformations_filters_by_transformation_type(client):
 
     response = client.get(
         TRANSFORMATIONS_URL,
-        {"task_id": str(task.id), "transformation_type": "rating_curve"},
+        {"taskId": str(task.id), "transformationType": "rating_curve"},
     )
 
     assert response.status_code == 200
@@ -199,7 +199,7 @@ def test_get_transformations_properties_filters_every_item_in_the_list(client):
 
     response = client.get(
         TRANSFORMATIONS_URL,
-        {"task_id": str(task.id), "properties": "id,transformationType"},
+        {"taskId": str(task.id), "properties": "id,transformationType"},
     )
 
     assert response.status_code == 200
@@ -216,7 +216,7 @@ def test_get_transformations_properties_rejects_unknown_property(client):
     client.force_login(owner)
 
     response = client.get(
-        TRANSFORMATIONS_URL, {"task_id": str(task.id), "properties": "id,bogus"}
+        TRANSFORMATIONS_URL, {"taskId": str(task.id), "properties": "id,bogus"}
     )
 
     assert response.status_code == 400
@@ -229,7 +229,7 @@ def test_get_transformations_without_properties_returns_every_field(client):
     _make_rating_curve_transformation(task, monitoring_site)
     client.force_login(owner)
 
-    response = client.get(TRANSFORMATIONS_URL, {"task_id": str(task.id)})
+    response = client.get(TRANSFORMATIONS_URL, {"taskId": str(task.id)})
 
     assert response.status_code == 200
     item = response.json()["data"][0]
@@ -243,7 +243,7 @@ def test_get_transformations_has_no_included_key_without_include_param(client):
     _make_rating_curve_transformation(task, monitoring_site)
     client.force_login(owner)
 
-    response = client.get(TRANSFORMATIONS_URL, {"task_id": str(task.id)})
+    response = client.get(TRANSFORMATIONS_URL, {"taskId": str(task.id)})
 
     assert response.status_code == 200
     assert "included" not in response.json()
@@ -258,7 +258,7 @@ def test_get_transformations_include_output_datastream_and_rating_curve(client):
 
     response = client.get(
         TRANSFORMATIONS_URL,
-        {"task_id": str(task.id), "include": "outputDatastream,ratingCurve"},
+        {"taskId": str(task.id), "include": "outputDatastream,ratingCurve"},
     )
 
     assert response.status_code == 200
@@ -277,7 +277,7 @@ def test_get_transformations_include_rejects_unknown_relation(client):
     task, _ = _make_task_with_monitoring_site(workspace)
     client.force_login(owner)
 
-    response = client.get(TRANSFORMATIONS_URL, {"task_id": str(task.id), "include": "bogus"})
+    response = client.get(TRANSFORMATIONS_URL, {"taskId": str(task.id), "include": "bogus"})
 
     assert response.status_code == 400
 
@@ -292,7 +292,7 @@ def test_get_transformations_properties_and_include_together(client):
     response = client.get(
         TRANSFORMATIONS_URL,
         {
-            "task_id": str(task.id),
+            "taskId": str(task.id),
             "properties": "id,transformationType",
             "include": "outputDatastream",
         },
@@ -318,7 +318,7 @@ def test_get_transformations_include_does_not_scale_queries_with_transformation_
     with CaptureQueriesContext(connection) as small:
         client.get(
             TRANSFORMATIONS_URL,
-            {"task_id": str(task.id), "include": "outputDatastream,ratingCurve"},
+            {"taskId": str(task.id), "include": "outputDatastream,ratingCurve"},
         )
 
     for _ in range(5):
@@ -327,7 +327,7 @@ def test_get_transformations_include_does_not_scale_queries_with_transformation_
     with CaptureQueriesContext(connection) as large:
         client.get(
             TRANSFORMATIONS_URL,
-            {"task_id": str(task.id), "include": "outputDatastream,ratingCurve"},
+            {"taskId": str(task.id), "include": "outputDatastream,ratingCurve"},
         )
 
     assert len(large.captured_queries) == len(small.captured_queries)
@@ -342,7 +342,7 @@ def test_get_transformations_sorts_by_output_datastream_id(client):
     client.force_login(owner)
 
     response = client.get(
-        TRANSFORMATIONS_URL, {"task_id": str(task.id), "sortby": "outputDatastreamId"}
+        TRANSFORMATIONS_URL, {"taskId": str(task.id), "sortby": "outputDatastreamId"}
     )
 
     expected = sorted([str(t1.output_datastream_id), str(t2.output_datastream_id)])
@@ -356,7 +356,7 @@ def test_get_transformations_sortby_rejects_unknown_field(client):
     task, _ = _make_task_with_monitoring_site(workspace)
     client.force_login(owner)
 
-    response = client.get(TRANSFORMATIONS_URL, {"task_id": str(task.id), "sortby": "bogus"})
+    response = client.get(TRANSFORMATIONS_URL, {"taskId": str(task.id), "sortby": "bogus"})
 
     assert response.status_code == 400
 

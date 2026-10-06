@@ -44,9 +44,7 @@ class ObservationAPIService(APIService):
         datastream_id: Optional[uuid.UUID] = None,
         select_related: Optional[list[str]] = None,
     ):
-        queryset = Observation.objects.annotate(
-            result_qualifier_codes=F("result_qualifiers")
-        ).select_related("datastream__monitoring_site")
+        queryset = Observation.objects.select_related("datastream__monitoring_site")
 
         if select_related:
             queryset = queryset.select_related(*select_related)
@@ -97,7 +95,7 @@ class ObservationAPIService(APIService):
         return datastream, workspace
 
     @staticmethod
-    def _validate_result_qualifier_codes(
+    def _validate_result_qualifiers(
         principal: User | ServiceAccount | AnonymousPrincipal,
         workspace_id: uuid.UUID,
         codes,
@@ -116,7 +114,7 @@ class ObservationAPIService(APIService):
         invalid_codes = set(codes) - valid_codes
         if invalid_codes:
             raise BadRequestError(
-                f"Invalid result qualifier codes: {', '.join(sorted(invalid_codes))}",
+                f"Invalid result qualifiers: {', '.join(sorted(invalid_codes))}",
             )
 
     @staticmethod
@@ -170,9 +168,9 @@ class ObservationAPIService(APIService):
 
         queryset = self.apply_datetime_instant(queryset, datetime_interval, "phenomenon_time")
 
-        if filtering.get("result_qualifier_codes"):
+        if filtering.get("result_qualifiers"):
             code_filter = Q()
-            for code in filtering["result_qualifier_codes"]:
+            for code in filtering["result_qualifiers"]:
                 code_filter |= Q(result_qualifiers__contains=[code])
             queryset = queryset.filter(code_filter)
 
@@ -187,7 +185,7 @@ class ObservationAPIService(APIService):
 
         count = (
             self.resolve_count(queryset)
-            if datetime_interval is not None or filtering.get("result_qualifier_codes")
+            if datetime_interval is not None or filtering.get("result_qualifiers")
             else self.sum_datastream_value_count(principal, datastream_ids, bbox)
         )
 
@@ -203,10 +201,6 @@ class ObservationAPIService(APIService):
         )
         checksum_uuid = (
             uuid.UUID(checksum_result["max_id"]) if checksum_result["max_id"] else None
-        )
-
-        queryset = queryset.annotate(
-            result_qualifier_codes=F("result_qualifiers")
         )
 
         queryset = self.apply_sorting(
@@ -225,7 +219,7 @@ class ObservationAPIService(APIService):
         response["X-Checksum"] = self.generate_checksum(checksum_uuid, meta.total_count)
 
         if response_format == "row":
-            fields = ["phenomenon_time", "result", "result_qualifier_codes"]
+            fields = ["phenomenon_time", "result", "result_qualifiers"]
             return {
                 "data": {
                     "fields": [to_camel(field) for field in fields],
@@ -234,7 +228,7 @@ class ObservationAPIService(APIService):
                 "meta": meta,
             }
         elif response_format == "column":
-            fields = ["phenomenon_time", "result", "result_qualifier_codes"]
+            fields = ["phenomenon_time", "result", "result_qualifiers"]
             observations = list(queryset.values_list(*fields))
             columns = (
                 dict(zip(fields, zip(*observations)))
@@ -303,7 +297,7 @@ class ObservationAPIService(APIService):
         observation = Observation(
             pk=data.id,
             datastream=datastream,
-            **data.dict(include=set(ObservationFields.model_fields.keys()), exclude=["result_qualifier_codes"]),
+            **data.dict(include=set(ObservationFields.model_fields.keys()), exclude=["result_qualifiers"]),
         )
         observation.full_clean()
 
@@ -315,11 +309,11 @@ class ObservationAPIService(APIService):
         ):
             raise ConflictError("Duplicate phenomenonTime or ID found on this datastream.")
 
-        self._validate_result_qualifier_codes(
-            principal, datastream.monitoring_site.workspace_id, data.result_qualifier_codes
+        self._validate_result_qualifiers(
+            principal, datastream.monitoring_site.workspace_id, data.result_qualifiers
         )
-        if data.result_qualifier_codes:
-            observation.result_qualifiers = data.result_qualifier_codes
+        if data.result_qualifiers:
+            observation.result_qualifiers = data.result_qualifiers
             observation.save(update_fields=["result_qualifiers"])
 
         if update_datastream_statistics is True:
@@ -393,16 +387,16 @@ class ObservationAPIService(APIService):
             for row in data.data
         ]
 
-        if "resultQualifierCodes" in data.fields:
-            idx_result_qualifier_codes = field_map["resultQualifierCodes"]
-            result_qualifier_code_set = {
-                code for row in data.data for code in row[idx_result_qualifier_codes]
+        if "resultQualifiers" in data.fields:
+            idx_result_qualifiers = field_map["resultQualifiers"]
+            result_qualifier_set = {
+                code for row in data.data for code in row[idx_result_qualifiers]
             }
-            self._validate_result_qualifier_codes(
-                principal, datastream.monitoring_site.workspace_id, result_qualifier_code_set
+            self._validate_result_qualifiers(
+                principal, datastream.monitoring_site.workspace_id, result_qualifier_set
             )
             for obs, row in zip(observation_records, data.data):
-                obs.result_qualifiers = row[idx_result_qualifier_codes]
+                obs.result_qualifiers = row[idx_result_qualifiers]
 
         if mode == "append" and datastream.phenomenon_end_time:
             if (

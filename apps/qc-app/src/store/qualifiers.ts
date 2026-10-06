@@ -52,7 +52,7 @@ export const useQualifierStore = defineStore(
       try {
         const response = await hs.value.resultQualifiers.list({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          workspace_id: selectedWorkspaceId.value,
+          workspaceId: selectedWorkspaceId.value,
           fetch_all: true,
         } as any)
         const list = (response.ok ? response.data : []) as ResultQualifier[]

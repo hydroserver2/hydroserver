@@ -274,7 +274,7 @@ export class MonitoringSite {
   name: string;
   latitude?: number | "";
   longitude?: number | "";
-  elevation_m?: number | "";
+  elevationM?: number | "";
   elevationDatum: string;
   state: string;
   county: string;
