@@ -29,8 +29,19 @@ export async function chooseAutocompleteOption(
   optionText: string
 ) {
   const field = page.getByRole('combobox', { name: label }).first()
-  await field.click()
-  await field.fill(optionText)
+  const container = field.locator('xpath=ancestor::*[@role="combobox"][1]')
+  await expect(field).toBeVisible()
+  await container.scrollIntoViewIfNeeded()
+  const toggle = container.getByRole('button').last()
+  if ((await toggle.count()) > 0) {
+    await toggle.click({ force: true })
+  }
+  await field.evaluate((element) => {
+    ;(element as HTMLInputElement).focus()
+  })
+  await page.keyboard.press('Control+A')
+  await page.keyboard.press('Backspace')
+  await page.keyboard.type(optionText)
   await chooseOverlayOption(page, optionText)
 }
 

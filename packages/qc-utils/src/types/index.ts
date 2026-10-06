@@ -133,16 +133,40 @@ export interface HistoryExecution {
    * Number of indices the op acted on. For filters this is the
    * size of the resulting selection (populated at resolve time);
    * for selection-consuming edits it's the size of the preceding
-   * SELECTION (populated at push time). `undefined` when not
+   * entry's selection, a SELECTION or a filter result (populated at
+   * push time). `undefined` when not
    * applicable (e.g. ADD_POINTS, which is datetime-addressed).
    */
   selectionSize?: number;
+  /**
+   * Epoch-ms datetimes of the first and last points the op acted on, read
+   * from the data as it stood when the op ran. Indices shift with later
+   * edits; these don't, so a consumer can say which period a step touched.
+   * Filters: their resulting selection. Selection-consuming edits: the
+   * preceding entry's selection, before the edit, so SHIFT_DATETIMES reports
+   * where the points were, not where they moved. ADD_POINTS and FILL_GAPS: the
+   * points they inserted. `undefined` when the op touched no points.
+   * Runtime-only like `selected`: recomputed on replay, never serialized.
+   */
+  extent?: { begin: number; end: number };
 }
 
 export type HistoryItem = {
   method: EnumEditOperations | EnumFilterOperations;
   args?: any[];
   selected?: number[];
+  /**
+   * Free-text note explaining why this operation was applied. Authored
+   * by the operator, round-tripped through save/load, and never read by
+   * the engine.
+   */
+  comment?: string;
+  /**
+   * Who applied this operation, for display. Server-assigned provenance
+   * rather than authored input: `applyHistory` and every replay carry it
+   * from the stored operation, and it is never sent back as part of one.
+   */
+  performedBy?: string;
   /**
    * Per-dispatch runtime information. Always present; some fields
    * populate at push time, others fill in after the handler resolves.
@@ -194,6 +218,10 @@ export type QcHistoryExecution = {
 export type QcHistoryOperation = {
   method: EnumEditOperations | EnumFilterOperations;
   args: any[];
+  /** Operator's note for this operation; absent when none was written. */
+  comment?: string;
+  /** Display name of whoever applied it. Audit only, like `execution`. */
+  performedBy?: string;
   execution?: QcHistoryExecution;
 };
 

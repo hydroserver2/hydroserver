@@ -12,9 +12,9 @@ self.onmessage = (e) => {
     outStart,
   } = e.data
   const arrayX = new Float64Array(bufferX)
-  const arrayY = new Float32Array(bufferY)
+  const arrayY = new Float64Array(bufferY)
   const outputArrayX = new Float64Array(outputBufferX)
-  const outputArrayY = new Float32Array(outputBufferY)
+  const outputArrayY = new Float64Array(outputBufferY)
   addDataPointsCore(
     arrayX,
     arrayY,

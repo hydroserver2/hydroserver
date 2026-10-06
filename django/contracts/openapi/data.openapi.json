@@ -5861,8 +5861,40 @@
                 "type": "null"
               }
             ],
-            "description": "Specifies how new observations are added to the datastream. `insert` allows observations at any timestamp. `append` adds only future observations (after the latest existing timestamp). `backfill` adds only historical observations (before the earliest existing timestamp). `replace` deletes all observations in the range of provided observations before inserting new ones.",
+            "description": "Specifies how new observations are added to the datastream. `insert` allows observations at any timestamp. `append` adds only future observations (after the latest existing timestamp). `backfill` adds only historical observations (before the earliest existing timestamp). `replace` deletes all observations in the range of provided observations before inserting new ones, or in `phenomenon_time_start` to `phenomenon_time_end` when given.",
             "title": "Mode"
+          },
+          "phenomenon_time_end": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "End of the range `replace` deletes. Requires `phenomenon_time_start`.",
+            "title": "Phenomenon Time End"
+          },
+          "phenomenon_time_start": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Start of the range `replace` deletes. Requires `phenomenon_time_end`.",
+            "title": "Phenomenon Time Start"
           }
         },
         "title": "ObservationBulkPostQueryParameters",
@@ -11613,7 +11645,7 @@
   "info": {
     "description": "",
     "title": "HydroServer Data Management API",
-    "version": "1.11.4"
+    "version": "1.12.0b6"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -14008,7 +14040,7 @@
             }
           },
           {
-            "description": "Specifies how new observations are added to the datastream. `insert` allows observations at any timestamp. `append` adds only future observations (after the latest existing timestamp). `backfill` adds only historical observations (before the earliest existing timestamp). `replace` deletes all observations in the range of provided observations before inserting new ones.",
+            "description": "Specifies how new observations are added to the datastream. `insert` allows observations at any timestamp. `append` adds only future observations (after the latest existing timestamp). `backfill` adds only historical observations (before the earliest existing timestamp). `replace` deletes all observations in the range of provided observations before inserting new ones, or in `phenomenon_time_start` to `phenomenon_time_end` when given.",
             "in": "query",
             "name": "mode",
             "required": false,
@@ -14027,8 +14059,52 @@
                   "type": "null"
                 }
               ],
-              "description": "Specifies how new observations are added to the datastream. `insert` allows observations at any timestamp. `append` adds only future observations (after the latest existing timestamp). `backfill` adds only historical observations (before the earliest existing timestamp). `replace` deletes all observations in the range of provided observations before inserting new ones.",
+              "description": "Specifies how new observations are added to the datastream. `insert` allows observations at any timestamp. `append` adds only future observations (after the latest existing timestamp). `backfill` adds only historical observations (before the earliest existing timestamp). `replace` deletes all observations in the range of provided observations before inserting new ones, or in `phenomenon_time_start` to `phenomenon_time_end` when given.",
               "title": "Mode"
+            }
+          },
+          {
+            "description": "Start of the range `replace` deletes. Requires `phenomenon_time_end`.",
+            "in": "query",
+            "name": "phenomenon_time_start",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Start of the range `replace` deletes. Requires `phenomenon_time_end`.",
+              "title": "Phenomenon Time Start"
+            }
+          },
+          {
+            "description": "End of the range `replace` deletes. Requires `phenomenon_time_start`.",
+            "in": "query",
+            "name": "phenomenon_time_end",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "End of the range `replace` deletes. Requires `phenomenon_time_start`.",
+              "title": "Phenomenon Time End"
             }
           }
         ],
@@ -23343,6 +23419,17 @@
         "responses": {
           "204": {
             "description": "No Content"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
           },
           "401": {
             "content": {

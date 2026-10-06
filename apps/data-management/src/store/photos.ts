@@ -8,6 +8,11 @@ export const usePhotosStore = defineStore('photos', () => {
   const photosToDelete = ref<string[]>([])
   const loading = ref(false)
 
+  const resetPendingPhotos = () => {
+    newPhotos.value = []
+    photosToDelete.value = []
+  }
+
   const uploadNewPhotos = async (thingId: string) => {
     if (!newPhotos.value.length) return
 
@@ -45,8 +50,7 @@ export const usePhotosStore = defineStore('photos', () => {
       console.error('Error updating photos', error)
     } finally {
       loading.value = false
-      newPhotos.value = []
-      photosToDelete.value = []
+      resetPendingPhotos()
     }
   }
 
@@ -55,6 +59,7 @@ export const usePhotosStore = defineStore('photos', () => {
     newPhotos,
     photosToDelete,
     loading,
+    resetPendingPhotos,
     updatePhotos,
   }
 })

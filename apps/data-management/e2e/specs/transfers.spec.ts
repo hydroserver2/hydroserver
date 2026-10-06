@@ -40,6 +40,14 @@ async function deleteWorkspace(page: Page, name: string) {
   await expect(page.getByRole('cell', { name, exact: true })).toHaveCount(0)
 }
 
+function pendingTransferRow(page: Page, name: string) {
+  return page
+    .getByRole('row', { name: new RegExp(name) })
+    .filter({
+      has: page.getByRole('button', { name: 'Accept transfer' }),
+    })
+}
+
 test.describe('workspace transfers', () => {
   test.use({ storageState: { cookies: [], origins: [] } })
 
@@ -55,14 +63,18 @@ test.describe('workspace transfers', () => {
 
     await page.getByRole('button', { name: 'Pending workspace transfer' }).click()
 
+    const transferRow = pendingTransferRow(page, fixtures.workspaces.transfer.name)
     await expect(
-      page.getByRole('cell', { name: fixtures.workspaces.transfer.name, exact: true })
+      transferRow.getByRole('cell', {
+        name: fixtures.workspaces.transfer.name,
+        exact: true,
+      })
     ).toBeVisible()
     await expect(
-      page.getByRole('button', { name: 'Accept transfer' })
+      transferRow.getByRole('button', { name: 'Accept transfer' })
     ).toBeVisible()
     await expect(
-      page.getByRole('button', { name: 'Cancel transfer' })
+      transferRow.getByRole('button', { name: 'Cancel transfer' })
     ).toBeVisible()
   })
 
@@ -88,15 +100,12 @@ test.describe('workspace transfers', () => {
     await targetPage.goto('/orchestration')
     await targetPage.getByRole('button', { name: 'Pending workspace transfer' }).click()
 
-    const pendingRow = targetPage.getByRole('row', {
-      name: new RegExp(workspaceName),
-    })
+    const pendingRow = pendingTransferRow(targetPage, workspaceName)
     await expect(pendingRow).toBeVisible()
     await pendingRow.getByRole('button', { name: 'Cancel transfer' }).click()
     await expect(pendingRow).toHaveCount(0)
 
-    await page.reload()
-    await page.getByRole('button', { name: 'Workspaces', exact: true }).click()
+    await page.goto('/orchestration/workspaces')
     await deleteWorkspace(page, workspaceName)
 
     await targetContext.close()
@@ -124,9 +133,7 @@ test.describe('workspace transfers', () => {
     await targetPage.goto('/orchestration')
     await targetPage.getByRole('button', { name: 'Pending workspace transfer' }).click()
 
-    const pendingRow = targetPage.getByRole('row', {
-      name: new RegExp(workspaceName),
-    })
+    const pendingRow = pendingTransferRow(targetPage, workspaceName)
     await expect(pendingRow).toBeVisible()
     await pendingRow.getByRole('button', { name: 'Accept transfer' }).click()
     await expect(pendingRow).toHaveCount(0)
@@ -136,8 +143,8 @@ test.describe('workspace transfers', () => {
     await expect(ownedRow).toBeVisible()
     await expect(ownedRow).toContainText('Owner')
 
-    await page.reload()
-    await page.getByRole('button', { name: 'Workspaces', exact: true }).click()
+    await page.goto('/orchestration/workspaces')
+    await expect(page.getByRole('button', { name: 'Add workspace' })).toBeVisible()
     await expect(page.getByRole('cell', { name: workspaceName, exact: true })).toHaveCount(0)
 
     await deleteWorkspace(targetPage, workspaceName)

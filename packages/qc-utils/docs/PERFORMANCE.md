@@ -25,9 +25,9 @@ methodology is in [CALIBRATION.md](./CALIBRATION.md).
 A single `ObservationRecord` allocates two typed arrays:
 
 - `Float64Array` for timestamps — 8 bytes / point
-- `Float32Array` for values — 4 bytes / point
+- `Float64Array` for values — 8 bytes / point
 
-So **12 bytes per observation**, plus a 20,000-slot growth headroom
+So **16 bytes per observation**, plus a 20,000-slot growth headroom
 (`INCREASE_AMOUNT`) reserved on initial allocation when the buffer
 exposes `maxByteLength`. The grow strategy uses
 `SharedArrayBuffer.grow()` + typed-array `resize()` to avoid copies on
@@ -68,10 +68,10 @@ crossover per device.
 
 | Dataset size | Memory / stream | Practical experience                                                                |
 |--------------|-----------------|--------------------------------------------------------------------------------------|
-| 50k obs      | ~0.6 MB         | Instant. Everything inline.                                                          |
-| 500k obs     | ~6 MB           | Comfortable. Workers kick in on big edits.                                           |
-| 5M obs       | ~60 MB          | Feasible on a modern desktop. Network fetch dominates the wall-clock time.           |
-| 50M obs      | ~600 MB         | Tab approaching its memory budget. Re-window in the consumer.                        |
+| 50k obs      | ~0.8 MB         | Instant. Everything inline.                                                          |
+| 500k obs     | ~8 MB           | Comfortable. Workers kick in on big edits.                                           |
+| 5M obs       | ~80 MB          | Feasible on a modern desktop. Network fetch dominates the wall-clock time.           |
+| 50M obs      | ~800 MB         | Tab approaching its memory budget. Re-window in the consumer.                        |
 
 The qc-app's "5 plotted streams" cap is a consumer-side decision —
 qc-utils itself doesn't impose one. If you build a consumer that wants
@@ -117,10 +117,6 @@ It is **less well-shaped** for:
   length); on a stream that never ends, history grows unbounded.
   Acceptable for sessions of <1000 ops; not designed for batch
   pipelines that accumulate millions.
-- **Datasets that don't fit in a Float32.** Values use Float32 — sensor
-  readings normally do. If you have a domain with Float64 value
-  precision requirements, this library is not the right fit without a
-  fork.
 
 ## Community evidence
 

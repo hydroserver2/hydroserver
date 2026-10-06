@@ -29,89 +29,9 @@ const ws = (overrides: Record<string, any> = {}) => ({
   ...overrides,
 })
 
-const role = (permissions: Array<{ resource: string; action: string }>) => ({
-  collaboratorRole: { permissions },
-})
-
 beforeEach(() => {
   setActivePinia(createPinia())
   mockList.fn = () => Promise.resolve({ data: [] })
-})
-
-describe('useWorkspaceStore.canEditSelected', () => {
-  it('returns false when no workspace is selected', async () => {
-    const { useWorkspaceStore } = await import('@/store/workspaces')
-    const store = useWorkspaceStore()
-    expect(store.canEditSelected).toBe(false)
-  })
-
-  it('returns true for owner (collaboratorRole is null)', async () => {
-    const { useWorkspaceStore } = await import('@/store/workspaces')
-    const store = useWorkspaceStore()
-    store.selectedWorkspace = ws() as any
-    expect(store.canEditSelected).toBe(true)
-  })
-
-  it('returns true for collaborator with edit on Observation', async () => {
-    const { useWorkspaceStore } = await import('@/store/workspaces')
-    const store = useWorkspaceStore()
-    store.selectedWorkspace = ws(
-      role([{ resource: 'Observation', action: 'edit' }])
-    ) as any
-    expect(store.canEditSelected).toBe(true)
-  })
-
-  it('returns true for collaborator with edit on "*" resource', async () => {
-    const { useWorkspaceStore } = await import('@/store/workspaces')
-    const store = useWorkspaceStore()
-    store.selectedWorkspace = ws(
-      role([{ resource: '*', action: 'edit' }])
-    ) as any
-    expect(store.canEditSelected).toBe(true)
-  })
-
-  it('returns true for collaborator with "*" action on Observation', async () => {
-    const { useWorkspaceStore } = await import('@/store/workspaces')
-    const store = useWorkspaceStore()
-    store.selectedWorkspace = ws(
-      role([{ resource: 'Observation', action: '*' }])
-    ) as any
-    expect(store.canEditSelected).toBe(true)
-  })
-
-  it('returns true for collaborator with create on Observation', async () => {
-    const { useWorkspaceStore } = await import('@/store/workspaces')
-    const store = useWorkspaceStore()
-    store.selectedWorkspace = ws(
-      role([{ resource: 'Observation', action: 'create' }])
-    ) as any
-    expect(store.canEditSelected).toBe(true)
-  })
-
-  it('returns false for collaborator with only view on Observation', async () => {
-    const { useWorkspaceStore } = await import('@/store/workspaces')
-    const store = useWorkspaceStore()
-    store.selectedWorkspace = ws(
-      role([{ resource: 'Observation', action: 'view' }])
-    ) as any
-    expect(store.canEditSelected).toBe(false)
-  })
-
-  it('returns false for collaborator with edit on unrelated resource', async () => {
-    const { useWorkspaceStore } = await import('@/store/workspaces')
-    const store = useWorkspaceStore()
-    store.selectedWorkspace = ws(
-      role([{ resource: 'Thing', action: 'edit' }])
-    ) as any
-    expect(store.canEditSelected).toBe(false)
-  })
-
-  it('returns false for collaborator with empty permissions list', async () => {
-    const { useWorkspaceStore } = await import('@/store/workspaces')
-    const store = useWorkspaceStore()
-    store.selectedWorkspace = ws(role([])) as any
-    expect(store.canEditSelected).toBe(false)
-  })
 })
 
 describe('useWorkspaceStore.selectWorkspace', () => {

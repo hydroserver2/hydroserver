@@ -1,10 +1,10 @@
 /**
  * Gaps filter: surfaces timestamps where Δx between adjacent points
  * exceeds a threshold. The panel is live-commit via `GapFinder`'s
- * `auto-select-endpoints` prop — no Apply button, filling the
+ * `auto-select-endpoints` prop: no Apply button, filling the
  * Amount input is enough to seed a selection once a gap is found.
  * The default fixture has a perfectly uniform 15-minute grid so a
- * small threshold still finds nothing — instead we use a custom
+ * small threshold still finds nothing. Instead we use a custom
  * fixture with one deliberate gap.
  */
 
@@ -14,8 +14,8 @@ import { openOp, setupEditView, waitForSelection } from './support/app'
 import { FIXTURE_OBS_START_MS } from './support/fixtures'
 
 function observationsWithGap() {
-  // See FIXTURE_OBS_START_MS — anchored to "now" so the series sits
-  // inside the QC app's default 1w window.
+  // See FIXTURE_OBS_START_MS: anchored to "now" so the series sits
+  // inside the QC app's default time range.
   const startMs = FIXTURE_OBS_START_MS
   const spacingMs = 15 * 60 * 1000
   const phenomenonTime: string[] = []
@@ -35,7 +35,7 @@ function observationsWithGap() {
 
 test.describe('filter: find gaps', () => {
   test.beforeEach(async ({ page }) => {
-    await installMocks(page, { observations: observationsWithGap() })
+    await installMocks(page, { observations: observationsWithGap(), qcHistories: true })
     await setupEditView(page)
   })
 

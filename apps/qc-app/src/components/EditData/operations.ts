@@ -19,6 +19,7 @@ import AddPoints from '@/components/EditData/AddPoints.vue'
 import ShiftDatetimes from '@/components/EditData/ShiftDatetimes.vue'
 import FillGaps from '@/components/EditData/FillGaps.vue'
 import QualifyingComments from '@/components/EditData/QualifyingComments.vue'
+import { QUALIFIER_TOOL_ENABLED } from '@/store/qualifiers'
 
 export type OperationGroup = 'filter' | 'edit' | 'add'
 
@@ -137,15 +138,19 @@ export const operations: OperationMeta[] = [
     component: markRaw(DeletePoints),
   },
   // Add Data
-  {
-    id: 'qualifyingComments',
-    title: 'Qualifying comments',
-    description: 'Attach qualifier flags to selected points',
-    icon: 'mdi-flag',
-    group: 'add',
-    requiresSelection: true,
-    component: markRaw(QualifyingComments),
-  },
+  ...(QUALIFIER_TOOL_ENABLED
+    ? [
+      {
+        id: 'qualifyingComments',
+        title: 'Qualifying comments',
+        description: 'Attach qualifier flags to selected points',
+        icon: 'mdi-flag',
+        group: 'add' as const,
+        requiresSelection: true,
+        component: markRaw(QualifyingComments),
+      },
+    ]
+    : []),
   {
     id: 'addPoints',
     title: 'Add points',
