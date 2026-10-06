@@ -169,6 +169,16 @@ describe('handleSelected', () => {
     expect(suppressedEchoSelection.value).toBeNull()
   })
 
+  it('takes a new selection of the same size on a relayout', async () => {
+    qcDatastream.value = { id: 'qc' }
+    selectedSeries.value = { data: { dispatchFilter } }
+    plotlyRef.value = makePlot('qc', [4, 5])
+    selectedData.value = [4, 6]
+    await handleSelected({ selections: [] } as any, { fromRelayout: true })
+    expect(selectedData.value).toEqual([4, 5])
+    expect(dispatchFilter).toHaveBeenCalledWith('SELECTION', [4, 5])
+  })
+
   it('treats a missing and an empty selection as the same on a relayout', async () => {
     qcDatastream.value = { id: 'qc' }
     selectedSeries.value = { data: { dispatchFilter } }

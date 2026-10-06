@@ -312,6 +312,25 @@ describe('useEditEntry', () => {
     expect(currentView.value).toBe('Edit')
   })
 
+  it("leaves a newer entry's opening flag alone", async () => {
+    let finishFirst!: (v: string) => void
+    beginEditing.mockReturnValueOnce(new Promise((r) => (finishFirst = r)))
+    const first = useEditEntry().enterEdit('mgd-a')
+    await vi.waitFor(() => expect(beginEditing).toHaveBeenCalledTimes(1))
+
+    let finishSecond!: (v: string) => void
+    beginEditing.mockReturnValueOnce(new Promise((r) => (finishSecond = r)))
+    const second = useEditEntry().enterEdit('mgd-b')
+    await vi.waitFor(() => expect(beginEditing).toHaveBeenCalledTimes(2))
+
+    finishFirst('resumed')
+    expect(await first).toBe('superseded')
+    expect(openingDatastreamId.value).toBe('mgd-b')
+    finishSecond('resumed')
+    await second
+    expect(openingDatastreamId.value).toBeNull()
+  })
+
   it('clears the opening flag when the session fails to open', async () => {
     beginEditing.mockRejectedValueOnce(new Error('offline'))
     await expect(useEditEntry().enterEdit('mgd')).rejects.toThrow('offline')

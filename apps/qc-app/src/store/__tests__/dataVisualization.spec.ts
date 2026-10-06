@@ -1243,6 +1243,17 @@ describe('useDataVisStore persisted preset', () => {
     const { useDataVisStore } = await import('@/store/dataVisualization')
     expect(useDataVisStore().selectedDateBtnId).toBe(1)
   })
+
+  it("restores the editor's context preset, an unknown one as the default", async () => {
+    localStorage.setItem(
+      'qc:preferences:v1',
+      JSON.stringify({ selectedDateBtnId: 5, contextPresetId: 9 })
+    )
+    installPinia()
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    expect(useDataVisStore().selectedDateBtnId).toBe(5)
+    expect(useDataVisStore().contextPresetId).toBe(1)
+  })
 })
 
 describe('useDataVisStore.clearPlottedDatastreams + toggleDatastream', () => {
