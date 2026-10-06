@@ -9,7 +9,7 @@ describe('WorkspaceService', () => {
 
   it('serializes boolean and null query values as lowercase true, false and null', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ data: [], meta: { offset: 0, limit: 100, totalCount: 0 } }), {
+      new Response(JSON.stringify({ data: [], meta: { offset: 0, limit: 100, numberMatched: 0 } }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       })
@@ -29,7 +29,7 @@ describe('WorkspaceService', () => {
 
   it('uses the service-account endpoint for the workspace management table', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ data: [], meta: { offset: 0, limit: 200, totalCount: 0 } }), {
+      new Response(JSON.stringify({ data: [], meta: { offset: 0, limit: 200, numberMatched: 0 } }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       })
@@ -69,7 +69,7 @@ describe('WorkspaceService', () => {
           JSON.stringify({
             data,
             included: { roles: [role], users },
-            meta: { offset: Number(offset), limit: 200, totalCount: 201 },
+            meta: { offset: Number(offset), limit: 200, numberMatched: 201 },
           }),
           {
             status: 200,
@@ -104,7 +104,7 @@ describe('WorkspaceService', () => {
           return new Response(
             JSON.stringify({
               data: [{ email: 'first@example.com' }],
-              meta: { offset: 0, limit: 200, totalCount: 201 },
+              meta: { offset: 0, limit: 200, numberMatched: 201 },
             }),
             {
               status: 200,
@@ -143,7 +143,7 @@ describe('WorkspaceService', () => {
         return new Response(
           JSON.stringify({
             data,
-            meta: { offset: Number(offset), limit: 200, totalCount: 201 },
+            meta: { offset: Number(offset), limit: 200, numberMatched: 201 },
           }),
           {
             status: 200,
@@ -306,7 +306,7 @@ describe('WorkspaceService', () => {
             roles: [role],
             users: [{ name: 'New', email: 'new@example.com', organizationName: null }],
           },
-          meta: { offset: 0, limit: 200, totalCount: 1 },
+          meta: { offset: 0, limit: 200, numberMatched: 1 },
         }),
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       )
@@ -336,7 +336,7 @@ describe('WorkspaceService', () => {
         })
       }
       return new Response(
-        JSON.stringify({ data: [], meta: { offset: 0, limit: 200, totalCount: 0 } }),
+        JSON.stringify({ data: [], meta: { offset: 0, limit: 200, numberMatched: 0 } }),
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       )
     })

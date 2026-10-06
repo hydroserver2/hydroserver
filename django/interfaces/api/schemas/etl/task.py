@@ -26,6 +26,7 @@ from interfaces.api.schemas.orchestration.schedule import (
     resolve_schedule,
 )
 from interfaces.api.schemas.orchestration.run import TaskRunResponse, resolve_latest_run
+from interfaces.api.schemas.base import ItemId
 
 
 class EtlTaskFields(Schema):
@@ -129,8 +130,7 @@ class EtlTaskQueryParameters(EtlTaskFilterFields, CollectionQueryParameters, Ext
     )
 
 
-class EtlTaskResponse(BaseGetResponse, EtlTaskFields):
-    id: uuid.UUID
+class EtlTaskResponse(BaseGetResponse, EtlTaskFields, ItemId):
     workspace_id: uuid.UUID = Field(
         ..., validation_alias=AliasChoices("workspaceId", AliasPath("data_connection", "workspace_id"))
     )

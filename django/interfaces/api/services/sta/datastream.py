@@ -4,7 +4,7 @@ from collections import defaultdict
 from typing import Optional, Literal, Sequence, get_args
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
-from django.db.models import Min, Max, Count
+from django.db.models import Min, Max, Count, Exists, OuterRef
 from django.utils import timezone
 from django.http import StreamingHttpResponse
 
@@ -12,6 +12,7 @@ from core.iam.models import ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.sta.models import (
     Datastream,
+    MonitoringSite,
     Observation,
     DatastreamLinkedResource,
 )
@@ -104,11 +105,27 @@ class DatastreamAPIService(APIService):
         return queryset
 
     @classmethod
-    def apply_site_bbox(cls, queryset, bbox: Optional[BoundingBox]):
-        """Filters datastreams to those whose monitoring site lies inside a bounding box."""
+    def apply_site_bbox(
+        cls,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        queryset,
+        bbox: Optional[BoundingBox],
+    ):
+        """
+        Filters datastreams to those whose monitoring site lies inside a bounding box, which is their GeoJSON
+        geometry (interfaces/api/geometry.py). Datastreams, whose site the principal can't view, have no geometry,
+        so they match any box, and the site's location never affects the result.
+        """
 
-        return cls.apply_bbox(
-            queryset, bbox, "monitoring_site__latitude", "monitoring_site__longitude"
+        if bbox is None:
+            return queryset
+
+        visible_site = principal.filter_by_permission(
+            MonitoringSite.objects.filter(pk=OuterRef("monitoring_site_id")), "can_view"
+        )
+
+        return queryset.filter(
+            Exists(visible_site.filter(cls.bbox_q(bbox))) | ~Exists(visible_site)
         )
 
     def list(
@@ -157,7 +174,7 @@ class DatastreamAPIService(APIService):
                 else:
                     queryset = self.apply_filters(queryset, field, filtering[field])
 
-        queryset = self.apply_site_bbox(queryset, bbox)
+        queryset = self.apply_site_bbox(principal, queryset, bbox)
         queryset = self.apply_datetime_interval(
             queryset, datetime_interval, "phenomenon_begin_time", "phenomenon_end_time"
         )

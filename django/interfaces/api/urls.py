@@ -6,6 +6,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from hydroserver import __version__
 from interfaces.api.http import handlers
 from interfaces.api.http.api import HydroServerNinjaAPI
+from interfaces.api.http.content_negotiation import negotiate_format
 from interfaces.api.http.query_params import reject_unknown_query_params
 from interfaces.api.http.renderer import ORJSONRenderer
 
@@ -29,6 +30,7 @@ api = HydroServerNinjaAPI(
 
 handlers.register(api)
 api.add_decorator(reject_unknown_query_params, mode="view")
+api.add_decorator(negotiate_format, mode="view")
 
 api.add_router("", ogc_router)
 

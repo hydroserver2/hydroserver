@@ -1,9 +1,9 @@
 import pytest
 
-from django.test import override_settings
 from django.urls import reverse
 
 from interfaces.api.urls import api
+from tests.interfaces.api.helpers import BASE_URL, links_by_rel
 
 pytestmark = [pytest.mark.django_db, pytest.mark.usefixtures("proxy_base_url")]
 
@@ -12,7 +12,6 @@ pytestmark = [pytest.mark.django_db, pytest.mark.usefixtures("proxy_base_url")]
 # Req 1-6; OGC API - Common Core landing-page and json classes). Links are built from
 # PROXY_BASE_URL, not the request's Host, which the test client sends as "testserver".
 
-BASE_URL = "https://hydroserver.example.org"
 LANDING_PATH = "/api/ogc/"
 CONFORMANCE_PATH = "/api/ogc/conformance"
 COMMON_CORE = "http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/core"
@@ -20,16 +19,10 @@ COMMON_JSON = "http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/json"
 COMMON_LANDING_PAGE = "http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/landing-page"
 OGC_CONFORMANCE_REL = "http://www.opengis.net/def/rel/ogc/1.0/conformance"
 FEATURES_CORE = "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core"
-
-
-@pytest.fixture
-def proxy_base_url():
-    with override_settings(PROXY_BASE_URL=BASE_URL):
-        yield
-
-
-def _links(response):
-    return {link["rel"]: link for link in response.json()["links"]}
+FEATURES_GEOJSON = "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson"
+COMMON_PROFILE_PARAMETER = "http://www.opengis.net/spec/ogcapi-common-3/1.0/conf/profile-parameter"
+FEATURES_PROPERTIES = "http://www.opengis.net/spec/ogcapi-features-6/1.0/conf/properties"
+FEATURES_PROPERTIES_FEATURES = "http://www.opengis.net/spec/ogcapi-features-6/1.0/conf/properties-features"
 
 
 def test_landing_page_describes_the_api(client):
@@ -41,7 +34,7 @@ def test_landing_page_describes_the_api(client):
 
 
 def test_landing_page_links(client):
-    links = _links(client.get(LANDING_PATH))
+    links = links_by_rel(client.get(LANDING_PATH))
 
     assert {rel: (link["href"], link["type"]) for rel, link in links.items()} == {
         "self": (f"{BASE_URL}/api/ogc/", "application/json"),
@@ -57,7 +50,7 @@ def test_landing_page_links(client):
     "rel", ["self", "service-desc", "service-doc", "conformance", OGC_CONFORMANCE_REL, "data"]
 )
 def test_landing_page_link_returns_its_declared_media_type(client, rel):
-    link = _links(client.get(LANDING_PATH))[rel]
+    link = links_by_rel(client.get(LANDING_PATH))[rel]
 
     response = client.get(link["href"].removeprefix(BASE_URL), HTTP_ACCEPT=link["type"])
 
@@ -70,7 +63,16 @@ def test_conformance_declares_the_implemented_classes(client):
 
     assert response.status_code == 200
     assert response.json() == {
-        "conformsTo": [COMMON_CORE, COMMON_JSON, COMMON_LANDING_PAGE, FEATURES_CORE]
+        "conformsTo": [
+            COMMON_CORE,
+            COMMON_LANDING_PAGE,
+            FEATURES_CORE,
+            COMMON_JSON,
+            FEATURES_GEOJSON,
+            COMMON_PROFILE_PARAMETER,
+            FEATURES_PROPERTIES,
+            FEATURES_PROPERTIES_FEATURES,
+        ]
     }
 
 

@@ -60,13 +60,16 @@ They also provide `get`/`getItem`, `create`/`createItem`, `update`/`updateItem`,
 
 QC sessions and operations use similar helpers but also require their parent history and session IDs. Authentication and linked resource methods expose purpose-specific methods instead.
 
-Most endpoints support query params such as:
+Most collection endpoints support query params such as:
 
-- `page`
-- `page_size`
+- `limit` and `offset` for paging
 - `sortby`
-- `expand_related`
+- `properties`, to return only some properties of each item
+- `include`, to add related resources to the response's `included` section
+- `q`, `bbox` and `datetime`, where a collection supports them
 - Resource-specific filters
+
+`f` selects the response format (for example `geojson` on workspaces, monitoring sites, datastreams, and observations), and observations also accept a `profile` (see [Get observations](#example-get-observations)).
 
 ### Example: Access collection items
 
@@ -80,10 +83,10 @@ for (const workspace of workspaces) {
 ### Example: Collection pagination
 
 ```ts
-// Fetch page 2 only
+// Fetch the second page of 5 only
 const page2 = await hs.workspaces.list({
-  page: 2,
-  page_size: 5,
+  offset: 5,
+  limit: 5,
 });
 
 // Fetch all pages
@@ -542,6 +545,8 @@ await hs.datastreams.deleteLinkedResource(datastreamId, created.data!.id);
 
 ### Example: Get related metadata for a datastream
 
+The datastream service accepts `expand_related`, which requests the datastream's related resources with `include` and nests them in the datastream it returns.
+
 ```ts
 import type { DatastreamExtended } from "@hydroserver/client";
 
@@ -562,16 +567,28 @@ if (res.ok) {
 
 ### Example: Get observations
 
+Without a `profile`, `getObservations` returns observation records. The row and column profiles return the same properties grouped by datastream: each group has `datastreamId` and either `fields` and `rows`, or `columns` with one array per property. Use `properties` to request only the properties you need.
+
 ```ts
+import { ObservationProfile } from "@hydroserver/client";
+
 const observations = await hs.datastreams.getObservations(
   "00000000-0000-0000-0000-000000000000",
   {
-    format: "row",
+    profile: [ObservationProfile.Column],
+    properties: ["phenomenonTime", "result"],
     sortby: ["phenomenonTime"],
     datetime: "2025-01-01T00:00:00Z/2025-12-31T23:59:59Z",
-    page_size: 1000,
+    limit: 1000,
   }
 );
+
+if (observations.ok) {
+  const [group] = observations.data;
+  if (group && "columns" in group) {
+    console.log(group.columns.phenomenonTime, group.columns.result);
+  }
+}
 ```
 
 ### Example: Upload observations
@@ -656,7 +673,6 @@ Data connections define the source, payload format, timestamp handling, placehol
 ```ts
 const dataConnections = await hs.dataConnections.listAllItems({
   workspace_id: ["00000000-0000-0000-0000-000000000000"],
-  expand_related: true,
 });
 ```
 
@@ -706,7 +722,6 @@ ETL tasks bind a data connection to source-to-datastream mappings.
 ```ts
 const tasks = await hs.tasks.listAllItems({
   workspace_id: ["00000000-0000-0000-0000-000000000000"],
-  expand_related: true,
 });
 ```
 
@@ -756,7 +771,7 @@ HydroServer stores task run history for ETL execution.
 const taskId = "00000000-0000-0000-0000-000000000000";
 
 const runs = await hs.tasks.getTaskRuns(taskId, {
-  page_size: 50,
+  limit: 50,
   sortby: ["-startedAt"],
 });
 
@@ -874,15 +889,17 @@ const historyRes = await hs.qualityControlHistories.create({
 });
 
 if (!historyRes.ok) throw new Error(historyRes.message);
-const history = historyRes.data;
 
-const histories = await hs.qualityControlHistories.listAllItems({
-  managed_datastream_id: [history.managedDatastream.id],
-  expand_related: true,
+const history = await hs.qualityControlHistories.getItem(historyRes.data.id);
+if (!history) throw new Error("Quality control history not found");
+
+const historiesRes = await hs.qualityControlHistories.list({
+  managed_datastream_id: [history.managedDatastreamId],
+  include: ["sourceDatastream", "managedDatastream"],
 });
 ```
 
-Without `expand_related`, history responses contain `sourceDatastreamId` and `managedDatastreamId`. With it, they contain expanded `sourceDatastream` and `managedDatastream` objects.
+History responses contain `sourceDatastreamId` and `managedDatastreamId`. With `include`, the datastreams themselves come back in the response's `included` section, as `sourceDatastreams` and `managedDatastreams`.
 
 ### Example: Correct observations in a range
 
@@ -902,9 +919,8 @@ if (!sessionRes.ok) throw new Error(sessionRes.message);
 const session = sessionRes.data;
 
 const sourceRes = await hs.datastreams.getObservations(
-  history.sourceDatastream.id,
+  history.sourceDatastreamId,
   {
-    format: "record",
     sortby: ["phenomenonTime"],
     datetime: `${rangeStart}/${rangeEnd}`,
   }
@@ -915,7 +931,13 @@ if (!Array.isArray(sourceRes.data) || sourceRes.data.length === 0) {
   throw new Error("No source observations found in the QC range");
 }
 
-const correctedRows = sourceRes.data.map((observation) => [
+const sourceObservations = sourceRes.data as Array<{
+  phenomenonTime: string;
+  result: number;
+  resultQualifierCodes: string[];
+}>;
+
+const correctedRows = sourceObservations.map((observation) => [
   observation.phenomenonTime,
   observation.result * 0.1,
   observation.resultQualifierCodes,
@@ -943,7 +965,7 @@ const operationsRes = await hs.qualityControlOperations.create(
 if (!operationsRes.ok) throw new Error(operationsRes.message);
 
 const writeRes = await hs.datastreams.createObservations(
-  history.managedDatastream.id,
+  history.managedDatastreamId,
   {
     fields: ["phenomenonTime", "result", "resultQualifierCodes"],
     data: correctedRows,

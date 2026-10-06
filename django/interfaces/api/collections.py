@@ -1,5 +1,17 @@
-from dataclasses import dataclass
-from typing import Optional
+from dataclasses import dataclass, field
+from typing import Literal, Mapping, Optional
+
+from interfaces.api.geometry import GeometrySource, PointGeometry, SiteExtent, SiteLocation
+
+ItemType = Literal["feature", "resource"]
+
+
+@dataclass(frozen=True)
+class FeatureType:
+    """What makes a collection's items features: the schema of their properties and where their geometry comes from."""
+
+    properties_schema: str
+    geometry: Optional[GeometrySource] = None
 
 
 @dataclass(frozen=True)
@@ -15,10 +27,20 @@ class CollectionDefinition:
     title: str
     description: str
     router: str
-    item_type: Optional[str] = None
+    feature: Optional[FeatureType] = None
+    formats: Mapping[str, tuple[str, ...]] = field(default_factory=lambda: {"json": ()})
+
+    @property
+    def default_format(self) -> str:
+        return next(iter(self.formats))
+
+    @property
+    def item_type(self) -> ItemType:
+        return "feature" if self.feature is not None else "resource"
 
 
 VIEWS = "interfaces.api.views"
+SCHEMAS = "interfaces.api.schemas"
 
 COLLECTIONS: tuple[CollectionDefinition, ...] = (
     CollectionDefinition(
@@ -27,6 +49,8 @@ COLLECTIONS: tuple[CollectionDefinition, ...] = (
         description="Workspaces that own monitoring sites, datastreams, and other data, and "
         "control who can access them.",
         router=f"{VIEWS}.iam.workspace.workspace_router",
+        feature=FeatureType(f"{SCHEMAS}.iam.workspace.WorkspaceProperties", geometry=SiteExtent()),
+        formats={"json": (), "geojson": ()},
     ),
     CollectionDefinition(
         id="roles",
@@ -40,7 +64,8 @@ COLLECTIONS: tuple[CollectionDefinition, ...] = (
         title="Monitoring Sites",
         description="Locations where observations are collected, with WGS 84 coordinates.",
         router=f"{VIEWS}.sta.monitoring_site.monitoring_site_router",
-        item_type="feature",
+        feature=FeatureType(f"{SCHEMAS}.sta.monitoring_site.MonitoringSiteProperties", geometry=PointGeometry()),
+        formats={"json": (), "geojson": ()},
     ),
     CollectionDefinition(
         id="monitoring-site-types",
@@ -60,7 +85,8 @@ COLLECTIONS: tuple[CollectionDefinition, ...] = (
         title="Datastreams",
         description="Time series of observations of one observed property at a monitoring site.",
         router=f"{VIEWS}.sta.datastream.datastream_router",
-        item_type="feature",
+        feature=FeatureType(f"{SCHEMAS}.sta.datastream.DatastreamProperties", geometry=SiteLocation()),
+        formats={"json": (), "geojson": ()},
     ),
     CollectionDefinition(
         id="datastream-statuses",
@@ -79,7 +105,11 @@ COLLECTIONS: tuple[CollectionDefinition, ...] = (
         title="Observations",
         description="Individual timestamped results recorded in datastreams.",
         router=f"{VIEWS}.sta.observation.observation_router",
-        item_type="feature",
+        feature=FeatureType(
+            f"{SCHEMAS}.sta.observation.ObservationProperties",
+            geometry=SiteLocation("datastreamId", site_lookup="datastreams__id"),
+        ),
+        formats={"json": ("row", "column"), "geojson": ()},
     ),
     CollectionDefinition(
         id="observed-properties",

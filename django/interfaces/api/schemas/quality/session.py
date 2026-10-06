@@ -19,6 +19,7 @@ from interfaces.api.schemas import (
     QueryBool,
 )
 from interfaces.api.schemas.iam.collaborator import DELETED_USER_CONTACT
+from interfaces.api.schemas.base import ItemId
 
 SessionStatus = Literal["in_progress", "committed"]
 
@@ -80,8 +81,7 @@ class QualityControlSessionQueryParameters(QualityControlSessionFilterFields, Co
     include_ancestors: QueryBool = Query(False, description="Also return transitive ancestors of all sessions matched by other filters.")
 
 
-class QualityControlSessionResponse(BaseGetResponse):
-    id: uuid.UUID
+class QualityControlSessionResponse(BaseGetResponse, ItemId):
     history_id: uuid.UUID
     created_by: UserContactResponse
     created_at: ISODatetime

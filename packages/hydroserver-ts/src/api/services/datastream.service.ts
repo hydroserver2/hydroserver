@@ -104,8 +104,8 @@ type LinkedResourceResponse = Data.components['schemas']['LinkedResourceGetRespo
 type ObservationResponse = Data.components['schemas']['ObservationResponse']
 type ObservationListResponse =
   | ObservationResponse[]
-  | Data.components['schemas']['ObservationRowData']
-  | Data.components['schemas']['ObservationColumnarData']
+  | Data.components['schemas']['ObservationRowResponse'][]
+  | Data.components['schemas']['ObservationColumnResponse'][]
 type CreatedResponse = Data.components['schemas']['CreatedResponse']
 type ObservationBulkPostQueryParameters =
   Data.components['schemas']['ObservationBulkPostQueryParameters']

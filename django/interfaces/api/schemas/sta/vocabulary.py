@@ -1,5 +1,3 @@
-import uuid
-
 from typing import Optional, Literal, Annotated
 from pydantic import BeforeValidator, WithJsonSchema
 from pydantic.alias_generators import to_camel
@@ -17,6 +15,7 @@ from interfaces.api.schemas import (
     split_sortby,
     sortby_array_schema,
 )
+from interfaces.api.schemas.base import ItemId, NewItemId
 
 
 class VocabularyFields(Schema):
@@ -69,12 +68,12 @@ class VocabularyQueryParameters(
     )
 
 
-class VocabularyResponse(BaseGetResponse, VocabularyFields):
-    id: uuid.UUID
+class VocabularyResponse(BaseGetResponse, VocabularyFields, ItemId):
+    pass
 
 
-class VocabularyPostBody(BasePostBody, VocabularyFields):
-    id: Optional[uuid.UUID] = None
+class VocabularyPostBody(BasePostBody, VocabularyFields, NewItemId):
+    pass
 
 
 class VocabularyPatchBody(BasePatchBody, VocabularyFields):

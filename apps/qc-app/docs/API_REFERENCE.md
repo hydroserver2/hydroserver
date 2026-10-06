@@ -43,11 +43,14 @@ qc-utils service layer lives under `packages/qc-utils/src/services/`.
 
 - **REST + JSON over HTTPS.** Authentication is session cookies issued by
   the HydroServer backend; CSRF tokens are read from the same domain.
-- **HydroServer columnar response format** is the preferred shape for
-  observation fetches (`format=column`). It returns parallel
-  `phenomenonTime[]` + `result[]` arrays and is dramatically faster than
-  the row-oriented response. The QC App can decode both, but uses column
-  format end-to-end today (see `src/utils/observations.ts:33`).
+- **HydroServer's column profile** is the preferred shape for observation
+  fetches (`profile=https://hydroserver.org/profiles/observations/column`,
+  `ObservationProfile.Column` in `@hydroserver/client`). It groups
+  observations by datastream, with parallel `phenomenonTime[]` and
+  `result[]` arrays in each group's `columns`, and is far faster than
+  observation records. The QC App requests only `phenomenonTime` and
+  `result` with the `properties` parameter (see
+  `src/utils/observations.ts:23`).
 - **No OData, no GraphQL, no OGC SensorThings.** Bridging to those
   standards is a HydroServer-backend concern; the QC App will inherit
   whatever HydroServer exposes.
@@ -56,8 +59,10 @@ qc-utils service layer lives under `packages/qc-utils/src/services/`.
 ### Observation read
 
 Paged GET against `/api/ogc/collections/observations/items` with
-`datastream_id={id}`, `format=column`, `sortby=phenomenonTime`,
-`limit=50000`, and a `datetime` interval (`start/end`, RFC 3339). The app
+`datastream_id={id}`, the column `profile`,
+`properties=phenomenonTime,result`, `sortby=phenomenonTime`,
+`limit=50000`, and a `datetime` interval (`start/end`, RFC 3339). The
+response holds one group for the datastream. The app
 paginates client-side and caches the merged window in
 `useObservationStore`.
 

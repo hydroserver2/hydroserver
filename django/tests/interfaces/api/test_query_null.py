@@ -3,7 +3,6 @@ import uuid
 import pytest
 
 from interfaces.api.schemas.base import accepts_null
-from interfaces.api.urls import api
 from tests.core.iam.factories import RoleFactory, UserFactory, WorkspaceFactory
 from tests.core.sta.factories import (
     DatastreamFactory,
@@ -11,6 +10,7 @@ from tests.core.sta.factories import (
     MonitoringSiteFactory,
     UnitFactory,
 )
+from tests.interfaces.api.helpers import api_operations
 
 pytestmark = pytest.mark.django_db
 
@@ -53,29 +53,26 @@ NULLABLE_PARAMETERS = {
 def _nullable_parameters():
     """Yields (collection id, parameter name) for every query parameter that accepts 'null'."""
 
-    for bound_router in api._get_bound_routers():
-        prefix = bound_router.prefix.strip("/")
+    for _, _, prefix, operation in api_operations():
         if not prefix.startswith("collections/"):
             continue
 
-        for path_view in bound_router.path_operations.values():
-            for operation in path_view.operations:
-                for model in operation.models:
-                    if getattr(model, "__ninja_param_source__", None) != "query":
-                        continue
+        for model in operation.models:
+            if getattr(model, "__ninja_param_source__", None) != "query":
+                continue
 
-                    for alias, field_path in model.__ninja_flatten_map__.items():
-                        schema = model
-                        for name in field_path[:-1]:
-                            schema = schema.model_fields[name].annotation
-                        # The flatten map ends with the parameter's alias, not its field name.
-                        field = next(
-                            field
-                            for name, field in schema.model_fields.items()
-                            if (field.alias or name) == field_path[-1]
-                        )
-                        if accepts_null(field.annotation):
-                            yield prefix.removeprefix("collections/"), alias
+            for alias, field_path in model.__ninja_flatten_map__.items():
+                schema = model
+                for name in field_path[:-1]:
+                    schema = schema.model_fields[name].annotation
+                # The flatten map ends with the parameter's alias, not its field name.
+                field = next(
+                    field
+                    for name, field in schema.model_fields.items()
+                    if (field.alias or name) == field_path[-1]
+                )
+                if accepts_null(field.annotation):
+                    yield prefix.removeprefix("collections/"), alias
 
 
 def test_only_nullable_columns_accept_null():

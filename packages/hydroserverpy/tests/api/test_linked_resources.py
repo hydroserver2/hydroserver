@@ -43,7 +43,7 @@ def test_get_linked_resources_unwraps_data_and_forwards_params(service):
     parent_id = uuid.uuid4()
     items = [linked_resource_payload(uuid.uuid4())]
     service.client.request.return_value = FakeResponse(
-        {"data": items, "meta": {"limit": 10, "offset": 20, "totalCount": 21}, "links": []}
+        {"data": items, "meta": {"limit": 10, "offset": 20, "numberMatched": 21}, "links": []}
     )
 
     result = service.get_linked_resources(parent_id, offset=20, limit=10, type=["Report"])

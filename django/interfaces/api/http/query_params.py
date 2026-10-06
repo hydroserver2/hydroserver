@@ -4,6 +4,8 @@ from typing import Callable
 from django.http import HttpRequest, HttpResponseBase
 from ninja.operation import Operation
 
+from interfaces.api.http.content_negotiation import negotiated_query_params
+
 
 def declared_query_params(operation: Operation) -> frozenset[str]:
     """
@@ -32,7 +34,7 @@ def declared_query_params(operation: Operation) -> frozenset[str]:
 def reject_unknown_query_params(run: Callable[..., HttpResponseBase]) -> Callable[..., HttpResponseBase]:
     """
     Ninja view-mode decorator that responds 400 to requests with query parameters the operation
-    doesn't declare (OGC API - Features Core Req 8, /req/core/query-param-unknown).
+    doesn't declare.
 
     Ninja ignores undeclared query parameters, so without this a misspelled filter such as
     '?workspaceId=' silently returns unfiltered results. View-mode decorators wrap the bound
@@ -50,11 +52,15 @@ def reject_unknown_query_params(run: Callable[..., HttpResponseBase]) -> Callabl
 
     @wraps(run)
     def wrapper(request: HttpRequest, **kwargs) -> HttpResponseBase:
-        unknown = sorted(set(request.GET) - allowed)
+        request_allowed = allowed | negotiated_query_params(request)
+        unknown = sorted(set(request.GET) - request_allowed)
 
         if unknown:
             message = f"Unknown query parameter(s): {', '.join(unknown)}."
-            message += f" Allowed: {', '.join(sorted(allowed))}." if allowed else " This operation accepts none."
+            message += (
+                f" Allowed: {', '.join(sorted(request_allowed))}."
+                if request_allowed else " This operation accepts none."
+            )
             return operation.api.create_response(request, {"message": message}, status=400)
 
         return run(request, **kwargs)

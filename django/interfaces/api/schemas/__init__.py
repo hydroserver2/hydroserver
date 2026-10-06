@@ -133,7 +133,7 @@ from interfaces.api.schemas.sta.observation import (
     ObservationQueryParameters,
     ObservationItemQueryParameters,
     ObservationRowResponse,
-    ObservationColumnarResponse,
+    ObservationColumnResponse,
     ObservationPostBody,
     ObservationBulkPostQueryParameters,
     ObservationBulkPostBody,

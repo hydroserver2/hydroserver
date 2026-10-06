@@ -382,7 +382,7 @@ def test_get_monitoring_sites_empty_q_does_not_filter(client):
     without_q = client.get(MONITORING_SITES_URL)
     with_empty_q = client.get(MONITORING_SITES_URL, {"q": ""})
 
-    assert without_q.json()["meta"]["totalCount"] == with_empty_q.json()["meta"]["totalCount"] == 2
+    assert without_q.json()["meta"]["numberMatched"] == with_empty_q.json()["meta"]["numberMatched"] == 2
 
 
 # --- create_monitoring_site ------------------------------------------------------------------
@@ -961,7 +961,7 @@ def test_get_monitoring_site_linked_resources_pages_by_name(client):
     second = client.get(_linked_resources_url(parent.id), {"limit": 2, "offset": 2}).json()
 
     assert [item["name"] for item in first["data"]] == ["A", "B"]
-    assert first["meta"] == {"limit": 2, "offset": 0, "totalCount": 3}
+    assert first["meta"] == {"limit": 2, "offset": 0, "numberMatched": 3, "numberReturned": 2}
     assert "next" in [link["rel"] for link in first["links"]]
     assert [item["name"] for item in second["data"]] == ["C"]
 

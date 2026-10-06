@@ -60,10 +60,14 @@ class WorkspaceAPIService(APIService):
         bbox: Optional[BoundingBox],
     ):
         """
-        Filters workspaces by the monitoring sites the principal can view. A workspace matches
-        when one of those sites lies inside the box, or when the principal can view none of its
-        sites, since a workspace without a visible location matches any box (OGC API - Features
-        Core Req 24C). Sites the principal can't view never affect the result.
+        Filters workspaces by the extent of the monitoring sites the principal can view, which
+        is their GeoJSON geometry (interfaces/api/geometry.py). A workspace matches when that
+        extent intersects the box, or when the principal can view none of its sites, since a
+        workspace without a geometry matches any box. Sites the principal can't view never affect
+        the result.
+
+        The extent intersects the box when some visible site lies on or north of the box's
+        south edge, some on or south of its north edge, and likewise for its east and west edges.
         """
 
         if bbox is None:
@@ -73,9 +77,16 @@ class WorkspaceAPIService(APIService):
             MonitoringSite.objects.filter(workspace_id=OuterRef("pk")), "can_view"
         )
 
-        return queryset.filter(
-            Exists(cls.apply_bbox(visible_sites, bbox)) | ~Exists(visible_sites)
-        )
+        def any_site(**lookup):
+            return Exists(visible_sites.filter(**lookup))
+
+        latitudes = any_site(latitude__gte=bbox.south) & any_site(latitude__lte=bbox.north)
+        if bbox.crosses_antimeridian:
+            longitudes = any_site(longitude__gte=bbox.west) | any_site(longitude__lte=bbox.east)
+        else:
+            longitudes = any_site(longitude__gte=bbox.west) & any_site(longitude__lte=bbox.east)
+
+        return queryset.filter((latitudes & longitudes) | ~Exists(visible_sites))
 
     def list(
         self,

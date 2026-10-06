@@ -1,8 +1,6 @@
 import re
 import uuid
 
-from urllib.parse import parse_qs, urlsplit
-
 import pytest
 
 from django.test import override_settings
@@ -13,20 +11,22 @@ from interfaces.api.schemas import base
 from interfaces.api.urls import api
 from tests.core.iam.factories import UserFactory
 from tests.core.sta.factories import DatastreamFactory, MonitoringSiteFactory, ObservationFactory, UnitFactory
+from tests.interfaces.api.helpers import BASE_URL, links_by_rel, query_params
 
-pytestmark = [pytest.mark.django_db, pytest.mark.usefixtures("proxy_base_url")]
+pytestmark = [pytest.mark.django_db, pytest.mark.usefixtures("proxy_base_url_with_trailing_slash")]
 
 # List and item responses link to themselves (OGC API - Features Core Req 28 and 35) and pages
 # link to the next and previous pages (Core Recs 17-19, Permission 7). Links are built from
 # PROXY_BASE_URL, not the request's Host, which the test client sends as "testserver".
 
-BASE_URL = "https://hydroserver.example.org"
 UNITS_PATH = "/api/ogc/collections/units/items"
 OBSERVATIONS_PATH = "/api/ogc/collections/observations/items"
 
 
 @pytest.fixture
-def proxy_base_url():
+def proxy_base_url_with_trailing_slash():
+    """Sets PROXY_BASE_URL with a trailing slash, which links must not double."""
+
     with override_settings(PROXY_BASE_URL=f"{BASE_URL}/"):
         yield
 
@@ -36,19 +36,11 @@ def max_limit_of_two(monkeypatch):
     monkeypatch.setattr(base, "MAX_LIMIT", 2)
 
 
-def _links(response):
-    return {link["rel"]: link for link in response.json()["links"]}
-
-
-def _query(href):
-    return parse_qs(urlsplit(href).query)
-
-
 def test_list_self_link_is_the_request_url_on_proxy_base_url(client):
     response = client.get(f"{UNITS_PATH}?limit=5&sortby=-name")
 
     assert response.status_code == 200
-    assert _links(response)["self"] == {
+    assert links_by_rel(response)["self"] == {
         "href": f"{BASE_URL}{UNITS_PATH}?limit=5&sortby=-name",
         "rel": "self",
         "type": "application/json",
@@ -58,7 +50,7 @@ def test_list_self_link_is_the_request_url_on_proxy_base_url(client):
 def test_list_self_link_without_a_query_string_has_no_question_mark(client):
     response = client.get(UNITS_PATH)
 
-    assert _links(response)["self"]["href"] == f"{BASE_URL}{UNITS_PATH}"
+    assert links_by_rel(response)["self"]["href"] == f"{BASE_URL}{UNITS_PATH}"
 
 
 def test_item_links_to_itself_and_its_collection(client):
@@ -85,7 +77,7 @@ def test_item_collection_link_resolves_to_its_collection(client):
     site = MonitoringSiteFactory()
 
     response = client.get(f"/api/ogc/collections/monitoring-sites/items/{site.id}")
-    collection_href = _links(response)["collection"]["href"]
+    collection_href = links_by_rel(response)["collection"]["href"]
 
     assert client.get(collection_href.removeprefix(BASE_URL)).json()["id"] == "monitoring-sites"
 
@@ -114,27 +106,27 @@ def test_no_collection_link_outside_a_collection_item(rf, path):
 def test_full_first_page_links_next_but_not_prev(client):
     UnitFactory.create_batch(3, global_=True)
 
-    links = _links(client.get(UNITS_PATH, {"limit": 2}))
+    links = links_by_rel(client.get(UNITS_PATH, {"limit": 2}))
 
     assert set(links) == {"self", "next"}
-    assert _query(links["next"]["href"]) == {"limit": ["2"], "offset": ["2"]}
+    assert query_params(links["next"]["href"]) == {"limit": ["2"], "offset": ["2"]}
     assert links["next"]["type"] == "application/json"
 
 
 def test_middle_page_links_next_and_prev(client):
     UnitFactory.create_batch(5, global_=True)
 
-    links = _links(client.get(UNITS_PATH, {"limit": 2, "offset": 2}))
+    links = links_by_rel(client.get(UNITS_PATH, {"limit": 2, "offset": 2}))
 
     assert set(links) == {"self", "next", "prev"}
-    assert _query(links["next"]["href"])["offset"] == ["4"]
-    assert _query(links["prev"]["href"])["offset"] == ["0"]
+    assert query_params(links["next"]["href"])["offset"] == ["4"]
+    assert query_params(links["prev"]["href"])["offset"] == ["0"]
 
 
 def test_partial_last_page_links_prev_but_not_next(client):
     UnitFactory.create_batch(3, global_=True)
 
-    links = _links(client.get(UNITS_PATH, {"limit": 2, "offset": 2}))
+    links = links_by_rel(client.get(UNITS_PATH, {"limit": 2, "offset": 2}))
 
     assert set(links) == {"self", "prev"}
 
@@ -142,15 +134,15 @@ def test_partial_last_page_links_prev_but_not_next(client):
 def test_prev_link_does_not_go_below_offset_zero(client):
     UnitFactory.create_batch(3, global_=True)
 
-    links = _links(client.get(UNITS_PATH, {"limit": 2, "offset": 1}))
+    links = links_by_rel(client.get(UNITS_PATH, {"limit": 2, "offset": 1}))
 
-    assert _query(links["prev"]["href"]) == {"limit": ["2"], "offset": ["0"]}
+    assert query_params(links["prev"]["href"]) == {"limit": ["2"], "offset": ["0"]}
 
 
 def test_zero_limit_links_only_self(client):
     UnitFactory(global_=True)
 
-    links = _links(client.get(UNITS_PATH, {"limit": 0}))
+    links = links_by_rel(client.get(UNITS_PATH, {"limit": 0}))
 
     assert set(links) == {"self"}
 
@@ -158,10 +150,10 @@ def test_zero_limit_links_only_self(client):
 def test_page_links_use_the_limit_that_was_applied(client, max_limit_of_two):
     UnitFactory.create_batch(3, global_=True)
 
-    links = _links(client.get(UNITS_PATH, {"limit": 50}))
+    links = links_by_rel(client.get(UNITS_PATH, {"limit": 50}))
 
-    assert _query(links["self"]["href"])["limit"] == ["50"]
-    assert _query(links["next"]["href"])["limit"] == ["2"]
+    assert query_params(links["self"]["href"])["limit"] == ["50"]
+    assert query_params(links["next"]["href"])["limit"] == ["2"]
 
 
 def test_page_links_keep_the_other_query_parameters(client):
@@ -173,7 +165,7 @@ def test_page_links_keep_the_other_query_parameters(client):
     )
 
     assert response.status_code == 200
-    assert _query(_links(response)["next"]["href"]) == {
+    assert query_params(links_by_rel(response)["next"]["href"]) == {
         "limit": ["2"],
         "offset": ["2"],
         "properties": ["name", "symbol"],
@@ -190,25 +182,23 @@ def test_following_next_links_returns_every_item_once(client):
     while url:
         response = client.get(url)
         seen.extend(item["id"] for item in response.json()["data"])
-        next_link = _links(response).get("next")
+        next_link = links_by_rel(response).get("next")
         url = next_link["href"].removeprefix(BASE_URL) if next_link else None
 
     assert sorted(seen) == sorted(str(unit.id) for unit in units)
 
 
-@pytest.mark.parametrize("response_format, key", [("row", "rows"), ("column", "phenomenonTime")])
-def test_observation_formats_link_next_from_their_row_count(client, response_format, key):
+@pytest.mark.parametrize("profile", ["https://hydroserver.org/profiles/observations/row", "https://hydroserver.org/profiles/observations/column"])
+def test_observation_profiles_link_next_from_the_observations_on_the_page(client, profile):
     datastream = DatastreamFactory()
     ObservationFactory.create_batch(3, datastream=datastream)
 
-    response = client.get(
-        OBSERVATIONS_PATH,
-        {"datastream_id": str(datastream.id), "format": response_format, "limit": 2},
-    )
+    response = client.get(OBSERVATIONS_PATH, {"datastream_id": str(datastream.id), "profile": profile, "limit": 2})
 
     assert response.status_code == 200
-    assert len(response.json()["data"][key]) == 2
-    assert set(_links(response)) == {"self", "next"}
+    (group,) = response.json()["data"]
+    assert len(group["rows"] if "rows" in group else group["columns"]["id"]) == 2
+    assert set(links_by_rel(response)) == {"self", "alternate", "profile", "next"}
 
 
 def _collection_items_paths():
@@ -226,12 +216,13 @@ def test_every_collection_links_to_itself(client, path):
 
     assert response.status_code == 200
     links = response.json()["links"]
-    assert _links(response)["self"]["href"] == f"{BASE_URL}{path}"
-    assert all({"href", "rel", "type"} <= set(link) for link in links)
+    assert links_by_rel(response)["self"]["href"] == f"{BASE_URL}{path}"
+    # Profile links identify a profile rather than a retrievable resource, so they have no media type.
+    assert all({"href", "rel", "type"} <= set(link) for link in links if link["rel"] != "profile")
 
 
 def test_links_are_documented_in_the_openapi_document():
     schemas = api.get_openapi_schema(path_prefix="/api/ogc/")["components"]["schemas"]
 
-    assert schemas["Link"]["required"] == ["href", "rel", "type"]
+    assert schemas["Link"]["required"] == ["href", "rel"]
     assert "links" in schemas["PaginatedResponse_UnitResponse_"]["properties"]
