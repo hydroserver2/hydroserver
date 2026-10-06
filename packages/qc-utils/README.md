@@ -7,7 +7,7 @@ but the runtime has no Vue / app dependencies — anywhere you can run a
 modern browser bundle is fair game.
 
 The package wraps a paired `Float64Array` (timestamps, ms epoch) and
-`Float32Array` (values) in an `ObservationRecord` and exposes a single
+`Float64Array` (values) in an `ObservationRecord` and exposes a single
 history-driven dispatch surface. Every edit and filter is logged as a
 `HistoryItem` you can replay, undo / redo, calibrate against the host
 machine, and serialize to disk as a JSON "QC history".
@@ -64,8 +64,12 @@ The single state container. Holds:
 - `redoStack` — items popped by `undo()`, ready for `redo()`.
 
 Mutations only happen through `dispatch` / `dispatchAction` /
-`dispatchFilter` / `undo` / `redo` / `reload` / `reloadHistory` /
-`removeHistoryItem`. The handlers themselves are private — operations
+`dispatchFilter` / `dispatchStep` / `undo` / `redo` / `reload` /
+`truncateHistory` / `restoreHistory` / `removeHistoryItem` /
+`applyWindow(begin, end, rawData?)`. `previewHistory(index)` shows an
+earlier step without dropping the later ones (`previewIndex` says which);
+edits throw `HistoryPreviewError` until `exitPreview()`. The handlers
+themselves are private, so operations
 are driven by enum + args so the same call shape works at runtime, on
 replay from a saved QC history, and in unit tests.
 
@@ -79,7 +83,7 @@ replay from a saved QC history, and in unit tests.
 | `ASSIGN_DATETIMES_BULK` | Write parallel datetimes; runs as one combined delete + add. |
 | `DELETE_POINTS`         | Drop the selection from x / y in a single skip-on-delete pass. |
 | `INTERPOLATE`           | Linear interpolation across each consecutive group in the selection. |
-| `SHIFT_DATETIMES`       | Offset the selection's timestamps by `(amount, TimeUnit)`. |
+| `SHIFT_DATETIMES`       | Offset the selection's timestamps by `(amount, TimeUnit, timeZone)`. |
 | `DRIFT_CORRECTION`      | Apply linear drift `value` to every consecutive group in the selection. |
 | `FILL_GAPS`             | Detect gaps over `gapThreshold`; insert points at `fillCadence` (interpolated or constant `fillValue`). |
 
@@ -102,7 +106,7 @@ window in epoch ms; `DATETIME_RANGE`'s args ARE the window.
 
 Every long-running kernel ships in two flavours: an inline core
 (`changeValuesCore`, `fillGapsCore`, …) and a worker pool that scans
-shared `Float64Array` / `Float32Array` views in parallel.
+shared `Float64Array` views in parallel.
 [`shouldUseWorker`](./src/utils/plotting/calibration.ts) picks per
 call:
 
@@ -224,7 +228,7 @@ dedicated client.
   (`dist/index.js` + `dist/index.cjs`).
 - `SharedArrayBuffer` for the worker fast path (graceful inline fallback
   when unavailable; see Calibration above).
-- `Float64Array` / `Float32Array` typed-array `resize()` /
+- `Float64Array` typed-array `resize()` /
   `SharedArrayBuffer.grow()` — Chrome 111+, Firefox 119+, Safari 16.4+.
 
 ## Contributing

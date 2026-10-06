@@ -152,6 +152,10 @@ export function serializeHistory(
       method: h.method,
       args: h.args ? [...h.args] : [],
     };
+    const comment = h.comment?.trim();
+    if (comment) op.comment = comment;
+    const performedBy = h.performedBy?.trim();
+    if (performedBy) op.performedBy = performedBy;
     const exec = projectExecution(h.execution);
     if (exec) op.execution = exec;
     return op;
@@ -218,10 +222,23 @@ export function parseHistory(json: unknown): QcHistory {
     if (!Array.isArray(o.args)) {
       throw new Error(`Operation ${i} \`args\` must be an array.`);
     }
+    if (o.comment !== undefined && typeof o.comment !== "string") {
+      throw new Error(`Operation ${i} \`comment\` must be a string when present.`);
+    }
+    if (o.performedBy !== undefined && typeof o.performedBy !== "string") {
+      throw new Error(
+        `Operation ${i} \`performedBy\` must be a string when present.`
+      );
+    }
     const op: QcHistoryOperation = {
       method: o.method as EnumEditOperations | EnumFilterOperations,
       args: [...o.args],
     };
+    // Trimmed and dropped when blank, as `serializeHistory` writes them.
+    const comment = (o.comment as string | undefined)?.trim();
+    if (comment) op.comment = comment;
+    const performedBy = (o.performedBy as string | undefined)?.trim();
+    if (performedBy) op.performedBy = performedBy;
     const exec = parseExecution(o.execution, i);
     if (exec) op.execution = exec;
     return op;
@@ -274,7 +291,7 @@ export async function applyHistory(
     try {
       // dispatch handles routing to dispatchAction / dispatchFilter
       // based on whether the method is in EnumFilterOperations.
-      await record.dispatch(op.method, ...op.args);
+      await record.dispatchStep(op);
       // The dispatch path's catch block writes
       // `historyItem.execution.status = "failed"` on throw. Read it
       // back to decide whether to count as applied.

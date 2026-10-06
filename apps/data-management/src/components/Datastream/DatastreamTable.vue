@@ -471,6 +471,13 @@
                   }"
                 />
                 <v-list-item
+                  v-if="canOpenQcEditor"
+                  :prepend-icon="mdiShieldCheckOutline"
+                  title="Open in QC editor"
+                  :data-testid="`qc-edit-datastream-${item.id}`"
+                  :href="qcEditHref(item.id)"
+                />
+                <v-list-item
                   :prepend-icon="mdiDownload"
                   title="Download data"
                   :data-testid="`download-datastream-${item.id}`"
@@ -771,6 +778,13 @@
                     }"
                   />
                   <v-list-item
+                    v-if="canOpenQcEditor"
+                    :prepend-icon="mdiShieldCheckOutline"
+                    title="Open in QC editor"
+                    :data-testid="`qc-edit-datastream-${item.id}`"
+                    :href="qcEditHref(item.id)"
+                  />
+                  <v-list-item
                     :prepend-icon="mdiDownload"
                     title="Download data"
                     :data-testid="`download-datastream-${item.id}`"
@@ -1034,6 +1048,7 @@ import { useTableLogic } from '@/composables/useTableLogic'
 import { Snackbar } from '@/utils/notifications'
 import { downloadDatastreamCsv } from '@/utils/csvExport'
 import { formatTime } from '@/utils/time'
+import { buildQcEditUrl } from '@/utils/qcLinks'
 import {
   countDistinctMonitoringViolationRules,
   getMonitoringRulesViolated,
@@ -1127,6 +1142,26 @@ const openInfoCardFor = (datastream: Datastream) => {
 
 const { hasPermission } = useWorkspacePermissions(workspaceRef)
 const { workspaces } = storeToRefs(useWorkspaceStore())
+
+const canOpenQcEditor = computed(
+  () =>
+    hasPermission(
+      PermissionResource.Observation,
+      PermissionAction.Edit,
+      props.workspace
+    ) ||
+    hasPermission(
+      PermissionResource.Observation,
+      PermissionAction.Create,
+      props.workspace
+    )
+)
+
+const qcEditHref = (datastreamId: string) =>
+  buildQcEditUrl({
+    workspaceId: props.workspace.id,
+    datastreamId,
+  })
 
 const canViewOrchestrationInfo = computed(() => {
   return workspaces.value.some(

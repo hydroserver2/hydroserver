@@ -9,6 +9,7 @@ import type {
 import { storeToRefs } from 'pinia'
 import { debounce } from 'lodash-es'
 import { Y_AXIS_KEY_RE } from './internal'
+import { fromPlot, toPlotDate } from './plotTime'
 
 // --- Zoom history -----------------------------------------------------------
 //
@@ -36,8 +37,9 @@ export const captureCurrentZoomState = (
 
   const xAxis = layout.xaxis as Partial<LayoutAxis> | undefined
   const xR = xAxis?.range as Array<number | string> | undefined
-  const xStart = xR ? Number(typeof xR[0] === 'string' ? Date.parse(xR[0]) : xR[0]) : NaN
-  const xEnd = xR ? Number(typeof xR[1] === 'string' ? Date.parse(xR[1]) : xR[1]) : NaN
+  // Real instants: the snapshot outlives the plot (undo, share link).
+  const xStart = xR?.[0] !== undefined ? fromPlot(xR[0]) : NaN
+  const xEnd = xR?.[1] !== undefined ? fromPlot(xR[1]) : NaN
   const xRange: [number, number] | null =
     Number.isFinite(xStart) && Number.isFinite(xEnd) ? [xStart, xEnd] : null
 
@@ -101,7 +103,7 @@ export const recordZoomIfSettled = (
   store.pushZoomState(snap)
 }
 
-/** 350 ms debounce — slightly longer than the relayout handler so a single
+/** 350 ms debounce, slightly longer than the relayout handler so a single
  * drag gesture collapses to one entry even when the user pauses briefly
  * mid-gesture. Module-private: wire via `installZoomTracking` instead. */
 const recordZoomDebounced = debounce(
@@ -134,7 +136,7 @@ export const applyZoomState = async (state: ZoomState): Promise<void> => {
 
   const update: Record<string, unknown> = {}
   if (state.xRange) {
-    update['xaxis.range'] = [state.xRange[0], state.xRange[1]]
+    update['xaxis.range'] = [toPlotDate(state.xRange[0]), toPlotDate(state.xRange[1])]
     update['xaxis.autorange'] = false
   } else {
     update['xaxis.autorange'] = true

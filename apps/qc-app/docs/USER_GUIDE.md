@@ -1,10 +1,10 @@
 # Quality Controlling Data with the QC App
 
 :::warning
-The HydroServer Quality Control (QC) App is currently under active development. We hope to make a first public release during the summer of 2026. The user documentation provided here is intended to be a description of what the QC App can do. Some of this functionality is still under construction and may not work correctly yet. A demo of the QC App is available for the HydroServer Playground instance at [https://playground.hydroserver.org/quality-control-demo/](https://playground.hydroserver.org/quality-control-demo/). If you want to try it out, you should create a workspace on the Playground instance, load some data, and then select that workspace with the QC App. We update the Playground instance periodically with the latest functionality, but the version deployed there might not match the latest functionality under development.
+The HydroServer Quality Control (QC) App is currently under active development. We are working toward a first public release. The user documentation provided here is intended to be a description of what the QC App can do. Some of this functionality is still under construction and may not work correctly yet. A demo of the QC App is available for the HydroServer Playground instance at [https://playground.hydroserver.org/quality-control-demo/](https://playground.hydroserver.org/quality-control-demo/). If you want to try it out, you should create a workspace on the Playground instance, load some data, and then select that workspace with the QC App. We update the Playground instance periodically with the latest functionality, but the version deployed there might not match the latest functionality under development.
 :::
 
-This guide is for the operator of the QC App: Usually a hydrologist or data technician who picks a datastream, flags, edits, and/or corrects the bad or erroneous points, and then submits the cleaned datastream back to HydroServer. It walks through every feature of the QC App and the shortest path to common QC tasks.
+This guide is for the operator of the QC App: Usually a hydrologist or data technician who picks a datastream, flags, edits, and/or corrects the bad or erroneous points, and then commits the cleaned data to a quality-controlled datastream in HydroServer. It walks through every feature of the QC App and the shortest path to common QC tasks.
 
 If you are looking for developer / deployment docs for the QC App, start with [ARCHITECTURE.md](./ARCHITECTURE.md) instead.
 
@@ -13,14 +13,14 @@ If you are looking for developer / deployment docs for the QC App, start with [A
 The QC App is the operator's view of HydroServer's quality control pipeline. With it you can:
 
 1. **Browse** monitoring sites and datastreams in a HydroServer workspace.
-2. **Plot up to five datastreams** on a synchronized multi-axis chart for visual context.
-3. **Pick one datastream as the QC target.** The rest are read-only reference traces.
+2. **Plot up to four datastreams** on a synchronized multi-axis chart for visual context, keeping the fifth plot slot for the datastream you edit.
+3. **Pick one datastream to edit with its row's Edit button.** Plotted datastreams are read-only context.
 4. **Filter** suspicious points using value thresholds, time windows, change detection, rate-of-change limits, gap detection, or persistence runs.
-5. **Edit** the selected points: change values, interpolate, drift-correct, shift datetimes, delete, fill gaps, add points, attach qualifier flags.
-6. **Save your edits as a QC history** (a JSON file you can replay on the same datastream later).
-7. **Submit** the cleaned observations back to HydroServer to save them.
+5. **Edit** the selected points: change values, interpolate, drift-correct, shift datetimes, delete, fill gaps, add points.
+6. **Save** your work to the session as you go. Saved operations are stored in HydroServer with who applied them, so anyone with access can pick the session up.
+7. **Commit** the session to write the cleaned observations to the managed datastream. The source datastream is never changed.
 
-Everything runs in your web browser. The backend never sees your edit history until you press Save.
+The edits themselves run in your web browser. HydroServer stores the operations you save and the observations you commit.
 
 ## Glossary
 
@@ -30,12 +30,15 @@ Everything runs in your web browser. The backend never sees your edit history un
 | **Thing / Site** | A physical monitoring site or sampling location. |
 | **Datastream** | A single time-series at a site: one variable, one sensor, one processing level. |
 | **Observation** | A single (timestamp, value) measurement. |
-| **QC target** | The datastream you are editing. There is always exactly one QC target when the Edit view is open. |
-| **Context traces** | The other plotted datastreams. Visible but read-only. They exist to give you context for the QC target. |
+| **Edit target** | The datastream you are editing, chosen with a row's Edit button. |
+| **Context traces** | The raw source, drawn around the session window, and any plotted datastreams shown around it. |
 | **History** | The ordered list of filters + selections + edits you've applied in the current edit session. Undo / redo / save / load all operate on this list. |
 | **Selection** | The set of point indices a filter (or your click / lasso) produced. Edits operate on the current selection. |
-| **QC history** | A JSON file holding your editing history for a datastream. This is the canonical save format. |
-| **Submit / Save** | POST the cleaned observations back to HydroServer to either overwrite the existing observations in the window you have plotted or to be saved as a new datastream, depending on your versioning scheme. |
+| **Managed datastream** | The quality-controlled copy of a source datastream. You edit it; the source stays as recorded. |
+| **Session** | One stretch of QC work on a managed datastream, over a time window. It is in progress until you commit it. |
+| **Save** | Store the session's operations in HydroServer as a draft. Nothing is written to the managed datastream yet. |
+| **Commit** | Write the session's result to the managed datastream and lock the session. The next session starts from it. |
+| **QC history** | A managed datastream's sessions, in the order they were committed. **Save QC history** downloads the open session as a JSON record. |
 
 ## First-time setup
 
@@ -44,11 +47,23 @@ Everything runs in your web browser. The backend never sees your edit history un
    expires, QC redirects back to the Data Management login page and returns
    you to the QC page after authentication.
 
-3. On the **Workspaces** page, pick the workspace you want to work in. The choice is remembered locally, so next time you sign in you'll land directly on Home.
+3. On the **Workspaces** page, click **Select** on the workspace you want to work in. The choice is remembered locally, so next time you sign in you'll land directly on Home. When you come back to this page later, the current workspace shows **Continue** to return to the app.
 
    ![Workspaces picker](./images/workspaces.png)
 
-4. On **Home**, the left filter drawer is open. Pick a time range and filter the datastream list by site / observed property / processing level. Click a row to plot it.
+4. On **Home**, the left filter drawer is open. Filter the datastream list by site / observed property / processing level there, and click a row to plot it. The time range is set from the **Time range** button on the plot toolbar.
+
+All dates and times in the app, in the pickers, the plot axis, the table and
+tooltips, are in one time zone: your browser's, unless you pick another with
+the **globe** button in the navigation rail. The button's menu offers the
+same choices as a data connection's timestamps: **UTC**, a **fixed UTC
+offset**, or an **IANA time zone** (which follows daylight saving), plus a
+button to go back to your browser's zone. The choice is remembered on this
+browser, and changing it redraws the plot over the same stretch of time.
+Observations are stored in UTC either way, so the zone only changes how
+times are shown and typed. Every time input names the zone at its end (for
+example `MDT`, or `MST` for a date in winter); hover it for the full zone
+name and its UTC offset.
 
 If the screen ever stays blank with a console error like `Failed to fetch app settings`, ask your administrator to check the API URL and COOP/COEP configuration ([DEPLOYMENT.md](./DEPLOYMENT.md) covers this).
 
@@ -62,14 +77,17 @@ A thin, always-visible column of icons.
 
 | Icon | Action |
 |------|--------|
-| HydroServer logo | Top left. Go home. Resets the current view. Prompts before discarding unsaved edits. |
-| Cursor (Select) | Top left. Show the datastream Select drawer + plot. |
-| Pencil (Edit) | Top left. Open the Edit view. **Disabled** until you've picked a QC datastream for editing; the tooltip explains why. |
+| HydroServer logo | Top left. Go home. Resets the current view. Asks what should happen to an open edit session first. |
+| Cursor (Select) | Top left. Show the datastream Select drawer + plot. While you are editing, this keeps the session open behind it. |
+| Pencil (Edit) | Top left. Return to the Edit view. **Disabled** until you're editing: pick a datastream to edit with its row's Edit button first. |
+| Globe (time zone) | Bottom left. Labelled with the zone in use (for example `MDT`). Pick the time zone dates are shown in. |
 | Stopwatch (Performance) | Bottom left. Open the Performance Calibration dialog. See "Performance" below. |
-| Grid (Workspace) | Bottom left. Switch workspace. |
+| Briefcase (Workspaces) | Bottom left. Switch workspace, or Continue in the current one. |
 | Logout | Bottom left. Sign out. |
 
-If you click any of these while you have unsaved edits in the Edit view, the app shows an "Unsaved edits" dialog with **Save & continue** / **Discard** / **Cancel**. Discarded edits cannot be recovered.
+Switching between **Select** and **Edit** never ends an edit session, so neither asks anything: the datastream you are editing, its session, and any unsaved edits stay exactly as they were.
+
+Home, Workspaces and Logout do leave the session, so they go through the same question as the editor's **Close** button. See "Leaving a session" below.
 
 ### Select view
 
@@ -77,41 +95,165 @@ The select view is the default landing surface after picking a workspace. The le
 
 ![Select view (Home)](./images/home-select.png)
 
-The filter drawer has two collapsible sections:
-
-- **Time range**: the loaded time window for the selected datastreams. The two date pickers (`From` / `To`) are the source of truth. They will respond when you make a selection in the row of preset chips below them:
-  **1w**, **1m**, **6m**, **1y**, **YTD**, **All**. Picking a preset re-fetches observations from the server. A `Custom` chip appears when the dates were edited manually in the `From` and `To` data pickers.
-
-  > **Tip:** when previewing a brand-new datastream whose observations
-  > might be years old, click **All** first. The default `1w` preset
-  > can show an empty window for old data and make the plot look
-  > broken.
-
-- **Datastream filters**: These filters allow you control the list of datastreams shown in the datastreams table by picking the site, observed property, and/or processing level. The list of matching datastreams updates live in the datastreams table.
+The filter drawer holds the **Datastream filters**. They let you control the list of datastreams shown in the datastreams table by picking the site, observed property, and/or processing level. The list of matching datastreams updates live in the datastreams table.
 
 The main area to the right of the window is split top/bottom:
 
-- **Top card** carries the preview plot, the current QC target's name (or "No datastream plotted"), and the **Start editing** button that jumps to the Edit view. The right pane of the card lists currently plotted datastreams.
-- **Bottom card** is the **Datastreams selection table**: listing every datastream the filters match. Each row is a datastream and has a plot toggle (check box); the first datastream you toggle on becomes the QC target (radio button column in the Plotted Datastreams List).
+- **Top card** carries the preview plot and a header showing how many datastreams are plotted ("N datastreams plotted" or "No datastream plotted"). The right pane of the card lists currently plotted datastreams, and, while you are editing, an **Editing** panel above it.
+
+  The plot toolbar's **Time range** button (reading **Time range · 1m**, the active preset) opens the loaded time window for the plotted datastreams. The two date pickers (`From` / `To`) show the window. The preset chips below them, **1w**, **1m**, **6m**, **1y**, **YTD**, **All**, count back from the last observation of the plotted datastreams (the newest one when several are plotted), so a preset always lands on data, even for datastreams whose observations are years old. That last observation is the one known when the workspace loaded, so data that arrives later only shows up after a reload. **1m** is the default, and the last preset you pick is remembered. Adding or removing a datastream re-anchors the preset. A `Custom` chip appears when you change a date in `From` or `To`; a custom window stays fixed while you add or remove datastreams. The button is there before anything is plotted too, so you can set the window before pulling data: dates you pick are kept as a `Custom` window when the data loads, and a preset applies as soon as there is data to count back from. It also stays when the window holds no observations, so you can widen it. While you are editing, the same button becomes the **Context** menu, with presets that count out from the edit session's window. The two remember their own preset, so neither changes the other.
+
+- **Bottom card** is the **Datastreams selection table**: listing every datastream the filters match. Each row has a **Plot** toggle (check box) and an **Edit** column (Edit button). See [Datastreams with quality-controlled versions](#datastreams-with-quality-controlled-versions) below for what the Edit button does.
 
 ![Select view with one datastream plotted](./images/home-plotted.png)
 
-Clicking a datastream row shows the full metadata for a datastream. Clicking the plot toggle (check box) in the row plots the datastream. The first datastream selected for plotting becomes the **QC target**. You can change the QC target via the radio button column in the Plotted Datastreams list.
+Clicking a datastream row shows the full metadata for a datastream. Clicking the plot toggle (check box) in the row plots the datastream as read-only context: plotting never picks what you edit, and the first plotted datastream has no special role.
+
+### The Select view while you are editing
+
+Clicking **Select** in the rail during an edit session does not leave it. The
+session, its working copy and every unsaved edit stay open; the Select view is
+just a different way to look at the same thing, so you can change what is
+plotted *around* the data you are editing.
+
+What changes:
+
+- An **Editing** panel appears in the top card's right pane: the managed
+  datastream's name, the session's time window, whether anything is unsaved,
+  and an **Open editor** button. Editing operations stay in the editor.
+- Picking a datastream with a row's **Edit** button lands here first, in this
+  preview, so you can set up its context before editing. **Open editor** takes
+  you in.
+- The preview plot draws the same series the editor does: the edit target,
+  and its raw source around the session window.
+  The overview strip under the plot stays in the editor.
+- **Clear plot**, above the plotted list in the right pane, empties the
+  plot. While a datastream is being edited it closes it first, with the
+  usual question about its session; choosing to stay keeps everything as it
+  was.
+- The row you are editing shows an **Editing** chip and a **Close** button in
+  place of **Edit**. **Close** ends the session the same way the editor's
+  **Close** does.
+- The row check boxes add and remove **context** datastreams, up to 4. That
+  includes the edit target's own source and its other quality-controlled
+  versions: a source you plot this way draws in full, in its own colour, like
+  any plotted datastream. The edit target itself is marked **Editing** in the
+  chooser. Picking it, or editing a datastream you had already plotted, draws
+  its committed data as context beside the copy you edit, in its own colour
+  and on its own axis. Its row in the plotted list is tagged **committed**.
+- The plot's **Time range** button becomes the **Context** menu, which sets
+  the range around the session, with presets counting out from the session
+  window. Your edits are never reloaded by it.
+- The rail's **Edit** button and the panel's **Open editor** button both
+  open the editor with the session, your zoom and any staged range intact.
+- The row **Edit** button on a different datastream starts the usual entry
+  flow.
+
+A link copied from here carries the edit target, so opening it reopens the
+session behind the Select view.
+
+### Datastreams with quality-controlled versions
+
+A row with a number badge next to its check box has that many **managed
+datastreams**: quality-controlled versions derived from it. Managed
+datastreams never get their own row in the table, so the check box on the
+source row opens a chooser instead of plotting straight away.
+
+The chooser lists **Raw data** first, then every managed datastream, each with
+its processing level, observation count, and session count. Tick any
+combination and press **Apply** to plot them together, which is how you compare
+a raw series against the quality-controlled version derived from it.
+
+Clicking the check box again reopens the chooser with the current selection, so
+that is also where you change or clear it. Unticking everything and applying
+unplots every series from that source. The four-datastream plot cap still
+applies: once it is reached, unticked rows are disabled.
+
+The row's check box reflects the whole group. It is filled when the raw
+datastream is plotted, and shows a partial mark when only managed versions are.
+
+The row's **Edit** button is separate from plotting: it opens a
+chooser of that source's managed datastreams, or, the first time, skips
+straight to the create-datastream form. Each managed datastream shows its
+sessions as a timeline, oldest first:
+
+- A session in progress has a **Continue** button that reopens it, saved
+  operations and all.
+- With nothing in progress, the timeline is headed by **Start new session**,
+  which opens the session window step. It reads **Continue from the latest
+  commit** once something is committed, since the new session starts from
+  what that commit left.
+- **Create new managed datastream** at the bottom sets up another
+  quality-controlled version of the same source.
+
+#### Creating a managed datastream
+
+The create-datastream form builds the quality-controlled datastream from the
+source's metadata. Everything you can change is prefilled from the source:
+
+- **New processing level**: required, and it has to differ from the source's.
+  Use **Add processing level** if the workspace has no suitable one yet.
+- **Name**: the source's name with "(QC)" appended.
+- **Description**: required, since the datastream cannot be saved without one.
+- **Status**: the HydroServer status vocabulary. It can be left empty.
+- **Select method**: the workspace's methods, which are its sensors. A
+  datastream's method is the sensor that produced it.
+
+If the method or status list cannot be loaded, the form keeps the source's own
+value so creation still goes through. Everything else (site, observed
+property, unit, medium, aggregation) is copied from the source and cannot be
+changed here; edit the datastream in the Data Management app afterwards if you
+need to.
+
+The form stays open while the datastream is being created, with a spinner on
+**Create datastream**. If the create fails, you see why and the form keeps
+what you entered, so you can fix it and try again.
+
+#### The session window
+
+The session window step shows the source's data extent and, if the managed
+datastream already has committed history, that history's extent too, so you
+can see where the last session left off. The default window picks up from
+there: it starts where the committed history ends and runs to the end of the
+source record (the **Since commit** preset). With nothing committed yet, or no
+new data since the last commit, it covers the whole record instead. Widen or
+narrow it as you need; the **All** preset goes back to the whole record.
+
+You can adjust the From / To pickers, but two rules apply:
+
+- The window has to stay inside the source's own data.
+- It can't leave a gap before or after the committed history: it has to
+  touch or overlap it. Starting after the committed history ends, or ending
+  before it starts, is rejected. Overlapping the committed history, or
+  landing exactly on its edge, is fine.
+
+The **Start session** button stays disabled, with an explanation, while the
+window is invalid.
 
 ### Edit view
 
-The Edit View opens when you click the pencil icon in the left hand navigation rail, or when you click the **Start
-editing** button on the Select view. The Edit View is available only after you've picked a QC datastream.
+The Edit View opens from the Select view's **Editing** panel (**Open editor**)
+once you finish the row Edit button's chooser and session window step (see
+[Datastreams with quality-controlled versions](#datastreams-with-quality-controlled-versions)
+above), or when you click the pencil icon in the navigation rail to return to
+a session already open.
 
 ![Edit view (full layout)](./images/edit-view.png)
+
+On the plot, the datastream you're editing draws in dark grey on the primary
+axis. Its raw source draws in light grey as read-only context, only before
+and after the session window, and joins the edited data at the window's
+edges. Nothing covers the plot, so box and lasso select work anywhere. Any
+other plotted datastreams render on their own axes to the right, same as the
+Select view.
 
 The Edit View consists of three columns, each independently resizable / collapsible:
 
 | Column | Contents |
 |--------|----------|
 | **Left** ("Operations") | The Edit drawer with three sections: Filter Data, Edit Data, Add Data. |
-| **Center** | The Plotly chart + a tab-switched data table (upper left) for the QC target. |
-| **Right** ("Aux") | At the top: **Save** / **Save & Close** / **Close** actions. Below that: the list of Plotted Datastreams, Edit history, and the currently staged Operation Panel. |
+| **Center** | The Plotly chart + a tab-switched data table (upper left) for the edit target. |
+| **Right** ("Aux") | The list of Plotted Datastreams, Edit history, and the currently staged Operation Panel. The **Save** / **Commit** / **Close** actions sit at the bottom of the Edit history panel. |
 
 The chart at the top of the center column has a Plotly toolbar with:
 
@@ -126,27 +268,45 @@ See the [Pan and zoom across axes](#pan-and-zoom-across-axes) section below for 
 
 Hover any toolbar icon to see its name. The left side of the toolbar flips between **Plot** and **Table** views (see below); the right side carries the **data points toggle**, a share-link button, and the `?` help menu.
 
-Between the help menu and the right edge is a drop down box with pre-selected zoom levels (**All Data**, **Last Week of Data**, **Last Month of Data**, **Last 6 months of data**, **Last Year of Data**). Clicking one of these options zooms the X axis to that window, *without* refetching observations, unlike the sidebar's identical-looking chips on the Select view. The active chip stays highlighted as a reminder of the last preset applied; clicking it again re-applies it, which is the easiest way to "snap back" after a manual pan or wheel-zoom. Selecting a preset also scrolls the **Table** view so the first row is the first observation in the chosen window, keeping the two tabs in sync.
+Between the help menu and the right edge is the **Context** button. It reads
+**Context · 1m** (the active range), and switches to an eye-off icon while
+the source context is hidden. Its menu starts with a **Show source
+context** switch: off, the raw source leaves the plot entirely. Below it are
+preset chips and From / To pickers like the Select view's Time range
+menu, but here they control how much of the raw source and any plotted
+datastreams load around your edit, not what you're editing. The raw source
+is never loaded inside the session window. The presets
+count out from the edit session's window instead of back from the last
+observation: **1w**, **1m**, **6m** and **1y** load that span before the
+session's start and after its end, and **All** loads all of the context
+data (always including the session's window). **YTD** is not offered here.
+The Context menu remembers its own preset, apart from the Select view's Time
+range. A remembered **YTD** loads the context as **All** and highlights the
+**All** chip, without changing that preference. When a session loads
+or you view another session, the active preset re-applies around its
+window; a `Custom` From / To range stays as you set it. Changing the range
+reloads that context data and keeps your current zoom. Your edits are
+never reloaded or re-windowed. The editor opens zoomed to the edit session's
+own window; open the Context menu (or click **All**) to see more of the
+surrounding data.
 
-Clicking a single point on the plot selects just that point. Clicking the empty plot area clears the selection.
+Clicking a point on the plot adds it to the selection, or takes it out if it is already selected. Clicking the empty plot area clears the selection.
 
 ### Plot vs Table tabs
 
 The segmented control at the top-left of the plot toolbar (`Plot` / `Table`) switches the center column between the Plotly chart and an editable observation table. Both tabs operate on the same QC datastream and share the selection state; flipping between them preserves edits, history, and the currently selected points.
 
-The **Table** tab opens a virtualized list of the QC target's observations:
+The **Table** tab opens a virtualized list of the edit target's observations:
 
-![Table view of the QC target](./images/table-view.png)
+![Table view of the edit target](./images/table-view.png)
 
 What you can do here:
 
 - **Edit values inline.** Click a `Value` cell to enter edit mode, type a new number, press Enter (or click outside) to commit. The cell shows a chip indicating the prior value so a typo is easy to spot.
 - **Edit timestamps inline.** Click a `Datetime` cell to open a `datetime-local` picker; the same edit-then-commit flow applies.
 - **Bulk-select for an operation.** The leading checkbox column toggles a row in or out of the selection. Selected rows match the selection on the plot, so you can stage a Delete points / Change values / Interpolate edit from the table just as you would from a box-select on the chart.
-- **Track pending edits.** The toolbar chip `N unsaved` lights up whenever the table has uncommitted edits. **Discard** rolls every pending edit back; **Save changes** flushes them through the same history machinery as a Change-values or Shift-datetimes operation (one history entry per cell type).
-- **Inspect qualifiers.** The `Qualifiers` column shows the qualifier codes attached to each observation (set via the
-  Qualifying comments panel). Hover a chip for its description.
-- **Jump to a range.** Picking a zoom-to-range preset from the toolbar drop down scrolls the table to the first observation in that window, so you land on the same data the plot just zoomed to.
+- **Track pending edits.** The toolbar chip `N unsaved` lights up whenever the table has uncommitted edits. **Discard** rolls every pending edit back; **Save changes** flushes them through the same history machinery as a Change-values or Shift-datetimes operation (one history entry per cell type). Pending edits belong to the rows they were typed on, so anything that changes the data first (an Edit drawer operation, undo, redo, or previewing a history step) discards them with a message rather than applying them to whatever point moved into that row. Switching back to the Plot tab discards them too. Save before doing either.
+- **Jump to a range.** The editor opens with the table scrolled to the first observation of the edit session's window, matching the plot's initial zoom.
 
 The table is the fastest path for a small number of targeted edits. For anything wider (a hundred points, a window of bad values, a drift correction) the plot's box-select gestures + Edit drawer are faster.
 
@@ -176,56 +336,59 @@ The URL encodes everything needed to reproduce what the sender is looking at - q
 - **Workspace** (`ws`)
 - **View** (Select vs Edit; `m=e` for Edit)
 - **Active center-column tab** (`tab=t` for Table)
-- **Plotted datastreams** (`ds`), in order. The first id is the QC target.
-- **Time window**: either a preset id (`r=0..5`) which the recipient re-anchors to *their* "now", or an explicit `from` / `to` pair as base36 second-epochs when the sender used a custom range.
+- **Plotted datastreams** (`ds`), in order.
+- **Edit target** (`ed`), the datastream you're editing. It travels from either view, since the Select view keeps the session open.
+- **Time window**: either a preset id (`r=0..5`) which the recipient resolves against the plotted data, or an explicit `from` / `to` pair as base36 second-epochs when the sender used a custom range.
 - **Per-trace eye-toggle visibility** (`h`) and **per-axis visibility** (`ya`) as hex bitmasks over the `ds` order.
 - **Plot zoom**: X zoom (`z`) plus optional per-Y-axis zoom (`yz`) for axes that aren't at their default fit.
 - **Data points mode** (`dp`) and **threshold** (`th`) when they differ from the app defaults.
+
+Reloading the page reopens exactly this view: the editor reopens under an "Opening the edit session…" overlay, and the address bar keeps the link unchanged until the view, tab and zoom are restored, so reloading again mid-load lands in the same place.
 
 Defaults are elided to keep URLs short. Sidebar filters (things / observed properties / processing levels) are kept in the
 URL only on the Select view, because they drive the datastreams table rather than the plot.
 
 ### Plotted datastreams list
 
-The right-hand list (visible on both Select and Edit views) is the roster of currently plotted datastreams. Each row carries:
+The right-hand list (visible on both Select and Edit views) is the roster of everything currently on the plot. Each row carries:
 
-- A drag handle to reorder the list (drag the QC target's row to promote / demote it; the line colors track the order).
-- A colored radio dot that picks the **QC target**. The active row is tinted; the other rows render in their reference color.
+- A drag handle to reorder the list (the line colors track the order). While editing, the **edit target** is pinned at the top and can't be reordered or unplotted; only the plotted datastreams can be dragged. The raw source context is not listed: it is switched from the **Context** menu.
 - An **eye** toggle that hides the trace from the plot without unplotting it. Hidden rows render with a strikethrough.
-- A **Y-axis** toggle (non-QC rows only) that collapses that datastream's secondary axis to provide more horizontal space for the plot.
+- A **Y-axis** toggle (non-primary rows only) that collapses that datastream's secondary axis to provide more horizontal space for the plot. The edit target shares the primary axis with the raw source, so its row has no toggle.
 - The datastream name and a subtitle showing the number of points loaded **in the current time window**, e.g. `1,248 pts loaded`. While the fetch is still in flight, the subtitle reads `loading…`.
-  - An `×` button to unplot the row.
+- An `×` button to unplot the row. The edit target can't be unplotted this way. Leave the editor to drop it.
 
-If a plotted datastream has no observations in the current window (either because the dataset is empty there or because the chosen time range doesn't cover its data), the row title shows a small warning-tinted database icon. Hover it for the tooltip "No observations in the current time window". Widening the time range (or clicking **All** in the Time range section) usually clears it.
+If a plotted datastream has no observations in the current window (either because the dataset is empty there or because the chosen time range doesn't cover its data), the row title shows a small warning-tinted database icon. Hover it for the tooltip "No observations in the current time window". Widening the time range (or clicking **All** in the Time range / Context menu) usually clears it.
+
+While editing, the edit target's row shows the session's working data over the session's window: committed data where a session was committed, the raw datastream everywhere else, with saved draft edits applied. Its line always covers the whole session window.
 
 ![Plotted datastreams list with two rows](./images/plotted-datastreams-list.png)
 
 ### Plotting multiple datastreams
 
-You can plot up to **5 datastreams at a time**. The plotted count and cap are surfaced in the Datastreams table toolbar as a chip ("`N/5 plotted`"). Once you hit the cap, the unchecked rows disable their plot toggles and a tooltip explains why. Unplot a row from either the table or the list to free up a slot.
+You can check up to **4 datastreams at a time**. The fifth plot slot is kept for the datastream you edit, so there is always room for it. The plotted count and cap are surfaced in the Datastreams table toolbar as a chip ("`N/4 plotted`"). Once you hit the cap, the unchecked rows disable their plot toggles and a tooltip explains why. Unplot a row from either the table or the list to free up a slot. While editing, the edit target and its raw source context are shown in addition to the 4 plotted datastreams. They don't count against the cap; a source you plot yourself does. History comparison lines (see [Comparing against a point in history](#comparing-against-a-point-in-history)) don't count either, and aren't included in **Download selected**.
 
 ![Two datastreams on independent y-axes](./images/home-multi-datastreams.png)
 
 When more than one datastream is on the plot:
 
-- The **first** datastream you plot becomes the **QC target** and uses the primary (left) Y axis. Its line draws in black with a point marker on every observation.
-- Each additional datastream gets its **own Y axis** on the right side of the plot. The chip at the top of each axis carries the datastream's display name plus its unit (e.g. `Water Temperature (°C)`). Up to four secondary axes stack side by side.
+- In the Select view, the **first** datastream you plot uses the primary (left) Y axis; in the Edit view, the edit target and its raw source share it instead. In the Select view that line keeps its own series colour; in the Edit view the edit target draws in dark grey with a point marker on every observation, and the raw source draws in light grey around the session window.
+- Every other datastream gets its **own Y axis** on the right side of the plot. The chip at the top of each axis carries the datastream's display name plus its unit (e.g. `Water Temperature (°C)`). Up to four secondary axes stack side by side.
 - Axis chips are colored to match their line so you can tell at a glance which trace goes with which axis.
 
 Once a datastream is on the plot, the **plotted datastreams list** on the right is where you manage it (see the previous section for the row anatomy). The interactions most relevant to multi-series work:
 
-- **QC target picker**: clicking the colored radio dot on a non-QC row promotes that datastream to the QC target. The primary Y axis rebinds to its scale and the previous QC datastream demotes to a secondary axis. The Edit view shows only the QC target's points for selection. Context traces are read-only.
 - **Eye toggle**: hide / show a trace on the plot without unplotting it. Useful when one series is visually crowding the others. Hidden rows render with a strikethrough; their axis stays on the plot so the scale doesn't jump.
-- **Y-axis toggle** (non-QC rows only): collapse just the secondary axis without removing the trace. Reach for it when the extra axes start eating horizontal room and you don't actually need the numeric scale.
-- **Drag handle**: drag a row up or down to reorder the legend. The plot redraws so the trace colors track the new order.
-- **× button**: unplot the row entirely. Removing the QC target promotes the next plotted row to QC.
+- **Y-axis toggle** (non-primary rows only): collapse just the secondary axis without removing the trace. Reach for it when the extra axes start eating horizontal room and you don't actually need the numeric scale.
+- **Drag handle**: drag a row up or down to reorder the legend. The plot redraws so the trace colors track the new order. The edit target is pinned and can't be reordered.
+- **× button**: unplot the row entirely.
 
 ### Pan and zoom across axes
 
 The Plotly toolbar at the top of the chart drives the X-axis gestures (Zoom, Pan, Reset). For Y axes, the gestures are slightly different and worth knowing about when you're juggling several datastreams:
 
 - **X-axis zoom**: drag a horizontal box on the time grid (Zoom tool), or scroll over the plot. Every axis stays time-synchronized.
-- **X-axis pan**: enable Pan in the toolbar, then drag the plot body. The context plot at the bottom is also draggable. It acts as an overview thumbnail.
+- **X-axis pan**: enable Pan in the toolbar, then drag the plot body. In the Edit view, the overview strip at the bottom is also draggable. It acts as a thumbnail of the loaded range.
 - **Per-axis zoom**: hover near the ends of any axis and drag. Only that axis rescales. Sibling axes keep their current view. This is how you "compare units": drop the temperature axis to a tight window without touching streamflow.
 - **Per-axis pan**: hover the middle of an axis and drag.
 - **Reset**: the home icon on the Plotly toolbar returns to the default zoom (does not change the begin/end dates in the
@@ -250,7 +413,7 @@ The Edit drawer is a vertical column of operation rows, grouped into three colla
 |-------|------|---------|
 | **Filter Data** | Blue | Select points without changing values. The result is a selection on the plot. |
 | **Edit Data** | Blue (or amber for "needs selection") | Change values or timestamps on the current selection. Amber rows disable themselves until you make a selection. |
-| **Add Data** | Green | Insert new points (Add Points, Fill Gaps) or attach data qualifiers without changing values. |
+| **Add Data** | Green | Insert new points (Add Points, Fill Gaps). |
 
 Click a row to open its panel on the right; click the same row again to dismiss it.
 
@@ -331,21 +494,21 @@ These change values or timestamps at the current selection. The drawer disables 
 
 #### Drift correction
 
-Apply a linear drift correction across each consecutive group in the selection. Use this when a sensor has drifted from a known reference.
+Apply a linear drift correction across each consecutive group in the selection. Use this when a sensor has drifted from a known reference. Points holding the datastream's no-data value are left as they are.
 
 ![Drift correction panel](./images/panel-driftCorrection.png)
 
-The panel lists every consecutive group it found in your selection, each with its first-point timestamp. **Drift amount** is the offset to apply linearly from the start to the end of each group. The radio at the bottom selects the method (today the only option is "Linear drift correction"). Drift correction needs **two or more consecutive points**; the Apply button stays disabled until that's true.
+The panel lists every consecutive group it found in your selection, each with its first-point timestamp. **Drift amount** is the offset to apply linearly from the start to the end of each group: the first point is unchanged and the last point moves by the full amount. The radio at the bottom selects the method (today the only option is "Linear drift correction"). Drift correction needs **two or more consecutive points**; the Apply button stays disabled until that's true.
 
 #### Interpolate
 
-Replace each consecutive group in the selection with linearly interpolated values from the surrounding good points.
+Replace each consecutive group in the selection with linearly interpolated values from the surrounding good points. The anchors are the nearest unselected points that are not the datastream's no-data value; a group with real values on one side only is filled flat from that side, and a group with none is left as it is. Selected no-data points are filled, which is how you replace missing readings.
 
 ![Interpolate panel](./images/panel-interpolate.png)
 
 #### Change values
 
-Apply an arithmetic operator at each selected index. The toggle row is `+ − × ÷ =`. The label below the toggle reminds you of the operation: `New value = old <op> input`.
+Apply an arithmetic operator at each selected index. The toggle row is `+ − × ÷ =`. The label below the toggle reminds you of the operation: `New value = old <op> input`. `+ − × ÷` skip points holding the datastream's no-data value; `=` sets them too, so it can replace a missing reading.
 
 ![Change values panel](./images/panel-changeValues.png)
 
@@ -354,6 +517,8 @@ Press Enter on the value field, or click **Apply**, to commit.
 #### Shift datetimes
 
 Offset the selection's timestamps by a duration. Pick an amount and a unit. Useful when a sensor's clock was off and the recorded datetime values need to be shifted by a known offset.
+
+Months and years follow the calendar of the time zone chosen on the rail, and keep the clock time: in Denver, Jan 15 at 9:00 AM plus six months is Jul 15 at 9:00 AM, even though daylight saving time started in between. A day past the end of the target month moves to its last day, so Jan 31 plus one month is Feb 28. Month and year amounts must be whole numbers. The step saves the zone it used, so it replays the same for everyone, whatever zone they have chosen.
 
 ![Shift datetimes panel](./images/panel-shiftDatetimes.png)
 
@@ -369,16 +534,6 @@ The deletion is recorded in history and can be undone from there.
 
 ### Add operations
 
-#### Qualifying comments
-
-Attach qualifier flags (e.g., "Ice affected", "Estimated") to the selected points. Pick one or more qualifiers from the autocomplete. Existing qualifiers already applied to the selection are listed below in chip form.
-
-![Qualifying comments panel](./images/panel-qualifyingComments.png)
-
-The **New qualifier** button opens a small dialog where you can register a new data qualifier code + description against the workspace.
-
-> **Note:** qualifier codes are tracked locally in your browser and are POSTed to the workspace's qualifier list, but the per-point qualifier applications themselves are not yet serialized to the backend on Save. See [QUALITY.md](./QUALITY.md) for the status.
-
 #### Add points
 
 Insert one or more `(datetime, value)` tuples. Each row is a card with a datetime picker and a value field. **+ Row** appends another row, the `×` icon removes one.
@@ -389,7 +544,7 @@ The first row is seeded with the last selected point's timestamp (or the last ob
 
 #### Fill gaps
 
-Detect gaps over a threshold and fill them with interpolated values or a constant NoData value at a chosen cadence.
+Detect gaps over a threshold and fill them with interpolated values or a constant NoData value at a chosen cadence. A gap whose edge holds the datastream's no-data value is filled with the constant instead of being interpolated.
 
 ![Fill gaps panel](./images/panel-fillGaps.png)
 
@@ -410,27 +565,116 @@ Every filter, edit, and add operation appends a row to **Edit history** in the r
 
 ![Edit history with one applied operation](./images/edit-history.png)
 
-The header carries the count chip and four icon buttons (left to right): **undo**, **redo**, **save QC history** (tray-arrow-down), **load QC history** (tray-arrow-up), and **open in window** (the pop-out icon, which reopens the same panel inside a modal). Keyboard shortcuts: `Ctrl+Z` to undo, `Ctrl+Y` or `Ctrl+Shift+Z` to redo.
+The header carries the count chip and four icon buttons (left to right): **undo**, **redo**, **save QC history** (tray-arrow-down), and **open in window** (the pop-out icon, which reopens the same panel inside a modal). Keyboard shortcuts: `Ctrl+Z` to undo, `Ctrl+Y` or `Ctrl+Shift+Z` to redo.
 
 The body shows:
 
-- A baseline **Data loaded** row at the top, with a reload-from-server button.
+- A baseline **Data loaded** row at the top, carrying a plot-this-step button and a **discard-edits-and-reload-from-server** button (cloud icon). Clicking the row returns the plot to the state the session started from. The cloud button is hidden on a committed session, where there are no edits to discard.
 - One row per history entry, each with:
   - The operation icon and Title-Case name.
-  - A failure badge (red `!`) if the op threw at author time. Common after a QC history import that references something missing in this datastream.
+  - Under the name, the period the step touched and how many points, for
+    example `Mar 3, 12:05 PM – Apr 1, 2026, 8:00 AM · 1,200 pts`. For a
+    filter or selection that is the points it picked; for an edit, the points
+    it changed, as they were before it ran; for Add points and Fill gaps, the
+    points it inserted. The dates are recorded when the step runs, so later
+    edits that move or remove points don't change them.
+  - A failure badge (red `!`) if the op threw at author time.
   - A duration badge.
   - In dev mode, a small chip showing whether the op ran inline or on a worker.
-  - A **reload-from-this-step** button that replays history up to but not including this entry.
-  - An **undo** button on the trailing entry only (older entries are undone via Reload-from-this-step).
-- A chevron toggles an inline "Arguments" drawer that shows the raw qc-utils call arguments.
+  - A **plot-this-step** button that adds that point in history to the plot as a comparison line.
+  - Clicking the row previews the data as it was at that step; a selection step also selects its points on the plot. Every step stays in the history: steps after the one on screen are dimmed, since they are recorded but not reflected in the plot. A banner reads **Previewing step N of M** with a **Back to latest** button (clicking the last step works too). While previewing, editing waits: operation panels, plot selections and table saves hold until you are back on the latest step. Replaying re-measures each step's duration but keeps its comment and attribution.
+  - An **undo** button on the trailing entry only. Undo and redo are the only ways to change the history; from a preview, undo acts on the whole history and ends the preview.
+- A chevron toggles an inline drawer under the row. It shows the raw qc-utils call arguments, **Applied by** with the name of whoever applied the step (once it is saved), and a **Comment** box for why the step was applied. A comment is saved with the operation, and a row that has one shows a comment icon next to its name. On a committed session the comment is shown but can't be changed.
 
-Clicking the chevron at the very top of the panel collapses the whole panel; the pop-out icon opens the same panel inside a wider modal so you can scan a long history without losing the rest of the sidebar.
+### The sessions timeline
 
-## Save / load a QC history
+Above the history sits **Sessions**: every session of the managed datastream
+you are editing, oldest first. The one you are working in is marked
+**Editing**; the others are marked **View**. Click a session to look at the
+data as it left it, with its own operations in the history below. Viewing a
+committed session is read-only (see [Committed sessions are read-only](#committed-sessions-are-read-only)),
+and **Return to current** takes you back to the session in progress. If you
+have unsaved edits, the app asks before switching, since viewing another
+session drops them. The session rows work from the keyboard too: Tab to one
+and press Enter.
 
-The QC history is the canonical save format. It's a JSON file you can keep, re-apply, share, or version-control.
+### Preview a step vs. reload from server
 
-### Save
+These two look like siblings on the **Data loaded** row and mostly produce the
+same picture, but they are not the same operation:
+
+- **Previewing a step** (or the **Data loaded** row, the starting state)
+  replays the raw observations already held in the browser and keeps the
+  history. No network, and it can only ever restore what you loaded.
+- **Discard edits and reload from server** (cloud icon) re-fetches the
+  observations and throws the history away.
+
+Starting a session already fetches the latest committed state, so within an
+undisturbed session the two agree. Reach for the cloud button when the server
+copy has moved underneath you: **another user committed a session** on the same
+managed datastream while you were editing, or the source is still ingesting
+data and you want the new points. The memory replay can never surface either,
+because it faithfully restores the copy you started with.
+
+Below the body sits the session action bar (see [Submit](#submit-save--commit--close)). It stays put when the panel is collapsed, so the actions are always one click away. While a session is open it carries **Save**, **Discard**, and **Commit**; once you commit, those are replaced by **New session**, which opens the session window step for a new one without a trip back to the Select view. **Close** is always there.
+
+Clicking the chevron at the very top of the panel collapses the body; the pop-out icon opens the same panel inside a wider modal so you can scan a long history without losing the rest of the sidebar. The modal shows the history only, not the session actions.
+
+## Comparing against a point in history
+
+The chart-line button on any history row plots that session's state at that
+operation as a **separate line**, so you can compare it against what you are
+editing now without leaving your session. The button on the **Data loaded**
+row plots the state the session started from, before its first operation.
+
+Click the button again to remove the line.
+
+Things worth knowing:
+
+- Snapshots appear in the plotted datastreams list with a history icon, a
+  `snapshot` chip, and a provenance line such as
+  `step 3 of 7: Fill Gaps - by Alice - Mar 14, 2026`.
+- Each snapshot gets its own Y axis, so you can shift it to line it up
+  against the edit target, exactly like any other plotted datastream.
+- A snapshot is **frozen**. It is computed once, over its own session's
+  window, and changing the plot's time range never refetches or recomputes
+  it. Zoom outside that window and the line simply stops.
+- Snapshots of the session you are editing include your unsaved edits;
+  snapshots of any other session replay what was saved to the server.
+- Snapshots travel in the share link, so a link reproduces the comparison.
+  Each one replays on load, so a link carrying several is slower to open.
+- Closing the session drops every snapshot. Switching to the Select view does
+  not, since the session stays open.
+
+## Deleting a session
+
+The **Edit** chooser shows every session on a managed datastream as a
+timeline, oldest first. Only the in-progress session carries a trash icon.
+When no session is open, the timeline is headed by a **Start new session**
+node.
+
+Committed sessions cannot be deleted. Their edits are already on the managed
+datastream, and the session is the record of how those values got there.
+Deleting an in-progress session removes only its saved operations, since
+nothing in it has been committed yet.
+
+The confirmation dialog names the session and says its operations go with it.
+The managed datastream's observations and earlier sessions are untouched.
+**This cannot be undone.**
+
+If the server rejects the delete, you see why, and the chooser reloads from
+the server so the list reflects what actually survived.
+
+To remove a managed datastream and all of its sessions at once, use the trash
+icon on the datastream's own header row instead. The same kind of dialog asks
+first, naming the datastream and how many sessions go with it. The source
+datastream is never touched.
+
+Deleting the datastream you are editing, or one of its sessions, closes the
+editor once the delete goes through, since what it had open is gone. If the
+delete fails, the editor stays as it was.
+
+## Save a QC history
 
 In the Edit history header, click the tray-arrow-down icon ("Save QC history"). The browser downloads a file named like:
 
@@ -438,46 +682,85 @@ In the Edit history header, click the tray-arrow-down icon ("Save QC history"). 
 qc-history-<datastream-name>-<isoTimestamp>.json
 ```
 
-The file contains:
+The file contains the session window and every operation in the history, in order, with its args and comments. A Snackbar confirms "QC history saved." The file is a record of the session; it can't be loaded back into the app.
 
-- The wall-clock window of the plotted data.
-- Every operation in the history, in order, with its args.
+## Submit (Save / Commit / Close)
 
-A Snackbar confirms "QC history saved."
+When you're satisfied with the edits, hit one of the action buttons at the bottom of the Edit history panel:
 
-### Load
+- **Save**: writes the session's operations to the backend as a draft and keeps you in the Edit view. Enabled only when there is something unsaved, including undoing an edit you already saved.
+- **Commit**: materializes the session into the managed datastream and locks it into the history.
+- **Discard**: drops every edit made since the last save, returning the session to its last saved state. Edits already saved to the session stay. Disabled when there is nothing unsaved, and it asks for confirmation first.
+- **New session**: replaces Save and Commit once the session is committed. Opens the session window step, starting from the state the last commit left behind.
+- **Close**: leaves the editor, after asking what should happen to the session. See "Leaving a session" below.
 
-Click the tray-arrow-up icon ("Load QC history") and pick a JSON file. The app will:
+What you can do depends on your role in the workspace. Editing and saving
+need permission to edit datastreams. Commit also needs permission to create
+observations, and creating a managed datastream needs permission to create
+datastreams. A button your role can't use is disabled, and hovering it says
+why.
 
-1. Fetch the QC history's authored window into your current QC datastream (the indices in selection-coupled ops reference the *windowed* dataset, so the window has to match).
-2. Replay each operation in order.
-3. Show a Snackbar with `Loaded N operations`, plus a warning if any ops failed.
+Clicking Commit opens a confirmation dialog so a misclick won't push data to the server.
 
-Per-op failures do not abort the replay. The app keeps going. If your QC history targets columns that don't exist in the new datastream (e.g., a qualifier code that isn't registered), that specific op fails and shows a red `!` badge on its history row, but the rest still run.
+![Commit confirmation dialog](./images/commit-dialog.png)
 
-### When to use it
+The dialog lets you add an optional session description. Once you confirm:
 
-- **Repeatable QC.** Apply the same QC routine to your raw dataset to generate the quality controlled dataset.
-- **Audit trail.** Save the QC history before submitting, so you have a record of every transformation you applied.
-- **Iterate offline.** Edit the QC history's JSON if you want to tweak a threshold without re-clicking through the panels.
-
-## Submit (Save / Save & Close)
-
-When you're satisfied with the edits, hit one of the action buttons at the top of the right sidebar:
-
-- **Save**: uploads and keeps you in the Edit view.
-- **Save & Close**: uploads, clears history, and drops you back to the Select view.
-- **Close**: abandons the session. If you have unsaved edits, the Unsaved-edits dialog intercepts you.
-
-Clicking Save (or Save & Close) opens a confirmation dialog so a misclick won't push data to the server.
-
-![Submit confirmation dialog](./images/submit-dialog.png)
-
-Once you confirm:
-
-1. The app POSTs the cleaned observations to HydroServer, which either overwrites the existing observations in the plotted window or saves the cleaned observations to a different datastream, depending on your data versioning scheme.
-2. On success, the Snackbar shows "Quality-controlled observations submitted" and the local history is cleared.
+1. The app saves the session's operations, then POSTs the cleaned observations to the managed datastream in `replace` mode, overwriting its observations over the session's time range.
+2. The session is committed and becomes read-only. The Snackbar shows "Session committed." and the footer swaps Save and Commit for **New session**.
 3. On failure, the Snackbar shows the backend's error message verbatim. Show that to your administrator if you need help.
+
+### Committed sessions are read-only
+
+A committed session can be looked at but not changed. This applies right after
+a commit, and whenever you pick an earlier session in the session list. While a
+committed session is on screen:
+
+- The Operations drawer disables every operation and says why.
+- Plot selections highlight points but are not recorded in the history.
+- Table cells show their values without offering to edit them.
+- Undo, redo and step undo are unavailable.
+
+To keep editing, click **Return to current** (when a session is in progress) or
+**New session**.
+
+## Leaving a session
+
+You never leave an edit session by accident. Anything that ends it, the
+editor's **Close** button, the HydroServer logo, the workspace switch, Log
+out, the browser's Back button, or editing a different datastream, asks the
+same question first and tells you what happens to your work. The question
+names the datastream you are leaving. When you edit a different datastream, it
+comes as soon as you pick that datastream, before the session window or the
+create form, so cancelling leaves nothing new behind and puts you back in the
+chooser.
+
+Which question depends on where the session stands:
+
+- **You have edits that are not saved to the session yet.** Choose **Save and
+  close** to write them to the session first, **Discard changes and close** to
+  drop everything since your last save, or **Cancel** to stay. Either way the
+  session stays in progress and you can pick it up later. Save is unavailable
+  when no session is open, because there is nowhere to save to. If discarding
+  leaves the session with nothing in it, the next question is the one below;
+  the edits are gone by then, so that question is only about the session.
+- **The session has no edits at all**, nothing saved and nothing unsaved (you
+  started it and then changed your mind). Choose **Keep session** to leave it
+  in progress, or **Discard session** to delete it from the server. Keeping it
+  is the safe choice: it costs nothing and you can resume it.
+- **Everything is saved.** The dialog only confirms that the session stays in
+  progress; **Close** leaves, **Cancel** stays.
+
+To come back to a session you left in progress, click the Edit button on
+that datastream's row again. It reopens where you left off.
+
+**Cancel** puts you back where you were: same zoom, same staged range, same
+unsaved edits. The one exception is the question that follows **Discard
+changes and close**, where the edits were already dropped by the choice you
+made: cancelling there keeps you in the session, not in your edits. Switching
+between the **Select** and **Edit** views
+is not leaving, so it never asks. Reloading the page or closing the tab still
+shows the browser's own "leave site?" prompt, which the app cannot reword.
 
 ## Performance and big datastreams
 
@@ -494,12 +777,10 @@ See [PERFORMANCE.md](./PERFORMANCE.md) for the envelope details.
 
 ### "I just want to drop everything above 1000 and re-submit."
 
-1. Pick a workspace, then pick the datastream you want to QC.
-2. Plot it (it becomes the QC target).
-3. Click **All** in the Time range so you load the full series.
-4. Click the pencil icon → expand **Value thresholds**, set `Greater than: 1000`, press Enter.
-5. Expand **Delete points**, click Delete.
-6. Click **Save** (or **Save & Close**), then confirm in the dialog.
+1. Pick a workspace, then click the Edit button on the row of the datastream you want to QC.
+2. Expand **Value thresholds**, set `Greater than: 1000`, press Enter.
+3. Expand **Delete points**, click Delete.
+4. Click **Save** at the bottom of the Edit history panel, then **Commit** and confirm in the dialog.
 
 ### "I want to drift-correct a known-bad interval."
 
@@ -509,24 +790,19 @@ See [PERFORMANCE.md](./PERFORMANCE.md) for the envelope details.
 4. Inspect the result on the chart. Use the undo button in Edit history if it's wrong.
 5. Click **Save** when satisfied.
 
-### "I want to replay last week's QC on this week's data."
-
-1. Load the new week of data on the same datastream.
-2. Open the Edit history header → click the tray-arrow-up icon → pick last week's JSON.
-3. The QC history's authored window may differ from this week's; the app will fetch the QC history's window. To re-apply against the new window instead, save the new window first, edit the QC history's `window` field in a text editor, then re-import.
-4. Review the history. Click **Save**.
-
 ### "I picked the wrong workspace."
 
-Click the grid icon in the nav rail → pick another. If you have unsaved edits, the app asks first.
+Click **Workspaces** in the nav rail and **Select** another, or **Continue** to stay in the current one. If an edit session is open, the app asks what should happen to it first.
 
 ## Troubleshooting
 
 | Symptom | Likely cause | Fix |
 |---------|--------------|-----|
 | Blank page on load | Wrong API URL or `localhost` vs `127.0.0.1` mismatch. | See [DEPLOYMENT.md](./DEPLOYMENT.md). |
-| Plot stays empty after picking a datastream | Time range falls outside the datastream's observations. The plotted row shows a database-off icon and the subtitle reads `0 pts loaded`. | Click **All** in Time range. |
-| Pencil ("Edit") icon is greyed out | No QC datastream selected. | Plot at least one datastream. The first becomes the QC target. |
+| Plot stays empty after picking a datastream | A `Custom` time range that doesn't overlap the datastream's observations, or the datastream has no observations. The plotted row shows a database-off icon and the subtitle reads `0 pts loaded`. | Click a preset such as **1m** or **All** in the plot's Time range menu. |
+| The Edit rail item is greyed out | You are not editing. | Click a row's Edit button. |
+| The Select view shows an "Editing" panel | A session is open, or you just picked a datastream to edit. | That is expected: click **Open editor** to edit it, or **Close** on its row (or in the editor) to end it. |
+| I closed the editor and cannot find my session | It is still in progress, just not open. | Click the Edit button on that datastream's row to resume it. Sessions you discarded on the way out are gone for good. |
 | Big edits freeze the page | `SharedArrayBuffer` not available; running inline. | Have your admin re-enable COOP/COEP headers, or accept the slower fallback. |
 | Save fails with a backend error | Permissions / workspace issue / network. | The Snackbar shows the backend message verbatim. Share that with your admin. |
 | The history shows a red failed entry after Load | The QC history referenced something missing in this datastream. | The rest of the QC history still ran. Click the chevron on the row to see its arguments. |

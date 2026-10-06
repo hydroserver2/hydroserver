@@ -80,15 +80,17 @@ jobs:
 
       - name: Install QC utils dependencies
         working-directory: packages/qc-utils
-        run: npm ci
+        run: npm ci --workspaces=false
 
       - name: Build QC utils
         working-directory: packages/qc-utils
         run: npm run build
 
+      # The root package.json declares npm workspaces; without this flag npm ci
+      # installs from the root lockfile instead of the one CI tests.
       - name: Install dependencies
         working-directory: apps/qc-app
-        run: npm ci
+        run: npm ci --workspaces=false
 
       - name: Configure environment variables
         working-directory: apps/qc-app

@@ -300,7 +300,7 @@ const addToPlot = async (datastream: Datastream) => {
 
 const clearAndPlot = async (datastream: Datastream) => {
   emit('close')
-  await setPlottedDatastreams([datastream], datastream.id)
+  await setPlottedDatastreams([datastream])
 }
 
 const d = computed(() => props.datastream)

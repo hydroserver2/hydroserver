@@ -131,8 +131,9 @@
         >
           Edit site information
         </v-btn>
-        <v-dialog v-if="thing" v-model="isRegisterModalOpen" width="80rem">
+        <v-dialog v-model="isRegisterModalOpen" width="80rem">
           <SiteForm
+            v-if="thing && isRegisterModalOpen"
             @close="onSiteFormClosed"
             :thing-id="thingId"
             :workspace-id="thing.workspaceId"

@@ -10,13 +10,16 @@ vi.mock('plotly.js-dist', () => ({
   },
 }))
 
+// Imported up front so building the module graph doesn't count against
+// a test's timeout.
+import * as mod from '@/utils/plotting/operations'
+
 describe('plotting/operations exports', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
   })
 
-  it('exports all 9 operation symbols as functions', async () => {
-    const mod = await import('@/utils/plotting/operations')
+  it('exports all 9 operation symbols as functions', () => {
     expect(typeof mod.zoomXaxisTo).toBe('function')
     expect(typeof mod.toggleTraceVisibility).toBe('function')
     expect(typeof mod.toggleAxisVisibility).toBe('function')
@@ -34,7 +37,7 @@ describe('plotting/operations exports', () => {
       setSelectedPoints,
       clearSelection,
       applyTraceUpdate,
-    } = await import('@/utils/plotting/operations')
+    } = mod
 
     await expect(zoomXaxisTo(null, 0, 1)).resolves.not.toThrow()
     await expect(setSelectedPoints(null, 0, [])).resolves.not.toThrow()

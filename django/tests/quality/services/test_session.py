@@ -302,11 +302,31 @@ def test_delete_session(get_principal, principal, error, error_fragment):
 
 
 def test_delete_committed_session(get_principal):
+    """A committed session has no dependents but its edits are on the managed datastream."""
     with pytest.raises(ValueError) as exc_info:
         qc_session_service.delete(
             principal=get_principal("owner"), history=uuid.UUID(H1), session=uuid.UUID(SESSION_COMMITTED_1)
         )
     assert "Only in-progress sessions can be deleted" in str(exc_info.value)
+    assert QCSession.objects.filter(pk=uuid.UUID(SESSION_COMMITTED_1)).exists()
+
+
+def test_delete_in_progress_session_keeps_its_dependencies(get_principal):
+    """Deleting a session that built on a commit leaves the commit in place."""
+    session = qc_session_service.create(
+        principal=get_principal("owner"),
+        history=uuid.UUID(H1),
+        phenomenon_time_start=_dt(2025, 1, 1, 3, 0),
+        phenomenon_time_end=_dt(2025, 1, 1, 9, 0),
+    )
+    assert uuid.UUID(SESSION_COMMITTED_1) in set(
+        session.dependencies.values_list("dependency_id", flat=True)
+    )
+
+    qc_session_service.delete(principal=get_principal("owner"), history=uuid.UUID(H1), session=session.pk)
+
+    assert not QCSession.objects.filter(pk=session.pk).exists()
+    assert QCSession.objects.filter(pk=uuid.UUID(SESSION_COMMITTED_1)).exists()
 
 
 # --- commit() ---

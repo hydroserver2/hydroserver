@@ -240,7 +240,11 @@ class QCSessionService(ServiceUtils):
         history: uuid.UUID | QCHistory,
         session: uuid.UUID | QCSession,
     ) -> None:
-        """Delete an in-progress session."""
+        """Delete an in-progress session.
+
+        A committed session's edits are already on the managed datastream and nothing
+        rolls them back, so the session stays as their record.
+        """
 
         session = self.get(history=history, session=session, principal=principal, action="edit")
 
