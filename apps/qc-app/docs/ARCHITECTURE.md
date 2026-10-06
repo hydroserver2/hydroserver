@@ -487,7 +487,11 @@ in this order:
   a navigation that lands back in the editor.
 
 The page title and meta tags update in `afterEach` (`updateHead`), so a
-cancelled navigation leaves them as they were.
+cancelled navigation leaves them as they were. From
+asking the user until its navigation lands, `leaveSessionGuard` holds
+`isLeavingPage` (`router/navigationState.ts`; `afterEach` clears it), and
+the editor's URL writer waits: a route replace then would cancel the
+navigation being answered for.
 
 The nav rail's "Edit" entry is enabled only while an edit target is set: it
 returns to the open editor and never picks one itself.

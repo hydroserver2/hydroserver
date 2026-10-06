@@ -491,6 +491,7 @@ import {
   watch,
 } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { isLeavingPage } from '@/router/navigationState'
 import PlottedDatastreams from './VisualizeData/PlottedDatastreams.vue'
 import { usePlotlyStore } from '@/store/plotly'
 import { useEditSession } from '@/composables/useEditSession'
@@ -936,6 +937,7 @@ const SHARE_KEYS = [
 watch(
   [
     isUrlRestored,
+    isLeavingPage,
     plottedDatastreams,
     qcDatastreamId,
     currentView,
@@ -956,7 +958,9 @@ watch(
     tooltipsMaxDataPoints,
   ],
   () => {
-    if (!isUrlRestored.value) return
+    // A replace while the leave guard's navigation is pending would cancel
+    // it; the URL catches up if the user stays instead.
+    if (!isUrlRestored.value || isLeavingPage.value) return
     // Snapshots travel in their own key; `ds` stays real plotted datastreams
     // so the visibility bitmasks line up.
     const plotted = plottedDatastreams.value

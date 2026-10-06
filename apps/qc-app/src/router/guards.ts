@@ -6,6 +6,7 @@ import {
   RouteLocationRaw,
 } from 'vue-router'
 import { nextLocation } from './nextLocation'
+import { isLeavingPage } from './navigationState'
 
 type RouteGuardResult = RouteLocationRaw | false | null | undefined | void
 
@@ -41,11 +42,20 @@ const redirectToDataManagementLogin = (to: RouteLocationNormalized) => {
  * Only the resume pointer is cleared here. The page being left unmounts the
  * editor, which resets the rest; clearing the edit target now would have the
  * editor's URL writer replace the route in the middle of this navigation.
+ * For the same reason the writer waits from the question until the
+ * navigation lands (`isLeavingPage`, cleared in `router.afterEach`).
  */
 export const leaveSessionGuard: RouteGuard = async (to, from) => {
   if (!from.name || to.name === from.name) return null
   const { requestLeave, forgetSession } = useLeaveSession()
-  if (!(await requestLeave())) return false
+  isLeavingPage.value = true
+  let leaving = false
+  try {
+    leaving = await requestLeave()
+  } finally {
+    if (!leaving) isLeavingPage.value = false
+  }
+  if (!leaving) return false
   forgetSession()
   return null
 }

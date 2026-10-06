@@ -226,7 +226,10 @@ const { settled } = useResumeEditSession(async (id) => {
 
 `settled` turns true once the resume has finished (or failed), or the catalog
 landed with nothing to resume. `VisualizeData.vue` holds the share URL as it
-came in until then.
+came in until then. It also holds it from the leave guard asking the user
+until that navigation lands (`isLeavingPage` in `router/navigationState.ts`):
+replacing the route then would cancel the navigation being answered for,
+such as a workspace switch. If the user stays, the URL catches up.
 
 Reopens the editor after a page reload, using the persisted
 `qcSession.resumeDatastreamId`: waits for the workspace catalog to arrive

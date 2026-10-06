@@ -1,6 +1,7 @@
 import { routes } from '@/router/routes'
 import { createRouter, createWebHistory } from 'vue-router'
 import { guards, updateHead } from '@/router/guards'
+import { isLeavingPage } from '@/router/navigationState'
 
 const router = createRouter({
   history: createWebHistory('/qc/'),
@@ -18,6 +19,8 @@ export function setupRouteGuards() {
     })
   })
   router.afterEach((to, from, failure) => {
+    // The leave guard's navigation has landed or been cancelled.
+    isLeavingPage.value = false
     if (!failure) updateHead(to, from)
   })
 }

@@ -34,6 +34,7 @@ vi.mock('@/router/routes', () => ({
 }))
 
 import { leaveSessionGuard } from '@/router/guards'
+import { isLeavingPage } from '@/router/navigationState'
 import router, { setupRouteGuards } from '@/router/router'
 
 const route = (name: string | undefined, query: Record<string, string> = {}) =>
@@ -60,6 +61,33 @@ describe('leaveSessionGuard', () => {
       false
     )
     expect(forgetSession).not.toHaveBeenCalled()
+  })
+
+  // A route replace before this navigation lands would cancel it.
+  it('holds the URL writer from asking on, when the user leaves', async () => {
+    let reply!: (v: boolean) => void
+    requestLeave.mockReturnValueOnce(new Promise((r) => (reply = r)))
+    const guarded = leaveSessionGuard(route('Workspaces'), route('Home'))
+    expect(isLeavingPage.value).toBe(true)
+    reply(true)
+    await guarded
+    // Released by the router once the navigation lands.
+    expect(isLeavingPage.value).toBe(true)
+    isLeavingPage.value = false
+  })
+
+  it('releases the URL writer when the user stays', async () => {
+    requestLeave.mockResolvedValueOnce(false)
+    await leaveSessionGuard(route('Workspaces'), route('Home'))
+    expect(isLeavingPage.value).toBe(false)
+  })
+
+  it('releases the URL writer when asking fails', async () => {
+    requestLeave.mockRejectedValueOnce(new Error('boom'))
+    await expect(
+      leaveSessionGuard(route('Workspaces'), route('Home'))
+    ).rejects.toThrow('boom')
+    expect(isLeavingPage.value).toBe(false)
   })
 
   // The editor rewrites its own URL constantly; that is not an exit.
@@ -108,6 +136,7 @@ describe('route guard order', () => {
 
     expect(requestLeave).toHaveBeenCalledOnce()
     expect(router.currentRoute.value.name).toBe('Workspaces')
+    expect(isLeavingPage.value).toBe(false)
   })
 
   it('keeps the page title when the user stays', async () => {

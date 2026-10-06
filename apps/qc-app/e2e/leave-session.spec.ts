@@ -169,6 +169,43 @@ test.describe('leaving a session', () => {
     })
   })
 
+  // The editor keeps writing its URL while the dialog waits. A route
+  // replace then would cancel the switch the user is answering for.
+  test('a zoom while asking neither cancels the switch nor gets lost', async ({
+    page,
+  }) => {
+    const zoom = () =>
+      page.evaluate(async () => {
+        const gd = document.querySelector('[data-testid="main-plot"]') as any
+        const [lo, hi] = gd.layout.xaxis.range as string[]
+        const ms = (v: string) => Date.parse(`${v.replace(' ', 'T')}Z`)
+        const mid = new Date((ms(lo!) + ms(hi!)) / 2)
+          .toISOString()
+          .replace('T', ' ')
+          .replace('Z', '')
+        await (window as any).Plotly.relayout(gd, { 'xaxis.range': [lo, mid] })
+      })
+    const zParam = () => new URL(page.url()).searchParams.get('z')
+
+    await page.getByTestId('nav-rail-workspaces').click()
+    await expect(leaveDialog(page)).toBeVisible()
+    const before = zParam()
+    await zoom()
+    await page.getByTestId('leave-cancel-btn').click()
+    // Staying put, the URL catches up with the zoom.
+    await expect.poll(zParam).not.toBe(before)
+
+    await page.getByTestId('nav-rail-workspaces').click()
+    await expect(leaveDialog(page)).toBeVisible()
+    await zoom()
+    // Long enough for the zoom history to record it.
+    await page.waitForTimeout(800)
+    await page.getByTestId('leave-keep-btn').click()
+    await expect(page.getByTestId('workspace-current-hint')).toBeVisible({
+      timeout: 30_000,
+    })
+  })
+
   test('logging out asks first', async ({ page }) => {
     await page.getByTestId('nav-rail-logout').click()
     await expect(leaveDialog(page)).toBeVisible()
