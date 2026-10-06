@@ -14,9 +14,14 @@ from interfaces.api.schemas import (
     BasePostBody,
     BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
+    BoundingBoxQuery,
     WorkspaceResponse,
     split_comma_separated,
     comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
+    QueryBool,
 )
 from interfaces.api.schemas.sta.linked_resource import LinkedResourceGetResponse
 from interfaces.api.schemas.sta.tags import reject_empty_tag_keys_and_values
@@ -122,10 +127,12 @@ class MonitoringSiteItemQueryParameters(MonitoringSiteFilterFields, BaseQueryPar
     pass
 
 
-class MonitoringSiteQueryParameters(MonitoringSiteFilterFields, CollectionQueryParameters):
-    sortby: Optional[list[MonitoringSiteSortByFields]] = Query(
-        [], description="Select one or more fields to sort the response by."
-    )
+class MonitoringSiteQueryParameters(MonitoringSiteFilterFields, CollectionQueryParameters, ExtentQueryParameters):
+    sortby: Annotated[
+        Optional[list[MonitoringSiteSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(MonitoringSiteSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
     q: Optional[str] = Query(
         None,
         description="Full-text search query. Comma-separated terms are combined with OR; "
@@ -134,22 +141,18 @@ class MonitoringSiteQueryParameters(MonitoringSiteFilterFields, CollectionQueryP
     workspace_id: list[uuid.UUID] = Query(
         [], description="Filter monitoring sites by workspace ID."
     )
-    bbox: list[str] = Query(
-        [],
-        description="Filter monitoring sites by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat}",
-    )
-    admin_area_1: list[str] = Query(
+    admin_area_1: list[str | Literal["null"]] = Query(
         [], description="Filter monitoring sites by admin area 1."
     )
-    admin_area_2: list[str] = Query(
+    admin_area_2: list[str | Literal["null"]] = Query(
         [], description="Filter monitoring sites by admin area 2."
     )
-    country: list[str] = Query([], description="Filter monitoring sites by country.")
+    country: list[str | Literal["null"]] = Query([], description="Filter monitoring sites by country.")
     type: list[str] = Query([], description="Filter monitoring sites by type.")
     tag: list[str] = Query(
         [], description="Filter monitoring sites by tag. Format tag filters as {key}:{value}"
     )
-    is_private: Optional[bool] = Query(
+    is_private: Optional[QueryBool] = Query(
         None,
         description="Controls whether the returned monitoring sites should be private or public.",
     )
@@ -159,10 +162,7 @@ class MonitoringSiteMarkerQueryParameters(BaseQueryParameters):
     workspace_id: list[uuid.UUID] = Query(
         [], description="Filter markers by workspace ID."
     )
-    bbox: list[str] = Query(
-        [],
-        description="Filter markers by bounding box. Format bounding box as {min_lon},{min_lat},{max_lon},{max_lat}",
-    )
+    bbox: BoundingBoxQuery = Query(None)
     type: list[str] = Query([], description="Filter markers by monitoring site type.")
 
 

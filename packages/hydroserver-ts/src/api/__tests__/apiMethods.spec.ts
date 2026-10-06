@@ -42,7 +42,7 @@ describe('paginatedFetch', () => {
 
     const response = await apiMethods.paginatedFetch<
       { id: string; ownerEmail: string }[]
-    >('https://hydro.example.com/api/data/workspaces?limit=1')
+    >('https://hydro.example.com/api/ogc/collections/workspaces/items?limit=1')
 
     expect(response.ok).toBe(true)
     if (!response.ok) return
@@ -86,7 +86,7 @@ describe('paginatedFetch', () => {
     const response = await apiMethods.paginatedFetch<{
       fields: string[]
       rows: unknown[][]
-    }>('https://hydro.example.com/api/data/observations?format=row&limit=1')
+    }>('https://hydro.example.com/api/ogc/collections/observations/items?format=row&limit=1')
 
     expect(response.ok).toBe(true)
     if (!response.ok) return
@@ -109,7 +109,7 @@ describe('paginatedFetch', () => {
 
     const response = await apiMethods.paginatedFetch<
       { id: string; ownerEmail: string }[]
-    >('https://hydro.example.com/api/data/workspaces')
+    >('https://hydro.example.com/api/ogc/collections/workspaces/items')
 
     expect(response.ok).toBe(true)
     if (!response.ok) return
@@ -139,7 +139,7 @@ describe('paginatedFetch', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     const response = await apiMethods.paginatedFetch<{ id: string }[]>(
-      'https://hydro.example.com/api/data/observations?limit=2'
+      'https://hydro.example.com/api/ogc/collections/observations/items?limit=2'
     )
 
     expect(response.ok).toBe(true)
@@ -167,7 +167,76 @@ describe('paginatedFetch', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     const response = await apiMethods.paginatedFetch<{ id: string }[]>(
-      'https://hydro.example.com/api/data/observations?limit=2'
+      'https://hydro.example.com/api/ogc/collections/observations/items?limit=2'
+    )
+
+    expect(response.ok).toBe(true)
+    if (!response.ok) return
+    expect(response.data.map((item) => item.id)).toEqual(['1', '2', '3'])
+  })
+
+  describe('when the server clamps the requested limit', () => {
+    // 5 records; the client asks for limit=4 but the server caps pages at 2.
+    const mockClampedServer = (meta: (offset: number) => Record<string, unknown>) => {
+      const records = ['1', '2', '3', '4', '5'].map((id) => ({ id }))
+      const fetchMock = vi.fn().mockImplementation(async (input: string | URL) => {
+        const url = new URL(String(input))
+        const offset = Number(url.searchParams.get('offset') ?? '0')
+        const limit = Math.min(Number(url.searchParams.get('limit')), 2)
+        return jsonResponse({
+          data: records.slice(offset, offset + limit),
+          meta: meta(offset),
+        })
+      })
+      vi.stubGlobal('fetch', fetchMock)
+      return fetchMock
+    }
+
+    const requestedOffsets = (fetchMock: ReturnType<typeof vi.fn>) =>
+      fetchMock.mock.calls.map(([input]) =>
+        Number(new URL(String(input)).searchParams.get('offset'))
+      )
+
+    it('pages by the returned meta.limit instead of the requested limit', async () => {
+      const fetchMock = mockClampedServer((offset) => ({ offset, limit: 2, totalCount: 5 }))
+
+      const response = await apiMethods.paginatedFetch<{ id: string }[]>(
+        'https://hydro.example.com/api/ogc/collections/observations/items?limit=4'
+      )
+
+      expect(response.ok).toBe(true)
+      if (!response.ok) return
+      expect(requestedOffsets(fetchMock)).toEqual([0, 2, 4])
+      expect(response.data.map((item) => item.id)).toEqual(['1', '2', '3', '4', '5'])
+      expect(response.meta?.totalCount).toBe(5)
+    })
+
+    it('pages by the returned meta.limit when totalCount is missing', async () => {
+      mockClampedServer((offset) => ({ offset, limit: 2 }))
+
+      const response = await apiMethods.paginatedFetch<{ id: string }[]>(
+        'https://hydro.example.com/api/ogc/collections/observations/items?limit=4'
+      )
+
+      expect(response.ok).toBe(true)
+      if (!response.ok) return
+      expect(response.data.map((item) => item.id)).toEqual(['1', '2', '3', '4', '5'])
+    })
+  })
+
+  it('falls back to the requested limit when the response has no meta.limit', async () => {
+    const pages: Record<string, { id: string }[]> = {
+      '0': [{ id: '1' }, { id: '2' }],
+      '2': [{ id: '3' }],
+    }
+    const fetchMock = vi.fn().mockImplementation(async (input: string | URL) => {
+      const offset = new URL(String(input)).searchParams.get('offset') ?? '0'
+      return jsonResponse({ data: pages[offset] ?? [], meta: { offset: Number(offset), totalCount: 3 } })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const response = await apiMethods.paginatedFetch<{ id: string }[]>(
+      'https://hydro.example.com/api/ogc/collections/observations/items?limit=2'
     )
 
     expect(response.ok).toBe(true)

@@ -47,9 +47,14 @@ export abstract class HydroServerBaseService<
     this._ModelCtor = ctor.Model
   }
 
-  /**  Not all resources are at api/data/ so provide this function to allow a service to override  */
+  /**  Not all resources are at api/ogc/ so provide this function to allow a service to override  */
   protected getBaseUrl(): string {
     return this._client.baseRoute
+  }
+
+  /** Collection root (the route without its trailing `/items`), for collection-level endpoints such as tag keys. */
+  protected get _collectionRoute(): string {
+    return this._route.replace(/\/items$/, '')
   }
   async list(
     params: Partial<QueryParamsOf<C>> & {

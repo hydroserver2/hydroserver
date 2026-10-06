@@ -41,4 +41,4 @@ class RatingCurve(HydroServerBaseModel):
 
     @classmethod
     def get_route(cls):
-        return "data-product-rating-curves"
+        return "collections/data-product-rating-curves/items"

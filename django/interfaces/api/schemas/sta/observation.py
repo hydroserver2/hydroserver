@@ -13,12 +13,17 @@ from interfaces.api.schemas import (
     BasePostBody,
     BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
     PaginationMeta,
     WorkspaceResponse,
     DatastreamResponse,
     split_comma_separated,
     comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
+from interfaces.api.schemas.base import page_links
+from interfaces.api.http.links import Link
 from interfaces.api.schemas.sta.result_qualifier import ResultQualifierResponse
 
 
@@ -88,27 +93,19 @@ class ObservationItemQueryParameters(ObservationFilterFields, BaseQueryParameter
     pass
 
 
-class ObservationQueryParameters(ObservationFilterFields, CollectionQueryParameters):
+class ObservationQueryParameters(ObservationFilterFields, CollectionQueryParameters, ExtentQueryParameters):
     datastream_id: list[uuid.UUID] = Query(
         [], description="Filter observations by datastream ID."
     )
-    sortby: Optional[list[ObservationSortByFields]] = Query(
-        [], description="Select one or more fields to sort the response by."
-    )
+    sortby: Annotated[
+        Optional[list[ObservationSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(ObservationSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
     response_format: Optional[Literal["record", "row", "column"]] = Query(
         None,
         description="Controls the format of the observations response.",
         alias="format",
-    )
-    phenomenon_time__lte: Optional[ISODatetime] = Query(
-        None,
-        description="Sets the maximum phenomenon time of filtered observations.",
-        alias="phenomenon_time_max",
-    )
-    phenomenon_time__gte: Optional[ISODatetime] = Query(
-        None,
-        description="Sets the minimum phenomenon time of filtered observations.",
-        alias="phenomenon_time_min",
     )
     result_qualifier_codes: list[str] = Query(
         [],
@@ -135,6 +132,7 @@ class ObservationFormatResponse(Schema, Generic[T]):
     data: T
     meta: PaginationMeta
     included: Optional[dict[str, list[Any]]] = None
+    links: list[Link] = []
 
     model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
 
@@ -147,6 +145,10 @@ class ObservationFormatResponse(Schema, Generic[T]):
         if not data.get("included"):
             data.pop("included", None)
 
+        links = page_links(info, self.meta, self.data.row_count)
+        if links is not None:
+            data["links"] = links
+
         return data
 
 
@@ -154,11 +156,19 @@ class ObservationRowData(BaseGetResponse):
     fields: list[Literal["phenomenonTime", "result", "resultQualifierCodes"]]
     rows: list[list]
 
+    @property
+    def row_count(self) -> int:
+        return len(self.rows)
+
 
 class ObservationColumnarData(BaseGetResponse):
     phenomenon_time: list
     result: list
     result_qualifier_codes: list
+
+    @property
+    def row_count(self) -> int:
+        return len(self.phenomenon_time)
 
 
 class ObservationRowResponse(ObservationFormatResponse[ObservationRowData]):

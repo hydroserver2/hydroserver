@@ -114,7 +114,7 @@ class MonitoringTaskService(HydroServerBaseService):
         """Trigger an immediate run of a monitoring task."""
 
         path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/trigger"
-        response = self.client.request("post", path).json()
+        response = self.client.request("post", path).json()["data"]
 
         return TaskRun(**response)
 
@@ -153,6 +153,6 @@ class MonitoringTaskService(HydroServerBaseService):
         """Fetch a single task run for a monitoring task."""
 
         path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/runs/{str(run_id)}"
-        response = self.client.request("get", path).json()
+        response = self.client.request("get", path).json()["data"]
 
         return TaskRun(**response)

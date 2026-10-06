@@ -18,7 +18,7 @@ from tests.core.sta.factories import (
 
 pytestmark = pytest.mark.django_db
 
-OBSERVED_PROPERTIES_URL = "/api/data/observed-properties"
+OBSERVED_PROPERTIES_URL = "/api/ogc/collections/observed-properties/items"
 
 
 def _detail_url(observed_property_id):

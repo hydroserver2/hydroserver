@@ -16,8 +16,9 @@ export const fetchObservationsSync = async (
   try {
     const result = await hs.value.datastreams.getObservations(id, {
       limit: 50_000,
-      phenomenon_time_min: startTime?.toISOString() ?? phenomenonBeginTime,
-      phenomenon_time_max: endTime?.toISOString() ?? phenomenonEndTime,
+      datetime: `${startTime?.toISOString() ?? phenomenonBeginTime}/${
+        endTime?.toISOString() ?? phenomenonEndTime
+      }`,
       sortby: ['phenomenonTime'],
       format: 'column',
     })

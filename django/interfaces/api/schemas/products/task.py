@@ -12,9 +12,12 @@ from interfaces.api.schemas import (
     BasePatchBody,
     BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
     MonitoringSiteResponse,
     split_comma_separated,
     comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
 from interfaces.api.schemas.orchestration.schedule import (
     ScheduleResponse,
@@ -90,10 +93,12 @@ class DataProductTaskItemQueryParameters(DataProductTaskFilterFields, BaseQueryP
     pass
 
 
-class DataProductTaskQueryParameters(DataProductTaskFilterFields, CollectionQueryParameters):
-    sortby: Optional[list[DataProductTaskSortByFields]] = Query(
-        [], description="Select one or more fields to sort the response by."
-    )
+class DataProductTaskQueryParameters(DataProductTaskFilterFields, CollectionQueryParameters, ExtentQueryParameters):
+    sortby: Annotated[
+        Optional[list[DataProductTaskSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(DataProductTaskSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
     q: Optional[str] = Query(
         None,
         description="Full-text search query. Comma-separated terms are combined with OR; "
@@ -117,7 +122,7 @@ class DataProductTaskQueryParameters(DataProductTaskFilterFields, CollectionQuer
     input_datastream: list[uuid.UUID] = Query(
         [], description="Filter data product tasks by input datastream ID.", alias="input_datastream_id"
     )
-    rating_curve: list[uuid.UUID] = Query(
+    rating_curve: list[uuid.UUID | Literal["null"]] = Query(
         [], description="Filter data product tasks by rating curve ID.", alias="rating_curve_id"
     )
 

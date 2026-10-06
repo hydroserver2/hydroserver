@@ -11,6 +11,8 @@ from interfaces.api.schemas import (
     CollectionQueryParameters,
     split_comma_separated,
     comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
 
 
@@ -34,9 +36,11 @@ class TaskRunQueryParameters(CollectionQueryParameters):
         description="Comma-separated list of properties to include in the response. "
         "All properties are returned if omitted.",
     )
-    sortby: list[TaskRunSortByFields] = Query(
-        [], description="Select one or more fields to sort the response by."
-    )
+    sortby: Annotated[
+        list[TaskRunSortByFields],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(TaskRunSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
     status: list[Literal["PENDING", "STARTED", "SUCCESS", "FAILURE"]] = Query(
         [], description="Filters task runs by their status."
     )

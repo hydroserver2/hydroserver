@@ -118,7 +118,7 @@ class TaskService(HydroServerBaseService):
         """Trigger an immediate run of an ETL task."""
 
         path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/trigger"
-        response = self.client.request("post", path).json()
+        response = self.client.request("post", path).json()["data"]
 
         return TaskRun(**response)
 
@@ -157,4 +157,4 @@ class TaskService(HydroServerBaseService):
 
         path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/runs/{str(run_id)}"
 
-        return TaskRun(**self.client.request("get", path).json())
+        return TaskRun(**self.client.request("get", path).json()["data"])

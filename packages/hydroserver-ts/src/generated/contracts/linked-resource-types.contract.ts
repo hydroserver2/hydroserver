@@ -1,9 +1,9 @@
 /* AUTO-GENERATED. DO NOT EDIT.
-   Generated from ../../django/contracts/openapi/data.openapi.json */
-import type * as Data from '../data.types'
+   Generated from ../../django/contracts/openapi/ogc.openapi.json */
+import type * as Data from '../ogc.types'
 
 export namespace LinkedResourceTypeContract {
-  export const route = 'linked-resource-types' as const
+  export const route = 'collections/linked-resource-types/items' as const
   export type QueryParameters = ([Data.operations['interfaces_api_views_sta_linked_resource_type_get_linked_resource_types']['parameters']['query']] extends [never] ? {} : NonNullable<Data.operations['interfaces_api_views_sta_linked_resource_type_get_linked_resource_types']['parameters']['query']>)
   export type SummaryResponse = Data.components['schemas']['LinkedResourceTypeResponse']
   export type DetailResponse  = Data.components['schemas']['ItemResponse_LinkedResourceTypeResponse_']

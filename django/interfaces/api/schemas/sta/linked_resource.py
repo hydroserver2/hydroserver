@@ -4,11 +4,11 @@ from ninja import Query
 from interfaces.api.schemas import (
     BaseGetResponse,
     BasePostBody,
-    CollectionQueryParameters,
+    PaginatedQueryParameters,
 )
 
 
-class LinkedResourceQueryParameters(CollectionQueryParameters):
+class LinkedResourceQueryParameters(PaginatedQueryParameters):
     type: list[str] = Query([], description="Filter by linked resource type.")
 
 

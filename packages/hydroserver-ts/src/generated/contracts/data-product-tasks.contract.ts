@@ -1,9 +1,9 @@
 /* AUTO-GENERATED. DO NOT EDIT.
-   Generated from ../../django/contracts/openapi/data.openapi.json */
-import type * as Data from '../data.types'
+   Generated from ../../django/contracts/openapi/ogc.openapi.json */
+import type * as Data from '../ogc.types'
 
 export namespace DataProductTaskContract {
-  export const route = 'data-product-tasks' as const
+  export const route = 'collections/data-product-tasks/items' as const
   export type QueryParameters = ([Data.operations['interfaces_api_views_products_task_get_data_product_tasks']['parameters']['query']] extends [never] ? {} : NonNullable<Data.operations['interfaces_api_views_products_task_get_data_product_tasks']['parameters']['query']>)
   export type SummaryResponse = Data.components['schemas']['DataProductTaskResponse']
   export type DetailResponse  = Data.components['schemas']['ItemResponse_DataProductTaskResponse_']

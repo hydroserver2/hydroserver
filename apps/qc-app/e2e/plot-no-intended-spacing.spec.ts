@@ -89,7 +89,7 @@ async function patchDatastreamFixture(route: Route): Promise<void> {
     processingLevels,
     units,
   }
-  if (/\/api\/data\/datastreams$/.test(path)) {
+  if (/\/api\/ogc\/collections\/datastreams\/items$/.test(path)) {
     const patched = datastreams.map(withoutIntendedSpacing)
     return route.fulfill({
       status: 200,
@@ -102,7 +102,7 @@ async function patchDatastreamFixture(route: Route): Promise<void> {
       }),
     })
   }
-  const single = path.match(/\/api\/data\/datastreams\/([^/]+)$/)
+  const single = path.match(/\/api\/ogc\/collections\/datastreams\/items\/([^/]+)$/)
   if (single) {
     const id = single[1]
     const ds = datastreams.find((d) => d.id === id) ?? datastreams[0]!
@@ -124,7 +124,7 @@ test.describe('plot: datastream without intendedTimeSpacing', () => {
     // wins for both the list and single-get endpoints. The sub-path
     // `/observations` is left to fall through.
     await page.route(
-      /\/api\/data\/datastreams(\/[^/]+)?(\?.*)?$/,
+      /\/api\/ogc\/collections\/datastreams\/items(\/[^/]+)?(\?.*)?$/,
       patchDatastreamFixture
     )
   })

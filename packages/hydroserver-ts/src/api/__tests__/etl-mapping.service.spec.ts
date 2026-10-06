@@ -38,14 +38,14 @@ describe('EtlMappingService', () => {
     })
 
     expect(fetchMock.mock.calls[0][0]).toBe(
-      'https://hydro.example.com/api/data/etl-mappings'
+      'https://hydro.example.com/api/ogc/collections/etl-mappings/items'
     )
     expect(fetchMock.mock.calls[0][1].method).toBe('POST')
     const sentBody = JSON.parse(fetchMock.mock.calls[0][1].body)
     expect(sentBody.etlTaskId).toBe('task-1')
 
     expect(fetchMock.mock.calls[1][0]).toBe(
-      'https://hydro.example.com/api/data/etl-mappings/mapping-1'
+      'https://hydro.example.com/api/ogc/collections/etl-mappings/items/mapping-1'
     )
 
     expect(response.ok).toBe(true)
@@ -77,7 +77,7 @@ describe('EtlMappingService', () => {
     })
 
     expect(fetchMock.mock.calls[0][0]).toBe(
-      'https://hydro.example.com/api/data/etl-mappings/mapping-1'
+      'https://hydro.example.com/api/ogc/collections/etl-mappings/items/mapping-1'
     )
     expect(fetchMock.mock.calls[0][1].method).toBe('PATCH')
     expect(response.ok).toBe(true)

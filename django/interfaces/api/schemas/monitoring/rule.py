@@ -11,9 +11,12 @@ from interfaces.api.schemas import (
     BasePatchBody,
     BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
     DatastreamResponse,
     split_comma_separated,
     comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
 
 
@@ -76,10 +79,12 @@ class MonitoringRuleItemQueryParameters(MonitoringRuleFilterFields, BaseQueryPar
     pass
 
 
-class MonitoringRuleQueryParameters(MonitoringRuleFilterFields, CollectionQueryParameters):
-    sortby: Optional[list[MonitoringRuleSortByFields]] = Query(
-        [], description="Select one or more fields to sort the response by."
-    )
+class MonitoringRuleQueryParameters(MonitoringRuleFilterFields, CollectionQueryParameters, ExtentQueryParameters):
+    sortby: Annotated[
+        Optional[list[MonitoringRuleSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(MonitoringRuleSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
     datastream_id: list[uuid.UUID] = Query(
         [], description="Filter rules by datastream ID."
     )

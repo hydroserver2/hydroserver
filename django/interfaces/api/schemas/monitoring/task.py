@@ -12,9 +12,12 @@ from interfaces.api.schemas import (
     BasePatchBody,
     BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
     MonitoringSiteResponse,
     split_comma_separated,
     comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
 from interfaces.api.schemas.orchestration.schedule import (
     ScheduleResponse,
@@ -91,10 +94,12 @@ class MonitoringTaskItemQueryParameters(MonitoringTaskFilterFields, BaseQueryPar
     pass
 
 
-class MonitoringTaskQueryParameters(MonitoringTaskFilterFields, CollectionQueryParameters):
-    sortby: Optional[list[MonitoringTaskSortByFields]] = Query(
-        [], description="Select one or more fields to sort the response by."
-    )
+class MonitoringTaskQueryParameters(MonitoringTaskFilterFields, CollectionQueryParameters, ExtentQueryParameters):
+    sortby: Annotated[
+        Optional[list[MonitoringTaskSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(MonitoringTaskSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
     q: Optional[str] = Query(
         None,
         description="Full-text search query. Comma-separated terms are combined with OR; "

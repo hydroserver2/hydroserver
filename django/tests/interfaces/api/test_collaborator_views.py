@@ -15,7 +15,7 @@ COLLABORATOR_FIELDS = {"roleId", "userEmail", "serviceAccountEmail"}
 
 
 def _collaborators_url(workspace_id):
-    return f"/api/data/workspaces/{workspace_id}/collaborators"
+    return f"/api/ogc/collections/workspaces/items/{workspace_id}/collaborators"
 
 
 def _collaborator_with_permission(workspace, resource_type, **permissions):

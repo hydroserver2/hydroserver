@@ -14,7 +14,7 @@ from tests.core.sta.factories import DatastreamFactory, UnitFactory, UnitTypeFac
 
 pytestmark = pytest.mark.django_db
 
-UNITS_URL = "/api/data/units"
+UNITS_URL = "/api/ogc/collections/units/items"
 
 
 def _detail_url(unit_id):

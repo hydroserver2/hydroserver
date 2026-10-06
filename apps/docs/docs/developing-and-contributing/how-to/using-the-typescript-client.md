@@ -568,8 +568,7 @@ const observations = await hs.datastreams.getObservations(
   {
     format: "row",
     sortby: ["phenomenonTime"],
-    phenomenon_time_min: "2025-01-01T00:00:00Z",
-    phenomenon_time_max: "2025-12-31T23:59:59Z",
+    datetime: "2025-01-01T00:00:00Z/2025-12-31T23:59:59Z",
     page_size: 1000,
   }
 );
@@ -907,8 +906,7 @@ const sourceRes = await hs.datastreams.getObservations(
   {
     format: "record",
     sortby: ["phenomenonTime"],
-    phenomenon_time_min: rangeStart,
-    phenomenon_time_max: rangeEnd,
+    datetime: `${rangeStart}/${rangeEnd}`,
   }
 );
 

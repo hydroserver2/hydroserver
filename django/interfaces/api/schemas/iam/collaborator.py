@@ -12,6 +12,8 @@ from interfaces.api.schemas import (
     RoleResponse,
     split_comma_separated,
     comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
 from interfaces.api.schemas.iam.user import UserContactResponse
 from interfaces.api.schemas.iam.service_account import ServiceAccountContactResponse
@@ -74,9 +76,11 @@ class CollaboratorFilterFields(Schema):
 
 class CollaboratorQueryParameters(CollaboratorFilterFields, CollectionQueryParameters):
     role_id: list[uuid.UUID] = Query([], description="Filter collaborators by role ID.")
-    sortby: Optional[list[CollaboratorSortByFields]] = Query(
-        [], description="Select one or more fields to sort the response by."
-    )
+    sortby: Annotated[
+        Optional[list[CollaboratorSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(CollaboratorSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
 
 
 class CollaboratorResponse(BaseGetResponse):

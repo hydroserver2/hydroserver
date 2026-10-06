@@ -11,8 +11,11 @@ from interfaces.api.schemas import (
     BaseGetResponse,
     BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
     split_comma_separated,
     comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
 
 RESOURCE_TYPES = Literal["*", *resource_types]
@@ -57,10 +60,12 @@ class RoleItemQueryParameters(RoleFilterFields, BaseQueryParameters):
     pass
 
 
-class RoleQueryParameters(RoleFilterFields, CollectionQueryParameters):
-    sortby: Optional[list[RoleSortByFields]] = Query(
-        [], description="Select one or more fields to sort the response by."
-    )
+class RoleQueryParameters(RoleFilterFields, CollectionQueryParameters, ExtentQueryParameters):
+    sortby: Annotated[
+        Optional[list[RoleSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(RoleSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
     workspace_id: list[uuid.UUID | Literal["null"]] = Query(
         [], description="Filter roles by workspace ID."
     )

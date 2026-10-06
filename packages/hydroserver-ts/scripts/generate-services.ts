@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import fs from 'node:fs'
 import path from 'node:path'
-import { DATA_OPENAPI_FILE } from './openapi-paths'
+import { OGC_OPENAPI_FILE } from './openapi-paths'
 
 type OAS = {
   servers?: any[]
@@ -10,7 +10,7 @@ type OAS = {
 }
 
 const ROOT = process.cwd()
-const SCHEMA_FILE = DATA_OPENAPI_FILE
+const SCHEMA_FILE = OGC_OPENAPI_FILE
 const OUT_DIR = path.resolve('src/generated/services')
 fs.mkdirSync(OUT_DIR, { recursive: true })
 
@@ -40,7 +40,7 @@ const toCamel = (s: string) =>
     .replace(/[-_\s]+(.)?/g, (_, c) => (c ? c.toUpperCase() : ''))
     .replace(/^(.)/, (m) => m.toLowerCase())
 
-/** Return "/api/data/<resource>" path root if present */
+/** Return "/api/ogc/<resource>" path root if present */
 function findCollectionRoot(resource: string) {
   const key = Object.keys(spec.paths).find((p) => p.endsWith(`/${resource}`))
   return key || null
@@ -205,7 +205,7 @@ const header = `/* AUTO-GENERATED. DO NOT EDIT.
 import type { ApiResponse } from '../../api/responseInterceptor'
 import { apiMethods } from '../../api/apiMethods'
 import type { HydroServer } from '../../api/HydroServer'
-import type * as Data from '../data.types'
+import type * as Data from '../ogc.types'
 import { ${resources
   .map((r) => `${toPascal(singularizeKebab(r))}Contract`)
   .join(', ')} } from '../contracts'

@@ -3,7 +3,7 @@ type LinkLike = {
 }
 
 function pathShouldUseApiOrigin(pathname: string) {
-  return pathname.startsWith('/media/') || pathname.startsWith('/api/data/')
+  return pathname.startsWith('/media/') || pathname.startsWith('/api/ogc/')
 }
 
 export function preferredApiOrigin(host?: string | null) {

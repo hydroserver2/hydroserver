@@ -14,7 +14,7 @@ HydroServer implements the [OGC SensorThings API](https://www.ogc.org/standard/s
 
 The interactive documentation for this API is available at:
 
-https://playground.hydroserver.org/api/data/docs
+https://playground.hydroserver.org/api/ogc/docs
 
 ### About
 

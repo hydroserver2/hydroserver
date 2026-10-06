@@ -25,7 +25,7 @@ def owner_workspace(client):
 
 @pytest.mark.parametrize("resource,fields", METADATA)
 def test_metadata_optional_fields_and_limits(client, owner_workspace, resource, fields):
-    url = f"/api/data/{resource}"
+    url = f"/api/ogc/collections/{resource}/items"
     body = {**fields, "name": "N" * 255, "workspaceId": str(owner_workspace.id)}
     response = client.post(url, data=body, content_type="application/json")
     assert response.status_code == 201, response.content
@@ -76,11 +76,11 @@ def test_metadata_optional_fields_and_limits(client, owner_workspace, resource, 
 @pytest.mark.parametrize("resource,fields", METADATA)
 def test_metadata_requires_name_and_description(client, owner_workspace, resource, fields):
     body = {**fields, "workspaceId": str(owner_workspace.id)}
-    assert client.post(f"/api/data/{resource}", data=body, content_type="application/json").status_code == 400
+    assert client.post(f"/api/ogc/collections/{resource}/items", data=body, content_type="application/json").status_code == 400
     if resource != "units":
         body["name"] = "Name"
         del body["description"]
-        assert client.post(f"/api/data/{resource}", data=body, content_type="application/json").status_code == 400
+        assert client.post(f"/api/ogc/collections/{resource}/items", data=body, content_type="application/json").status_code == 400
 
 
 @pytest.mark.parametrize("global_", [False, True])
@@ -106,9 +106,9 @@ def test_observation_codes_use_qualifier_names(client, owner_workspace, global_)
         "datastreamId": str(datastream.id), "phenomenonTime": "2026-01-01T00:00:00Z",
         "result": 1.0, "resultQualifierCodes": [qualifier.name],
     }
-    response = client.post("/api/data/observations", data=body, content_type="application/json")
+    response = client.post("/api/ogc/collections/observations/items", data=body, content_type="application/json")
     assert response.status_code == 201, response.content
-    response = client.get("/api/data/observations", {"datastream_id": str(datastream.id), "result_qualifier_code": qualifier.name})
+    response = client.get("/api/ogc/collections/observations/items", {"datastream_id": str(datastream.id), "result_qualifier_code": qualifier.name})
     assert response.status_code == 200
     assert response.json()["data"][0]["resultQualifierCodes"] == [qualifier.name]
 
@@ -118,7 +118,7 @@ def test_visualization_allows_observed_property_without_code(client, owner_works
         monitoring_site__workspace=owner_workspace, observed_property__code=None,
         processing_level__code=None,
     )
-    response = client.get("/api/data/datastreams/visualization-bootstrap")
+    response = client.get("/api/ogc/collections/datastreams/visualization-bootstrap")
     assert response.status_code == 200, response.content
     properties = response.json()["observedProperties"]
     assert next(p for p in properties if p["id"] == str(datastream.observed_property_id))["code"] is None
@@ -132,6 +132,6 @@ def test_bulk_observation_codes_use_qualifier_names(client, owner_workspace):
         "fields": ["phenomenonTime", "result", "resultQualifierCodes"],
         "data": [["2026-01-01T00:00:00Z", 1.0, [qualifier.name]]],
     }
-    response = client.post("/api/data/observations/bulk-create?mode=insert", data=body, content_type="application/json")
+    response = client.post("/api/ogc/collections/observations/bulk-create?mode=insert", data=body, content_type="application/json")
     assert response.status_code == 201, response.content
     assert datastream.observation_set.get().result_qualifiers == [qualifier.name]

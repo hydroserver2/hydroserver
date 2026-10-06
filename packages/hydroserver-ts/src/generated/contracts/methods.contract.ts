@@ -1,9 +1,9 @@
 /* AUTO-GENERATED. DO NOT EDIT.
-   Generated from ../../django/contracts/openapi/data.openapi.json */
-import type * as Data from '../data.types'
+   Generated from ../../django/contracts/openapi/ogc.openapi.json */
+import type * as Data from '../ogc.types'
 
 export namespace MethodContract {
-  export const route = 'methods' as const
+  export const route = 'collections/methods/items' as const
   export type QueryParameters = ([Data.operations['interfaces_api_views_sta_method_get_methods']['parameters']['query']] extends [never] ? {} : NonNullable<Data.operations['interfaces_api_views_sta_method_get_methods']['parameters']['query']>)
   export type SummaryResponse = Data.components['schemas']['MethodResponse']
   export type DetailResponse  = Data.components['schemas']['ItemResponse_MethodResponse_']

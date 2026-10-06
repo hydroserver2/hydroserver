@@ -2,14 +2,17 @@ import uuid
 
 from typing import Optional, get_args
 from django.contrib.auth import get_user_model
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q
 from django.db.utils import IntegrityError
 
 from core.iam.models import Workspace, ServiceAccount
+from core.sta.models import MonitoringSite
 from core.iam.permissions.anonymous import AnonymousPrincipal
 from interfaces.api.service import APIService
 from interfaces.api.http.errors import BadRequestError, ConflictError, PermissionDeniedError
 from interfaces.api.schemas import (
+    BoundingBox,
+    TimeInterval,
     WorkspacePostBody,
     WorkspacePatchBody,
     WorkspaceTransferBody,
@@ -49,6 +52,31 @@ class WorkspaceAPIService(APIService):
 
         return workspace
 
+    @classmethod
+    def apply_visible_site_bbox(
+        cls,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        queryset,
+        bbox: Optional[BoundingBox],
+    ):
+        """
+        Filters workspaces by the monitoring sites the principal can view. A workspace matches
+        when one of those sites lies inside the box, or when the principal can view none of its
+        sites, since a workspace without a visible location matches any box (OGC API - Features
+        Core Req 24C). Sites the principal can't view never affect the result.
+        """
+
+        if bbox is None:
+            return queryset
+
+        visible_sites = principal.filter_by_permission(
+            MonitoringSite.objects.filter(workspace_id=OuterRef("pk")), "can_view"
+        )
+
+        return queryset.filter(
+            Exists(cls.apply_bbox(visible_sites, bbox)) | ~Exists(visible_sites)
+        )
+
     def list(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
@@ -57,6 +85,8 @@ class WorkspaceAPIService(APIService):
         sortby: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
         include: Optional[list[str]] = None,
+        bbox: Optional[BoundingBox] = None,
+        datetime_interval: Optional[TimeInterval] = None,
     ):
         requested_includes = self.resolve_include_set(include)
         queryset = Workspace.objects
@@ -90,6 +120,10 @@ class WorkspaceAPIService(APIService):
                 else:
                     queryset = self.apply_filters(queryset, field, filtering[field])
 
+        queryset = self.apply_visible_site_bbox(principal, queryset, bbox)
+        queryset = self.apply_visible_datastream_datetime(
+            principal, queryset, datetime_interval, "monitoring_site__workspace_id"
+        )
         queryset, has_search = self.apply_search(queryset, filtering.get("q"))
         queryset = self.apply_sorting(
             queryset,

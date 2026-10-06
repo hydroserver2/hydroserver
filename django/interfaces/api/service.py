@@ -8,12 +8,14 @@ from django.contrib.auth import get_user_model
 from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.core.exceptions import EmptyResultSet
 from django.db import connection
-from django.db.models import QuerySet, Model, Q, F
+from django.db.models import QuerySet, Model, Q, F, Exists, OuterRef
 
 from core.iam.models import Workspace, ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
+from core.sta.models import Datastream
 from interfaces.api.http.errors import BadRequestError, NotFoundError
-from interfaces.api.schemas.base import PaginationMeta
+from interfaces.api.schemas.base import PaginationMeta, clamp_limit
+from interfaces.api.schemas.extent import BoundingBox, TimeInterval
 
 User = get_user_model()
 
@@ -80,6 +82,138 @@ class APIService:
                 return queryset
         else:
             return queryset.filter(**{field_name: values})
+
+    @staticmethod
+    def bbox_q(
+        bbox: BoundingBox,
+        latitude_field: str = "latitude",
+        longitude_field: str = "longitude",
+    ) -> Q:
+        """
+        Builds a Q object matching points inside a bounding box, boundaries included. A box
+        that crosses the antimeridian matches longitudes east of its west edge or west of its
+        east edge.
+        """
+
+        latitude_q = Q(
+            **{f"{latitude_field}__gte": bbox.south, f"{latitude_field}__lte": bbox.north}
+        )
+
+        if bbox.crosses_antimeridian:
+            longitude_q = Q(**{f"{longitude_field}__gte": bbox.west}) | Q(
+                **{f"{longitude_field}__lte": bbox.east}
+            )
+        else:
+            longitude_q = Q(
+                **{f"{longitude_field}__gte": bbox.west, f"{longitude_field}__lte": bbox.east}
+            )
+
+        return latitude_q & longitude_q
+
+    @classmethod
+    def apply_bbox(
+        cls,
+        queryset: QuerySet,
+        bbox: Optional[BoundingBox],
+        latitude_field: str = "latitude",
+        longitude_field: str = "longitude",
+    ) -> QuerySet:
+        """Filters a queryset to points inside a bounding box. A missing box leaves it unfiltered."""
+
+        if bbox is None:
+            return queryset
+
+        return queryset.filter(cls.bbox_q(bbox, latitude_field, longitude_field))
+
+    @staticmethod
+    def datetime_instant_q(interval: TimeInterval, field: str) -> Q:
+        """
+        Builds a Q object matching items whose instant lies inside a datetime interval, bounds
+        included. Items without an instant match any interval (OGC API - Features Core Req 26C).
+        """
+
+        q = Q()
+        if interval.start is not None:
+            q &= Q(**{f"{field}__gte": interval.start})
+        if interval.end is not None:
+            q &= Q(**{f"{field}__lte": interval.end})
+
+        return q | Q(**{f"{field}__isnull": True})
+
+    @staticmethod
+    def datetime_interval_q(interval: TimeInterval, start_field: str, end_field: str) -> Q:
+        """
+        Builds a Q object matching items whose [start, end] interval intersects a datetime
+        interval, bounds included (OGC API - Features Core Req 26). A missing start or end on
+        an item is treated as open, so items without an interval match any datetime (Req 26C).
+        """
+
+        q = Q()
+        if interval.end is not None:
+            q &= Q(**{f"{start_field}__lte": interval.end}) | Q(**{f"{start_field}__isnull": True})
+        if interval.start is not None:
+            q &= Q(**{f"{end_field}__gte": interval.start}) | Q(**{f"{end_field}__isnull": True})
+
+        return q
+
+    @classmethod
+    def apply_datetime_instant(
+        cls, queryset: QuerySet, interval: Optional[TimeInterval], field: str
+    ) -> QuerySet:
+        """Filters a queryset to items whose instant lies inside a datetime interval."""
+
+        if interval is None:
+            return queryset
+
+        return queryset.filter(cls.datetime_instant_q(interval, field))
+
+    @classmethod
+    def apply_datetime_interval(
+        cls,
+        queryset: QuerySet,
+        interval: Optional[TimeInterval],
+        start_field: str,
+        end_field: str,
+    ) -> QuerySet:
+        """Filters a queryset to items whose interval intersects a datetime interval."""
+
+        if interval is None:
+            return queryset
+
+        return queryset.filter(cls.datetime_interval_q(interval, start_field, end_field))
+
+    @classmethod
+    def apply_visible_datastream_datetime(
+        cls,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        queryset,
+        interval: Optional[TimeInterval],
+        datastream_field: str,
+    ):
+        """
+        Filters items by the observed time of the datastreams the principal can view, where
+        datastream_field links a datastream to the item's pk. An item matches when one of those
+        datastreams overlaps the interval, or when none of them has observations, since an item
+        without a time matches any datetime (OGC API - Features Core Req 26C). Datastreams the
+        principal can't view never affect the result.
+        """
+
+        if interval is None:
+            return queryset
+
+        observed_datastreams = principal.filter_by_permission(
+            Datastream.objects.filter(
+                **{datastream_field: OuterRef("pk")}, phenomenon_begin_time__isnull=False
+            ),
+            "can_view",
+        )
+        overlapping_datastreams = cls.apply_datetime_interval(
+            observed_datastreams, interval, "phenomenon_begin_time", "phenomenon_end_time"
+        )
+
+        return queryset.filter(
+            Exists(overlapping_datastreams) | ~Exists(observed_datastreams)
+        )
 
     @staticmethod
     def apply_sorting(
@@ -298,8 +432,8 @@ class APIService:
             raise BadRequestError("Offset must be >= 0.")
         if limit < 0:
             raise BadRequestError("Limit must be >= 0.")
-        if limit > 100000:
-            raise BadRequestError("Limit must be <= 100000.")
+
+        limit = clamp_limit(limit)
 
         if count is None:
             count = queryset.count()
@@ -336,6 +470,20 @@ class APIService:
             return queryset.count()
 
         return estimated
+
+    @staticmethod
+    def get_linked_resource_by_id(
+        linked_resource_model: Type[Model],
+        parent_field: str,
+        parent: Model,
+        linked_resource_id: uuid.UUID,
+    ):
+        try:
+            return linked_resource_model.objects.get(
+                **{parent_field: parent}, id=linked_resource_id
+            )
+        except linked_resource_model.DoesNotExist:
+            raise NotFoundError("Linked resource does not exist")
 
     @staticmethod
     def create_linked_resource(

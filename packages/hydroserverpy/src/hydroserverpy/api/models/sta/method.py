@@ -37,7 +37,7 @@ class Method(HydroServerBaseModel):
 
     @classmethod
     def get_route(cls):
-        return "methods"
+        return "collections/methods/items"
 
     @property
     def workspace(self) -> Optional["Workspace"]:

@@ -14,9 +14,12 @@ from interfaces.api.schemas import (
     BasePatchBody,
     BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
     WorkspaceResponse,
     split_comma_separated,
     comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
 from interfaces.api.schemas.orchestration.schedule import (
     ScheduleResponse,
@@ -93,10 +96,12 @@ class DataConnectionItemQueryParameters(DataConnectionFilterFields, BaseQueryPar
     pass
 
 
-class DataConnectionQueryParameters(DataConnectionFilterFields, CollectionQueryParameters):
-    sortby: Optional[list[DataConnectionSortByFields]] = Query(
-        [], description="Select one or more fields to sort the response by."
-    )
+class DataConnectionQueryParameters(DataConnectionFilterFields, CollectionQueryParameters, ExtentQueryParameters):
+    sortby: Annotated[
+        Optional[list[DataConnectionSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(DataConnectionSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
     q: Optional[str] = Query(
         None,
         description="Full-text search query. Comma-separated terms are combined with OR; "

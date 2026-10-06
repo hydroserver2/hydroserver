@@ -134,13 +134,12 @@ describe('fetchObservations', () => {
     const data = await fetchObservations(createDatastream(), start, end)
 
     expect(data).toEqual([['2023-01-01T00:00:00Z', 5]])
-    expect(getObservationsMock).toHaveBeenCalledWith(
-      '123',
-      expect.objectContaining({
-        phenomenon_time_min: start,
-        phenomenon_time_max: end,
-      })
-    )
+    expect(getObservationsMock).toHaveBeenCalledWith('123', {
+      sortby: ['phenomenonTime'],
+      limit: 50_000,
+      format: 'column',
+      datetime: `${start}/${end}`,
+    })
   })
 
   it('returns empty for non-ok or invalid payloads', async () => {

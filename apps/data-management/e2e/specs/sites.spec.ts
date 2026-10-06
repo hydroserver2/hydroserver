@@ -309,7 +309,7 @@ test.describe('sites and workspaces', () => {
   test('Browse metadata controls stay on one line with multiple values', async ({
     page,
   }) => {
-    await page.route('**/api/data/monitoring-sites/site-summaries*', async (route) => {
+    await page.route('**/api/ogc/collections/monitoring-sites/site-summaries*', async (route) => {
       const response = await route.fetch()
       const summaries = (await response.json()) as Array<{
         tags: Record<string, string>
@@ -629,7 +629,7 @@ test.describe('sites and workspaces', () => {
     await expect
       .poll(async () => {
         const response = await page.request.get(
-          `${apiBaseUrl}/api/data/monitoring-sites/${fixtures.monitoringSites.public.id}`
+          `${apiBaseUrl}/api/ogc/collections/monitoring-sites/items/${fixtures.monitoringSites.public.id}`
         )
         const monitoringSite = await response.json()
         return monitoringSite.data.isPrivate
@@ -638,7 +638,7 @@ test.describe('sites and workspaces', () => {
     await page.getByRole('button', { name: 'Close' }).click()
 
     const blockedMonitoringSiteRequest = anonymousPage.waitForResponse((response) =>
-      response.url().includes(`/api/data/monitoring-sites/${fixtures.monitoringSites.public.id}`)
+      response.url().includes(`/api/ogc/collections/monitoring-sites/items/${fixtures.monitoringSites.public.id}`)
     )
     await anonymousPage.goto(`/sites/${fixtures.monitoringSites.public.id}`)
     const blockedMonitoringSiteResponse = await blockedMonitoringSiteRequest
@@ -650,7 +650,7 @@ test.describe('sites and workspaces', () => {
     await expect
       .poll(async () => {
         const response = await page.request.get(
-          `${apiBaseUrl}/api/data/monitoring-sites/${fixtures.monitoringSites.public.id}`
+          `${apiBaseUrl}/api/ogc/collections/monitoring-sites/items/${fixtures.monitoringSites.public.id}`
         )
         const monitoringSite = await response.json()
         return monitoringSite.data.isPrivate
@@ -665,7 +665,7 @@ test.describe('sites and workspaces', () => {
     await expect
       .poll(async () => {
         const response = await page.request.get(
-          `${apiBaseUrl}/api/data/datastreams/${fixtures.datastreams.public.id}`
+          `${apiBaseUrl}/api/ogc/collections/datastreams/items/${fixtures.datastreams.public.id}`
         )
         const datastream = await response.json()
         return datastream.data.isPrivate
@@ -679,7 +679,7 @@ test.describe('sites and workspaces', () => {
     await expect
       .poll(async () => {
         const response = await page.request.get(
-          `${apiBaseUrl}/api/data/datastreams/${fixtures.datastreams.public.id}`
+          `${apiBaseUrl}/api/ogc/collections/datastreams/items/${fixtures.datastreams.public.id}`
         )
         const datastream = await response.json()
         return datastream.data.isPrivate
@@ -688,7 +688,7 @@ test.describe('sites and workspaces', () => {
     await expect
       .poll(async () => {
         const response = await page.request.get(
-          `${apiBaseUrl}/api/data/datastreams/${fixtures.datastreams.public.id}`
+          `${apiBaseUrl}/api/ogc/collections/datastreams/items/${fixtures.datastreams.public.id}`
         )
         const datastream = await response.json()
         return datastream.data.isVisible
@@ -699,7 +699,7 @@ test.describe('sites and workspaces', () => {
     await expect
       .poll(async () => {
         const response = await page.request.get(
-          `${apiBaseUrl}/api/data/datastreams/${fixtures.datastreams.public.id}`
+          `${apiBaseUrl}/api/ogc/collections/datastreams/items/${fixtures.datastreams.public.id}`
         )
         const datastream = await response.json()
         return datastream.data.isVisible
@@ -715,7 +715,7 @@ test.describe('sites and workspaces', () => {
     await expect
       .poll(async () => {
         const response = await page.request.get(
-          `${apiBaseUrl}/api/data/datastreams/${fixtures.datastreams.public.id}`
+          `${apiBaseUrl}/api/ogc/collections/datastreams/items/${fixtures.datastreams.public.id}`
         )
         const datastream = await response.json()
         return datastream.data.isVisible

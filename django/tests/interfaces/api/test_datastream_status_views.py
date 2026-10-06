@@ -5,7 +5,7 @@ from tests.core.sta.factories import DatastreamStatusFactory
 
 pytestmark = pytest.mark.django_db
 
-DATASTREAM_STATUSES_URL = "/api/data/datastream-statuses"
+DATASTREAM_STATUSES_URL = "/api/ogc/collections/datastream-statuses/items"
 
 
 def _detail_url(datastream_status_id):

@@ -12,6 +12,7 @@ from interfaces.api.schemas import (
     BasePatchBody,
     BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
     WorkspaceResponse,
     MonitoringSiteResponse,
     ObservedPropertyResponse,
@@ -20,6 +21,9 @@ from interfaces.api.schemas import (
     ProcessingLevelResponse,
     split_comma_separated,
     comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
+    QueryBool,
 )
 from interfaces.api.schemas.sta.linked_resource import LinkedResourceGetResponse
 from interfaces.api.schemas.sta.tags import reject_empty_tag_keys_and_values
@@ -37,11 +41,6 @@ class DatastreamFields(Schema):
     time_aggregation_interval: float
     status: Optional[str] = Field(None, max_length=255)
     result_type: str = Field(..., max_length=255)
-    value_count: Optional[int] = Field(None, ge=0)
-    phenomenon_begin_time: Optional[ISODatetime] = None
-    phenomenon_end_time: Optional[ISODatetime] = None
-    result_begin_time: Optional[ISODatetime] = None
-    result_end_time: Optional[ISODatetime] = None
     is_private: bool = False
     is_visible: bool = True
     time_aggregation_interval_unit: Literal["seconds", "minutes", "hours", "days"]
@@ -49,6 +48,16 @@ class DatastreamFields(Schema):
     intended_time_spacing_unit: Optional[
         Literal["seconds", "minutes", "hours", "days"]
     ] = None
+
+
+class DatastreamStatisticsFields(Schema):
+    """Observation statistics the server maintains; returned in responses but never writable."""
+
+    value_count: Optional[int] = Field(None, ge=0)
+    phenomenon_begin_time: Optional[ISODatetime] = None
+    phenomenon_end_time: Optional[ISODatetime] = None
+    result_begin_time: Optional[ISODatetime] = None
+    result_end_time: Optional[ISODatetime] = None
 
 
 class DatastreamRelatedFields(Schema):
@@ -134,6 +143,7 @@ _property_fields = (
     "id",
     "workspaceId",
     *(to_camel(name) for name in DatastreamFields.model_fields),
+    *(to_camel(name) for name in DatastreamStatisticsFields.model_fields),
     *(to_camel(name) for name in DatastreamRelatedFields.model_fields),
     "tags",
     "linkedResources",
@@ -165,10 +175,12 @@ class DatastreamItemQueryParameters(DatastreamFilterFields, BaseQueryParameters)
     pass
 
 
-class DatastreamQueryParameters(DatastreamFilterFields, CollectionQueryParameters):
-    sortby: Optional[list[DatastreamSortByFields]] = Query(
-        [], description="Select one or more fields to sort the response by."
-    )
+class DatastreamQueryParameters(DatastreamFilterFields, CollectionQueryParameters, ExtentQueryParameters):
+    sortby: Annotated[
+        Optional[list[DatastreamSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(DatastreamSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
     q: Optional[str] = Query(
         None,
         description="Full-text search query. Comma-separated terms are combined with OR; "
@@ -199,12 +211,12 @@ class DatastreamQueryParameters(DatastreamFilterFields, CollectionQueryParameter
     sampled_medium: list[str] = Query(
         [], description="Filter monitoring_sites by sampled medium."
     )
-    status: list[str] = Query([], description="Filter monitoring_sites by status.")
+    status: list[str | Literal["null"]] = Query([], description="Filter datastreams by status.")
     result_type: list[str] = Query([], description="Filter monitoring_sites by result type.")
     tag: list[str] = Query(
         [], description="Filter datastreams by tag. Format tag filters as {key}:{value}"
     )
-    is_private: Optional[bool] = Query(
+    is_private: Optional[QueryBool] = Query(
         None,
         description="Controls whether the datastreams should be private or public.",
     )
@@ -217,46 +229,6 @@ class DatastreamQueryParameters(DatastreamFilterFields, CollectionQueryParameter
         None,
         description="Sets the minimum value count of filtered datastreams.",
         alias="value_count_min",
-    )
-    phenomenon_begin_time__lte: Optional[ISODatetime] = Query(
-        None,
-        description="Sets the maximum phenomenon begin time of filtered datastreams.",
-        alias="phenomenon_begin_time_max",
-    )
-    phenomenon_begin_time__gte: Optional[ISODatetime] = Query(
-        None,
-        description="Sets the minimum phenomenon begin time of filtered datastreams.",
-        alias="phenomenon_begin_time_min",
-    )
-    phenomenon_end_time__lte: Optional[ISODatetime] = Query(
-        None,
-        description="Sets the maximum phenomenon end time of filtered datastreams.",
-        alias="phenomenon_end_time_max",
-    )
-    phenomenon_end_time__gte: Optional[ISODatetime] = Query(
-        None,
-        description="Sets the minimum phenomenon end time of filtered datastreams.",
-        alias="phenomenon_end_time_min",
-    )
-    result_begin_time__lte: Optional[ISODatetime] = Query(
-        None,
-        description="Sets the maximum result begin time of filtered datastreams.",
-        alias="result_begin_time_max",
-    )
-    result_begin_time__gte: Optional[ISODatetime] = Query(
-        None,
-        description="Sets the minimum result begin time of filtered datastreams.",
-        alias="result_begin_time_min",
-    )
-    result_end_time__lte: Optional[ISODatetime] = Query(
-        None,
-        description="Sets the maximum result end time of filtered datastreams.",
-        alias="result_end_time_max",
-    )
-    result_end_time__gte: Optional[ISODatetime] = Query(
-        None,
-        description="Sets the minimum result end time of filtered datastreams.",
-        alias="result_end_time_min",
     )
 
 
@@ -318,7 +290,7 @@ class DatastreamVisualizationBootstrapResponse(BaseGetResponse):
 
 
 class DatastreamResponse(
-    BaseGetResponse, DatastreamFields, DatastreamRelatedFields
+    BaseGetResponse, DatastreamFields, DatastreamStatisticsFields, DatastreamRelatedFields
 ):
     id: uuid.UUID
     workspace_id: uuid.UUID = Field(

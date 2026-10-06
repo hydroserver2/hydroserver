@@ -1,9 +1,9 @@
 /* AUTO-GENERATED. DO NOT EDIT.
-   Generated from ../../django/contracts/openapi/data.openapi.json */
-import type * as Data from '../data.types'
+   Generated from ../../django/contracts/openapi/ogc.openapi.json */
+import type * as Data from '../ogc.types'
 
 export namespace AggregationStatisticContract {
-  export const route = 'aggregation-statistics' as const
+  export const route = 'collections/aggregation-statistics/items' as const
   export type QueryParameters = ([Data.operations['interfaces_api_views_sta_aggregation_statistic_get_aggregation_statistics']['parameters']['query']] extends [never] ? {} : NonNullable<Data.operations['interfaces_api_views_sta_aggregation_statistic_get_aggregation_statistics']['parameters']['query']>)
   export type SummaryResponse = Data.components['schemas']['AggregationStatisticResponse']
   export type DetailResponse  = Data.components['schemas']['ItemResponse_AggregationStatisticResponse_']

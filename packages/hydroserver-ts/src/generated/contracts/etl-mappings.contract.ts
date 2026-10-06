@@ -1,9 +1,9 @@
 /* AUTO-GENERATED. DO NOT EDIT.
-   Generated from ../../django/contracts/openapi/data.openapi.json */
-import type * as Data from '../data.types'
+   Generated from ../../django/contracts/openapi/ogc.openapi.json */
+import type * as Data from '../ogc.types'
 
 export namespace EtlMappingContract {
-  export const route = 'etl-mappings' as const
+  export const route = 'collections/etl-mappings/items' as const
   export type QueryParameters = ([Data.operations['interfaces_api_views_etl_mapping_get_etl_mappings']['parameters']['query']] extends [never] ? {} : NonNullable<Data.operations['interfaces_api_views_etl_mapping_get_etl_mappings']['parameters']['query']>)
   export type SummaryResponse = Data.components['schemas']['EtlMappingResponse']
   export type DetailResponse  = Data.components['schemas']['ItemResponse_EtlMappingResponse_']

@@ -14,7 +14,7 @@ from tests.core.sta.factories import ResultQualifierFactory
 
 pytestmark = pytest.mark.django_db
 
-RESULT_QUALIFIERS_URL = "/api/data/result-qualifiers"
+RESULT_QUALIFIERS_URL = "/api/ogc/collections/result-qualifiers/items"
 
 
 def _detail_url(result_qualifier_id):

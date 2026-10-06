@@ -9,7 +9,7 @@ from tests.core.iam.factories import (
 
 pytestmark = pytest.mark.django_db
 
-ROLES_URL = "/api/data/roles"
+ROLES_URL = "/api/ogc/collections/roles/items"
 
 
 def _detail_url(role_id):
