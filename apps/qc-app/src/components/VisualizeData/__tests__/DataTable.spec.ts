@@ -573,7 +573,7 @@ describe('DataTable.vue staged edits when the data changes', () => {
   })
 
   it('keeps its own save from discarding the edits it applies', async () => {
-    const dispatch = vi.fn(async () => {
+    const dispatch = vi.fn(async (_actions: unknown) => {
       selectedSeries.value.data.revision++
     })
     selectedSeries.value.data.dispatch = dispatch
