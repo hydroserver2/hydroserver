@@ -25,7 +25,7 @@ workspace_service = WorkspaceAPIService()
 
 
 @workspace_router.get(
-    "",
+    "/items",
     auth=[session_auth, oidc_workspace_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: PaginatedResponse[WorkspaceResponse],
@@ -49,11 +49,13 @@ def get_workspaces(
         sortby=query.sortby,
         filtering=query.dict(exclude_unset=True),
         include=query.include,
+        bbox=query.bbox,
+        datetime_interval=query.datetime,
     )
 
 
 @workspace_router.post(
-    "",
+    "/items",
     auth=[session_auth, oidc_workspace_write_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
@@ -75,7 +77,7 @@ def create_workspace(
 
 
 @workspace_router.get(
-    "/{workspace_id}",
+    "/items/{workspace_id}",
     auth=[session_auth, oidc_workspace_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: ItemResponse[WorkspaceResponse],
@@ -101,7 +103,7 @@ def get_workspace(
 
 
 @workspace_router.patch(
-    "/{workspace_id}",
+    "/items/{workspace_id}",
     auth=[session_auth, oidc_workspace_write_auth, basic_auth],
     response={
         204: None,
@@ -131,7 +133,7 @@ def update_workspace(
 
 
 @workspace_router.delete(
-    "/{workspace_id}",
+    "/items/{workspace_id}",
     auth=[session_auth, oidc_workspace_write_auth, basic_auth],
     response={
         204: None,
@@ -150,7 +152,7 @@ def delete_workspace(request: HydroServerHttpRequest, workspace_id: Path[uuid.UU
 
 
 @workspace_router.post(
-    "/{workspace_id}/transfer",
+    "/items/{workspace_id}/transfer",
     auth=[session_auth, oidc_iam_write_auth, basic_auth],
     response={
         201: str,
@@ -176,7 +178,7 @@ def transfer_workspace(
 
 
 @workspace_router.put(
-    "/{workspace_id}/transfer",
+    "/items/{workspace_id}/transfer",
     auth=[session_auth, oidc_iam_write_auth, basic_auth],
     response={
         200: str,
@@ -200,7 +202,7 @@ def accept_workspace_transfer(
 
 
 @workspace_router.delete(
-    "/{workspace_id}/transfer",
+    "/items/{workspace_id}/transfer",
     auth=[session_auth, oidc_iam_write_auth, basic_auth],
     response={
         200: str,
@@ -224,8 +226,8 @@ def reject_workspace_transfer(
 
 
 workspace_router.add_router(
-    "{workspace_id}/collaborators", collaborator_router, tags=["Collaborators"]
+    "items/{workspace_id}/collaborators", collaborator_router, tags=["Collaborators"]
 )
 workspace_router.add_router(
-    "{workspace_id}/service-accounts", service_account_router, tags=["Service Accounts"]
+    "items/{workspace_id}/service-accounts", service_account_router, tags=["Service Accounts"]
 )

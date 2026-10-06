@@ -396,7 +396,7 @@ test.describe('workspace management', () => {
     page,
   }) => {
     let failWorkspaceRequests = true
-    await page.route('**/api/data/workspaces?**', async (route) => {
+    await page.route('**/api/ogc/collections/workspaces/items?**', async (route) => {
       if (failWorkspaceRequests) {
         await route.fulfill({
           status: 503,
@@ -427,7 +427,7 @@ test.describe('workspace management', () => {
     page,
   }) => {
     await page.route(
-      `**/api/data/workspaces/${fixtures.workspaces.private.id}/service-accounts?**`,
+      `**/api/ogc/collections/workspaces/items/${fixtures.workspaces.private.id}/service-accounts?**`,
       (route) =>
         route.fulfill({
           status: 503,
@@ -452,7 +452,7 @@ test.describe('workspace management', () => {
   test('a slow overview response cannot overwrite the newly selected workspace', async ({
     page,
   }) => {
-    await page.route('**/api/data/monitoring-sites/site-summaries?**', async (route) => {
+    await page.route('**/api/ogc/collections/monitoring-sites/site-summaries?**', async (route) => {
       const workspaceId = new URL(route.request().url()).searchParams.get(
         'workspace_id'
       )

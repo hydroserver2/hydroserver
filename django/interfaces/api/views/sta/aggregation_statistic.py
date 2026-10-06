@@ -22,7 +22,7 @@ aggregation_statistic_service = AggregationStatisticAPIService()
 
 
 @aggregation_statistic_router.get(
-    "",
+    "/items",
     auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: PaginatedResponse[AggregationStatisticResponse],
@@ -49,7 +49,7 @@ def get_aggregation_statistics(
 
 
 @aggregation_statistic_router.post(
-    "",
+    "/items",
     auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
@@ -74,7 +74,7 @@ def create_aggregation_statistic(
 
 
 @aggregation_statistic_router.get(
-    "/{aggregation_statistic_id}",
+    "/items/{aggregation_statistic_id}",
     auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: ItemResponse[AggregationStatisticResponse],
@@ -101,7 +101,7 @@ def get_aggregation_statistic(
 
 
 @aggregation_statistic_router.patch(
-    "/{aggregation_statistic_id}",
+    "/items/{aggregation_statistic_id}",
     auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
@@ -129,7 +129,7 @@ def update_aggregation_statistic(
 
 
 @aggregation_statistic_router.delete(
-    "/{aggregation_statistic_id}",
+    "/items/{aggregation_statistic_id}",
     auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         204: None,

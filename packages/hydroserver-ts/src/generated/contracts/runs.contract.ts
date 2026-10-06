@@ -1,12 +1,12 @@
 /* AUTO-GENERATED. DO NOT EDIT.
-   Generated from ../../django/contracts/openapi/data.openapi.json */
-import type * as Data from '../data.types'
+   Generated from ../../django/contracts/openapi/ogc.openapi.json */
+import type * as Data from '../ogc.types'
 
 export namespace RunContract {
   export const route = 'runs' as const
   export type QueryParameters = ([Data.operations['interfaces_api_views_products_task_get_data_product_task_runs']['parameters']['query']] extends [never] ? {} : NonNullable<Data.operations['interfaces_api_views_products_task_get_data_product_task_runs']['parameters']['query']>)
   export type SummaryResponse = Data.components['schemas']['TaskRunResponse']
-  export type DetailResponse  = Data.components['schemas']['TaskRunResponse']
+  export type DetailResponse  = Data.components['schemas']['ItemResponse_TaskRunResponse_']
   export type PostBody        = never
   export type PatchBody       = never
   export type DeleteBody      = never

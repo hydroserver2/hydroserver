@@ -15,6 +15,34 @@ describe('MonitoringSiteService', () => {
 
   const client = new HydroServer({ host: 'https://hydro.example.com' })
 
+  describe('getLinkedResources', () => {
+    it('fetches every page of a site\'s linked resources', async () => {
+      const items = Array.from({ length: 250 }, (_, i) => ({
+        id: `lr-${i}`,
+        name: `Resource ${i}`,
+        type: 'Report',
+        link: `https://example.com/${i}`,
+      }))
+      const fetchMock = vi.fn(async (input: any) => {
+        const params = new URL(String(input)).searchParams
+        const offset = Number(params.get('offset') ?? 0)
+        const limit = Number(params.get('limit') ?? 100)
+        return jsonResponse({
+          data: items.slice(offset, offset + limit),
+          meta: { offset, limit, numberMatched: items.length },
+        })
+      })
+      vi.stubGlobal('fetch', fetchMock)
+
+      const res = await client.monitoringSites.getLinkedResources('site-1')
+
+      expect(fetchMock.mock.calls.length).toBeGreaterThan(1)
+      expect(res.ok && res.data.map((item: { id: string }) => item.id)).toEqual(
+        items.map((item) => item.id)
+      )
+    })
+  })
+
   describe('listMarkers', () => {
     it('fetches monitoringSite markers and returns them in data', async () => {
       const payload = [
@@ -36,7 +64,7 @@ describe('MonitoringSiteService', () => {
       expect(res.ok).toBe(true)
       expect(res.data).toEqual(payload)
       const [url] = (fetch as any).mock.calls[0]
-      expect(url).toMatch(/\/api\/data\/monitoring-sites\/markers$/)
+      expect(url).toMatch(/\/api\/ogc\/collections\/monitoring-sites\/markers$/)
     })
 
     it('returns ok:false on a failed request', async () => {
@@ -139,14 +167,16 @@ describe('MonitoringSiteService', () => {
   })
 
   describe('linked resources', () => {
-    it('createLinkedResource posts, then re-fetches the list to find the new entry by id', async () => {
+    it('createLinkedResource posts, then fetches the new entry by id', async () => {
       const fetchMock = vi.fn().mockImplementation(async (input: string | URL, init?: RequestInit) => {
         if (init?.method === 'POST') {
           return jsonResponse({ id: 'linked-1' })
         }
-        return jsonResponse([
-          { id: 'linked-1', name: 'Site Report', type: 'Report', link: 'https://example.com/report.pdf' },
-        ])
+        return jsonResponse({
+          data: { id: 'linked-1', name: 'Site Report', type: 'Report', link: 'https://example.com/report.pdf' },
+          included: null,
+          links: [],
+        })
       })
       vi.stubGlobal('fetch', fetchMock)
 
@@ -156,19 +186,22 @@ describe('MonitoringSiteService', () => {
       )
 
       expect(fetchMock).toHaveBeenCalledTimes(2)
+      expect(String(fetchMock.mock.calls[1][0])).toMatch(/\/linked-resources\/linked-1$/)
       expect(res.ok).toBe(true)
       if (!res.ok) return
       expect(res.data).toMatchObject({ id: 'linked-1', name: 'Site Report' })
     })
 
-    it('updateLinkedResource patches, then re-fetches the list to find the updated entry by id', async () => {
+    it('updateLinkedResource patches, then fetches the updated entry by id', async () => {
       const fetchMock = vi.fn().mockImplementation(async (input: string | URL, init?: RequestInit) => {
         if (init?.method === 'PATCH') {
           return new Response(null, { status: 204, headers: { 'Content-Length': '0' } })
         }
-        return jsonResponse([
-          { id: 'linked-1', name: 'Updated Report', type: 'Report', link: 'https://example.com/report.pdf' },
-        ])
+        return jsonResponse({
+          data: { id: 'linked-1', name: 'Updated Report', type: 'Report', link: 'https://example.com/report.pdf' },
+          included: null,
+          links: [],
+        })
       })
       vi.stubGlobal('fetch', fetchMock)
 
@@ -179,15 +212,16 @@ describe('MonitoringSiteService', () => {
       )
 
       expect(fetchMock).toHaveBeenCalledTimes(2)
+      expect(String(fetchMock.mock.calls[1][0])).toMatch(/\/linked-resources\/linked-1$/)
       expect(res.ok).toBe(true)
       if (!res.ok) return
       expect(res.data).toMatchObject({ id: 'linked-1', name: 'Updated Report' })
     })
 
-    it('createLinkedResource returns ok:false when the new entry is missing from the refetched list', async () => {
+    it('createLinkedResource returns ok:false when the new entry cannot be fetched', async () => {
       const fetchMock = vi.fn().mockImplementation(async (input: string | URL, init?: RequestInit) => {
         if (init?.method === 'POST') return jsonResponse({ id: 'linked-1' })
-        return jsonResponse([])
+        return jsonResponse({ message: 'Linked resource does not exist' }, 404)
       })
       vi.stubGlobal('fetch', fetchMock)
 
@@ -208,7 +242,7 @@ describe('MonitoringSiteService', () => {
 
       expect(res.ok).toBe(true)
       const [url] = (fetch as any).mock.calls[0]
-      expect(url).toMatch(/\/api\/data\/monitoring-sites\/site-summaries$/)
+      expect(url).toMatch(/\/api\/ogc\/collections\/monitoring-sites\/site-summaries$/)
     })
 
     it('passes workspace_id as a query param and returns summaries', async () => {
@@ -235,7 +269,7 @@ describe('MonitoringSiteService', () => {
 
       const [url] = (fetch as any).mock.calls[0]
       const parsed = new URL(url)
-      expect(parsed.pathname).toBe('/api/data/monitoring-sites/site-summaries')
+      expect(parsed.pathname).toBe('/api/ogc/collections/monitoring-sites/site-summaries')
       expect(parsed.searchParams.get('workspace_id')).toBe('workspace id')
     })
 
@@ -258,33 +292,38 @@ describe('DatastreamService', () => {
   const client = new HydroServer({ host: 'https://hydro.example.com' })
 
   describe('linked resources', () => {
-    it('createLinkedResource posts, then re-fetches the list to find the new entry by id', async () => {
+    it('createLinkedResource posts, then fetches the new entry by id', async () => {
       const fetchMock = vi.fn().mockImplementation(async (input: string | URL, init?: RequestInit) => {
         if (init?.method === 'POST') {
           return jsonResponse({ id: 'linked-1' })
         }
-        return jsonResponse([
-          { id: 'linked-1', name: 'Datastream Report', type: 'Report', link: 'https://example.com/report.pdf' },
-        ])
+        return jsonResponse({
+          data: { id: 'linked-1', name: 'Datastream Report', type: 'Report', link: 'https://example.com/report.pdf' },
+          included: null,
+          links: [],
+        })
       })
       vi.stubGlobal('fetch', fetchMock)
 
       const res = await client.datastreams.createLinkedResource('ds-1', new FormData())
 
       expect(fetchMock).toHaveBeenCalledTimes(2)
+      expect(String(fetchMock.mock.calls[1][0])).toMatch(/\/linked-resources\/linked-1$/)
       expect(res.ok).toBe(true)
       if (!res.ok) return
       expect(res.data).toMatchObject({ id: 'linked-1', name: 'Datastream Report' })
     })
 
-    it('updateLinkedResource patches, then re-fetches the list to find the updated entry by id', async () => {
+    it('updateLinkedResource patches, then fetches the updated entry by id', async () => {
       const fetchMock = vi.fn().mockImplementation(async (input: string | URL, init?: RequestInit) => {
         if (init?.method === 'PATCH') {
           return new Response(null, { status: 204, headers: { 'Content-Length': '0' } })
         }
-        return jsonResponse([
-          { id: 'linked-1', name: 'Updated Report', type: 'Report', link: 'https://example.com/report.pdf' },
-        ])
+        return jsonResponse({
+          data: { id: 'linked-1', name: 'Updated Report', type: 'Report', link: 'https://example.com/report.pdf' },
+          included: null,
+          links: [],
+        })
       })
       vi.stubGlobal('fetch', fetchMock)
 
@@ -295,6 +334,7 @@ describe('DatastreamService', () => {
       )
 
       expect(fetchMock).toHaveBeenCalledTimes(2)
+      expect(String(fetchMock.mock.calls[1][0])).toMatch(/\/linked-resources\/linked-1$/)
       expect(res.ok).toBe(true)
       if (!res.ok) return
       expect(res.data).toMatchObject({ id: 'linked-1', name: 'Updated Report' })
@@ -323,7 +363,7 @@ describe('DatastreamService', () => {
       expect(res.ok).toBe(true)
 
       const [url] = (fetch as any).mock.calls[0]
-      expect(url).toMatch(/\/api\/data\/datastreams\/visualization-bootstrap$/)
+      expect(url).toMatch(/\/api\/ogc\/collections\/datastreams\/visualization-bootstrap$/)
 
       expect(res.data.monitoringSites[0]).toBeInstanceOf(MonitoringSite)
       expect(res.data.datastreams[0]).toBeInstanceOf(Datastream)
@@ -406,7 +446,7 @@ describe('DatastreamService', () => {
       const fetchMock = vi.fn().mockResolvedValue(
         jsonResponse({
           data: [rawDatastream],
-          meta: { offset: 0, limit: 100, totalCount: 1 },
+          meta: { offset: 0, limit: 100, numberMatched: 1 },
           included,
         })
       )

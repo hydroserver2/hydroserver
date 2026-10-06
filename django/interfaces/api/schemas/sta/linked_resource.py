@@ -1,19 +1,18 @@
-import uuid
 from typing import Optional
 from ninja import Query
 from interfaces.api.schemas import (
     BaseGetResponse,
     BasePostBody,
-    CollectionQueryParameters,
+    PaginatedQueryParameters,
 )
+from interfaces.api.schemas.base import ItemId
 
 
-class LinkedResourceQueryParameters(CollectionQueryParameters):
+class LinkedResourceQueryParameters(PaginatedQueryParameters):
     type: list[str] = Query([], description="Filter by linked resource type.")
 
 
-class LinkedResourceGetResponse(BaseGetResponse):
-    id: uuid.UUID
+class LinkedResourceGetResponse(BaseGetResponse, ItemId):
     name: str
     description: Optional[str] = None
     type: str

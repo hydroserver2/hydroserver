@@ -16,7 +16,10 @@ from interfaces.api.schemas import (
     WorkspaceResponse,
     split_comma_separated,
     comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
+from interfaces.api.schemas.base import ItemId, NewItemId
 
 
 class ServiceAccountInputFields(Schema):
@@ -87,13 +90,14 @@ class ServiceAccountItemQueryParameters(ServiceAccountFilterFields, BaseQueryPar
 
 
 class ServiceAccountQueryParameters(ServiceAccountFilterFields, CollectionQueryParameters):
-    sortby: Optional[list[ServiceAccountSortByFields]] = Query(
-        [], description="Select one or more fields to sort the response by."
-    )
+    sortby: Annotated[
+        Optional[list[ServiceAccountSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(ServiceAccountSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
 
 
-class ServiceAccountResponse(BaseGetResponse, ServiceAccountFields):
-    id: uuid.UUID
+class ServiceAccountResponse(BaseGetResponse, ServiceAccountFields, ItemId):
     workspace_id: uuid.UUID
 
 
@@ -105,8 +109,7 @@ class ServiceAccountKeyResponse(BaseGetResponse):
     key: str = Field(..., max_length=255)
 
 
-class ServiceAccountPostBody(BasePostBody, ServiceAccountInputFields):
-    id: Optional[uuid.UUID] = None
+class ServiceAccountPostBody(BasePostBody, ServiceAccountInputFields, NewItemId):
     role_id: Optional[uuid.UUID] = None
 
 
@@ -114,7 +117,6 @@ class ServiceAccountPatchBody(BasePatchBody, ServiceAccountInputFields):
     pass
 
 
-class ServiceAccountContactResponse(BaseGetResponse):
-    id: uuid.UUID
+class ServiceAccountContactResponse(BaseGetResponse, ItemId):
     name: str
     email: str

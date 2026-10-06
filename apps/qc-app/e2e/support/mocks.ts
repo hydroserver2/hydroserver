@@ -1,7 +1,7 @@
 /**
  * Route-level HydroServer mocks for Playwright.
  *
- * The real QC app talks to a HydroServer instance (`/api/data/*` and
+ * The real QC app talks to a HydroServer instance (`/api/ogc/*` and
  * `/api/auth/*`). For e2e specs we don't want to depend on a live
  * backend: tests are slow, flaky, and can't set up the exact dataset
  * shape each spec needs. This module registers `page.route()` handlers
@@ -12,7 +12,7 @@
  *   await installMocks(page)
  *   await page.goto('/')
  *
- * The handlers match on path fragments (`/api/data/datastreams/...`)
+ * The handlers match on path fragments (`/api/ogc/collections/datastreams/items/...`)
  * regardless of host.
  */
 
@@ -178,9 +178,9 @@ export async function installMocks(
     }
 
     // --- Bulk observation create (submit) ---
-    // Observations moved to a top-level resource: POST /observations/bulk-create
+    // Observations moved to a top-level resource: POST /collections/observations/bulk-create
     // with datastreamId in the body, not the path.
-    const bulkCreate = path === '/api/data/observations/bulk-create'
+    const bulkCreate = path === '/api/ogc/collections/observations/bulk-create'
     if (bulkCreate && method === 'POST') {
       const params = new URL(url).searchParams
       const body = await safeJson(request)
@@ -191,21 +191,19 @@ export async function installMocks(
     // --- Observations list (columnar) ---
     // Same restructuring: GET /observations?datastream_id={id}, not nested
     // under /datastreams/{id}/observations.
-    const obsList = path === '/api/data/observations'
+    const obsList = path === '/api/ogc/collections/observations/items'
     if (obsList && method === 'GET') {
       const params = new URL(url).searchParams
       const dsId = params.get('datastream_id') ?? ''
       const series = observationsById[dsId] ?? observations
-      // Honour the `phenomenon_time_min` / `phenomenon_time_max`
-      // params the client always sends. Without this, the app's
-      // cache-extension logic in `fetchObservationsInRange` (which
-      // re-fetches the segment outside its cached window every time
+      // Honour the `datetime` interval the client always sends. Without
+      // this, the app's cache-extension logic in `fetchObservationsInRange`
+      // (which re-fetches the segment outside its cached window every time
       // the range moves) would receive the full fixture series on
       // each call and stack duplicates into the ObservationRecord —
       // visible as wrong point counts and a long phantom line
       // connecting the first and last observations.
-      const tMin = parseISOorNull(params.get('phenomenon_time_min'))
-      const tMax = parseISOorNull(params.get('phenomenon_time_max'))
+      const [tMin, tMax] = parseDatetimeInterval(params.get('datetime'))
       const sliced =
         tMin == null && tMax == null ? series : sliceSeries(series, tMin, tMax)
       // The columnar format spreads its fields at the top level (no `data`
@@ -216,26 +214,26 @@ export async function installMocks(
     }
 
     // --- Units ---
-    const unitGet = path.match(/\/api\/data\/units\/([^/]+)$/)
+    const unitGet = path.match(/\/api\/ogc\/collections\/units\/items\/([^/]+)$/)
     if (unitGet && method === 'GET') {
       const id = unitGet[1]
       const unit = units.find((u) => u.id === id) ?? units[0]
       return json(route, unit)
     }
-    if (path.endsWith('/api/data/units') && method === 'GET') {
+    if (path.endsWith('/api/ogc/collections/units/items') && method === 'GET') {
       return json(route, { data: units, meta: listMeta(units.length) })
     }
 
     // --- Workspaces ---
-    if (path.endsWith('/api/data/workspaces') && method === 'GET') {
+    if (path.endsWith('/api/ogc/collections/workspaces/items') && method === 'GET') {
       return json(route, { data: workspaces, meta: listMeta(workspaces.length) })
     }
 
     // --- Monitoring sites / datastreams / processing levels / observed properties ---
-    if (path.endsWith('/api/data/monitoring-sites') && method === 'GET') {
+    if (path.endsWith('/api/ogc/collections/monitoring-sites/items') && method === 'GET') {
       return json(route, { data: monitoringSites, meta: listMeta(monitoringSites.length) })
     }
-    if (path.endsWith('/api/data/datastreams') && method === 'GET') {
+    if (path.endsWith('/api/ogc/collections/datastreams/items') && method === 'GET') {
       return json(route, {
         data: datastreams,
         meta: listMeta(datastreams.length),
@@ -249,21 +247,21 @@ export async function installMocks(
         },
       })
     }
-    if (path.endsWith('/api/data/processing-levels') && method === 'GET') {
+    if (path.endsWith('/api/ogc/collections/processing-levels/items') && method === 'GET') {
       return json(route, { data: processingLevels, meta: listMeta(processingLevels.length) })
     }
-    if (path.endsWith('/api/data/observed-properties') && method === 'GET') {
+    if (path.endsWith('/api/ogc/collections/observed-properties/items') && method === 'GET') {
       return json(route, { data: observedProperties, meta: listMeta(observedProperties.length) })
     }
-    if (path.endsWith('/api/data/methods') && method === 'GET') {
+    if (path.endsWith('/api/ogc/collections/methods/items') && method === 'GET') {
       return json(route, { data: methods, meta: listMeta(methods.length) })
     }
-    if (path.endsWith('/api/data/result-qualifiers') && method === 'GET') {
+    if (path.endsWith('/api/ogc/collections/result-qualifiers/items') && method === 'GET') {
       return json(route, { data: resultQualifiers, meta: listMeta(resultQualifiers.length) })
     }
 
     // --- Single datastream ---
-    const dsGet = path.match(/\/api\/data\/datastreams\/([^/]+)$/)
+    const dsGet = path.match(/\/api\/ogc\/collections\/datastreams\/items\/([^/]+)$/)
     if (dsGet && method === 'GET') {
       const id = dsGet[1]
       const ds = datastreams.find((d) => d.id === id) ?? datastreams[0]
@@ -301,15 +299,24 @@ async function safeJson(request: ReturnType<Page['request']> | any): Promise<any
   }
 }
 
-function parseISOorNull(value: string | null): number | null {
-  if (!value) return null
-  const t = Date.parse(value)
-  return Number.isFinite(t) ? t : null
+/** Parses a `datetime` instant or interval into [start, end] epoch ms; open ends are null. */
+function parseDatetimeInterval(value: string | null): [number | null, number | null] {
+  if (!value) return [null, null]
+  const parseEnd = (part: string | undefined): number | null => {
+    if (!part || part === '..') return null
+    const t = Date.parse(part)
+    return Number.isFinite(t) ? t : null
+  }
+  if (!value.includes('/')) {
+    const instant = parseEnd(value)
+    return [instant, instant]
+  }
+  const [start, end] = value.split('/')
+  return [parseEnd(start), parseEnd(end)]
 }
 
 /**
- * Mirror the real backend's `phenomenon_time_min` / `phenomenon_time_max`
- * filtering. Bounds are inclusive on both ends, matching how the QC
+ * Mirror the real backend's `datetime` filtering. Bounds are inclusive on both ends, matching how the QC
  * app issues its cache-extension queries.
  */
 function sliceSeries(

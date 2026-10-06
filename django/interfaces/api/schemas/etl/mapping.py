@@ -11,10 +11,14 @@ from interfaces.api.schemas import (
     BasePatchBody,
     BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
     DatastreamResponse,
     split_comma_separated,
     comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
+from interfaces.api.schemas.base import ItemId, NewItemId
 
 
 class EtlMappingFields(Schema):
@@ -28,6 +32,7 @@ EtlMappingSortByFields = Literal[*_sortby_fields, *[f"-{f}" for f in _sortby_fie
 
 _property_fields = (
     "id",
+    "etlTaskId",
     *(to_camel(name) for name in EtlMappingFields.model_fields),
 )
 EtlMappingPropertyName = Literal[*_property_fields]
@@ -71,10 +76,12 @@ class EtlMappingItemQueryParameters(EtlMappingFilterFields, BaseQueryParameters)
     pass
 
 
-class EtlMappingQueryParameters(EtlMappingFilterFields, CollectionQueryParameters):
-    sortby: Optional[list[EtlMappingSortByFields]] = Query(
-        [], description="Select one or more fields to sort the response by."
-    )
+class EtlMappingQueryParameters(EtlMappingFilterFields, CollectionQueryParameters, ExtentQueryParameters):
+    sortby: Annotated[
+        Optional[list[EtlMappingSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(EtlMappingSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
     source_identifier: list[str] = Query(
         [], description="Filter mappings by source identifier."
     )
@@ -89,13 +96,11 @@ class EtlMappingQueryParameters(EtlMappingFilterFields, CollectionQueryParameter
     )
 
 
-class EtlMappingResponse(BaseGetResponse, EtlMappingFields):
-    id: uuid.UUID
+class EtlMappingResponse(BaseGetResponse, EtlMappingFields, ItemId):
     etl_task_id: uuid.UUID
 
 
-class EtlMappingPostBody(BasePostBody, EtlMappingFields):
-    id: Optional[uuid.UUID] = None
+class EtlMappingPostBody(BasePostBody, EtlMappingFields, NewItemId):
     etl_task_id: uuid.UUID
 
 

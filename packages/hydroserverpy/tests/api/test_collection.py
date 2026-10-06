@@ -32,7 +32,7 @@ class FakeResponse:
 
 def make_client():
     client = MagicMock()
-    client.base_route = "/api/data"
+    client.base_route = "/api/ogc"
     return client
 
 
@@ -42,12 +42,12 @@ def _item(name):
 
 def test_fetch_all_continues_past_an_underestimated_total_count():
     client = make_client()
-    # Page 1 reports totalCount=2 (an estimate), but 5 items actually exist
+    # Page 1 reports numberMatched=2 (an estimate), but 5 items actually exist
     # across 3 pages of limit=2 - the last page is short, proving completion.
     client.request.side_effect = [
-        FakeResponse({"data": [_item("a"), _item("b")], "meta": {"limit": 2, "offset": 0, "totalCount": 2}}),
-        FakeResponse({"data": [_item("c"), _item("d")], "meta": {"limit": 2, "offset": 2, "totalCount": 2}}),
-        FakeResponse({"data": [_item("e")], "meta": {"limit": 2, "offset": 4, "totalCount": 2}}),
+        FakeResponse({"data": [_item("a"), _item("b")], "meta": {"limit": 2, "offset": 0, "numberMatched": 2}}),
+        FakeResponse({"data": [_item("c"), _item("d")], "meta": {"limit": 2, "offset": 2, "numberMatched": 2}}),
+        FakeResponse({"data": [_item("e")], "meta": {"limit": 2, "offset": 4, "numberMatched": 2}}),
     ]
 
     service = DummyService(client)
@@ -64,7 +64,7 @@ def test_fetch_all_continues_past_an_underestimated_total_count():
 def test_fetch_all_stops_immediately_when_first_page_is_already_short():
     client = make_client()
     client.request.side_effect = [
-        FakeResponse({"data": [_item("a")], "meta": {"limit": 2, "offset": 0, "totalCount": 1}}),
+        FakeResponse({"data": [_item("a")], "meta": {"limit": 2, "offset": 0, "numberMatched": 1}}),
     ]
 
     service = DummyService(client)

@@ -67,7 +67,7 @@ def _access_token(oidc_client, user, value, scopes=None, expires_at=None):
 
 
 def _bearer_request(token_value=None):
-    request = RequestFactory().get("/api/data/workspaces")
+    request = RequestFactory().get("/api/ogc/collections/workspaces/items")
     if token_value is not None:
         request.META["HTTP_AUTHORIZATION"] = f"Bearer {token_value}"
     return request
@@ -184,8 +184,8 @@ def _bearer(value):
 @pytest.mark.parametrize(
     "path, scope, other_scope",
     [
-        ("/api/data/workspaces", WORKSPACE_READ, DATA_READ),
-        ("/api/data/monitoring-sites", DATA_READ, WORKSPACE_READ),
+        ("/api/ogc/collections/workspaces/items", WORKSPACE_READ, DATA_READ),
+        ("/api/ogc/collections/monitoring-sites/items", DATA_READ, WORKSPACE_READ),
         ("/api/sensorthings/v1.1/Things", DATA_READ, WORKSPACE_READ),
     ],
 )
@@ -209,7 +209,7 @@ def test_workspace_create_requires_workspace_write_scope(client, oidc_client):
 
     def create_workspace(token):
         return client.post(
-            "/api/data/workspaces",
+            "/api/ogc/collections/workspaces/items",
             {"name": f"Workspace {token}", "isPrivate": True},
             content_type="application/json",
             **_bearer(token),
@@ -225,7 +225,7 @@ def test_workspace_delete_requires_workspace_write_scope(client, oidc_client):
     workspace = WorkspaceFactory(owner=user)
     _access_token(oidc_client, user, "iam-token", scopes=["openid", IAM_WRITE])
     _access_token(oidc_client, user, "write-token", scopes=["openid", WORKSPACE_WRITE])
-    url = f"/api/data/workspaces/{workspace.id}"
+    url = f"/api/ogc/collections/workspaces/items/{workspace.id}"
 
     assert client.delete(url, **_bearer("iam-token")).status_code == 403
     assert client.delete(url, **_bearer("write-token")).status_code == 204
@@ -234,13 +234,13 @@ def test_workspace_delete_requires_workspace_write_scope(client, oidc_client):
 @pytest.mark.parametrize(
     "method, path",
     [
-        ("post", "/api/data/workspaces/{workspace_id}/service-accounts"),
-        ("put", "/api/data/workspaces/{workspace_id}/service-accounts/{other_id}/regenerate"),
-        ("post", "/api/data/workspaces/{workspace_id}/collaborators"),
-        ("post", "/api/data/workspaces/{workspace_id}/transfer"),
-        ("post", "/api/data/etl-tasks/{other_id}/trigger"),
-        ("post", "/api/data/monitoring-tasks/{other_id}/trigger"),
-        ("post", "/api/data/data-product-tasks/{other_id}/trigger"),
+        ("post", "/api/ogc/collections/workspaces/items/{workspace_id}/service-accounts"),
+        ("put", "/api/ogc/collections/workspaces/items/{workspace_id}/service-accounts/{other_id}/regenerate"),
+        ("post", "/api/ogc/collections/workspaces/items/{workspace_id}/collaborators"),
+        ("post", "/api/ogc/collections/workspaces/items/{workspace_id}/transfer"),
+        ("post", "/api/ogc/collections/etl-tasks/items/{other_id}/trigger"),
+        ("post", "/api/ogc/collections/monitoring-tasks/items/{other_id}/trigger"),
+        ("post", "/api/ogc/collections/data-product-tasks/items/{other_id}/trigger"),
     ],
 )
 def test_data_and_workspace_scopes_cannot_reach_iam_or_task_run_endpoints(
@@ -298,50 +298,59 @@ def _api_operations(api):
 # routes that differ from their collection's default. A router missing from
 # this table fails the test, so new collections must pick their scopes here.
 COLLECTION_SCOPES = {
-    "workspaces": (WORKSPACE_READ, WORKSPACE_WRITE),
-    "workspaces/{workspace_id}/collaborators": (IAM_READ, IAM_WRITE),
-    "workspaces/{workspace_id}/service-accounts": (IAM_READ, IAM_WRITE),
-    "roles": (IAM_READ, IAM_WRITE),
-    "monitoring-sites": (DATA_READ, DATA_WRITE),
-    "monitoring-site-types": (DATA_READ, DATA_WRITE),
-    "linked-resource-types": (DATA_READ, DATA_WRITE),
-    "datastreams": (DATA_READ, DATA_WRITE),
-    "datastream-statuses": (DATA_READ, DATA_WRITE),
-    "aggregation-statistics": (DATA_READ, DATA_WRITE),
-    "observations": (DATA_READ, DATA_WRITE),
-    "observed-properties": (DATA_READ, DATA_WRITE),
-    "observed-property-types": (DATA_READ, DATA_WRITE),
-    "units": (DATA_READ, DATA_WRITE),
-    "unit-types": (DATA_READ, DATA_WRITE),
-    "methods": (DATA_READ, DATA_WRITE),
-    "method-types": (DATA_READ, DATA_WRITE),
-    "processing-levels": (DATA_READ, DATA_WRITE),
-    "result-qualifiers": (DATA_READ, DATA_WRITE),
-    "sampled-mediums": (DATA_READ, DATA_WRITE),
-    "quality-control/histories": (DATA_READ, DATA_WRITE),
-    "quality-control/histories/{history_id}/sessions": (DATA_READ, DATA_WRITE),
-    "quality-control/histories/{history_id}/sessions/{session_id}/operations": (
+    "collections/workspaces": (WORKSPACE_READ, WORKSPACE_WRITE),
+    "collections/workspaces/items/{workspace_id}/collaborators": (IAM_READ, IAM_WRITE),
+    "collections/workspaces/items/{workspace_id}/service-accounts": (IAM_READ, IAM_WRITE),
+    "collections/roles": (IAM_READ, IAM_WRITE),
+    "collections/monitoring-sites": (DATA_READ, DATA_WRITE),
+    "collections/monitoring-site-types": (DATA_READ, DATA_WRITE),
+    "collections/linked-resource-types": (DATA_READ, DATA_WRITE),
+    "collections/datastreams": (DATA_READ, DATA_WRITE),
+    "collections/datastream-statuses": (DATA_READ, DATA_WRITE),
+    "collections/aggregation-statistics": (DATA_READ, DATA_WRITE),
+    "collections/observations": (DATA_READ, DATA_WRITE),
+    "collections/observed-properties": (DATA_READ, DATA_WRITE),
+    "collections/observed-property-types": (DATA_READ, DATA_WRITE),
+    "collections/units": (DATA_READ, DATA_WRITE),
+    "collections/unit-types": (DATA_READ, DATA_WRITE),
+    "collections/methods": (DATA_READ, DATA_WRITE),
+    "collections/method-types": (DATA_READ, DATA_WRITE),
+    "collections/processing-levels": (DATA_READ, DATA_WRITE),
+    "collections/result-qualifiers": (DATA_READ, DATA_WRITE),
+    "collections/sampled-mediums": (DATA_READ, DATA_WRITE),
+    "collections/quality-control-histories": (DATA_READ, DATA_WRITE),
+    "collections/quality-control-histories/items/{history_id}/sessions": (DATA_READ, DATA_WRITE),
+    "collections/quality-control-histories/items/{history_id}/sessions/{session_id}/operations": (
         DATA_READ,
         DATA_WRITE,
     ),
-    "etl-data-connections": (TASK_READ, TASK_WRITE),
-    "etl-tasks": (TASK_READ, TASK_WRITE),
-    "etl-mappings": (TASK_READ, TASK_WRITE),
-    "monitoring-tasks": (TASK_READ, TASK_WRITE),
-    "monitoring-rules": (TASK_READ, TASK_WRITE),
-    "data-product-tasks": (TASK_READ, TASK_WRITE),
-    "data-product-transformations": (TASK_READ, TASK_WRITE),
-    "data-product-rating-curves": (TASK_READ, TASK_WRITE),
+    "collections/etl-data-connections": (TASK_READ, TASK_WRITE),
+    "collections/etl-tasks": (TASK_READ, TASK_WRITE),
+    "collections/etl-mappings": (TASK_READ, TASK_WRITE),
+    "collections/monitoring-tasks": (TASK_READ, TASK_WRITE),
+    "collections/monitoring-rules": (TASK_READ, TASK_WRITE),
+    "collections/data-product-tasks": (TASK_READ, TASK_WRITE),
+    "collections/data-product-transformations": (TASK_READ, TASK_WRITE),
+    "collections/data-product-rating-curves": (TASK_READ, TASK_WRITE),
 }
 
 ROUTE_SCOPE_OVERRIDES = {
-    ("POST", "workspaces/{workspace_id}/transfer"): IAM_WRITE,
-    ("PUT", "workspaces/{workspace_id}/transfer"): IAM_WRITE,
-    ("DELETE", "workspaces/{workspace_id}/transfer"): IAM_WRITE,
-    ("GET", "monitoring-sites/task-summaries"): TASK_READ,
-    ("POST", "etl-tasks/{task_id}/trigger"): TASK_RUN,
-    ("POST", "monitoring-tasks/{task_id}/trigger"): TASK_RUN,
-    ("POST", "data-product-tasks/{task_id}/trigger"): TASK_RUN,
+    ("POST", "collections/workspaces/items/{workspace_id}/transfer"): IAM_WRITE,
+    ("PUT", "collections/workspaces/items/{workspace_id}/transfer"): IAM_WRITE,
+    ("DELETE", "collections/workspaces/items/{workspace_id}/transfer"): IAM_WRITE,
+    ("GET", "collections/monitoring-sites/task-summaries"): TASK_READ,
+    ("POST", "collections/etl-tasks/items/{task_id}/trigger"): TASK_RUN,
+    ("POST", "collections/monitoring-tasks/items/{task_id}/trigger"): TASK_RUN,
+    ("POST", "collections/data-product-tasks/items/{task_id}/trigger"): TASK_RUN,
+}
+
+# OGC capability routes are public and identical for every caller, so they take no
+# auth at all. Listed here so the table test notices if auth is added to them.
+PUBLIC_ROUTES = {
+    ("GET", ""),
+    ("GET", "conformance"),
+    ("GET", "collections"),
+    ("GET", "collections/{collection_id}"),
 }
 
 
@@ -356,15 +365,24 @@ def test_every_data_api_endpoint_requires_its_listed_oidc_scope():
 
     checked = 0
     used_overrides = set()
+    seen_public = set()
 
     for prefix, router in api._routers:
         for path, path_view in router.path_operations.items():
             for operation in path_view.operations:
+                route = _route_path(prefix, path)
+                public_keys = {(method, route) for method in operation.methods} & PUBLIC_ROUTES
+                if public_keys:
+                    assert not operation.auth_callbacks, (
+                        f"{route} is listed in PUBLIC_ROUTES but declares auth"
+                    )
+                    seen_public |= public_keys
+                    continue
+
                 auths = _oidc_auths(operation)
                 if not auths:
                     continue
 
-                route = _route_path(prefix, path)
                 assert prefix in COLLECTION_SCOPES, (
                     f"{route} accepts OIDC tokens but its collection {prefix!r} has no "
                     f"entry in COLLECTION_SCOPES"
@@ -390,6 +408,30 @@ def test_every_data_api_endpoint_requires_its_listed_oidc_scope():
     assert used_overrides == set(ROUTE_SCOPE_OVERRIDES), (
         f"Stale ROUTE_SCOPE_OVERRIDES entries: {set(ROUTE_SCOPE_OVERRIDES) - used_overrides}"
     )
+    assert seen_public == PUBLIC_ROUTES, (
+        f"Stale PUBLIC_ROUTES entries: {PUBLIC_ROUTES - seen_public}"
+    )
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/api/ogc/",
+        "/api/ogc/conformance",
+        "/api/ogc/collections",
+        "/api/ogc/collections/workspaces",
+    ],
+)
+def test_ogc_capability_endpoints_are_the_same_for_every_caller(client, oidc_client, path):
+    user = UserFactory()
+    _access_token(oidc_client, user, "no-scope-token", scopes=["openid"])
+
+    anonymous = client.get(path)
+    with_token = client.get(path, **_bearer("no-scope-token"))
+
+    assert anonymous.status_code == 200
+    assert with_token.status_code == 200
+    assert with_token.json() == anonymous.json()
 
 
 def test_every_sensorthings_endpoint_requires_data_scope():

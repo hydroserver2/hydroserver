@@ -1,4 +1,4 @@
-import type * as Data from '../../generated/data.types'
+import type * as Data from '../../generated/ogc.types'
 
 export type DataProductTransformation =
   Data.components['schemas']['DataProductTransformationResponse']

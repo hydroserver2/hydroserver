@@ -12,9 +12,12 @@ from interfaces.api.schemas import (
     BasePatchBody,
     BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
     DataConnectionResponse,
     split_comma_separated,
     comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
 from interfaces.api.schemas.orchestration.schedule import (
     ScheduleResponse,
@@ -23,6 +26,7 @@ from interfaces.api.schemas.orchestration.schedule import (
     resolve_schedule,
 )
 from interfaces.api.schemas.orchestration.run import TaskRunResponse, resolve_latest_run
+from interfaces.api.schemas.base import ItemId
 
 
 class EtlTaskFields(Schema):
@@ -89,10 +93,12 @@ class EtlTaskItemQueryParameters(EtlTaskFilterFields, BaseQueryParameters):
     pass
 
 
-class EtlTaskQueryParameters(EtlTaskFilterFields, CollectionQueryParameters):
-    sortby: Optional[list[EtlTaskSortByFields]] = Query(
-        [], description="Select one or more fields to sort the response by."
-    )
+class EtlTaskQueryParameters(EtlTaskFilterFields, CollectionQueryParameters, ExtentQueryParameters):
+    sortby: Annotated[
+        Optional[list[EtlTaskSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(EtlTaskSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
     q: Optional[str] = Query(
         None,
         description="Full-text search query. Comma-separated terms are combined with OR; "
@@ -124,8 +130,7 @@ class EtlTaskQueryParameters(EtlTaskFilterFields, CollectionQueryParameters):
     )
 
 
-class EtlTaskResponse(BaseGetResponse, EtlTaskFields):
-    id: uuid.UUID
+class EtlTaskResponse(BaseGetResponse, EtlTaskFields, ItemId):
     workspace_id: uuid.UUID = Field(
         ..., validation_alias=AliasChoices("workspaceId", AliasPath("data_connection", "workspace_id"))
     )

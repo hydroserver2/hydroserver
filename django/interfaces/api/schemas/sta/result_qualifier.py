@@ -11,10 +11,14 @@ from interfaces.api.schemas import (
     BasePatchBody,
     BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
     WorkspaceResponse,
     split_comma_separated,
     comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
+from interfaces.api.schemas.base import ItemId, NewItemId
 
 
 class ResultQualifierFields(Schema):
@@ -71,11 +75,13 @@ class ResultQualifierItemQueryParameters(
 
 
 class ResultQualifierQueryParameters(
-    ResultQualifierFilterFields, CollectionQueryParameters
+    ResultQualifierFilterFields, CollectionQueryParameters, ExtentQueryParameters
 ):
-    sortby: Optional[list[ResultQualifierSortByFields]] = Query(
-        [], description="Select one or more fields to sort the response by."
-    )
+    sortby: Annotated[
+        Optional[list[ResultQualifierSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(ResultQualifierSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
     q: Optional[str] = Query(
         None,
         description="Full-text search query. Comma-separated terms are combined with OR; "
@@ -86,13 +92,11 @@ class ResultQualifierQueryParameters(
     )
 
 
-class ResultQualifierResponse(BaseGetResponse, ResultQualifierFields):
-    id: uuid.UUID
+class ResultQualifierResponse(BaseGetResponse, ResultQualifierFields, ItemId):
     workspace_id: Optional[uuid.UUID]
 
 
-class ResultQualifierPostBody(BasePostBody, ResultQualifierFields):
-    id: Optional[uuid.UUID] = None
+class ResultQualifierPostBody(BasePostBody, ResultQualifierFields, NewItemId):
     workspace_id: Optional[uuid.UUID] = None
 
 

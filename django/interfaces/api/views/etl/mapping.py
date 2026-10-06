@@ -19,7 +19,7 @@ _service = EtlMappingAPIService()
 
 
 @etl_mapping_router.get(
-    "",
+    "/items",
     auth=[session_auth, oidc_task_read_auth, apikey_auth, basic_auth],
     response={
         200: PaginatedResponse[EtlMappingResponse],
@@ -46,7 +46,7 @@ def get_etl_mappings(
 
 
 @etl_mapping_router.post(
-    "",
+    "/items",
     auth=[session_auth, oidc_task_write_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
@@ -70,7 +70,7 @@ def create_etl_mapping(
 
 
 @etl_mapping_router.get(
-    "/{mapping_id}",
+    "/items/{mapping_id}",
     auth=[session_auth, oidc_task_read_auth, apikey_auth, basic_auth],
     response={
         200: ItemResponse[EtlMappingResponse],
@@ -95,7 +95,7 @@ def get_etl_mapping(
 
 
 @etl_mapping_router.patch(
-    "/{mapping_id}",
+    "/items/{mapping_id}",
     auth=[session_auth, oidc_task_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
@@ -123,7 +123,7 @@ def update_etl_mapping(
 
 
 @etl_mapping_router.delete(
-    "/{mapping_id}",
+    "/items/{mapping_id}",
     auth=[session_auth, oidc_task_write_auth, apikey_auth, basic_auth],
     response={
         204: None,

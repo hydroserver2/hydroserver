@@ -1,9 +1,9 @@
 /* AUTO-GENERATED. DO NOT EDIT.
-   Generated from ../../django/contracts/openapi/data.openapi.json */
-import type * as Data from '../data.types'
+   Generated from ../../django/contracts/openapi/ogc.openapi.json */
+import type * as Data from '../ogc.types'
 
 export namespace ObservedPropertyContract {
-  export const route = 'observed-properties' as const
+  export const route = 'collections/observed-properties/items' as const
   export type QueryParameters = ([Data.operations['interfaces_api_views_sta_observed_property_get_observed_properties']['parameters']['query']] extends [never] ? {} : NonNullable<Data.operations['interfaces_api_views_sta_observed_property_get_observed_properties']['parameters']['query']>)
   export type SummaryResponse = Data.components['schemas']['ObservedPropertyResponse']
   export type DetailResponse  = Data.components['schemas']['ItemResponse_ObservedPropertyResponse_']

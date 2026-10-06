@@ -4,7 +4,7 @@ from collections import defaultdict
 from typing import Optional, Literal, Sequence, get_args
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
-from django.db.models import Min, Max, Count
+from django.db.models import Min, Max, Count, Exists, OuterRef
 from django.utils import timezone
 from django.http import StreamingHttpResponse
 
@@ -12,12 +12,15 @@ from core.iam.models import ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.sta.models import (
     Datastream,
+    MonitoringSite,
     Observation,
     DatastreamLinkedResource,
 )
 from interfaces.api.http.errors import BadRequestError, ConflictError, NotFoundError, PermissionDeniedError
 from interfaces.api.service import APIService
 from interfaces.api.schemas import (
+    BoundingBox,
+    TimeInterval,
     DatastreamPostBody,
     DatastreamPatchBody,
     LinkedResourcePostBody,
@@ -101,6 +104,30 @@ class DatastreamAPIService(APIService):
 
         return queryset
 
+    @classmethod
+    def apply_site_bbox(
+        cls,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        queryset,
+        bbox: Optional[BoundingBox],
+    ):
+        """
+        Filters datastreams to those whose monitoring site lies inside a bounding box, which is their GeoJSON
+        geometry (interfaces/api/geometry.py). Datastreams, whose site the principal can't view, have no geometry,
+        so they match any box, and the site's location never affects the result.
+        """
+
+        if bbox is None:
+            return queryset
+
+        visible_site = principal.filter_by_permission(
+            MonitoringSite.objects.filter(pk=OuterRef("monitoring_site_id")), "can_view"
+        )
+
+        return queryset.filter(
+            Exists(visible_site.filter(cls.bbox_q(bbox))) | ~Exists(visible_site)
+        )
+
     def list(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
@@ -109,6 +136,8 @@ class DatastreamAPIService(APIService):
         sortby: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
         include: Optional[list[str]] = None,
+        bbox: Optional[BoundingBox] = None,
+        datetime_interval: Optional[TimeInterval] = None,
     ):
         requested_includes = self.resolve_include_set(include)
         queryset = Datastream.objects
@@ -128,14 +157,6 @@ class DatastreamAPIService(APIService):
             "is_private",
             "value_count__lte",
             "value_count__gte",
-            "phenomenon_begin_time__lte",
-            "phenomenon_begin_time__gte",
-            "phenomenon_end_time__lte",
-            "phenomenon_end_time__gte",
-            "result_begin_time__lte",
-            "result_begin_time__gte",
-            "result_end_time__lte",
-            "result_end_time__gte",
         ]:
             if field in filtering:
                 if field == "is_private":
@@ -153,6 +174,10 @@ class DatastreamAPIService(APIService):
                 else:
                     queryset = self.apply_filters(queryset, field, filtering[field])
 
+        queryset = self.apply_site_bbox(principal, queryset, bbox)
+        queryset = self.apply_datetime_interval(
+            queryset, datetime_interval, "phenomenon_begin_time", "phenomenon_end_time"
+        )
         queryset = self.apply_tag_filter(queryset, filtering.get("tag"))
         queryset, has_search = self.apply_search(queryset, filtering.get("q"))
         queryset = self.apply_sorting(
@@ -428,6 +453,8 @@ class DatastreamAPIService(APIService):
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
         uid: uuid.UUID,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
         filtering: Optional[dict] = None,
     ):
         datastream = self.get_datastream_for_action(
@@ -439,7 +466,27 @@ class DatastreamAPIService(APIService):
         if filtering.get("type"):
             queryset = self.apply_filters(queryset, "type", filtering["type"])
 
-        return queryset.all()
+        queryset = self.apply_sorting(queryset, [], [], default_sortby=("name",))
+        queryset, meta = self.apply_pagination(queryset, offset, limit)
+
+        return {"data": list(queryset), "meta": meta}
+
+    def get_linked_resource(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        uid: uuid.UUID,
+        linked_resource_id: uuid.UUID,
+    ):
+        datastream = self.get_datastream_for_action(
+            principal=principal, uid=uid, action="view"
+        )
+
+        return self.get_linked_resource_by_id(
+            linked_resource_model=DatastreamLinkedResource,
+            parent_field="datastream",
+            parent=datastream,
+            linked_resource_id=linked_resource_id,
+        )
 
     def add_linked_resource(
         self,

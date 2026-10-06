@@ -63,7 +63,7 @@ class MonitoringTask(HydroServerBaseModel):
 
     @classmethod
     def get_route(cls):
-        return "monitoring-tasks"
+        return "collections/monitoring-tasks/items"
 
     @cached_property
     def rules(self):

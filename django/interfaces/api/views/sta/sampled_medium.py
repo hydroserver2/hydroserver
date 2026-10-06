@@ -22,7 +22,7 @@ sampled_medium_service = SampledMediumAPIService()
 
 
 @sampled_medium_router.get(
-    "",
+    "/items",
     auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: PaginatedResponse[SampledMediumResponse],
@@ -49,7 +49,7 @@ def get_sampled_mediums(
 
 
 @sampled_medium_router.post(
-    "",
+    "/items",
     auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
@@ -74,7 +74,7 @@ def create_sampled_medium(
 
 
 @sampled_medium_router.get(
-    "/{sampled_medium_id}",
+    "/items/{sampled_medium_id}",
     auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: ItemResponse[SampledMediumResponse],
@@ -101,7 +101,7 @@ def get_sampled_medium(
 
 
 @sampled_medium_router.patch(
-    "/{sampled_medium_id}",
+    "/items/{sampled_medium_id}",
     auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
@@ -129,7 +129,7 @@ def update_sampled_medium(
 
 
 @sampled_medium_router.delete(
-    "/{sampled_medium_id}",
+    "/items/{sampled_medium_id}",
     auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         204: None,

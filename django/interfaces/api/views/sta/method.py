@@ -22,7 +22,7 @@ method_service = MethodAPIService()
 
 
 @method_router.get(
-    "",
+    "/items",
     auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: PaginatedResponse[MethodResponse],
@@ -50,7 +50,7 @@ def get_methods(
 
 
 @method_router.post(
-    "",
+    "/items",
     auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
@@ -76,7 +76,7 @@ def create_method(
 
 
 @method_router.get(
-    "/{method_id}",
+    "/items/{method_id}",
     auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: ItemResponse[MethodResponse],
@@ -104,7 +104,7 @@ def get_method(
 
 
 @method_router.patch(
-    "/{method_id}",
+    "/items/{method_id}",
     auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
@@ -134,7 +134,7 @@ def update_method(
 
 
 @method_router.delete(
-    "/{method_id}",
+    "/items/{method_id}",
     auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         204: None,

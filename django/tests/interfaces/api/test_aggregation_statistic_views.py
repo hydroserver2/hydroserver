@@ -5,7 +5,7 @@ from tests.core.sta.factories import AggregationStatisticFactory
 
 pytestmark = pytest.mark.django_db
 
-AGGREGATION_STATISTICS_URL = "/api/data/aggregation-statistics"
+AGGREGATION_STATISTICS_URL = "/api/ogc/collections/aggregation-statistics/items"
 
 
 def _detail_url(aggregation_statistic_id):

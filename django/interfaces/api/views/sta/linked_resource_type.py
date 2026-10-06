@@ -22,7 +22,7 @@ linked_resource_type_service = LinkedResourceTypeAPIService()
 
 
 @linked_resource_type_router.get(
-    "",
+    "/items",
     auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: PaginatedResponse[LinkedResourceTypeResponse],
@@ -49,7 +49,7 @@ def get_linked_resource_types(
 
 
 @linked_resource_type_router.post(
-    "",
+    "/items",
     auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
@@ -74,7 +74,7 @@ def create_linked_resource_type(
 
 
 @linked_resource_type_router.get(
-    "/{linked_resource_type_id}",
+    "/items/{linked_resource_type_id}",
     auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: ItemResponse[LinkedResourceTypeResponse],
@@ -101,7 +101,7 @@ def get_linked_resource_type(
 
 
 @linked_resource_type_router.patch(
-    "/{linked_resource_type_id}",
+    "/items/{linked_resource_type_id}",
     auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
@@ -129,7 +129,7 @@ def update_linked_resource_type(
 
 
 @linked_resource_type_router.delete(
-    "/{linked_resource_type_id}",
+    "/items/{linked_resource_type_id}",
     auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         204: None,

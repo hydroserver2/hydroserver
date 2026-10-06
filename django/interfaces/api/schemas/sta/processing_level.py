@@ -11,10 +11,14 @@ from interfaces.api.schemas import (
     BasePatchBody,
     BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
     WorkspaceResponse,
     split_comma_separated,
     comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
+from interfaces.api.schemas.base import ItemId, NewItemId
 
 
 class ProcessingLevelFields(Schema):
@@ -68,10 +72,12 @@ class ProcessingLevelItemQueryParameters(ProcessingLevelFilterFields, BaseQueryP
     pass
 
 
-class ProcessingLevelQueryParameters(ProcessingLevelFilterFields, CollectionQueryParameters):
-    sortby: Optional[list[ProcessingLevelSortByFields]] = Query(
-        [], description="Select one or more fields to sort the response by."
-    )
+class ProcessingLevelQueryParameters(ProcessingLevelFilterFields, CollectionQueryParameters, ExtentQueryParameters):
+    sortby: Annotated[
+        Optional[list[ProcessingLevelSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(ProcessingLevelSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
     q: Optional[str] = Query(
         None,
         description="Full-text search query. Comma-separated terms are combined with OR; "
@@ -90,13 +96,11 @@ class ProcessingLevelQueryParameters(ProcessingLevelFilterFields, CollectionQuer
     )
 
 
-class ProcessingLevelResponse(BaseGetResponse, ProcessingLevelFields):
-    id: uuid.UUID
+class ProcessingLevelResponse(BaseGetResponse, ProcessingLevelFields, ItemId):
     workspace_id: Optional[uuid.UUID]
 
 
-class ProcessingLevelPostBody(BasePostBody, ProcessingLevelFields):
-    id: Optional[uuid.UUID] = None
+class ProcessingLevelPostBody(BasePostBody, ProcessingLevelFields, NewItemId):
     workspace_id: Optional[uuid.UUID] = None
 
 

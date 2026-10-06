@@ -22,7 +22,7 @@ datastream_status_service = DatastreamStatusAPIService()
 
 
 @datastream_status_router.get(
-    "",
+    "/items",
     auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: PaginatedResponse[DatastreamStatusResponse],
@@ -49,7 +49,7 @@ def get_datastream_statuses(
 
 
 @datastream_status_router.post(
-    "",
+    "/items",
     auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
@@ -74,7 +74,7 @@ def create_datastream_status(
 
 
 @datastream_status_router.get(
-    "/{datastream_status_id}",
+    "/items/{datastream_status_id}",
     auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: ItemResponse[DatastreamStatusResponse],
@@ -101,7 +101,7 @@ def get_datastream_status(
 
 
 @datastream_status_router.patch(
-    "/{datastream_status_id}",
+    "/items/{datastream_status_id}",
     auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
@@ -129,7 +129,7 @@ def update_datastream_status(
 
 
 @datastream_status_router.delete(
-    "/{datastream_status_id}",
+    "/items/{datastream_status_id}",
     auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         204: None,

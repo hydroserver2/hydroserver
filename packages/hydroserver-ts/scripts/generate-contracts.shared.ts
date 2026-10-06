@@ -89,9 +89,12 @@ function derefRequestBody(spec: OAS, ref: string) {
 
 function findJsonSchemaFromContent(content?: any) {
   if (!content || typeof content !== 'object') return undefined
+  const keys = Object.keys(content)
+  // Prefer plain JSON over other JSON media types, such as application/geo+json alternatives.
   const key =
-    Object.keys(content).find((k) => k.toLowerCase().includes('json')) ??
-    Object.keys(content)[0]
+    keys.find((k) => k.toLowerCase() === 'application/json') ??
+    keys.find((k) => k.toLowerCase().includes('json')) ??
+    keys[0]
   return key ? content[key]?.schema : undefined
 }
 

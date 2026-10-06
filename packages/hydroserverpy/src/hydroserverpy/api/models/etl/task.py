@@ -62,7 +62,7 @@ class EtlTask(HydroServerBaseModel):
 
     @classmethod
     def get_route(cls):
-        return "etl-tasks"
+        return "collections/etl-tasks/items"
 
     @cached_property
     def mappings(self) -> List[EtlMapping]:

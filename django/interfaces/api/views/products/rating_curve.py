@@ -19,7 +19,7 @@ rating_curve_service = RatingCurveAPIService()
 
 
 @rating_curve_router.get(
-    "",
+    "/items",
     auth=[session_auth, oidc_task_read_auth, apikey_auth, basic_auth],
     response={
         200: PaginatedResponse[RatingCurveResponse],
@@ -46,7 +46,7 @@ def get_rating_curves(
 
 
 @rating_curve_router.post(
-    "",
+    "/items",
     auth=[session_auth, oidc_task_write_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
@@ -72,7 +72,7 @@ def create_rating_curve(
 
 
 @rating_curve_router.get(
-    "/{rating_curve_id}",
+    "/items/{rating_curve_id}",
     auth=[session_auth, oidc_task_read_auth, apikey_auth, basic_auth],
     response={
         200: ItemResponse[RatingCurveResponse],
@@ -99,7 +99,7 @@ def get_rating_curve(
 
 
 @rating_curve_router.patch(
-    "/{rating_curve_id}",
+    "/items/{rating_curve_id}",
     auth=[session_auth, oidc_task_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
@@ -129,7 +129,7 @@ def update_rating_curve(
 
 
 @rating_curve_router.delete(
-    "/{rating_curve_id}",
+    "/items/{rating_curve_id}",
     auth=[session_auth, oidc_task_write_auth, apikey_auth, basic_auth],
     response={
         204: None,

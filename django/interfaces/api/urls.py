@@ -1,4 +1,3 @@
-from ninja import NinjaAPI
 from ninja.throttling import AnonRateThrottle, AuthRateThrottle
 from django.conf import settings
 from django.urls import path, include
@@ -6,95 +5,46 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 
 from hydroserver import __version__
 from interfaces.api.http import handlers
+from interfaces.api.http.api import HydroServerNinjaAPI
+from interfaces.api.http.content_negotiation import negotiate_format
+from interfaces.api.http.query_params import reject_unknown_query_params
 from interfaces.api.http.renderer import ORJSONRenderer
 
-from interfaces.api.views import (
-    workspace_router,
-    role_router,
-    monitoring_site_router,
-    monitoring_site_type_router,
-    linked_resource_type_router,
-    observed_property_router,
-    observed_property_type_router,
-    processing_level_router,
-    result_qualifier_router,
-    sampled_medium_router,
-    aggregation_statistic_router,
-    datastream_status_router,
-    method_router,
-    method_type_router,
-    unit_router,
-    unit_type_router,
-    datastream_router,
-    observation_router,
-    data_connection_router,
-    etl_task_router,
-    etl_mapping_router,
-    rating_curve_router,
-    data_product_transformation_router,
-    data_product_task_router,
-    monitoring_task_router,
-    monitoring_rule_router,
-    qc_history_router,
-    qc_session_router,
-    qc_operation_router,
-)
+from interfaces.api.collections import COLLECTIONS
+from interfaces.api.views import qc_history_router, qc_session_router, qc_operation_router
+from interfaces.api.views.ogc import API_DESCRIPTION, API_TITLE, ogc_router
 
 
 rate_limits = settings.API_RATE_LIMITS or {}
 throttle_classes = {"anonymous": AnonRateThrottle, "authenticated": AuthRateThrottle}
 
-api = NinjaAPI(
-    title="HydroServer Data Management API",
+api = HydroServerNinjaAPI(
+    title=API_TITLE,
+    description=API_DESCRIPTION,
     version=__version__,
-    urls_namespace="data",
+    urls_namespace="ogc",
     docs_decorator=ensure_csrf_cookie,
     renderer=ORJSONRenderer(),
     throttle=[cls(rate_limits[k]) for k, cls in throttle_classes.items() if rate_limits.get(k)],
 )
 
 handlers.register(api)
+api.add_decorator(reject_unknown_query_params, mode="view")
+api.add_decorator(negotiate_format, mode="view")
 
-api.add_router("workspaces", workspace_router)
-api.add_router("roles", role_router)
+api.add_router("", ogc_router)
 
-api.add_router("monitoring-sites", monitoring_site_router)
-api.add_router("monitoring-site-types", monitoring_site_type_router)
-api.add_router("linked-resource-types", linked_resource_type_router)
-api.add_router("datastreams", datastream_router)
-api.add_router("datastream-statuses", datastream_status_router)
-api.add_router("aggregation-statistics", aggregation_statistic_router)
-api.add_router("observations", observation_router)
-api.add_router("observed-properties", observed_property_router)
-api.add_router("observed-property-types", observed_property_type_router)
-api.add_router("units", unit_router)
-api.add_router("unit-types", unit_type_router)
-api.add_router("methods", method_router)
-api.add_router("method-types", method_type_router)
-api.add_router("processing-levels", processing_level_router)
-api.add_router("result-qualifiers", result_qualifier_router)
-api.add_router("sampled-mediums", sampled_medium_router)
+for collection in COLLECTIONS:
+    api.add_router(f"collections/{collection.id}", collection.router)
 
-api.add_router("etl-data-connections", data_connection_router)
-api.add_router("etl-tasks", etl_task_router)
-api.add_router("etl-mappings", etl_mapping_router)
-
-api.add_router("data-product-rating-curves", rating_curve_router)
-api.add_router("data-product-tasks", data_product_task_router)
-api.add_router("data-product-transformations", data_product_transformation_router)
-
-api.add_router("monitoring-tasks", monitoring_task_router)
-api.add_router("monitoring-rules", monitoring_rule_router)
-
-api.add_router("quality-control/histories", qc_history_router)
 qc_history_router.add_router(
-    "/{history_id}/sessions", qc_session_router, tags=["Quality Control Sessions"]
+    "/items/{history_id}/sessions", qc_session_router, tags=["Quality Control Sessions"]
 )
 qc_session_router.add_router(
     "/{session_id}/operations", qc_operation_router, tags=["Quality Control Operations"]
 )
 
 urlpatterns = [
-    path("data/", api.urls),
+    path("ogc/", api.urls),
     path("sensorthings/", include("sensorthings.versions.v1_1.urls")),
 ]

@@ -19,7 +19,7 @@ monitoring_rule_service = MonitoringRuleAPIService()
 
 
 @monitoring_rule_router.get(
-    "",
+    "/items",
     auth=[session_auth, oidc_task_read_auth, apikey_auth, basic_auth],
     response={
         200: PaginatedResponse[MonitoringRuleResponse],
@@ -48,7 +48,7 @@ def get_monitoring_rules(
 
 
 @monitoring_rule_router.post(
-    "",
+    "/items",
     auth=[session_auth, oidc_task_write_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
@@ -74,7 +74,7 @@ def create_monitoring_rule(
 
 
 @monitoring_rule_router.get(
-    "/{rule_id}",
+    "/items/{rule_id}",
     auth=[session_auth, oidc_task_read_auth, apikey_auth, basic_auth],
     response={
         200: ItemResponse[MonitoringRuleResponse],
@@ -101,7 +101,7 @@ def get_monitoring_rule(
 
 
 @monitoring_rule_router.patch(
-    "/{rule_id}",
+    "/items/{rule_id}",
     auth=[session_auth, oidc_task_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
@@ -131,7 +131,7 @@ def update_monitoring_rule(
 
 
 @monitoring_rule_router.delete(
-    "/{rule_id}",
+    "/items/{rule_id}",
     auth=[session_auth, oidc_task_write_auth, apikey_auth, basic_auth],
     response={
         204: None,

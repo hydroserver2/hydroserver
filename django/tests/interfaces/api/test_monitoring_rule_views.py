@@ -15,7 +15,7 @@ from tests.processing.monitoring.factories import MonitoringRuleFactory, Monitor
 
 pytestmark = pytest.mark.django_db
 
-RULES_URL = "/api/data/monitoring-rules"
+RULES_URL = "/api/ogc/collections/monitoring-rules/items"
 
 MONITORING_RULE_FIELDS = {
     "id",

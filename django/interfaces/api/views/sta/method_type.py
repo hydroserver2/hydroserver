@@ -22,7 +22,7 @@ method_type_service = MethodTypeAPIService()
 
 
 @method_type_router.get(
-    "",
+    "/items",
     auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: PaginatedResponse[MethodTypeResponse],
@@ -49,7 +49,7 @@ def get_method_types(
 
 
 @method_type_router.post(
-    "",
+    "/items",
     auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
@@ -74,7 +74,7 @@ def create_method_type(
 
 
 @method_type_router.get(
-    "/{method_type_id}",
+    "/items/{method_type_id}",
     auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: ItemResponse[MethodTypeResponse],
@@ -101,7 +101,7 @@ def get_method_type(
 
 
 @method_type_router.patch(
-    "/{method_type_id}",
+    "/items/{method_type_id}",
     auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
@@ -129,7 +129,7 @@ def update_method_type(
 
 
 @method_type_router.delete(
-    "/{method_type_id}",
+    "/items/{method_type_id}",
     auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         204: None,

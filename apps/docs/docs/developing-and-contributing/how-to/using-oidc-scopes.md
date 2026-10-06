@@ -14,13 +14,13 @@ Scopes a client isn't allowed are silently dropped from its tokens.
 | --- | --- | --- |
 | `data:read` | `GET` on monitoring sites, datastreams, observations, metadata vocabularies (methods, units, processing levels, observed properties, result qualifiers, and system types), quality control histories, and the SensorThings API | View your monitoring sites, datastreams, observations, and quality control history |
 | `data:write` | `POST`, `PATCH`, `PUT`, and `DELETE` on the same resources | Create, change, and delete your monitoring sites, datastreams, observations, and quality control edits |
-| `workspace:read` | `GET /workspaces` and `GET /workspaces/{id}`, including owner and pending transfer details | See your workspaces, including owner and pending transfer details |
+| `workspace:read` | `GET /api/ogc/collections/workspaces/items` and `GET /api/ogc/collections/workspaces/items/{workspace_id}`, including owner and pending transfer details | See your workspaces, including owner and pending transfer details |
 | `workspace:write` | Create, update, and delete workspaces, including changing whether a workspace is private | Create, rename, and delete workspaces, and change their privacy, including making a workspace public |
 | `iam:read` | `GET` on collaborators, service accounts, and roles | See who can access your workspaces: collaborators, roles, and service accounts |
 | `iam:write` | Add, edit, and remove collaborators; create, update, delete, and regenerate keys for service accounts; transfer workspace ownership and accept or reject transfers | Manage access to your workspaces: collaborators, service accounts, and ownership transfers (shown with a warning) |
 | `task:read` | `GET` on ETL tasks, data connections, ETL mappings, monitoring tasks and rules, data product tasks, transformations, rating curves, task runs, and monitoring site task summaries | View your data loading, monitoring, and data product tasks, their settings, and run history |
 | `task:write` | `POST`, `PATCH`, and `DELETE` on the same task resources | Create, change, and delete tasks and data connections (shown with a note) |
-| `task:run` | `POST /{task_id}/trigger` on ETL, monitoring, and data product tasks | Run your tasks on demand |
+| `task:run` | `POST /api/ogc/collections/{collection}/items/{task_id}/trigger`, where `{collection}` is `etl-tasks`, `monitoring-tasks`, or `data-product-tasks` | Run your tasks on demand |
 
 Scopes don't imply each other. A token with `data:write` can't read, and a token with `task:run` can't read the runs
 it starts, so request each scope your app uses. Scopes only decide which endpoints a token can call. The user's
@@ -48,6 +48,10 @@ A request with a valid token that lacks the endpoint's scope gets a `403` respon
 
 This applies even to resources that anonymous users can read, such as public workspaces. A token is never treated as
 anonymous, so an app that sends a token must hold the scope for every endpoint it calls.
+
+The API's landing page (`/api/ogc/`), conformance declaration (`/api/ogc/conformance`), and collection metadata
+(`/api/ogc/collections` and `/api/ogc/collections/{collection_id}`) need no scope. They return the same response to
+every caller, with or without a token.
 
 ## Included resources
 

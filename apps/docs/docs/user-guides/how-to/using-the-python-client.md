@@ -374,11 +374,11 @@ Result-qualifier creation accepts `name` and `description` by position or by key
 | `intended_time_spacing_unit` | `str \| None` | Yes | `"seconds"`, `"minutes"`, `"hours"`, `"days"` |
 | `status` | `str \| None` | Yes | |
 | `result_type` | `str` | Yes | |
-| `value_count` | `int \| None` | Yes | |
-| `phenomenon_begin_time` | `datetime \| None` | Yes | |
-| `phenomenon_end_time` | `datetime \| None` | Yes | |
-| `result_begin_time` | `datetime \| None` | Yes | |
-| `result_end_time` | `datetime \| None` | Yes | |
+| `value_count` | `int \| None` | No | Maintained from observations |
+| `phenomenon_begin_time` | `datetime \| None` | No | Maintained from observations |
+| `phenomenon_end_time` | `datetime \| None` | No | Maintained from observations |
+| `result_begin_time` | `datetime \| None` | No | Maintained from observations |
+| `result_end_time` | `datetime \| None` | No | Maintained from observations |
 | `is_private` | `bool` | Yes | |
 | `is_visible` | `bool` | Yes | |
 | `monitoring_site_id` | `UUID` | Yes | |
@@ -412,9 +412,7 @@ hs_api.datastreams.create(name, description, monitoring_site, method, observed_p
                           unit, observation_type, result_type, sampled_medium, no_data_value,
                           aggregation_statistic, time_aggregation_interval,
                           time_aggregation_interval_unit, intended_time_spacing=None,
-                          intended_time_spacing_unit=None, status=None, value_count=None,
-                          phenomenon_begin_time=None, phenomenon_end_time=None,
-                          result_begin_time=None, result_end_time=None,
+                          intended_time_spacing_unit=None, status=None,
                           is_private=False, is_visible=True, uid=None) -> Datastream
 ```
 

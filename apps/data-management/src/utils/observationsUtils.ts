@@ -2,6 +2,7 @@ import hs, {
   DataArray,
   DataPoint,
   Datastream,
+  ObservationProfile,
   TimeSpacingUnit,
 } from '@hydroserver/client'
 
@@ -11,6 +12,14 @@ export function subtractHours(timestamp: string, hours: number): string {
   const date = new Date(timestamp)
   date.setHours(date.getHours() - hours)
   return date.toISOString()
+}
+
+const datastreamColumns = (data: unknown): Record<string, unknown> | null => {
+  if (!Array.isArray(data) || !data.length) return null
+  const columns = (data[0] as { columns?: unknown })?.columns
+  return columns && typeof columns === 'object'
+    ? (columns as Record<string, unknown>)
+    : null
 }
 
 const toObservationRows = (columnar: Record<string, unknown>): DataArray => {
@@ -30,8 +39,7 @@ const toObservationRows = (columnar: Record<string, unknown>): DataArray => {
 export const fetchObservations = async (
   datastream: Datastream,
   startTime: string | null = null,
-  endTime: string | null = null,
-  signal?: AbortSignal
+  endTime: string | null = null
 ) => {
   const { id, phenomenonBeginTime, phenomenonEndTime } = datastream
   if (!phenomenonBeginTime || !phenomenonEndTime) return []
@@ -39,16 +47,15 @@ export const fetchObservations = async (
   const options: any = {
     sortby: ['phenomenonTime'],
     limit: 50_000,
-    format: 'column',
-    phenomenon_time_min: startTime ?? phenomenonBeginTime,
-    phenomenon_time_max: endTime ?? phenomenonEndTime,
+    profile: [ObservationProfile.Column],
+    properties: ['phenomenonTime', 'result'],
+    datetime: `${startTime ?? phenomenonBeginTime}/${endTime ?? phenomenonEndTime}`,
   }
-  if (signal) options.signal = signal
 
   const res = await hs.datastreams.getObservations(id, options)
 
-  if (!res.ok || !res.data || typeof res.data !== 'object') return []
-  return toObservationRows(res.data as Record<string, unknown>)
+  const columns = res.ok ? datastreamColumns(res.data) : null
+  return columns ? toObservationRows(columns) : []
 }
 
 export const fetchRecentObservationsPage = async (
@@ -59,11 +66,12 @@ export const fetchRecentObservationsPage = async (
     offset: 0,
     sortby: ['-phenomenonTime'],
     limit: pageSize,
-    format: 'column',
+    profile: [ObservationProfile.Column],
+    properties: ['phenomenonTime', 'result'],
   })
 
-  if (!res.ok || !res.data || typeof res.data !== 'object') return []
-  return toObservationRows(res.data as Record<string, unknown>).reverse()
+  const columns = res.ok ? datastreamColumns(res.data) : null
+  return columns ? toObservationRows(columns).reverse() : []
 }
 
 function toDataPointArray(dataArray: DataArray | ObservationArray) {

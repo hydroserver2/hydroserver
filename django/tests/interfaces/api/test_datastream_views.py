@@ -1,9 +1,12 @@
 import uuid
+from datetime import timedelta
 
 import pytest
+from django.utils import timezone
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 
+from core.sta.models import Datastream, DatastreamLinkedResource
 from tests.core.iam.factories import (
     CollaboratorFactory,
     PermissionFactory,
@@ -26,7 +29,8 @@ from tests.core.sta.factories import (
 
 pytestmark = pytest.mark.django_db
 
-DATASTREAMS_URL = "/api/data/datastreams"
+DATASTREAMS_COLLECTION_URL = "/api/ogc/collections/datastreams"
+DATASTREAMS_URL = f"{DATASTREAMS_COLLECTION_URL}/items"
 
 
 def _detail_url(datastream_id):
@@ -692,7 +696,7 @@ def test_get_datastream_visualization_bootstrap_returns_public_datastream(client
         ),
     )
 
-    response = client.get(f"{DATASTREAMS_URL}/visualization-bootstrap")
+    response = client.get(f"{DATASTREAMS_COLLECTION_URL}/visualization-bootstrap")
 
     assert response.status_code == 200
     body = response.json()
@@ -715,7 +719,7 @@ def test_get_datastream_tag_keys_returns_keys_for_workspace_owner(client):
     datastream.save()
     client.force_login(owner)
 
-    response = client.get(f"{DATASTREAMS_URL}/tags/keys")
+    response = client.get(f"{DATASTREAMS_COLLECTION_URL}/tags/keys")
 
     assert response.status_code == 200
     assert response.json()["season"] == ["summer"]
@@ -745,6 +749,98 @@ def _linked_resources_url(datastream_id):
     return f"{_detail_url(datastream_id)}/linked-resources"
 
 
+def _make_datastream_linked_resources(owner, names):
+    workspace = WorkspaceFactory(owner=owner)
+    parent = _make_datastream(workspace)
+    for name in names:
+        DatastreamLinkedResource.objects.create(datastream=parent, name=name, type="Report", url=f"https://example.com/{name}")
+    return parent
+
+
+def test_get_datastream_linked_resources_pages_by_name(client):
+    owner = UserFactory()
+    parent = _make_datastream_linked_resources(owner, ["C", "A", "B"])
+    client.force_login(owner)
+
+    first = client.get(_linked_resources_url(parent.id), {"limit": 2}).json()
+    second = client.get(_linked_resources_url(parent.id), {"limit": 2, "offset": 2}).json()
+
+    assert [item["name"] for item in first["data"]] == ["A", "B"]
+    assert first["meta"] == {"limit": 2, "offset": 0, "numberMatched": 3, "numberReturned": 2}
+    assert "next" in [link["rel"] for link in first["links"]]
+    assert [item["name"] for item in second["data"]] == ["C"]
+
+
+def test_get_datastream_linked_resources_selects_properties(client):
+    owner = UserFactory()
+    parent = _make_datastream_linked_resources(owner, ["A"])
+    client.force_login(owner)
+
+    response = client.get(_linked_resources_url(parent.id), {"properties": "name"})
+
+    assert response.json()["data"] == [{"name": "A"}]
+
+
+def test_get_datastream_linked_resources_rejects_include(client):
+    owner = UserFactory()
+    parent = _make_datastream_linked_resources(owner, ["A"])
+    client.force_login(owner)
+
+    response = client.get(_linked_resources_url(parent.id), {"include": "datastream"})
+
+    assert response.status_code == 400
+
+
+def test_get_datastream_linked_resource_returns_item(client):
+    owner = UserFactory()
+    parent = _make_datastream_linked_resources(owner, ["A", "B"])
+    linked_resource = DatastreamLinkedResource.objects.get(datastream=parent, name="B")
+    client.force_login(owner)
+
+    response = client.get(f"{_linked_resources_url(parent.id)}/{linked_resource.id}")
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["id"] == str(linked_resource.id)
+    assert data["name"] == "B"
+    assert data["type"] == "Report"
+    assert data["link"] == "https://example.com/B"
+
+
+def test_get_datastream_linked_resource_returns_404_for_unknown_id(client):
+    owner = UserFactory()
+    parent = _make_datastream_linked_resources(owner, ["A"])
+    client.force_login(owner)
+
+    response = client.get(f"{_linked_resources_url(parent.id)}/{uuid.uuid4()}")
+
+    assert response.status_code == 404
+
+
+def test_get_datastream_linked_resource_returns_404_for_other_parents_resource(client):
+    owner = UserFactory()
+    parent = _make_datastream_linked_resources(owner, ["A"])
+    other_parent = _make_datastream_linked_resources(owner, ["B"])
+    other_resource = DatastreamLinkedResource.objects.get(datastream=other_parent)
+    client.force_login(owner)
+
+    response = client.get(f"{_linked_resources_url(parent.id)}/{other_resource.id}")
+
+    assert response.status_code == 404
+
+
+def test_get_datastream_linked_resource_returns_404_for_private_parent_when_outsider(client):
+    parent = _make_datastream(WorkspaceFactory(), private=True)
+    linked_resource = DatastreamLinkedResource.objects.create(
+        datastream=parent, name="A", type="Report", url="https://example.com/A"
+    )
+    client.force_login(UserFactory())
+
+    response = client.get(f"{_linked_resources_url(parent.id)}/{linked_resource.id}")
+
+    assert response.status_code == 404
+
+
 def test_add_datastream_linked_resource_succeeds_with_link(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
@@ -762,7 +858,7 @@ def test_add_datastream_linked_resource_succeeds_with_link(client):
 
     assert response.status_code == 201
     assert set(response.json().keys()) == {"id"}
-    linked_resources = client.get(_linked_resources_url(datastream.id)).json()
+    linked_resources = client.get(_linked_resources_url(datastream.id)).json()["data"]
     assert linked_resources[0]["name"] == "Datastream Report"
 
 
@@ -929,3 +1025,169 @@ def test_get_datastreams_properties_filters_response_fields(client):
     assert response.status_code == 200
     row = response.json()["data"][0]
     assert set(row.keys()) == {"id", "name"}
+
+
+# --- bbox --------------------------------------------------------------------------------
+
+
+def _datastream_at(longitude, latitude):
+    return DatastreamFactory(monitoring_site=MonitoringSiteFactory(longitude=longitude, latitude=latitude))
+
+
+def _datastream_ids(response):
+    return {datastream["id"] for datastream in response.json()["data"]}
+
+
+def test_get_datastreams_filters_by_monitoring_site_location(client):
+    inside = _datastream_at(-111.5, 40.5)
+    _datastream_at(-100, 40.5)
+
+    response = client.get(DATASTREAMS_URL, {"bbox": "-112,40,-111,41"})
+
+    assert response.status_code == 200
+    assert _datastream_ids(response) == {str(inside.id)}
+
+
+def test_get_datastreams_filters_by_a_bbox_crossing_the_antimeridian(client):
+    east = _datastream_at(175, -15)
+    west = _datastream_at(-175, -15)
+    _datastream_at(0, -15)
+
+    response = client.get(DATASTREAMS_URL, {"bbox": "170,-20,-170,-10"})
+
+    assert response.status_code == 200
+    assert _datastream_ids(response) == {str(east.id), str(west.id)}
+
+
+def test_get_datastreams_combines_bbox_with_other_filters(client):
+    inside = _datastream_at(-111.5, 40.5)
+    _datastream_at(-111.5, 40.5)
+
+    response = client.get(
+        DATASTREAMS_URL, {"bbox": "-112,40,-111,41", "monitoring_site_id": str(inside.monitoring_site_id)}
+    )
+
+    assert response.status_code == 200
+    assert _datastream_ids(response) == {str(inside.id)}
+
+
+def test_get_datastreams_returns_400_for_invalid_bbox(client):
+    response = client.get(DATASTREAMS_URL, {"bbox": "-112,40,-111,91"})
+
+    assert response.status_code == 400
+
+
+# --- datetime ----------------------------------------------------------------------------
+
+
+def _datastream_spanning(begin, end):
+    return DatastreamFactory(phenomenon_begin_time=begin, phenomenon_end_time=end)
+
+
+def test_get_datastreams_filters_by_overlapping_phenomenon_time(client):
+    jan = timezone.now().replace(microsecond=0) - timedelta(days=60)
+    feb = jan + timedelta(days=30)
+    before = _datastream_spanning(jan - timedelta(days=20), jan - timedelta(days=10))
+    overlaps_start = _datastream_spanning(jan - timedelta(days=5), jan + timedelta(days=5))
+    inside = _datastream_spanning(jan + timedelta(days=1), jan + timedelta(days=2))
+    touches_end = _datastream_spanning(feb, feb + timedelta(days=5))
+    after = _datastream_spanning(feb + timedelta(days=1), feb + timedelta(days=5))
+
+    response = client.get(DATASTREAMS_URL, {"datetime": f"{jan.isoformat()}/{feb.isoformat()}"})
+
+    assert response.status_code == 200
+    ids = _datastream_ids(response)
+    assert {str(overlaps_start.id), str(inside.id), str(touches_end.id)} <= ids
+    assert not ids & {str(before.id), str(after.id)}
+
+
+def test_get_datastreams_datetime_matches_datastreams_without_observations(client):
+    empty = _datastream_spanning(None, None)
+    old = _datastream_spanning(timezone.now() - timedelta(days=20), timezone.now() - timedelta(days=10))
+
+    response = client.get(DATASTREAMS_URL, {"datetime": timezone.now().replace(microsecond=0).isoformat()})
+
+    assert response.status_code == 200
+    assert str(empty.id) in _datastream_ids(response)
+    assert str(old.id) not in _datastream_ids(response)
+
+
+def test_get_datastreams_returns_400_for_invalid_datetime(client):
+    response = client.get(DATASTREAMS_URL, {"datetime": "../.."})
+
+    assert response.status_code == 400
+
+
+# --- server-maintained statistics -------------------------------------------------------
+
+STATISTICS = {
+    "valueCount": 42,
+    "phenomenonBeginTime": "2020-01-01T00:00:00Z",
+    "phenomenonEndTime": "2020-12-31T00:00:00Z",
+    "resultBeginTime": "2020-01-01T00:00:00Z",
+    "resultEndTime": "2020-12-31T00:00:00Z",
+}
+
+
+def test_create_datastream_ignores_server_maintained_statistics(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    body = _datastream_body(
+        MonitoringSiteFactory(workspace=workspace),
+        MethodFactory(workspace=workspace),
+        ObservedPropertyFactory(workspace=workspace),
+        ProcessingLevelFactory(workspace=workspace),
+        UnitFactory(workspace=workspace),
+        **STATISTICS,
+    )
+    client.force_login(owner)
+
+    response = client.post(DATASTREAMS_URL, data=body, content_type="application/json")
+
+    assert response.status_code == 201
+    datastream = Datastream.objects.get(pk=response.json()["id"])
+    assert datastream.value_count in (None, 0)
+    assert datastream.phenomenon_begin_time is None
+    assert datastream.phenomenon_end_time is None
+    assert datastream.result_begin_time is None
+
+
+def test_update_datastream_ignores_server_maintained_statistics(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    begin = timezone.now().replace(microsecond=0) - timedelta(days=2)
+    datastream = DatastreamFactory(
+        monitoring_site=MonitoringSiteFactory(workspace=workspace),
+        value_count=3,
+        phenomenon_begin_time=begin,
+        phenomenon_end_time=begin + timedelta(days=1),
+    )
+    client.force_login(owner)
+
+    response = client.patch(_detail_url(datastream.id), data=STATISTICS, content_type="application/json")
+
+    assert response.status_code == 204
+    datastream.refresh_from_db()
+    assert datastream.value_count == 3
+    assert datastream.phenomenon_begin_time == begin
+    assert datastream.phenomenon_end_time == begin + timedelta(days=1)
+
+
+def test_get_datastream_returns_server_maintained_statistics(client):
+    begin = timezone.now().replace(microsecond=0) - timedelta(days=2)
+    datastream = DatastreamFactory(value_count=3, phenomenon_begin_time=begin, phenomenon_end_time=begin)
+
+    response = client.get(_detail_url(datastream.id), {"properties": "valueCount,phenomenonBeginTime"})
+
+    assert response.status_code == 200
+    assert response.json()["data"] == {"valueCount": 3, "phenomenonBeginTime": begin.isoformat()}
+
+
+def test_datastream_request_bodies_do_not_declare_server_maintained_statistics():
+    from interfaces.api.urls import api
+
+    schemas = api.get_openapi_schema(path_prefix="/api/ogc/")["components"]["schemas"]
+
+    for body in ("DatastreamPostBody", "DatastreamPatchBody"):
+        assert not set(schemas[body]["properties"]) & set(STATISTICS)
+    assert set(STATISTICS) <= set(schemas["DatastreamResponse"]["properties"])

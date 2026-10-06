@@ -11,11 +11,16 @@ from interfaces.api.schemas import (
     BasePatchBody,
     BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
     UserContactResponse,
     RoleResponse,
     split_comma_separated,
     comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
+    QueryBool,
 )
+from interfaces.api.schemas.base import ItemId, NewItemId
 
 
 class WorkspaceFields(Schema):
@@ -84,26 +89,27 @@ class WorkspaceItemQueryParameters(WorkspaceFilterFields, BaseQueryParameters):
     pass
 
 
-class WorkspaceQueryParameters(WorkspaceFilterFields, CollectionQueryParameters):
-    sortby: Optional[list[WorkspaceSortByFields]] = Query(
-        [], description="Select one or more fields to sort the response by."
-    )
+class WorkspaceQueryParameters(WorkspaceFilterFields, CollectionQueryParameters, ExtentQueryParameters):
+    sortby: Annotated[
+        Optional[list[WorkspaceSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(WorkspaceSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
     q: Optional[str] = Query(
         None,
         description="Full-text search query. Comma-separated terms are combined with OR; "
         "whitespace-separated words within a term are combined with AND.",
     )
-    is_associated: Optional[bool] = Query(
+    is_associated: Optional[QueryBool] = Query(
         None,
         description="Whether the workspace is associated with the authenticated user",
     )
-    is_private: Optional[bool] = Query(
+    is_private: Optional[QueryBool] = Query(
         None, description="Whether the returned workspaces should be private or public."
     )
 
 
-class WorkspaceResponse(BaseGetResponse, WorkspaceFields):
-    id: uuid.UUID
+class WorkspaceProperties(BaseGetResponse, WorkspaceFields):
     owner_email: str
     pending_transfer_to_email: Optional[str] = None
     collaborator_role_id: Optional[uuid.UUID] = None
@@ -134,8 +140,12 @@ class WorkspaceResponse(BaseGetResponse, WorkspaceFields):
         return role.id if role else None
 
 
-class WorkspacePostBody(BasePostBody, WorkspaceFields):
-    id: Optional[uuid.UUID] = None
+class WorkspaceResponse(WorkspaceProperties, ItemId):
+    pass
+
+
+class WorkspacePostBody(BasePostBody, WorkspaceFields, NewItemId):
+    pass
 
 
 class WorkspacePatchBody(BasePatchBody, WorkspaceFields):

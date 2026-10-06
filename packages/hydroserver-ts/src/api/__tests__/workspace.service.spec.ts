@@ -7,9 +7,29 @@ describe('WorkspaceService', () => {
     vi.restoreAllMocks()
   })
 
+  it('serializes boolean and null query values as lowercase true, false and null', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ data: [], meta: { offset: 0, limit: 100, numberMatched: 0 } }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const client = new HydroServer({ host: 'https://hydro.example.com' })
+    await client.workspaces.list({ is_associated: true, is_private: false })
+    await client.units.list({ workspace_id: ['workspace-1', 'null'] } as any)
+
+    const workspaceParams = new URL(String(fetchMock.mock.calls[0][0])).searchParams
+    expect(workspaceParams.get('is_associated')).toBe('true')
+    expect(workspaceParams.get('is_private')).toBe('false')
+    const unitParams = new URL(String(fetchMock.mock.calls[1][0])).searchParams
+    expect(unitParams.getAll('workspace_id')).toEqual(['workspace-1', 'null'])
+  })
+
   it('uses the service-account endpoint for the workspace management table', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ data: [], meta: { offset: 0, limit: 200, totalCount: 0 } }), {
+      new Response(JSON.stringify({ data: [], meta: { offset: 0, limit: 200, numberMatched: 0 } }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       })
@@ -20,7 +40,7 @@ describe('WorkspaceService', () => {
     await client.workspaces.getServiceAccounts('workspace-1')
 
     expect(String(fetchMock.mock.calls[0][0])).toBe(
-      'https://hydro.example.com/api/data/workspaces/workspace-1/service-accounts?offset=0&limit=200'
+      'https://hydro.example.com/api/ogc/collections/workspaces/items/workspace-1/service-accounts?offset=0&limit=200'
     )
   })
 
@@ -49,7 +69,7 @@ describe('WorkspaceService', () => {
           JSON.stringify({
             data,
             included: { roles: [role], users },
-            meta: { offset: Number(offset), limit: 200, totalCount: 201 },
+            meta: { offset: Number(offset), limit: 200, numberMatched: 201 },
           }),
           {
             status: 200,
@@ -69,8 +89,8 @@ describe('WorkspaceService', () => {
     expect(response.data.every((c) => c.role?.id === 'role-1')).toBe(true)
     expect(fetchMock).toHaveBeenCalledTimes(2)
     expect(fetchMock.mock.calls.map(([url]) => String(url))).toEqual([
-      'https://hydro.example.com/api/data/workspaces/workspace-1/collaborators?include=role%2Cuser%2CserviceAccount&offset=0&limit=200',
-      'https://hydro.example.com/api/data/workspaces/workspace-1/collaborators?include=role%2Cuser%2CserviceAccount&offset=200&limit=200',
+      'https://hydro.example.com/api/ogc/collections/workspaces/items/workspace-1/collaborators?include=role%2Cuser%2CserviceAccount&offset=0&limit=200',
+      'https://hydro.example.com/api/ogc/collections/workspaces/items/workspace-1/collaborators?include=role%2Cuser%2CserviceAccount&offset=200&limit=200',
     ])
   })
 
@@ -84,7 +104,7 @@ describe('WorkspaceService', () => {
           return new Response(
             JSON.stringify({
               data: [{ email: 'first@example.com' }],
-              meta: { offset: 0, limit: 200, totalCount: 201 },
+              meta: { offset: 0, limit: 200, numberMatched: 201 },
             }),
             {
               status: 200,
@@ -123,7 +143,7 @@ describe('WorkspaceService', () => {
         return new Response(
           JSON.stringify({
             data,
-            meta: { offset: Number(offset), limit: 200, totalCount: 201 },
+            meta: { offset: Number(offset), limit: 200, numberMatched: 201 },
           }),
           {
             status: 200,
@@ -139,8 +159,8 @@ describe('WorkspaceService', () => {
     expect(response.data).toEqual([{ id: 'account-1' }, { id: 'account-2' }])
     expect(fetchMock).toHaveBeenCalledTimes(2)
     expect(fetchMock.mock.calls.map(([url]) => String(url))).toEqual([
-      'https://hydro.example.com/api/data/workspaces/workspace-1/service-accounts?offset=0&limit=200',
-      'https://hydro.example.com/api/data/workspaces/workspace-1/service-accounts?offset=200&limit=200',
+      'https://hydro.example.com/api/ogc/collections/workspaces/items/workspace-1/service-accounts?offset=0&limit=200',
+      'https://hydro.example.com/api/ogc/collections/workspaces/items/workspace-1/service-accounts?offset=200&limit=200',
     ])
   })
 
@@ -175,7 +195,7 @@ describe('WorkspaceService', () => {
     const response = await client.workspaces.get('workspace-1')
 
     expect(String(fetchMock.mock.calls[0][0])).toBe(
-      'https://hydro.example.com/api/data/workspaces/workspace-1?include=owner%2CpendingTransferTo%2CcollaboratorRole'
+      'https://hydro.example.com/api/ogc/collections/workspaces/items/workspace-1?include=owner%2CpendingTransferTo%2CcollaboratorRole'
     )
     expect(response.ok).toBe(true)
     if (!response.ok) return
@@ -286,7 +306,7 @@ describe('WorkspaceService', () => {
             roles: [role],
             users: [{ name: 'New', email: 'new@example.com', organizationName: null }],
           },
-          meta: { offset: 0, limit: 200, totalCount: 1 },
+          meta: { offset: 0, limit: 200, numberMatched: 1 },
         }),
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       )
@@ -316,7 +336,7 @@ describe('WorkspaceService', () => {
         })
       }
       return new Response(
-        JSON.stringify({ data: [], meta: { offset: 0, limit: 200, totalCount: 0 } }),
+        JSON.stringify({ data: [], meta: { offset: 0, limit: 200, numberMatched: 0 } }),
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       )
     })
@@ -355,7 +375,7 @@ describe('WorkspaceService', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1)
     expect(String(fetchMock.mock.calls[0][0])).toBe(
-      'https://hydro.example.com/api/data/workspaces/workspace-1/service-accounts/account-1/regenerate'
+      'https://hydro.example.com/api/ogc/collections/workspaces/items/workspace-1/service-accounts/account-1/regenerate'
     )
     expect(response.ok).toBe(true)
     if (!response.ok) return

@@ -24,6 +24,11 @@ class NotFoundError(HttpError):
         super().__init__(404, message)
 
 
+class NotAcceptableError(HttpError):
+    def __init__(self, message="Not Acceptable"):
+        super().__init__(406, message)
+
+
 class ConflictError(HttpError):
     def __init__(self, message="Conflict"):
         super().__init__(409, message)

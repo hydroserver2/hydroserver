@@ -1,7 +1,9 @@
 import uuid
 
+from django.http import HttpResponse
 from ninja import Router, Path, Query
 
+from interfaces.api.http.links import build_self_link
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.auth.security import session_auth, oidc_task_read_auth, oidc_task_write_auth, oidc_task_run_auth, apikey_auth, basic_auth
 from processing.orchestration.models import TaskRun
@@ -22,7 +24,7 @@ monitoring_task_service = MonitoringTaskAPIService()
 
 
 @monitoring_task_router.get(
-    "",
+    "/items",
     auth=[session_auth, oidc_task_read_auth, apikey_auth, basic_auth],
     response={
         200: PaginatedResponse[MonitoringTaskResponse],
@@ -50,7 +52,7 @@ def get_monitoring_tasks(
 
 
 @monitoring_task_router.post(
-    "",
+    "/items",
     auth=[session_auth, oidc_task_write_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
@@ -73,7 +75,7 @@ def create_monitoring_task(
 
 
 @monitoring_task_router.get(
-    "/{task_id}",
+    "/items/{task_id}",
     auth=[session_auth, oidc_task_read_auth, apikey_auth, basic_auth],
     response={
         200: ItemResponse[MonitoringTaskResponse],
@@ -98,7 +100,7 @@ def get_monitoring_task(
 
 
 @monitoring_task_router.patch(
-    "/{task_id}",
+    "/items/{task_id}",
     auth=[session_auth, oidc_task_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
@@ -124,7 +126,7 @@ def update_monitoring_task(
 
 
 @monitoring_task_router.delete(
-    "/{task_id}",
+    "/items/{task_id}",
     auth=[session_auth, oidc_task_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
@@ -151,10 +153,10 @@ def delete_monitoring_task(
 
 
 @monitoring_task_router.post(
-    "/{task_id}/trigger",
+    "/items/{task_id}/trigger",
     auth=[session_auth, oidc_task_run_auth, apikey_auth, basic_auth],
     response={
-        202: TaskRunResponse,
+        202: ItemResponse[TaskRunResponse],
         401: str,
         403: str,
         404: str,
@@ -163,6 +165,7 @@ def delete_monitoring_task(
 )
 def trigger_monitoring_task(
     request: HydroServerHttpRequest,
+    response: HttpResponse,
     task_id: Path[uuid.UUID],
 ):
     """
@@ -176,11 +179,14 @@ def trigger_monitoring_task(
     run = TaskRun.objects.create(task=task, status="PENDING")
     run_monitoring_task.apply_async(kwargs={"task_id": str(task.id), "run_id": str(run.id)})
 
-    return 202, run
+    run_link = build_self_link(request, request.path_info.removesuffix("/trigger") + f"/runs/{run.id}")
+    response["Location"] = run_link.href
+
+    return 202, {"data": run, "links": [run_link]}
 
 
 @monitoring_task_router.get(
-    "/{task_id}/runs",
+    "/items/{task_id}/runs",
     auth=[session_auth, oidc_task_read_auth, apikey_auth, basic_auth],
     response={
         200: PaginatedResponse[TaskRunResponse],
@@ -222,10 +228,10 @@ def get_monitoring_task_runs(
 
 
 @monitoring_task_router.get(
-    "/{task_id}/runs/{run_id}",
+    "/items/{task_id}/runs/{run_id}",
     auth=[session_auth, oidc_task_read_auth, apikey_auth, basic_auth],
     response={
-        200: TaskRunResponse,
+        200: ItemResponse[TaskRunResponse],
         401: str,
         403: str,
         404: str,
@@ -247,4 +253,4 @@ def get_monitoring_task_run(
         principal=request.principal,
     )
 
-    return 200, run
+    return 200, {"data": run}

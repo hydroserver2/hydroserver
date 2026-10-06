@@ -22,7 +22,7 @@ processing_level_service = ProcessingLevelAPIService()
 
 
 @processing_level_router.get(
-    "",
+    "/items",
     auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: PaginatedResponse[ProcessingLevelResponse],
@@ -50,7 +50,7 @@ def get_processing_levels(
 
 
 @processing_level_router.post(
-    "",
+    "/items",
     auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
@@ -75,7 +75,7 @@ def create_processing_level(
 
 
 @processing_level_router.get(
-    "/{processing_level_id}",
+    "/items/{processing_level_id}",
     auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: ItemResponse[ProcessingLevelResponse],
@@ -103,7 +103,7 @@ def get_processing_level(
 
 
 @processing_level_router.patch(
-    "/{processing_level_id}",
+    "/items/{processing_level_id}",
     auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
@@ -133,7 +133,7 @@ def update_processing_level(
 
 
 @processing_level_router.delete(
-    "/{processing_level_id}",
+    "/items/{processing_level_id}",
     auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         204: None,

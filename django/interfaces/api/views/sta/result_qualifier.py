@@ -24,7 +24,7 @@ result_qualifier_service = ResultQualifierAPIService()
 
 
 @result_qualifier_router.get(
-    "",
+    "/items",
     auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: PaginatedResponse[ResultQualifierResponse],
@@ -52,7 +52,7 @@ def get_result_qualifiers(
 
 
 @result_qualifier_router.post(
-    "",
+    "/items",
     auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
@@ -77,7 +77,7 @@ def create_result_qualifier(
 
 
 @result_qualifier_router.get(
-    "/{result_qualifier_id}",
+    "/items/{result_qualifier_id}",
     auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: ItemResponse[ResultQualifierResponse],
@@ -105,7 +105,7 @@ def get_result_qualifier(
 
 
 @result_qualifier_router.patch(
-    "/{result_qualifier_id}",
+    "/items/{result_qualifier_id}",
     auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
@@ -134,7 +134,7 @@ def update_result_qualifier(
 
 
 @result_qualifier_router.delete(
-    "/{result_qualifier_id}",
+    "/items/{result_qualifier_id}",
     auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         204: None,

@@ -122,7 +122,7 @@ class HydroServerCollection:
 
         self.offset = self._resolve_int_metadata("offset", meta, data)
         self.limit = self._resolve_int_metadata("limit", meta, data)
-        self.total_count = self._resolve_int_metadata("total_count", meta, data, meta_key="totalCount")
+        self.total_count = self._resolve_int_metadata("total_count", meta, data, meta_key="numberMatched")
 
         if "items" in data:
             self.items = data["items"]

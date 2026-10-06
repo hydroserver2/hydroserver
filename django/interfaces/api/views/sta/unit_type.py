@@ -22,7 +22,7 @@ unit_type_service = UnitTypeAPIService()
 
 
 @unit_type_router.get(
-    "",
+    "/items",
     auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: PaginatedResponse[UnitTypeResponse],
@@ -49,7 +49,7 @@ def get_unit_types(
 
 
 @unit_type_router.post(
-    "",
+    "/items",
     auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
@@ -74,7 +74,7 @@ def create_unit_type(
 
 
 @unit_type_router.get(
-    "/{unit_type_id}",
+    "/items/{unit_type_id}",
     auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: ItemResponse[UnitTypeResponse],
@@ -101,7 +101,7 @@ def get_unit_type(
 
 
 @unit_type_router.patch(
-    "/{unit_type_id}",
+    "/items/{unit_type_id}",
     auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
@@ -129,7 +129,7 @@ def update_unit_type(
 
 
 @unit_type_router.delete(
-    "/{unit_type_id}",
+    "/items/{unit_type_id}",
     auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
