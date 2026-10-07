@@ -193,7 +193,7 @@ def test_observation_profiles_link_next_from_the_observations_on_the_page(client
     datastream = DatastreamFactory()
     ObservationFactory.create_batch(3, datastream=datastream)
 
-    response = client.get(OBSERVATIONS_PATH, {"datastream_id": str(datastream.id), "profile": profile, "limit": 2})
+    response = client.get(OBSERVATIONS_PATH, {"datastreamId": str(datastream.id), "profile": profile, "limit": 2})
 
     assert response.status_code == 200
     (group,) = response.json()["data"]

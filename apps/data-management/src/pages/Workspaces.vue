@@ -437,7 +437,7 @@ function openDialog(item: Workspace, dialog: 'edit' | 'delete') {
 async function loadWorkspaceList() {
   try {
     const response = await hs.workspaces.list({
-      is_associated: true,
+      isAssociated: true,
       fetch_all: true,
     })
     if (!response.ok) {

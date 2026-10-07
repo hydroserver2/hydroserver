@@ -112,7 +112,7 @@ def test_negotiated_format_keeps_headers_set_by_the_view(client):
     datastream = DatastreamFactory(monitoring_site=MonitoringSiteFactory(workspace=WorkspaceFactory()))
     ObservationFactory(datastream=datastream)
 
-    response = _get(client, OBSERVATIONS_URL, f="text", datastream_id=str(datastream.id))
+    response = _get(client, OBSERVATIONS_URL, f="text", datastreamId=str(datastream.id))
 
     assert "data" in orjson.loads(response.content)
     assert response.has_header("X-Checksum")

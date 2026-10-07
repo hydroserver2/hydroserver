@@ -109,7 +109,7 @@ class DataConnectionQueryParameters(DataConnectionFilterFields, CollectionQueryP
         "whitespace-separated words within a term are combined with AND.",
     )
     workspace: list[uuid.UUID] = Query(
-        [], description="Filter data connections by workspace ID.", alias="workspace_id"
+        [], description="Filter data connections by workspace ID.", alias="workspaceId"
     )
     payload_type: list[str] = Query(
         [], description="Filter data connections by payload type."

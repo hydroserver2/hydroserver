@@ -100,7 +100,7 @@ class RatingCurveQueryParameters(RatingCurveFilterFields, CollectionQueryParamet
         [], description="Filter rating curves by monitoring site ID."
     )
     monitoring_site__workspace_id: list[uuid.UUID] = Query(
-        [], description="Filter rating curves by workspace ID.", alias="workspace_id"
+        [], description="Filter rating curves by workspace ID.", alias="workspaceId"
     )
 
 

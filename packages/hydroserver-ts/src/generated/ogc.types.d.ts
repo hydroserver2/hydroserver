@@ -2333,11 +2333,11 @@ export interface components {
              */
             properties?: ("roleId" | "userEmail" | "serviceAccountEmail")[];
             /**
-             * Role Id
+             * Roleid
              * @description Filter collaborators by role ID.
              * @default []
              */
-            role_id: string[];
+            roleId: string[];
             /**
              * Sortby
              * @description Select one or more fields to sort the response by.
@@ -2496,11 +2496,11 @@ export interface components {
              */
             offset: number | null;
             /**
-             * Payload Type
+             * Payloadtype
              * @description Filter data connections by payload type.
              * @default []
              */
-            payload_type: string[];
+            payloadType: string[];
             /**
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
@@ -2518,11 +2518,11 @@ export interface components {
              */
             sortby: ("id" | "name" | "timestampKey" | "timestampFormat" | "timezoneType" | "timezone" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-timestampKey" | "-timestampFormat" | "-timezoneType" | "-timezone" | "-workspaceId" | "-workspaceName" | "+id" | "+name" | "+timestampKey" | "+timestampFormat" | "+timezoneType" | "+timezone" | "+workspaceId" | "+workspaceName")[];
             /**
-             * Workspace Id
+             * Workspaceid
              * @description Filter data connections by workspace ID.
              * @default []
              */
-            workspace_id: string[];
+            workspaceId: string[];
         };
         /** DataConnectionResponse */
         DataConnectionResponse: {
@@ -2651,17 +2651,17 @@ export interface components {
              */
             include?: "monitoringSite"[];
             /**
-             * Input Datastream Id
+             * Inputdatastreamid
              * @description Filter data product tasks by input datastream ID.
              * @default []
              */
-            input_datastream_id: string[];
+            inputDatastreamId: string[];
             /**
-             * Latest Run Status
+             * Latestrunstatus
              * @description Filter data product tasks by their most recent run status.
              * @default []
              */
-            latest_run_status: (string | "null")[];
+            latestRunStatus: (string | "null")[];
             /**
              * Limit
              * @description The maximum number of items to return. (default: 100, maximum: 100000)
@@ -2669,11 +2669,11 @@ export interface components {
              */
             limit: number;
             /**
-             * Monitoring Site Id
+             * Monitoringsiteid
              * @description Filter data product tasks by monitoring_site ID.
              * @default []
              */
-            monitoring_site_id: string[];
+            monitoringSiteId: string[];
             /**
              * Offset
              * @description Number of items to skip.
@@ -2681,11 +2681,11 @@ export interface components {
              */
             offset: number | null;
             /**
-             * Output Datastream Id
+             * Outputdatastreamid
              * @description Filter data product tasks by output datastream ID.
              * @default []
              */
-            output_datastream_id: string[];
+            outputDatastreamId: string[];
             /**
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
@@ -2697,11 +2697,11 @@ export interface components {
              */
             q?: string | null;
             /**
-             * Rating Curve Id
+             * Ratingcurveid
              * @description Filter data product tasks by rating curve ID.
              * @default []
              */
-            rating_curve_id: (string | "null")[];
+            ratingCurveId: (string | "null")[];
             /**
              * Sortby
              * @description Select one or more fields to sort the response by.
@@ -2709,17 +2709,17 @@ export interface components {
              */
             sortby: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "+id" | "+name" | "+monitoringSiteId" | "+monitoringSiteName" | "+workspaceId" | "+workspaceName" | "+latestRunStatus" | "+latestRunStartedAt" | "+latestRunFinishedAt")[];
             /**
-             * Transformation Type
+             * Transformationtype
              * @description Filter data product tasks by transformation type.
              * @default []
              */
-            transformation_type: string[];
+            transformationType: string[];
             /**
-             * Workspace Id
+             * Workspaceid
              * @description Filter data product tasks by workspace ID.
              * @default []
              */
-            workspace_id: string[];
+            workspaceId: string[];
         };
         /** DataProductTaskResponse */
         DataProductTaskResponse: {
@@ -2860,11 +2860,11 @@ export interface components {
              */
             include?: ("outputDatastream" | "ratingCurve")[];
             /**
-             * Input Datastream Id
+             * Inputdatastreamid
              * @description Filter transformations by input datastream ID.
              * @default []
              */
-            input_datastream_id: string[];
+            inputDatastreamId: string[];
             /**
              * Limit
              * @description The maximum number of items to return. (default: 100, maximum: 100000)
@@ -2878,11 +2878,11 @@ export interface components {
              */
             offset: number | null;
             /**
-             * Output Datastream Id
+             * Outputdatastreamid
              * @description Filter transformations by output datastream ID.
              * @default []
              */
-            output_datastream_id: string[];
+            outputDatastreamId: string[];
             /**
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
@@ -2895,23 +2895,23 @@ export interface components {
              */
             sortby: ("id" | "outputDatastreamId" | "transformationType" | "-id" | "-outputDatastreamId" | "-transformationType" | "+id" | "+outputDatastreamId" | "+transformationType")[];
             /**
-             * Task Id
+             * Taskid
              * @description Filter transformations by data product task ID.
              * @default []
              */
-            task_id: string[];
+            taskId: string[];
             /**
-             * Transformation Type
+             * Transformationtype
              * @description Filter transformations by type.
              * @default []
              */
-            transformation_type: string[];
+            transformationType: string[];
             /**
-             * Workspace Id
+             * Workspaceid
              * @description Filter transformations by workspace ID.
              * @default []
              */
-            workspace_id: string[];
+            workspaceId: string[];
         };
         /** DataProductTransformationResponse */
         DataProductTransformationResponse: {
@@ -3222,10 +3222,10 @@ export interface components {
              */
             include?: ("workspace" | "monitoringSite" | "method" | "observedProperty" | "processingLevel" | "unit" | "sampledMedium" | "aggregationStatistic" | "status")[];
             /**
-             * Is Private
+             * Isprivate
              * @description Controls whether the datastreams should be private or public.
              */
-            is_private?: boolean | null;
+            isPrivate?: boolean | null;
             /**
              * Limit
              * @description The maximum number of items to return. (default: 100, maximum: 100000)
@@ -3233,29 +3233,29 @@ export interface components {
              */
             limit: number;
             /**
-             * Method Id
+             * Methodid
              * @description Filter datastreams by method ID.
              * @default []
              */
-            method_id: string[];
+            methodId: string[];
             /**
-             * Monitoring Site Id
+             * Monitoringsiteid
              * @description Filter datastreams by monitoring_site ID.
              * @default []
              */
-            monitoring_site_id: string[];
+            monitoringSiteId: string[];
             /**
-             * Observation Type
+             * Observationtype
              * @description Filter monitoring_sites by observation type.
              * @default []
              */
-            observation_type: string[];
+            observationType: string[];
             /**
-             * Observed Property Id
+             * Observedpropertyid
              * @description Filter datastreams by observed property ID.
              * @default []
              */
-            observed_property_id: string[];
+            observedPropertyId: string[];
             /**
              * Offset
              * @description Number of items to skip.
@@ -3263,11 +3263,11 @@ export interface components {
              */
             offset: number | null;
             /**
-             * Processing Level Id
+             * Processinglevelid
              * @description Filter datastreams by processing level ID.
              * @default []
              */
-            processing_level_id: string[];
+            processingLevelId: string[];
             /**
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
@@ -3279,23 +3279,23 @@ export interface components {
              */
             q?: string | null;
             /**
-             * Result Qualifier Id
+             * Resultqualifier
              * @description Filter datastreams by observation result qualifier ID.
              * @default []
              */
-            result_qualifier_id: string[];
+            resultQualifier: string[];
             /**
-             * Result Type
+             * Resulttype
              * @description Filter monitoring_sites by result type.
              * @default []
              */
-            result_type: string[];
+            resultType: string[];
             /**
-             * Sampled Medium
+             * Sampledmedium
              * @description Filter monitoring_sites by sampled medium.
              * @default []
              */
-            sampled_medium: string[];
+            sampledMedium: string[];
             /**
              * Sortby
              * @description Select one or more fields to sort the response by.
@@ -3310,32 +3310,32 @@ export interface components {
             status: (string | "null")[];
             /**
              * Tag
-             * @description Filter datastreams by tag. Format tag filters as {key}:{value}
+             * @description Filter datastreams by tag. Format tag filters as {key}:{value}. Repeat the parameter to require several tags.
              * @default []
              */
             tag: string[];
             /**
-             * Unit Id
+             * Unitid
              * @description Filter datastreams by unit ID.
              * @default []
              */
-            unit_id: string[];
+            unitId: string[];
             /**
-             * Value Count Max
+             * Valuecountmax
              * @description Sets the maximum value count of filtered datastreams.
              */
-            value_count_max?: number | null;
+            valueCountMax?: number | null;
             /**
-             * Value Count Min
+             * Valuecountmin
              * @description Sets the minimum value count of filtered datastreams.
              */
-            value_count_min?: number | null;
+            valueCountMin?: number | null;
             /**
-             * Workspace Id
+             * Workspaceid
              * @description Filter datastreams by workspace ID.
              * @default []
              */
-            workspace_id: string[];
+            workspaceId: string[];
         };
         /** DatastreamResponse */
         DatastreamResponse: {
@@ -3467,11 +3467,11 @@ export interface components {
         /** DatastreamVisualizationBootstrapQueryParameters */
         DatastreamVisualizationBootstrapQueryParameters: {
             /**
-             * Workspace Id
+             * Workspaceid
              * @description Filter visualization bootstrap datastreams by workspace ID.
              * @default []
              */
-            workspace_id: string[];
+            workspaceId: string[];
         };
         /** DatastreamVisualizationBootstrapResponse */
         DatastreamVisualizationBootstrapResponse: {
@@ -3534,11 +3534,11 @@ export interface components {
             /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
             datetime?: string;
             /**
-             * Etl Task Id
+             * Etltaskid
              * @description Filter mappings by ETL task ID.
              * @default []
              */
-            etl_task_id: string[];
+            etlTaskId: string[];
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -3568,23 +3568,23 @@ export interface components {
              */
             sortby: ("id" | "sourceIdentifier" | "targetDatastreamId" | "-id" | "-sourceIdentifier" | "-targetDatastreamId" | "+id" | "+sourceIdentifier" | "+targetDatastreamId")[];
             /**
-             * Source Identifier
+             * Sourceidentifier
              * @description Filter mappings by source identifier.
              * @default []
              */
-            source_identifier: string[];
+            sourceIdentifier: string[];
             /**
-             * Target Datastream Id
+             * Targetdatastreamid
              * @description Filter mappings by target datastream ID.
              * @default []
              */
-            target_datastream_id: string[];
+            targetDatastreamId: string[];
             /**
-             * Workspace Id
+             * Workspaceid
              * @description Filter mappings by workspace ID.
              * @default []
              */
-            workspace_id: string[];
+            workspaceId: string[];
         };
         /** EtlMappingResponse */
         EtlMappingResponse: {
@@ -3663,11 +3663,11 @@ export interface components {
             /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
             bbox?: number[] & (unknown | unknown);
             /**
-             * Data Connection Id
+             * Dataconnectionid
              * @description Filter ETL tasks by data connection ID.
              * @default []
              */
-            data_connection_id: string[];
+            dataConnectionId: string[];
             /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
             datetime?: string;
             /**
@@ -3676,31 +3676,31 @@ export interface components {
              */
             include?: "dataConnection"[];
             /**
-             * Latest Run Finished At Max
+             * Latestrunfinishedatmax
              * @description Filter tasks whose latest run finished on or before this datetime.
              */
-            latest_run_finished_at_max?: string | null;
+            latestRunFinishedAtMax?: string | null;
             /**
-             * Latest Run Finished At Min
+             * Latestrunfinishedatmin
              * @description Filter tasks whose latest run finished on or after this datetime.
              */
-            latest_run_finished_at_min?: string | null;
+            latestRunFinishedAtMin?: string | null;
             /**
-             * Latest Run Started At Max
+             * Latestrunstartedatmax
              * @description Filter tasks whose latest run started on or before this datetime.
              */
-            latest_run_started_at_max?: string | null;
+            latestRunStartedAtMax?: string | null;
             /**
-             * Latest Run Started At Min
+             * Latestrunstartedatmin
              * @description Filter tasks whose latest run started on or after this datetime.
              */
-            latest_run_started_at_min?: string | null;
+            latestRunStartedAtMin?: string | null;
             /**
-             * Latest Run Status
+             * Latestrunstatus
              * @description Filter ETL tasks by their most recent run status.
              * @default []
              */
-            latest_run_status: (string | "null")[];
+            latestRunStatus: (string | "null")[];
             /**
              * Limit
              * @description The maximum number of items to return. (default: 100, maximum: 100000)
@@ -3708,11 +3708,11 @@ export interface components {
              */
             limit: number;
             /**
-             * Monitoring Site Id
+             * Monitoringsiteid
              * @description Filter ETL tasks by monitoring_site ID.
              * @default []
              */
-            monitoring_site_id: string[];
+            monitoringSiteId: string[];
             /**
              * Offset
              * @description Number of items to skip.
@@ -3736,11 +3736,11 @@ export interface components {
              */
             sortby: ("id" | "name" | "dataConnectionId" | "dataConnectionName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-dataConnectionId" | "-dataConnectionName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "+id" | "+name" | "+dataConnectionId" | "+dataConnectionName" | "+workspaceId" | "+workspaceName" | "+latestRunStatus" | "+latestRunStartedAt" | "+latestRunFinishedAt")[];
             /**
-             * Workspace Id
+             * Workspaceid
              * @description Filter ETL tasks by workspace ID.
              * @default []
              */
-            workspace_id: string[];
+            workspaceId: string[];
         };
         /** EtlTaskResponse */
         EtlTaskResponse: {
@@ -4636,11 +4636,11 @@ export interface components {
             /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
             bbox?: number[] & (unknown | unknown);
             /**
-             * Datastream Id
+             * Datastreamid
              * @description Filter methods by datastream ID.
              * @default []
              */
-            datastream_id: (string | "null")[];
+            datastreamId: (string | "null")[];
             /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
             datetime?: string;
             /**
@@ -4655,11 +4655,11 @@ export interface components {
              */
             limit: number;
             /**
-             * Monitoring Site Id
+             * Monitoringsiteid
              * @description Filter methods by monitoring_site ID.
              * @default []
              */
-            monitoring_site_id: (string | "null")[];
+            monitoringSiteId: (string | "null")[];
             /**
              * Offset
              * @description Number of items to skip.
@@ -4677,17 +4677,17 @@ export interface components {
              */
             q?: string | null;
             /**
-             * Sensor Model
+             * Sensormodel
              * @description Filter methods by sensor model
              * @default []
              */
-            sensor_model: (string | "null")[];
+            sensorModel: (string | "null")[];
             /**
-             * Sensor Model Manufacturer
+             * Sensormodelmanufacturer
              * @description Filter methods by sensor model manufacturer
              * @default []
              */
-            sensor_model_manufacturer: (string | "null")[];
+            sensorModelManufacturer: (string | "null")[];
             /**
              * Sortby
              * @description Select one or more fields to sort the response by.
@@ -4701,11 +4701,11 @@ export interface components {
              */
             type: string[];
             /**
-             * Workspace Id
+             * Workspaceid
              * @description Filter methods by workspace ID.
              * @default []
              */
-            workspace_id: (string | "null")[];
+            workspaceId: (string | "null")[];
         };
         /** MethodResponse */
         MethodResponse: {
@@ -4826,11 +4826,11 @@ export interface components {
             /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
             bbox?: number[] & (unknown | unknown);
             /**
-             * Datastream Id
+             * Datastreamid
              * @description Filter rules by datastream ID.
              * @default []
              */
-            datastream_id: string[];
+            datastreamId: string[];
             /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
             datetime?: string;
             /**
@@ -4856,11 +4856,11 @@ export interface components {
              */
             properties?: ("id" | "taskId" | "datastreamId" | "ruleType" | "lastCheckedAt" | "minValue" | "maxValue" | "windowInterval" | "windowIntervalUnits")[];
             /**
-             * Rule Type
+             * Ruletype
              * @description Filter rules by rule type.
              * @default []
              */
-            rule_type: string[];
+            ruleType: string[];
             /**
              * Sortby
              * @description Select one or more fields to sort the response by.
@@ -4868,17 +4868,17 @@ export interface components {
              */
             sortby: ("id" | "ruleType" | "datastreamId" | "lastCheckedAt" | "-id" | "-ruleType" | "-datastreamId" | "-lastCheckedAt" | "+id" | "+ruleType" | "+datastreamId" | "+lastCheckedAt")[];
             /**
-             * Task Id
+             * Taskid
              * @description Filter rules by monitoring task ID.
              * @default []
              */
-            task_id: string[];
+            taskId: string[];
             /**
-             * Workspace Id
+             * Workspaceid
              * @description Filter rules by workspace ID.
              * @default []
              */
-            workspace_id: string[];
+            workspaceId: string[];
         };
         /** MonitoringRuleResponse */
         MonitoringRuleResponse: {
@@ -4925,7 +4925,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "workspaceId" | "latitude" | "longitude" | "name" | "description" | "code" | "type" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "dataDisclaimer" | "isPrivate" | "tags" | "linkedResources")[];
+            properties?: ("id" | "workspaceId" | "latitude" | "longitude" | "name" | "description" | "code" | "type" | "elevationM" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "dataDisclaimer" | "isPrivate" | "tags" | "linkedResources")[];
         };
         /** MonitoringSiteMapSummaryQueryParameters */
         MonitoringSiteMapSummaryQueryParameters: {
@@ -4936,11 +4936,11 @@ export interface components {
              */
             type: string[];
             /**
-             * Workspace Id
+             * Workspaceid
              * @description Filter site summaries by workspace ID.
              * @default []
              */
-            workspace_id: string[];
+            workspaceId: string[];
         };
         /** MonitoringSiteMapSummaryResponse */
         MonitoringSiteMapSummaryResponse: {
@@ -4983,11 +4983,11 @@ export interface components {
              */
             type: string[];
             /**
-             * Workspace Id
+             * Workspaceid
              * @description Filter markers by workspace ID.
              * @default []
              */
-            workspace_id: string[];
+            workspaceId: string[];
         };
         /** MonitoringSiteMarkerResponse */
         MonitoringSiteMarkerResponse: {
@@ -5029,8 +5029,8 @@ export interface components {
             description?: string;
             /** Elevationdatum */
             elevationDatum?: string | null;
-            /** Elevation M */
-            elevation_m?: number | string | null;
+            /** Elevationm */
+            elevationM?: number | string | null;
             /** Isprivate */
             isPrivate?: boolean;
             /** Latitude */
@@ -5062,8 +5062,8 @@ export interface components {
             description: string;
             /** Elevationdatum */
             elevationDatum?: string | null;
-            /** Elevation M */
-            elevation_m?: number | string | null;
+            /** Elevationm */
+            elevationM?: number | string | null;
             /**
              * Id
              * @description The new item's identifier. Generated if omitted.
@@ -5108,8 +5108,8 @@ export interface components {
             description: string;
             /** Elevationdatum */
             elevationDatum?: string | null;
-            /** Elevation M */
-            elevation_m?: number | null;
+            /** Elevationm */
+            elevationM?: number | null;
             /** Isprivate */
             isPrivate: boolean;
             /** Linkedresources */
@@ -5134,17 +5134,17 @@ export interface components {
         /** MonitoringSiteQueryParameters */
         MonitoringSiteQueryParameters: {
             /**
-             * Admin Area 1
+             * Adminarea1
              * @description Filter monitoring sites by admin area 1.
              * @default []
              */
-            admin_area_1: (string | "null")[];
+            adminArea1: (string | "null")[];
             /**
-             * Admin Area 2
+             * Adminarea2
              * @description Filter monitoring sites by admin area 2.
              * @default []
              */
-            admin_area_2: (string | "null")[];
+            adminArea2: (string | "null")[];
             /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
             bbox?: number[] & (unknown | unknown);
             /**
@@ -5161,10 +5161,10 @@ export interface components {
              */
             include?: ("workspace" | "type")[];
             /**
-             * Is Private
+             * Isprivate
              * @description Controls whether the returned monitoring sites should be private or public.
              */
-            is_private?: boolean | null;
+            isPrivate?: boolean | null;
             /**
              * Limit
              * @description The maximum number of items to return. (default: 100, maximum: 100000)
@@ -5181,7 +5181,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "workspaceId" | "latitude" | "longitude" | "name" | "description" | "code" | "type" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "dataDisclaimer" | "isPrivate" | "tags" | "linkedResources")[];
+            properties?: ("id" | "workspaceId" | "latitude" | "longitude" | "name" | "description" | "code" | "type" | "elevationM" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "dataDisclaimer" | "isPrivate" | "tags" | "linkedResources")[];
             /**
              * Q
              * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
@@ -5192,10 +5192,10 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("name" | "code" | "type" | "isPrivate" | "latitude" | "longitude" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "-name" | "-code" | "-type" | "-isPrivate" | "-latitude" | "-longitude" | "-elevation_m" | "-elevationDatum" | "-adminArea1" | "-adminArea2" | "-country" | "+name" | "+code" | "+type" | "+isPrivate" | "+latitude" | "+longitude" | "+elevation_m" | "+elevationDatum" | "+adminArea1" | "+adminArea2" | "+country")[];
+            sortby: ("name" | "code" | "type" | "isPrivate" | "latitude" | "longitude" | "elevationM" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "-name" | "-code" | "-type" | "-isPrivate" | "-latitude" | "-longitude" | "-elevationM" | "-elevationDatum" | "-adminArea1" | "-adminArea2" | "-country" | "+name" | "+code" | "+type" | "+isPrivate" | "+latitude" | "+longitude" | "+elevationM" | "+elevationDatum" | "+adminArea1" | "+adminArea2" | "+country")[];
             /**
              * Tag
-             * @description Filter monitoring sites by tag. Format tag filters as {key}:{value}
+             * @description Filter monitoring sites by tag. Format tag filters as {key}:{value}. Repeat the parameter to require several tags.
              * @default []
              */
             tag: string[];
@@ -5206,11 +5206,11 @@ export interface components {
              */
             type: string[];
             /**
-             * Workspace Id
+             * Workspaceid
              * @description Filter monitoring sites by workspace ID.
              * @default []
              */
-            workspace_id: string[];
+            workspaceId: string[];
         };
         /** MonitoringSiteResponse */
         MonitoringSiteResponse: {
@@ -5228,8 +5228,8 @@ export interface components {
             description: string;
             /** Elevationdatum */
             elevationDatum?: string | null;
-            /** Elevation M */
-            elevation_m?: number | null;
+            /** Elevationm */
+            elevationM?: number | null;
             /**
              * Id
              * Format: uuid
@@ -5270,11 +5270,11 @@ export interface components {
              */
             type: string[];
             /**
-             * Workspace Id
+             * Workspaceid
              * @description Filter task summaries by workspace ID.
              * @default []
              */
-            workspace_id: string[];
+            workspaceId: string[];
         };
         /** MonitoringSiteTaskSummaryResponse */
         MonitoringSiteTaskSummaryResponse: {
@@ -5393,11 +5393,11 @@ export interface components {
             /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
             bbox?: number[] & (unknown | unknown);
             /**
-             * Datastream Id
+             * Datastreamid
              * @description Filter monitoring tasks by datastream ID.
              * @default []
              */
-            datastream_id: string[];
+            datastreamId: string[];
             /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
             datetime?: string;
             /**
@@ -5406,11 +5406,11 @@ export interface components {
              */
             include?: "monitoringSite"[];
             /**
-             * Latest Run Status
+             * Latestrunstatus
              * @description Filter monitoring tasks by their most recent run status.
              * @default []
              */
-            latest_run_status: (string | "null")[];
+            latestRunStatus: (string | "null")[];
             /**
              * Limit
              * @description The maximum number of items to return. (default: 100, maximum: 100000)
@@ -5418,11 +5418,11 @@ export interface components {
              */
             limit: number;
             /**
-             * Monitoring Site Id
+             * Monitoringsiteid
              * @description Filter monitoring tasks by monitoring_site ID.
              * @default []
              */
-            monitoring_site_id: string[];
+            monitoringSiteId: string[];
             /**
              * Offset
              * @description Number of items to skip.
@@ -5440,11 +5440,11 @@ export interface components {
              */
             q?: string | null;
             /**
-             * Rule Type
+             * Ruletype
              * @description Filter monitoring tasks by rule type.
              * @default []
              */
-            rule_type: string[];
+            ruleType: string[];
             /**
              * Sortby
              * @description Select one or more fields to sort the response by.
@@ -5452,11 +5452,11 @@ export interface components {
              */
             sortby: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "+id" | "+name" | "+monitoringSiteId" | "+monitoringSiteName" | "+workspaceId" | "+workspaceName" | "+latestRunStatus" | "+latestRunStartedAt" | "+latestRunFinishedAt")[];
             /**
-             * Workspace Id
+             * Workspaceid
              * @description Filter monitoring tasks by workspace ID.
              * @default []
              */
-            workspace_id: string[];
+            workspaceId: string[];
         };
         /** MonitoringTaskResponse */
         MonitoringTaskResponse: {
@@ -5526,10 +5526,10 @@ export interface components {
             /** Result */
             result: (number | null)[];
             /**
-             * Resultqualifiercodes
+             * Resultqualifiers
              * @default []
              */
-            resultQualifierCodes: string[][];
+            resultQualifiers: string[][];
         };
         /** ObservationBulkDeleteBody */
         ObservationBulkDeleteBody: {
@@ -5553,7 +5553,7 @@ export interface components {
              */
             datastreamId: string;
             /** Fields */
-            fields: ("phenomenonTime" | "result" | "resultQualifierCodes")[];
+            fields: ("phenomenonTime" | "result" | "resultQualifiers")[];
         };
         /** ObservationBulkPostQueryParameters */
         ObservationBulkPostQueryParameters: {
@@ -5582,8 +5582,8 @@ export interface components {
             phenomenonTime?: unknown[] | null;
             /** Result */
             result?: unknown[] | null;
-            /** Resultqualifiercodes */
-            resultQualifierCodes?: unknown[] | null;
+            /** Resultqualifiers */
+            resultQualifiers?: unknown[] | null;
         };
         /** ObservationItemQueryParameters */
         ObservationItemQueryParameters: {
@@ -5596,7 +5596,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "result" | "resultQualifierCodes")[];
+            properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "result" | "resultQualifiers")[];
         };
         /** ObservationPostBody */
         ObservationPostBody: {
@@ -5615,10 +5615,10 @@ export interface components {
             /** Result */
             result: number;
             /**
-             * Resultqualifiercodes
+             * Resultqualifiers
              * @default []
              */
-            resultQualifierCodes: string[];
+            resultQualifiers: string[];
         };
         /** ObservationProperties */
         ObservationProperties: {
@@ -5635,10 +5635,10 @@ export interface components {
             /** Result */
             result: number;
             /**
-             * Resultqualifiercodes
+             * Resultqualifiers
              * @default []
              */
-            resultQualifierCodes: string[];
+            resultQualifiers: string[];
             /**
              * Workspaceid
              * Format: uuid
@@ -5650,11 +5650,11 @@ export interface components {
             /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
             bbox?: number[] & (unknown | unknown);
             /**
-             * Datastream Id
+             * Datastreamid
              * @description Filter observations by datastream ID.
              * @default []
              */
-            datastream_id: string[];
+            datastreamId: string[];
             /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
             datetime?: string;
             /**
@@ -5678,13 +5678,13 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "result" | "resultQualifierCodes")[];
+            properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "result" | "resultQualifiers")[];
             /**
-             * Result Qualifier Code
-             * @description Filter observations by result qualifier code.
+             * Resultqualifiers
+             * @description Filter observations by result qualifier.
              * @default []
              */
-            result_qualifier_code: string[];
+            resultQualifiers: string[];
             /**
              * Sortby
              * @description Select one or more fields to sort the response by.
@@ -5713,10 +5713,10 @@ export interface components {
             /** Result */
             result: number;
             /**
-             * Resultqualifiercodes
+             * Resultqualifiers
              * @default []
              */
-            resultQualifierCodes: string[];
+            resultQualifiers: string[];
             /**
              * Workspaceid
              * Format: uuid
@@ -5731,7 +5731,7 @@ export interface components {
              */
             datastreamId: string;
             /** Fields */
-            fields: ("id" | "phenomenonTime" | "result" | "resultQualifierCodes")[];
+            fields: ("id" | "phenomenonTime" | "result" | "resultQualifiers")[];
             /** Rows */
             rows: unknown[][];
             /** Workspaceid */
@@ -5788,11 +5788,11 @@ export interface components {
             /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
             bbox?: number[] & (unknown | unknown);
             /**
-             * Datastream Id
+             * Datastreamid
              * @description Filter observed properties by datastream ID.
              * @default []
              */
-            datastream_id: (string | "null")[];
+            datastreamId: (string | "null")[];
             /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
             datetime?: string;
             /**
@@ -5807,11 +5807,11 @@ export interface components {
              */
             limit: number;
             /**
-             * Monitoring Site Id
+             * Monitoringsiteid
              * @description Filter observed properties by monitoring_site ID.
              * @default []
              */
-            monitoring_site_id: (string | "null")[];
+            monitoringSiteId: (string | "null")[];
             /**
              * Offset
              * @description Number of items to skip.
@@ -5841,11 +5841,11 @@ export interface components {
              */
             type: string[];
             /**
-             * Workspace Id
+             * Workspaceid
              * @description Filter observed properties by workspace ID.
              * @default []
              */
-            workspace_id: (string | "null")[];
+            workspaceId: (string | "null")[];
         };
         /** ObservedPropertyResponse */
         ObservedPropertyResponse: {
@@ -6557,11 +6557,11 @@ export interface components {
             /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
             bbox?: number[] & (unknown | unknown);
             /**
-             * Datastream Id
+             * Datastreamid
              * @description Filter processing levels by datastream ID.
              * @default []
              */
-            datastream_id: (string | "null")[];
+            datastreamId: (string | "null")[];
             /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
             datetime?: string;
             /**
@@ -6576,11 +6576,11 @@ export interface components {
              */
             limit: number;
             /**
-             * Monitoring Site Id
+             * Monitoringsiteid
              * @description Filter processing levels by monitoring_site ID.
              * @default []
              */
-            monitoring_site_id: (string | "null")[];
+            monitoringSiteId: (string | "null")[];
             /**
              * Offset
              * @description Number of items to skip.
@@ -6604,11 +6604,11 @@ export interface components {
              */
             sortby: ("code" | "name" | "-code" | "-name" | "+code" | "+name")[];
             /**
-             * Workspace Id
+             * Workspaceid
              * @description Filter processing levels by workspace ID.
              * @default []
              */
-            workspace_id: (string | "null")[];
+            workspaceId: (string | "null")[];
         };
         /** ProcessingLevelResponse */
         ProcessingLevelResponse: {
@@ -6673,11 +6673,11 @@ export interface components {
              */
             limit: number;
             /**
-             * Managed Datastream Id
+             * Manageddatastreamid
              * @description Filter histories by managed datastream ID.
              * @default []
              */
-            managed_datastream_id: string[];
+            managedDatastreamId: string[];
             /**
              * Offset
              * @description Number of items to skip.
@@ -6696,11 +6696,11 @@ export interface components {
              */
             sortby: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd" | "+id" | "+createdAt" | "+phenomenonTimeStart" | "+phenomenonTimeEnd")[];
             /**
-             * Source Datastream Id
+             * Sourcedatastreamid
              * @description Filter histories by source datastream ID.
              * @default []
              */
-            source_datastream_id: (string | "null")[];
+            sourceDatastreamId: (string | "null")[];
         };
         /** QualityControlHistoryResponse */
         QualityControlHistoryResponse: {
@@ -6853,21 +6853,21 @@ export interface components {
         /** QualityControlSessionQueryParameters */
         QualityControlSessionQueryParameters: {
             /**
-             * Ancestor Of
+             * Ancestorof
              * @description Return all transitive ancestors of the given session ID.
              */
-            ancestor_of?: string | null;
+            ancestorOf?: string | null;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
              */
             include?: string | null;
             /**
-             * Include Ancestors
+             * Includeancestors
              * @description Also return transitive ancestors of all sessions matched by other filters.
              * @default false
              */
-            include_ancestors: boolean;
+            includeAncestors: boolean;
             /**
              * Limit
              * @description The maximum number of items to return. (default: 100, maximum: 100000)
@@ -6886,15 +6886,15 @@ export interface components {
              */
             properties?: ("id" | "historyId" | "createdBy" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "status" | "committedAt" | "description" | "sourceChecksum" | "managedChecksum" | "dependencyIds")[];
             /**
-             * Range End
+             * Rangeend
              * @description Return sessions overlapping with this range end.
              */
-            range_end?: string | null;
+            rangeEnd?: string | null;
             /**
-             * Range Start
+             * Rangestart
              * @description Return sessions overlapping with this range start.
              */
-            range_start?: string | null;
+            rangeStart?: string | null;
             /**
              * Sortby
              * @description Select one or more fields to sort the response by.
@@ -7027,11 +7027,11 @@ export interface components {
              */
             limit: number;
             /**
-             * Monitoring Site Id
+             * Monitoringsiteid
              * @description Filter rating curves by monitoring site ID.
              * @default []
              */
-            monitoring_site_id: string[];
+            monitoringSiteId: string[];
             /**
              * Offset
              * @description Number of items to skip.
@@ -7055,11 +7055,11 @@ export interface components {
              */
             sortby: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "fittingMethod" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-fittingMethod" | "+id" | "+name" | "+monitoringSiteId" | "+monitoringSiteName" | "+workspaceId" | "+workspaceName" | "+fittingMethod")[];
             /**
-             * Workspace Id
+             * Workspaceid
              * @description Filter rating curves by workspace ID.
              * @default []
              */
-            workspace_id: string[];
+            workspaceId: string[];
         };
         /** RatingCurveResponse */
         RatingCurveResponse: {
@@ -7166,11 +7166,11 @@ export interface components {
              */
             sortby: ("name" | "-name" | "+name")[];
             /**
-             * Workspace Id
+             * Workspaceid
              * @description Filter terms by workspace ID.
              * @default []
              */
-            workspace_id: (string | "null")[];
+            workspaceId: (string | "null")[];
         };
         /** ResultQualifierResponse */
         ResultQualifierResponse: {
@@ -7230,11 +7230,11 @@ export interface components {
              */
             sortby: ("name" | "-name" | "+name")[];
             /**
-             * Workspace Id
+             * Workspaceid
              * @description Filter roles by workspace ID.
              * @default []
              */
-            workspace_id: (string | "null")[];
+            workspaceId: (string | "null")[];
         };
         /** RoleResponse */
         RoleResponse: {
@@ -7459,15 +7459,15 @@ export interface components {
         /** TaskRunQueryParameters */
         TaskRunQueryParameters: {
             /**
-             * Finished At Max
+             * Finishedatmax
              * @description Filters for task runs finished on or before this date and time.
              */
-            finished_at_max?: string | null;
+            finishedAtMax?: string | null;
             /**
-             * Finished At Min
+             * Finishedatmin
              * @description Filters for task runs finished on or after this date and time.
              */
-            finished_at_min?: string | null;
+            finishedAtMin?: string | null;
             /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
@@ -7497,15 +7497,15 @@ export interface components {
              */
             sortby: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt" | "+id" | "+status" | "+startedAt" | "+finishedAt")[];
             /**
-             * Started At Max
+             * Startedatmax
              * @description Filters for task runs started on or before this date and time.
              */
-            started_at_max?: string | null;
+            startedAtMax?: string | null;
             /**
-             * Started At Min
+             * Startedatmin
              * @description Filters for task runs started on or after this date and time.
              */
-            started_at_min?: string | null;
+            startedAtMin?: string | null;
             /**
              * Status
              * @description Filters task runs by their status.
@@ -7607,11 +7607,11 @@ export interface components {
             /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
             bbox?: number[] & (unknown | unknown);
             /**
-             * Datastream Id
+             * Datastreamid
              * @description Filter units by datastream ID.
              * @default []
              */
-            datastream_id: (string | "null")[];
+            datastreamId: (string | "null")[];
             /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
             datetime?: string;
             /**
@@ -7626,11 +7626,11 @@ export interface components {
              */
             limit: number;
             /**
-             * Monitoring Site Id
+             * Monitoringsiteid
              * @description Filter units by monitoring_site ID.
              * @default []
              */
-            monitoring_site_id: (string | "null")[];
+            monitoringSiteId: (string | "null")[];
             /**
              * Offset
              * @description Number of items to skip.
@@ -7660,11 +7660,11 @@ export interface components {
              */
             type: string[];
             /**
-             * Workspace Id
+             * Workspaceid
              * @description Filter units by workspace ID.
              * @default []
              */
-            workspace_id: (string | "null")[];
+            workspaceId: (string | "null")[];
         };
         /** UnitResponse */
         UnitResponse: {
@@ -7947,15 +7947,15 @@ export interface components {
              */
             include?: ("owner" | "pendingTransferTo" | "collaboratorRole")[];
             /**
-             * Is Associated
+             * Isassociated
              * @description Whether the workspace is associated with the authenticated user
              */
-            is_associated?: boolean | null;
+            isAssociated?: boolean | null;
             /**
-             * Is Private
+             * Isprivate
              * @description Whether the returned workspaces should be private or public.
              */
-            is_private?: boolean | null;
+            isPrivate?: boolean | null;
             /**
              * Limit
              * @description The maximum number of items to return. (default: 100, maximum: 100000)
@@ -8314,9 +8314,9 @@ export interface operations {
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter rating curves by monitoring site ID. */
-                monitoring_site_id?: string[];
+                monitoringSiteId?: string[];
                 /** @description Filter rating curves by workspace ID. */
-                workspace_id?: string[];
+                workspaceId?: string[];
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json";
             };
@@ -8589,19 +8589,19 @@ export interface operations {
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter data product tasks by monitoring_site ID. */
-                monitoring_site_id?: string[];
+                monitoringSiteId?: string[];
                 /** @description Filter data product tasks by workspace ID. */
-                workspace_id?: string[];
+                workspaceId?: string[];
                 /** @description Filter data product tasks by their most recent run status. */
-                latest_run_status?: (string | "null")[];
+                latestRunStatus?: (string | "null")[];
                 /** @description Filter data product tasks by transformation type. */
-                transformation_type?: string[];
+                transformationType?: string[];
                 /** @description Filter data product tasks by output datastream ID. */
-                output_datastream_id?: string[];
+                outputDatastreamId?: string[];
                 /** @description Filter data product tasks by input datastream ID. */
-                input_datastream_id?: string[];
+                inputDatastreamId?: string[];
                 /** @description Filter data product tasks by rating curve ID. */
-                rating_curve_id?: (string | "null")[];
+                ratingCurveId?: (string | "null")[];
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json";
             };
@@ -8870,13 +8870,13 @@ export interface operations {
                 /** @description Filters task runs by their status. */
                 status?: ("PENDING" | "STARTED" | "SUCCESS" | "FAILURE")[];
                 /** @description Filters for task runs started on or before this date and time. */
-                started_at_max?: string | null;
+                startedAtMax?: string | null;
                 /** @description Filters for task runs started on or after this date and time. */
-                started_at_min?: string | null;
+                startedAtMin?: string | null;
                 /** @description Filters for task runs finished on or before this date and time. */
-                finished_at_max?: string | null;
+                finishedAtMax?: string | null;
                 /** @description Filters for task runs finished on or after this date and time. */
-                finished_at_min?: string | null;
+                finishedAtMin?: string | null;
             };
             header?: never;
             path: {
@@ -9041,15 +9041,15 @@ export interface operations {
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("id" | "outputDatastreamId" | "transformationType" | "-id" | "-outputDatastreamId" | "-transformationType" | "+id" | "+outputDatastreamId" | "+transformationType")[];
                 /** @description Filter transformations by type. */
-                transformation_type?: string[];
+                transformationType?: string[];
                 /** @description Filter transformations by output datastream ID. */
-                output_datastream_id?: string[];
+                outputDatastreamId?: string[];
                 /** @description Filter transformations by input datastream ID. */
-                input_datastream_id?: string[];
+                inputDatastreamId?: string[];
                 /** @description Filter transformations by data product task ID. */
-                task_id?: string[];
+                taskId?: string[];
                 /** @description Filter transformations by workspace ID. */
-                workspace_id?: string[];
+                workspaceId?: string[];
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json";
             };
@@ -9573,35 +9573,35 @@ export interface operations {
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter datastreams by workspace ID. */
-                workspace_id?: string[];
+                workspaceId?: string[];
                 /** @description Filter datastreams by monitoring_site ID. */
-                monitoring_site_id?: string[];
+                monitoringSiteId?: string[];
                 /** @description Filter datastreams by method ID. */
-                method_id?: string[];
+                methodId?: string[];
                 /** @description Filter datastreams by observed property ID. */
-                observed_property_id?: string[];
+                observedPropertyId?: string[];
                 /** @description Filter datastreams by processing level ID. */
-                processing_level_id?: string[];
+                processingLevelId?: string[];
                 /** @description Filter datastreams by unit ID. */
-                unit_id?: string[];
+                unitId?: string[];
                 /** @description Filter datastreams by observation result qualifier ID. */
-                result_qualifier_id?: string[];
+                resultQualifier?: string[];
                 /** @description Filter monitoring_sites by observation type. */
-                observation_type?: string[];
+                observationType?: string[];
                 /** @description Filter monitoring_sites by sampled medium. */
-                sampled_medium?: string[];
+                sampledMedium?: string[];
                 /** @description Filter datastreams by status. */
                 status?: (string | "null")[];
                 /** @description Filter monitoring_sites by result type. */
-                result_type?: string[];
-                /** @description Filter datastreams by tag. Format tag filters as {key}:{value} */
+                resultType?: string[];
+                /** @description Filter datastreams by tag. Format tag filters as {key}:{value}. Repeat the parameter to require several tags. */
                 tag?: string[];
                 /** @description Controls whether the datastreams should be private or public. */
-                is_private?: boolean | null;
+                isPrivate?: boolean | null;
                 /** @description Sets the maximum value count of filtered datastreams. */
-                value_count_max?: number | null;
+                valueCountMax?: number | null;
                 /** @description Sets the minimum value count of filtered datastreams. */
-                value_count_min?: number | null;
+                valueCountMin?: number | null;
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json" | "geojson";
             };
@@ -10162,8 +10162,8 @@ export interface operations {
     interfaces_api_views_sta_datastream_get_datastream_tag_keys: {
         parameters: {
             query?: {
-                workspace_id?: string | null;
-                datastream_id?: string | null;
+                workspaceId?: string | null;
+                datastreamId?: string | null;
             };
             header?: never;
             path?: never;
@@ -10197,7 +10197,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Filter visualization bootstrap datastreams by workspace ID. */
-                workspace_id?: string[];
+                workspaceId?: string[];
             };
             header?: never;
             path?: never;
@@ -10245,9 +10245,9 @@ export interface operations {
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter data connections by workspace ID. */
-                workspace_id?: string[];
+                workspaceId?: string[];
                 /** @description Filter data connections by payload type. */
-                payload_type?: string[];
+                payloadType?: string[];
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json";
             };
@@ -10509,13 +10509,13 @@ export interface operations {
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("id" | "sourceIdentifier" | "targetDatastreamId" | "-id" | "-sourceIdentifier" | "-targetDatastreamId" | "+id" | "+sourceIdentifier" | "+targetDatastreamId")[];
                 /** @description Filter mappings by source identifier. */
-                source_identifier?: string[];
+                sourceIdentifier?: string[];
                 /** @description Filter mappings by target datastream ID. */
-                target_datastream_id?: string[];
+                targetDatastreamId?: string[];
                 /** @description Filter mappings by ETL task ID. */
-                etl_task_id?: string[];
+                etlTaskId?: string[];
                 /** @description Filter mappings by workspace ID. */
-                workspace_id?: string[];
+                workspaceId?: string[];
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json";
             };
@@ -10806,21 +10806,21 @@ export interface operations {
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter ETL tasks by monitoring_site ID. */
-                monitoring_site_id?: string[];
+                monitoringSiteId?: string[];
                 /** @description Filter ETL tasks by workspace ID. */
-                workspace_id?: string[];
+                workspaceId?: string[];
                 /** @description Filter ETL tasks by data connection ID. */
-                data_connection_id?: string[];
+                dataConnectionId?: string[];
                 /** @description Filter ETL tasks by their most recent run status. */
-                latest_run_status?: (string | "null")[];
+                latestRunStatus?: (string | "null")[];
                 /** @description Filter tasks whose latest run started on or after this datetime. */
-                latest_run_started_at_min?: string | null;
+                latestRunStartedAtMin?: string | null;
                 /** @description Filter tasks whose latest run started on or before this datetime. */
-                latest_run_started_at_max?: string | null;
+                latestRunStartedAtMax?: string | null;
                 /** @description Filter tasks whose latest run finished on or after this datetime. */
-                latest_run_finished_at_min?: string | null;
+                latestRunFinishedAtMin?: string | null;
                 /** @description Filter tasks whose latest run finished on or before this datetime. */
-                latest_run_finished_at_max?: string | null;
+                latestRunFinishedAtMax?: string | null;
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json";
             };
@@ -11089,13 +11089,13 @@ export interface operations {
                 /** @description Filters task runs by their status. */
                 status?: ("PENDING" | "STARTED" | "SUCCESS" | "FAILURE")[];
                 /** @description Filters for task runs started on or before this date and time. */
-                started_at_max?: string | null;
+                startedAtMax?: string | null;
                 /** @description Filters for task runs started on or after this date and time. */
-                started_at_min?: string | null;
+                startedAtMin?: string | null;
                 /** @description Filters for task runs finished on or before this date and time. */
-                finished_at_max?: string | null;
+                finishedAtMax?: string | null;
                 /** @description Filters for task runs finished on or after this date and time. */
-                finished_at_min?: string | null;
+                finishedAtMin?: string | null;
             };
             header?: never;
             path: {
@@ -11728,17 +11728,17 @@ export interface operations {
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter methods by workspace ID. */
-                workspace_id?: (string | "null")[];
+                workspaceId?: (string | "null")[];
                 /** @description Filter methods by monitoring_site ID. */
-                monitoring_site_id?: (string | "null")[];
+                monitoringSiteId?: (string | "null")[];
                 /** @description Filter methods by datastream ID. */
-                datastream_id?: (string | "null")[];
+                datastreamId?: (string | "null")[];
                 /** @description Filter methods by type */
                 type?: string[];
                 /** @description Filter methods by sensor model */
-                sensor_model?: (string | "null")[];
+                sensorModel?: (string | "null")[];
                 /** @description Filter methods by sensor model manufacturer */
-                sensor_model_manufacturer?: (string | "null")[];
+                sensorModelManufacturer?: (string | "null")[];
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json";
             };
@@ -12000,13 +12000,13 @@ export interface operations {
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("id" | "ruleType" | "datastreamId" | "lastCheckedAt" | "-id" | "-ruleType" | "-datastreamId" | "-lastCheckedAt" | "+id" | "+ruleType" | "+datastreamId" | "+lastCheckedAt")[];
                 /** @description Filter rules by datastream ID. */
-                datastream_id?: string[];
+                datastreamId?: string[];
                 /** @description Filter rules by rule type. */
-                rule_type?: string[];
+                ruleType?: string[];
                 /** @description Filter rules by monitoring task ID. */
-                task_id?: string[];
+                taskId?: string[];
                 /** @description Filter rules by workspace ID. */
-                workspace_id?: string[];
+                workspaceId?: string[];
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json";
             };
@@ -12518,7 +12518,7 @@ export interface operations {
                 /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
                 datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "latitude" | "longitude" | "name" | "description" | "code" | "type" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "dataDisclaimer" | "isPrivate" | "tags" | "linkedResources")[];
+                properties?: ("id" | "workspaceId" | "latitude" | "longitude" | "name" | "description" | "code" | "type" | "elevationM" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "dataDisclaimer" | "isPrivate" | "tags" | "linkedResources")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("workspace" | "type")[];
                 /** @description Number of items to skip. */
@@ -12526,23 +12526,23 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "code" | "type" | "isPrivate" | "latitude" | "longitude" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "-name" | "-code" | "-type" | "-isPrivate" | "-latitude" | "-longitude" | "-elevation_m" | "-elevationDatum" | "-adminArea1" | "-adminArea2" | "-country" | "+name" | "+code" | "+type" | "+isPrivate" | "+latitude" | "+longitude" | "+elevation_m" | "+elevationDatum" | "+adminArea1" | "+adminArea2" | "+country")[];
+                sortby?: ("name" | "code" | "type" | "isPrivate" | "latitude" | "longitude" | "elevationM" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "-name" | "-code" | "-type" | "-isPrivate" | "-latitude" | "-longitude" | "-elevationM" | "-elevationDatum" | "-adminArea1" | "-adminArea2" | "-country" | "+name" | "+code" | "+type" | "+isPrivate" | "+latitude" | "+longitude" | "+elevationM" | "+elevationDatum" | "+adminArea1" | "+adminArea2" | "+country")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter monitoring sites by workspace ID. */
-                workspace_id?: string[];
+                workspaceId?: string[];
                 /** @description Filter monitoring sites by admin area 1. */
-                admin_area_1?: (string | "null")[];
+                adminArea1?: (string | "null")[];
                 /** @description Filter monitoring sites by admin area 2. */
-                admin_area_2?: (string | "null")[];
+                adminArea2?: (string | "null")[];
                 /** @description Filter monitoring sites by country. */
                 country?: (string | "null")[];
                 /** @description Filter monitoring sites by type. */
                 type?: string[];
-                /** @description Filter monitoring sites by tag. Format tag filters as {key}:{value} */
+                /** @description Filter monitoring sites by tag. Format tag filters as {key}:{value}. Repeat the parameter to require several tags. */
                 tag?: string[];
                 /** @description Controls whether the returned monitoring sites should be private or public. */
-                is_private?: boolean | null;
+                isPrivate?: boolean | null;
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json" | "geojson";
             };
@@ -12619,7 +12619,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "latitude" | "longitude" | "name" | "description" | "code" | "type" | "elevation_m" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "dataDisclaimer" | "isPrivate" | "tags" | "linkedResources")[];
+                properties?: ("id" | "workspaceId" | "latitude" | "longitude" | "name" | "description" | "code" | "type" | "elevationM" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "dataDisclaimer" | "isPrivate" | "tags" | "linkedResources")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("workspace" | "type")[];
                 /** @description Response format. Overrides the Accept header. */
@@ -13057,7 +13057,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Filter markers by workspace ID. */
-                workspace_id?: string[];
+                workspaceId?: string[];
                 /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
                 bbox?: number[] & (unknown | unknown);
                 /** @description Filter markers by monitoring site type. */
@@ -13093,7 +13093,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Filter site summaries by workspace ID. */
-                workspace_id?: string[];
+                workspaceId?: string[];
                 /** @description Filter summaries by monitoring site type. */
                 type?: string[];
             };
@@ -13146,8 +13146,8 @@ export interface operations {
     interfaces_api_views_sta_monitoring_site_get_monitoring_site_tag_keys: {
         parameters: {
             query?: {
-                workspace_id?: string | null;
-                monitoring_site_id?: string | null;
+                workspaceId?: string | null;
+                monitoringSiteId?: string | null;
             };
             header?: never;
             path?: never;
@@ -13181,7 +13181,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Filter task summaries by workspace ID. */
-                workspace_id?: string[];
+                workspaceId?: string[];
                 /** @description Filter summaries by monitoring site type. */
                 type?: string[];
             };
@@ -13231,15 +13231,15 @@ export interface operations {
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter monitoring tasks by monitoring_site ID. */
-                monitoring_site_id?: string[];
+                monitoringSiteId?: string[];
                 /** @description Filter monitoring tasks by workspace ID. */
-                workspace_id?: string[];
+                workspaceId?: string[];
                 /** @description Filter monitoring tasks by their most recent run status. */
-                latest_run_status?: (string | "null")[];
+                latestRunStatus?: (string | "null")[];
                 /** @description Filter monitoring tasks by datastream ID. */
-                datastream_id?: string[];
+                datastreamId?: string[];
                 /** @description Filter monitoring tasks by rule type. */
-                rule_type?: string[];
+                ruleType?: string[];
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json";
             };
@@ -13508,13 +13508,13 @@ export interface operations {
                 /** @description Filters task runs by their status. */
                 status?: ("PENDING" | "STARTED" | "SUCCESS" | "FAILURE")[];
                 /** @description Filters for task runs started on or before this date and time. */
-                started_at_max?: string | null;
+                startedAtMax?: string | null;
                 /** @description Filters for task runs started on or after this date and time. */
-                started_at_min?: string | null;
+                startedAtMin?: string | null;
                 /** @description Filters for task runs finished on or before this date and time. */
-                finished_at_max?: string | null;
+                finishedAtMax?: string | null;
                 /** @description Filters for task runs finished on or after this date and time. */
-                finished_at_min?: string | null;
+                finishedAtMin?: string | null;
             };
             header?: never;
             path: {
@@ -13761,7 +13761,7 @@ export interface operations {
                 /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
                 datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "result" | "resultQualifierCodes")[];
+                properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "result" | "resultQualifiers")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("datastream" | "workspace" | "resultQualifiers")[];
                 /** @description Number of items to skip. */
@@ -13769,11 +13769,11 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Filter observations by datastream ID. */
-                datastream_id?: string[];
+                datastreamId?: string[];
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("phenomenonTime" | "datastreamId" | "-phenomenonTime" | "-datastreamId" | "+phenomenonTime" | "+datastreamId")[];
-                /** @description Filter observations by result qualifier code. */
-                result_qualifier_code?: string[];
+                /** @description Filter observations by result qualifier. */
+                resultQualifiers?: string[];
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json" | "geojson";
                 /** @description Profiles to represent the items in, by URI, in order of preference. Profiles the response format doesn't support are ignored, and without a supported profile the items are in the format's standard representation. Profiles: https://hydroserver.org/profiles/observations/row: Observations as rows grouped by datastream (json); https://hydroserver.org/profiles/observations/column: Observations as columns grouped by datastream (json). */
@@ -13879,7 +13879,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "result" | "resultQualifierCodes")[];
+                properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "result" | "resultQualifiers")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("datastream" | "workspace" | "resultQualifiers")[];
                 /** @description Response format. Overrides the Accept header. */
@@ -13990,11 +13990,11 @@ export interface operations {
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter observed properties by workspace ID. */
-                workspace_id?: (string | "null")[];
+                workspaceId?: (string | "null")[];
                 /** @description Filter observed properties by monitoring_site ID. */
-                monitoring_site_id?: (string | "null")[];
+                monitoringSiteId?: (string | "null")[];
                 /** @description Filter observed properties by datastream ID. */
-                datastream_id?: (string | "null")[];
+                datastreamId?: (string | "null")[];
                 /** @description Filter observed properties by type */
                 type?: string[];
                 /** @description Response format. Overrides the Accept header. */
@@ -14493,11 +14493,11 @@ export interface operations {
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter processing levels by workspace ID. */
-                workspace_id?: (string | "null")[];
+                workspaceId?: (string | "null")[];
                 /** @description Filter processing levels by monitoring_site ID. */
-                monitoring_site_id?: (string | "null")[];
+                monitoringSiteId?: (string | "null")[];
                 /** @description Filter processing levels by datastream ID. */
-                datastream_id?: (string | "null")[];
+                datastreamId?: (string | "null")[];
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json";
             };
@@ -14759,9 +14759,9 @@ export interface operations {
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd" | "+id" | "+createdAt" | "+phenomenonTimeStart" | "+phenomenonTimeEnd")[];
                 /** @description Filter histories by managed datastream ID. */
-                managed_datastream_id?: string[];
+                managedDatastreamId?: string[];
                 /** @description Filter histories by source datastream ID. */
-                source_datastream_id?: (string | "null")[];
+                sourceDatastreamId?: (string | "null")[];
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json";
             };
@@ -14978,13 +14978,13 @@ export interface operations {
                 sortby?: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "status" | "committedAt" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd" | "-status" | "-committedAt" | "+id" | "+createdAt" | "+phenomenonTimeStart" | "+phenomenonTimeEnd" | "+status" | "+committedAt")[];
                 status?: ("in_progress" | "committed") | null;
                 /** @description Return sessions overlapping with this range start. */
-                range_start?: string | null;
+                rangeStart?: string | null;
                 /** @description Return sessions overlapping with this range end. */
-                range_end?: string | null;
+                rangeEnd?: string | null;
                 /** @description Return all transitive ancestors of the given session ID. */
-                ancestor_of?: string | null;
+                ancestorOf?: string | null;
                 /** @description Also return transitive ancestors of all sessions matched by other filters. */
-                include_ancestors?: boolean;
+                includeAncestors?: boolean;
             };
             header?: never;
             path: {
@@ -15622,7 +15622,7 @@ export interface operations {
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter terms by workspace ID. */
-                workspace_id?: (string | "null")[];
+                workspaceId?: (string | "null")[];
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json";
             };
@@ -15857,7 +15857,7 @@ export interface operations {
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("name" | "-name" | "+name")[];
                 /** @description Filter roles by workspace ID. */
-                workspace_id?: (string | "null")[];
+                workspaceId?: (string | "null")[];
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json";
             };
@@ -16418,11 +16418,11 @@ export interface operations {
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Filter units by workspace ID. */
-                workspace_id?: (string | "null")[];
+                workspaceId?: (string | "null")[];
                 /** @description Filter units by monitoring_site ID. */
-                monitoring_site_id?: (string | "null")[];
+                monitoringSiteId?: (string | "null")[];
                 /** @description Filter units by datastream ID. */
-                datastream_id?: (string | "null")[];
+                datastreamId?: (string | "null")[];
                 /** @description Filter units by type */
                 type?: string[];
                 /** @description Response format. Overrides the Accept header. */
@@ -16679,9 +16679,9 @@ export interface operations {
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Whether the workspace is associated with the authenticated user */
-                is_associated?: boolean | null;
+                isAssociated?: boolean | null;
                 /** @description Whether the returned workspaces should be private or public. */
-                is_private?: boolean | null;
+                isPrivate?: boolean | null;
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json" | "geojson";
             };
@@ -16921,7 +16921,7 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Filter collaborators by role ID. */
-                role_id?: string[];
+                roleId?: string[];
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("id" | "roleId" | "-id" | "-roleId" | "+id" | "+roleId")[];
             };

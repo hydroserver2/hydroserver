@@ -80,7 +80,7 @@ export class MonitoringSite {
   code: string
   latitude?: number | ''
   longitude?: number | ''
-  elevation_m?: number | ''
+  elevationM?: number | ''
   elevationDatum: string
   adminArea1: string
   adminArea2: string

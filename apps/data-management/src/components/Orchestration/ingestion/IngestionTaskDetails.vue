@@ -196,7 +196,7 @@ async function loadMappings() {
     return
   }
   const loaded = await hs.etlMappings.listAllItems({
-    etl_task_id: taskId,
+    etlTaskId: taskId,
   } as any)
   if (task.value?.id !== taskId) return
   mappings.value = loaded

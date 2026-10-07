@@ -172,7 +172,7 @@ class Datastream(HydroServerBaseModel):
         sortby: List[str] = ...,
         phenomenon_time_max: datetime = ...,
         phenomenon_time_min: datetime = ...,
-        result_qualifier_code: str = ...,
+        result_qualifiers: str = ...,
         fetch_all: bool = False,
     ) -> pd.DataFrame:
         """Retrieve the observations for this datastream."""
@@ -184,7 +184,7 @@ class Datastream(HydroServerBaseModel):
             sortby=sortby,
             phenomenon_time_max=phenomenon_time_max,
             phenomenon_time_min=phenomenon_time_min,
-            result_qualifier_code=result_qualifier_code,
+            result_qualifiers=result_qualifiers,
             fetch_all=fetch_all
         )
 

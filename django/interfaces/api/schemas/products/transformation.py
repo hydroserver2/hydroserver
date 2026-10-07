@@ -124,7 +124,7 @@ class DataProductTransformationQueryParameters(
         [], description="Filter transformations by output datastream ID."
     )
     input_datastreams__datastream_id: list[uuid.UUID] = Query(
-        [], description="Filter transformations by input datastream ID.", alias="input_datastream_id"
+        [], description="Filter transformations by input datastream ID.", alias="inputDatastreamId"
     )
     task_id: list[uuid.UUID] = Query(
         [], description="Filter transformations by data product task ID."

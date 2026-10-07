@@ -59,7 +59,7 @@ qc-utils service layer lives under `packages/qc-utils/src/services/`.
 ### Observation read
 
 Paged GET against `/api/ogc/collections/observations/items` with
-`datastream_id={id}`, the column `profile`,
+`datastreamId={id}`, the column `profile`,
 `properties=phenomenonTime,result`, `sortby=phenomenonTime`,
 `limit=50000`, and a `datetime` interval (`start/end`, RFC 3339). The
 response holds one group for the datastream. The app

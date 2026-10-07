@@ -87,12 +87,12 @@ class ProcessingLevelQueryParameters(ProcessingLevelFilterFields, CollectionQuer
         [], description="Filter processing levels by workspace ID."
     )
     datastreams__monitoring_site_id: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter processing levels by monitoring_site ID.", alias="monitoring_site_id"
+        [], description="Filter processing levels by monitoring_site ID.", alias="monitoringSiteId"
     )
     datastreams__id: list[uuid.UUID | Literal["null"]] = Query(
         [],
         description="Filter processing levels by datastream ID.",
-        alias="datastream_id",
+        alias="datastreamId",
     )
 
 

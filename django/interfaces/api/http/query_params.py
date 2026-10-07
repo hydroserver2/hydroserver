@@ -37,7 +37,7 @@ def reject_unknown_query_params(run: Callable[..., HttpResponseBase]) -> Callabl
     doesn't declare.
 
     Ninja ignores undeclared query parameters, so without this a misspelled filter such as
-    '?workspaceId=' silently returns unfiltered results. View-mode decorators wrap the bound
+    '?workspace_id=' silently returns unfiltered results. View-mode decorators wrap the bound
     Operation.run, which is how the operation's declared parameters are found.
     """
 

@@ -38,13 +38,13 @@ async function loadWorkspaceCatalog(workspaceId: string) {
     processingLevelsResponse,
     observedPropertiesResponse,
   ] = await Promise.all([
-    hs.value.monitoringSites.list({ workspace_id: workspaceId } as any),
+    hs.value.monitoringSites.list({ workspaceId } as any),
     hs.value.datastreams.list({
       expand_related: true,
-      workspace_id: workspaceId,
+      workspaceId,
     } as any),
-    hs.value.processingLevels.list({ workspace_id: workspaceId } as any),
-    hs.value.observedProperties.list({ workspace_id: workspaceId } as any),
+    hs.value.processingLevels.list({ workspaceId } as any),
+    hs.value.observedProperties.list({ workspaceId } as any),
   ])
 
   monitoringSites.value = monitoringSitesResponse.ok ? monitoringSitesResponse.data : []

@@ -100,12 +100,12 @@ class ObservedPropertyQueryParameters(ObservedPropertyFilterFields, CollectionQu
         [], description="Filter observed properties by workspace ID."
     )
     datastreams__monitoring_site_id: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter observed properties by monitoring_site ID.", alias="monitoring_site_id"
+        [], description="Filter observed properties by monitoring_site ID.", alias="monitoringSiteId"
     )
     datastreams__id: list[uuid.UUID | Literal["null"]] = Query(
         [],
         description="Filter observed properties by datastream ID.",
-        alias="datastream_id",
+        alias="datastreamId",
     )
     type: list[str] = Query([], description="Filter observed properties by type")
 

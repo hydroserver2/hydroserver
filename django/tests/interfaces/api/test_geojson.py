@@ -70,7 +70,7 @@ def test_feature_properties_leave_out_the_id_and_geometry_fields(client, observa
     (feature,) = _get_geojson(client, _items_path("monitoring-sites")).json()["features"]
 
     assert {"id", "latitude", "longitude"}.isdisjoint(feature["properties"])
-    assert feature["properties"]["elevation_m"] == 1400.0
+    assert feature["properties"]["elevationM"] == 1400.0
     assert feature["properties"]["name"] == observation.datastream.monitoring_site.name
 
 
@@ -136,7 +136,7 @@ def test_properties_parameter_selects_properties_but_keeps_id_and_geometry(clien
 @pytest.mark.parametrize("profile", ["https://hydroserver.org/profiles/observations/row", "https://hydroserver.org/profiles/observations/column"])
 def test_observation_row_and_column_profiles_do_not_apply_to_geojson(client, observation, profile):
     response = _get_geojson(
-        client, _items_path("observations"), profile=profile, datastream_id=str(observation.datastream.id)
+        client, _items_path("observations"), profile=profile, datastreamId=str(observation.datastream.id)
     )
 
     body = response.json()
@@ -177,7 +177,7 @@ def test_openapi_documents_geojson_responses(client):
 
     properties = components["MonitoringSiteProperties"]["properties"]
     assert {"id", "latitude", "longitude"}.isdisjoint(properties)
-    assert "elevation_m" in properties
+    assert "elevationM" in properties
 
     units_get = next(item["get"] for path, item in paths.items() if path.endswith("/units/items"))
     assert set(units_get["responses"]["200"]["content"]) == {"application/json"}

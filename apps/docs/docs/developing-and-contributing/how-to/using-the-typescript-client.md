@@ -91,7 +91,7 @@ const page2 = await hs.workspaces.list({
 
 // Fetch all pages
 const allWorkspaces = await hs.workspaces.listAllItems({
-  is_associated: true,
+  isAssociated: true,
 });
 ```
 
@@ -111,12 +111,12 @@ const multiOrdered = await hs.workspaces.list({
 
 ```ts
 const publicWorkspaces = await hs.workspaces.listAllItems({
-  is_private: false,
+  isPrivate: false,
 });
 
 const yourPrivateWorkspaces = await hs.workspaces.listAllItems({
-  is_private: true,
-  is_associated: true,
+  isPrivate: true,
+  isAssociated: true,
 });
 ```
 
@@ -160,7 +160,7 @@ Workspaces are the top-level access-control boundary for HydroServer data.
 const publicWorkspaces = await hs.workspaces.listAllItems();
 
 const yourWorkspaces = await hs.workspaces.listAllItems({
-  is_associated: true,
+  isAssociated: true,
 });
 
 const workspace = await hs.workspaces.getItem(
@@ -220,7 +220,7 @@ Monitoring sites represent physical monitoring locations.
 const publicMonitoringSites = await hs.monitoringSites.listAllItems();
 
 const workspaceMonitoringSites = await hs.monitoringSites.listAllItems({
-  workspace_id: ["00000000-0000-0000-0000-000000000000"],
+  workspaceId: ["00000000-0000-0000-0000-000000000000"],
 });
 
 const boundedMonitoringSites = await hs.monitoringSites.listAllItems({
@@ -245,7 +245,7 @@ monitoringSite.code = "OBSERVATION_SITE";
 monitoringSite.type = "Atmosphere";
 monitoringSite.latitude = 41.739;
 monitoringSite.longitude = -111.7957;
-monitoringSite.elevation_m = 1414;
+monitoringSite.elevationM = 1414;
 monitoringSite.elevationDatum = "EGM96";
 monitoringSite.adminArea1 = "UT";
 monitoringSite.adminArea2 = "Cache";
@@ -308,7 +308,7 @@ await hs.monitoringSites.deleteLinkedResource(monitoringSiteId, created.data!.id
 
 ```ts
 const monitoringSiteDatastreams = await hs.datastreams.listAllItems({
-  monitoring_site_id: ["00000000-0000-0000-0000-000000000000"],
+  monitoringSiteId: ["00000000-0000-0000-0000-000000000000"],
 });
 ```
 
@@ -326,7 +326,7 @@ await hs.monitoringSites.delete("00000000-0000-0000-0000-000000000000");
 const observedProperties = await hs.observedProperties.listAllItems();
 
 const workspaceObservedProperties = await hs.observedProperties.listAllItems({
-  workspace_id: ["00000000-0000-0000-0000-000000000000"],
+  workspaceId: ["00000000-0000-0000-0000-000000000000"],
 });
 ```
 
@@ -477,11 +477,11 @@ Datastreams group observations for one observed property, produced by one method
 const datastreams = await hs.datastreams.listAllItems();
 
 const workspaceDatastreams = await hs.datastreams.listAllItems({
-  workspace_id: ["00000000-0000-0000-0000-000000000000"],
+  workspaceId: ["00000000-0000-0000-0000-000000000000"],
 });
 
 const monitoringSiteDatastreams = await hs.datastreams.listAllItems({
-  monitoring_site_id: ["00000000-0000-0000-0000-000000000000"],
+  monitoringSiteId: ["00000000-0000-0000-0000-000000000000"],
 });
 
 const datastream = await hs.datastreams.getItem(
@@ -672,7 +672,7 @@ Data connections define the source, payload format, timestamp handling, placehol
 
 ```ts
 const dataConnections = await hs.dataConnections.listAllItems({
-  workspace_id: ["00000000-0000-0000-0000-000000000000"],
+  workspaceId: ["00000000-0000-0000-0000-000000000000"],
 });
 ```
 
@@ -721,7 +721,7 @@ ETL tasks bind a data connection to source-to-datastream mappings.
 
 ```ts
 const tasks = await hs.tasks.listAllItems({
-  workspace_id: ["00000000-0000-0000-0000-000000000000"],
+  workspaceId: ["00000000-0000-0000-0000-000000000000"],
 });
 ```
 
@@ -813,7 +813,7 @@ await hs.monitoringRules.create({
 await hs.monitoringTasks.runTask(task.id);
 ```
 
-Monitoring rules are a top-level resource: use `hs.monitoringRules`' `list` (filtered with `{ task_id: task.id }`), `get`, `create`, `update`, and `delete` methods to manage a monitoring task's rules.
+Monitoring rules are a top-level resource: use `hs.monitoringRules`' `list` (filtered with `{ taskId: task.id }`), `get`, `create`, `update`, and `delete` methods to manage a monitoring task's rules.
 
 ## Data Product Tasks and Rating Curves
 
@@ -934,13 +934,13 @@ if (!Array.isArray(sourceRes.data) || sourceRes.data.length === 0) {
 const sourceObservations = sourceRes.data as Array<{
   phenomenonTime: string;
   result: number;
-  resultQualifierCodes: string[];
+  resultQualifiers: string[];
 }>;
 
 const correctedRows = sourceObservations.map((observation) => [
   observation.phenomenonTime,
   observation.result * 0.1,
-  observation.resultQualifierCodes,
+  observation.resultQualifiers,
 ]);
 
 const operationsRes = await hs.qualityControlOperations.create(
@@ -967,7 +967,7 @@ if (!operationsRes.ok) throw new Error(operationsRes.message);
 const writeRes = await hs.datastreams.createObservations(
   history.managedDatastreamId,
   {
-    fields: ["phenomenonTime", "result", "resultQualifierCodes"],
+    fields: ["phenomenonTime", "result", "resultQualifiers"],
     data: correctedRows,
   },
   { mode: "replace" }
@@ -990,13 +990,13 @@ Operation `arguments` are specific to the selected `operationType`. Timestamps i
 ```ts
 const sessions = await hs.qualityControlSessions.listAllItems(history.id, {
   status: "committed",
-  range_start: "2026-01-01T00:00:00Z",
-  range_end: "2026-02-01T00:00:00Z",
-  include_ancestors: true,
+  rangeStart: "2026-01-01T00:00:00Z",
+  rangeEnd: "2026-02-01T00:00:00Z",
+  includeAncestors: true,
 });
 
 const ancestors = await hs.qualityControlSessions.listAllItems(history.id, {
-  ancestor_of: session.id,
+  ancestorOf: session.id,
 });
 ```
 

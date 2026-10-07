@@ -413,7 +413,7 @@ def test_create_monitoring_site_succeeds_with_non_terminating_binary_coordinates
     response = client.post(
         MONITORING_SITES_URL,
         data=_monitoring_site_body(
-            workspace.id, latitude=41.7501, longitude=-111.8102, elevation_m=1380.45
+            workspace.id, latitude=41.7501, longitude=-111.8102, elevationM=1380.45
         ),
         content_type="application/json",
     )
@@ -422,7 +422,7 @@ def test_create_monitoring_site_succeeds_with_non_terminating_binary_coordinates
     detail = client.get(_detail_url(response.json()["id"]))
     assert detail.json()["data"]["latitude"] == 41.7501
     assert detail.json()["data"]["longitude"] == -111.8102
-    assert detail.json()["data"]["elevation_m"] == 1380.45
+    assert detail.json()["data"]["elevationM"] == 1380.45
 
 
 def test_create_monitoring_site_returns_401_when_unauthenticated(client):
@@ -472,7 +472,7 @@ def test_get_monitoring_site_returns_public_monitoring_site_for_anonymous(client
     assert response.json()["data"]["id"] == str(monitoring_site.id)
 
 
-def test_get_monitoring_site_preserves_elevation_m_wire_name(client):
+def test_get_monitoring_site_returns_elevation_m_as_camel_case(client):
     workspace = WorkspaceFactory()
     monitoring_site = MonitoringSiteFactory(
         workspace=workspace,
@@ -482,8 +482,22 @@ def test_get_monitoring_site_preserves_elevation_m_wire_name(client):
     response = client.get(_detail_url(monitoring_site.id))
 
     assert response.status_code == 200
-    assert response.json()["data"]["elevation_m"] == 1380
-    assert "elevationM" not in response.json()["data"]
+    assert response.json()["data"]["elevationM"] == 1380
+    assert "elevation_m" not in response.json()["data"]
+
+
+def test_get_monitoring_sites_sorts_by_elevation(client):
+    workspace = WorkspaceFactory()
+    low = MonitoringSiteFactory(workspace=workspace, elevation_m=100)
+    high = MonitoringSiteFactory(workspace=workspace, elevation_m=2000)
+
+    response = client.get(
+        MONITORING_SITES_URL,
+        {"workspaceId": str(workspace.id), "sortby": "-elevationM", "properties": "id,elevationM"},
+    )
+
+    assert response.status_code == 200
+    assert [item["id"] for item in response.json()["data"]] == [str(high.id), str(low.id)]
 
 
 def test_get_monitoring_site_returns_404_for_private_monitoring_site_when_outsider(client):

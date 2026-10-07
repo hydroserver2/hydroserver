@@ -192,7 +192,7 @@ export class DatastreamService extends HydroServerBaseService<typeof C, M> {
 
   /* ----------------------- Sub-resources: Tags ----------------------- */
 
-  getTagKeys(params: { workspace_id?: string; datastream_id?: string }) {
+  getTagKeys(params: { workspaceId?: string; datastreamId?: string }) {
     const url = this.withQuery(`${this._collectionRoute}/tags/keys`, params)
     return apiMethods.fetch<TagKeyResponse>(url)
   }
@@ -279,7 +279,7 @@ export class DatastreamService extends HydroServerBaseService<typeof C, M> {
   ) {
     const url = this.withQuery(`${this._client.baseRoute}/collections/observations/items`, {
       ...params,
-      datastream_id: datastreamId,
+      datastreamId,
     })
     return apiMethods.paginatedFetch<ObservationListResponse>(url)
   }

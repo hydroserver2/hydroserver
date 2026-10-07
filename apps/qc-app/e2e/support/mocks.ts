@@ -189,12 +189,12 @@ export async function installMocks(
     }
 
     // --- Observations list (columnar) ---
-    // Same restructuring: GET /observations?datastream_id={id}, not nested
+    // Same restructuring: GET /observations?datastreamId={id}, not nested
     // under /datastreams/{id}/observations.
     const obsList = path === '/api/ogc/collections/observations/items'
     if (obsList && method === 'GET') {
       const params = new URL(url).searchParams
-      const dsId = params.get('datastream_id') ?? ''
+      const dsId = params.get('datastreamId') ?? ''
       const series = observationsById[dsId] ?? observations
       // Honour the `datetime` interval the client always sends. Without
       // this, the app's cache-extension logic in `fetchObservationsInRange`

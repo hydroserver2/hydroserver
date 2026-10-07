@@ -90,10 +90,10 @@ describe('orchestration store', () => {
       'rating-curve-output',
     ])
     expect(etlMappingsListAllItemsMock).toHaveBeenCalledWith({
-      workspace_id: ['workspace-1'],
+      workspaceId: ['workspace-1'],
     })
     expect(dataProductTransformationsListAllItemsMock).toHaveBeenCalledWith({
-      workspace_id: ['workspace-1'],
+      workspaceId: ['workspace-1'],
     })
     expect(etlMappingsListAllItemsMock).toHaveBeenCalledTimes(1)
     expect(dataProductTransformationsListAllItemsMock).toHaveBeenCalledTimes(1)
@@ -116,10 +116,8 @@ describe('orchestration store', () => {
     const workspaceOneRequest = deferred<any[]>()
     const workspaceTwoRequest = deferred<any[]>()
 
-    listAllItemsMock.mockImplementation(({ workspace_id }: any) => {
-      const workspaceId = Array.isArray(workspace_id)
-        ? workspace_id[0]
-        : workspace_id
+    listAllItemsMock.mockImplementation(({ workspaceId: requested }: any) => {
+      const workspaceId = Array.isArray(requested) ? requested[0] : requested
       if (workspaceId === 'workspace-1') return workspaceOneRequest.promise
       if (workspaceId === 'workspace-2') return workspaceTwoRequest.promise
       return Promise.resolve([])
@@ -154,7 +152,7 @@ describe('orchestration store', () => {
       'ds-2',
     ])
     expect(listAllItemsMock).toHaveBeenCalledWith({
-      workspace_id: ['workspace-2'],
+      workspaceId: ['workspace-2'],
       expand_related: true,
     })
 

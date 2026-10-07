@@ -85,9 +85,9 @@ the items most likely to bite a new team in the first three months.
 collect qualifier codes per selection, but
 `composables/useQcSubmission.ts:42` only serializes
 `['phenomenonTime', 'result']` on the bulk POST. The API no longer blocks
-this: the column profile returns `resultQualifierCodes` when it's listed in
+this: the column profile returns `resultQualifiers` when it's listed in
 `properties`, and the bulk POST accepts it as a field. The remaining work is
-in the QC App: request `resultQualifierCodes` in
+in the QC App: request `resultQualifiers` in
 `src/utils/observations.ts` and serialize it in `useQcSubmission.ts`.
 Tracked inline as a TODO.
 

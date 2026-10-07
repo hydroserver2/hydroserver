@@ -45,19 +45,19 @@ class TaskRunQueryParameters(CollectionQueryParameters):
     )
     started_at__lte: ISODatetime | None = Query(
         None, description="Filters for task runs started on or before this date and time.",
-        alias="started_at_max"
+        alias="startedAtMax"
     )
     started_at__gte: ISODatetime | None = Query(
         None, description="Filters for task runs started on or after this date and time.",
-        alias="started_at_min"
+        alias="startedAtMin"
     )
     finished_at__lte: ISODatetime | None = Query(
         None, description="Filters for task runs finished on or before this date and time.",
-        alias="finished_at_max"
+        alias="finishedAtMax"
     )
     finished_at__gte: ISODatetime | None = Query(
         None, description="Filters for task runs finished on or after this date and time.",
-        alias="finished_at_min"
+        alias="finishedAtMin"
     )
 
 

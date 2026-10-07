@@ -5,7 +5,7 @@ from uuid import UUID
 from datetime import datetime
 from pydantic.alias_generators import to_camel
 from hydroserverpy.api.models import Datastream, ObservationCollection
-from hydroserverpy.api.utils import normalize_uuid, build_datetime_interval
+from hydroserverpy.api.utils import normalize_uuid, build_datetime_interval, sortby_to_camel
 from ..base import HydroServerBaseService
 
 if TYPE_CHECKING:
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     )
 
 COLUMN_PROFILE = "https://hydroserver.org/profiles/observations/column"
-LOADABLE_OBSERVATION_PROPERTIES = ("phenomenonTime", "result", "resultQualifierCodes")
+LOADABLE_OBSERVATION_PROPERTIES = ("phenomenonTime", "result", "resultQualifiers")
 READ_ONLY_OBSERVATION_PROPERTIES = ("id", "workspaceId", "datastreamId")
 
 
@@ -82,6 +82,7 @@ class DatastreamService(HydroServerBaseService):
         collection.filters.update({
             k: v
             for k, v in {
+                "tag": tag,
                 "phenomenon_time_max": phenomenon_time_max,
                 "phenomenon_time_min": phenomenon_time_min,
             }.items()
@@ -229,18 +230,18 @@ class DatastreamService(HydroServerBaseService):
         sortby: List[str] = ...,
         phenomenon_time_max: datetime = ...,
         phenomenon_time_min: datetime = ...,
-        result_qualifier_code: str = ...,
+        result_qualifiers: str = ...,
         fetch_all: bool = False,
     ) -> ObservationCollection:
         """Retrieve observations of a datastream."""
 
         params = {
-            "datastream_id": str(uid),
+            "datastreamId": str(uid),
             "offset": offset,
             "limit": limit,
-            "sortby": ",".join(sortby) if sortby is not ... else sortby,
+            "sortby": ",".join(sortby_to_camel(o) for o in sortby) if sortby is not ... else sortby,
             "datetime": build_datetime_interval(phenomenon_time_min, phenomenon_time_max),
-            "result_qualifier_code": result_qualifier_code,
+            "resultQualifiers": result_qualifiers,
             "profile": COLUMN_PROFILE,
             "properties": ",".join(LOADABLE_OBSERVATION_PROPERTIES),
         }
@@ -262,7 +263,7 @@ class DatastreamService(HydroServerBaseService):
                 for k, v in {
                     "phenomenon_time_max": phenomenon_time_max,
                     "phenomenon_time_min": phenomenon_time_min,
-                    "result_qualifier_code": result_qualifier_code,
+                    "result_qualifiers": result_qualifiers,
                 }.items()
                 if v is not ...
             },

@@ -33,13 +33,13 @@ describe('QualityControl services', () => {
 
     const client = new HydroServer({ host: 'https://hydro.example.com' })
     await client.qualityControlHistories.list({
-      managed_datastream_id: ['managed-1'],
+      managedDatastreamId: ['managed-1'],
       fetch_all: true,
     })
 
     const url = new URL(fetchMock.mock.calls[0][0])
     expect(url.href).toBe(
-      'https://hydro.example.com/api/ogc/collections/quality-control-histories/items?managed_datastream_id=managed-1&offset=0&limit=200'
+      'https://hydro.example.com/api/ogc/collections/quality-control-histories/items?managedDatastreamId=managed-1&offset=0&limit=200'
     )
   })
 

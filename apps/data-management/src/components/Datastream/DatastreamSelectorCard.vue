@@ -799,13 +799,13 @@ async function loadFallbackData() {
   if (!workspaceId) return
   const [datastreams, sites] = await Promise.all([
     hs.datastreams.listAllItems({
-      workspace_id: [workspaceId],
+      workspaceId: [workspaceId],
       expand_related: true,
     } as any),
     props.monitoringSites
       ? Promise.resolve([])
       : hs.monitoringSites.listAllItems({
-          workspace_id: [workspaceId],
+          workspaceId: [workspaceId],
           sortby: ['name'],
         } as any),
   ])

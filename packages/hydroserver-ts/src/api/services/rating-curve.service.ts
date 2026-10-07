@@ -57,7 +57,7 @@ export class RatingCurveService extends HydroServerBaseService<typeof C, M> {
   ) {
     return this.list({
       ...params,
-      monitoring_site_id: [monitoringSiteId],
+      monitoringSiteId: [monitoringSiteId],
     })
   }
 

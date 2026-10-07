@@ -55,7 +55,7 @@ def datastreams():
 
 @pytest.mark.parametrize("profile", [ROW, COLUMN])
 def test_number_returned_counts_observations_not_datastream_groups(client, datastreams, profile):
-    params = {"datastream_id": [str(datastream.id) for datastream in datastreams], "profile": profile, "limit": 3}
+    params = {"datastreamId": [str(datastream.id) for datastream in datastreams], "profile": profile, "limit": 3}
 
     body = client.get(OBSERVATIONS_PATH, params).json()
 
@@ -65,7 +65,7 @@ def test_number_returned_counts_observations_not_datastream_groups(client, datas
 
 def test_number_returned_counts_observations_when_no_column_is_selected(client, datastreams):
     params = {
-        "datastream_id": [str(datastream.id) for datastream in datastreams],
+        "datastreamId": [str(datastream.id) for datastream in datastreams],
         "profile": COLUMN,
         "properties": "datastreamId",
         "limit": 3,

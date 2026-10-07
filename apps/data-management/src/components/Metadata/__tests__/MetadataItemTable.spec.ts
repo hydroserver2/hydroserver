@@ -112,7 +112,7 @@ describe('metadata table UUIDs and read-only details', () => {
       })
       const systemRecord = { ...record, id: 'system-item', name: 'System metadata' }
       const fetch = vi.spyOn(hs[service], 'listAllItems').mockImplementation(
-        async (params: any) => params.workspace_id[0] === 'null'
+        async (params: any) => params.workspaceId[0] === 'null'
           ? [systemRecord] as any
           : workspaceItems
       )
@@ -161,7 +161,7 @@ describe('metadata table UUIDs and read-only details', () => {
     'supports copying and viewing %s with no edit permission',
     async (service, component) => {
       vi.spyOn(hs[service], 'listAllItems').mockImplementation(async (params: any) =>
-        params.workspace_id[0] === 'null' ? [] : [{ ...record }] as any
+        params.workspaceId[0] === 'null' ? [] : [{ ...record }] as any
       )
       const wrapper = render(component, {
         search: '',

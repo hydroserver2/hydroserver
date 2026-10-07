@@ -95,10 +95,10 @@ class UnitQueryParameters(UnitFilterFields, CollectionQueryParameters, ExtentQue
         [], description="Filter units by workspace ID."
     )
     datastreams__monitoring_site_id: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter units by monitoring_site ID.", alias="monitoring_site_id"
+        [], description="Filter units by monitoring_site ID.", alias="monitoringSiteId"
     )
     datastreams__id: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter units by datastream ID.", alias="datastream_id"
+        [], description="Filter units by datastream ID.", alias="datastreamId"
     )
     type: list[str] = Query([], description="Filter units by type")
 

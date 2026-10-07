@@ -188,7 +188,7 @@ class DatastreamQueryParameters(DatastreamFilterFields, CollectionQueryParameter
         "whitespace-separated words within a term are combined with AND.",
     )
     monitoring_site__workspace_id: list[uuid.UUID] = Query(
-        [], description="Filter datastreams by workspace ID.", alias="workspace_id"
+        [], description="Filter datastreams by workspace ID.", alias="workspaceId"
     )
     monitoring_site_id: list[uuid.UUID] = Query([], description="Filter datastreams by monitoring_site ID.")
     method_id: list[uuid.UUID] = Query(
@@ -204,7 +204,7 @@ class DatastreamQueryParameters(DatastreamFilterFields, CollectionQueryParameter
     observations__result_qualifier_id: list[uuid.UUID] = Query(
         [],
         description="Filter datastreams by observation result qualifier ID.",
-        alias="result_qualifier_id",
+        alias="resultQualifier",
     )
     observation_type: list[str] = Query(
         [], description="Filter monitoring_sites by observation type."
@@ -215,7 +215,9 @@ class DatastreamQueryParameters(DatastreamFilterFields, CollectionQueryParameter
     status: list[str | Literal["null"]] = Query([], description="Filter datastreams by status.")
     result_type: list[str] = Query([], description="Filter monitoring_sites by result type.")
     tag: list[str] = Query(
-        [], description="Filter datastreams by tag. Format tag filters as {key}:{value}"
+        [],
+        description="Filter datastreams by tag. Format tag filters as {key}:{value}. Repeat the "
+        "parameter to require several tags.",
     )
     is_private: Optional[QueryBool] = Query(
         None,
@@ -224,18 +226,18 @@ class DatastreamQueryParameters(DatastreamFilterFields, CollectionQueryParameter
     value_count__lte: Optional[int] = Query(
         None,
         description="Sets the maximum value count of filtered datastreams.",
-        alias="value_count_max",
+        alias="valueCountMax",
     )
     value_count__gte: Optional[int] = Query(
         None,
         description="Sets the minimum value count of filtered datastreams.",
-        alias="value_count_min",
+        alias="valueCountMin",
     )
 
 
 class DatastreamVisualizationBootstrapQueryParameters(BaseQueryParameters):
     monitoring_site__workspace_id: list[uuid.UUID] = Query(
-        [], description="Filter visualization bootstrap datastreams by workspace ID.", alias="workspace_id"
+        [], description="Filter visualization bootstrap datastreams by workspace ID.", alias="workspaceId"
     )
 
 

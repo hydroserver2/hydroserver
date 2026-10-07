@@ -81,10 +81,10 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
     const requestId = ++linkedDatastreamRequestId
     const [mappings, transformations] = await Promise.all([
       hs.etlMappings.listAllItems({
-        workspace_id: [requestedWorkspaceId],
+        workspaceId: [requestedWorkspaceId],
       } as any),
       hs.dataProductTransformations.listAllItems({
-        workspace_id: [requestedWorkspaceId],
+        workspaceId: [requestedWorkspaceId],
       } as any),
     ])
     if (requestId !== linkedDatastreamRequestId) {
@@ -126,7 +126,7 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
 
     const requestId = ++workspaceDatastreamRequestId
     const list = await hs.datastreams.listAllItems({
-      workspace_id: [requestedWorkspaceId],
+      workspaceId: [requestedWorkspaceId],
       expand_related: true,
     })
     if (requestId !== workspaceDatastreamRequestId) {
@@ -155,7 +155,7 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
 
     const requestId = ++workspaceMonitoringSitesRequestId
     const list = await hs.monitoringSites.listAllItems({
-      workspace_id: [requestedWorkspaceId],
+      workspaceId: [requestedWorkspaceId],
       sortby: ['name'],
     } as any)
     if (requestId !== workspaceMonitoringSitesRequestId) {

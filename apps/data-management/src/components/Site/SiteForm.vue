@@ -125,11 +125,11 @@
               <v-col cols="12" sm="6"
                 ><v-text-field
                   label="Elevation (m)"
-                  v-model="monitoringSite.elevation_m"
+                  v-model="monitoringSite.elevationM"
                   type="number"
                   :rules="
-                    monitoringSite.elevation_m === '' ||
-                    monitoringSite.elevation_m == null
+                    monitoringSite.elevationM === '' ||
+                    monitoringSite.elevationM == null
                       ? []
                       : [
                           ...rules.requiredNumber,
@@ -295,7 +295,7 @@ async function uploadMonitoringSite() {
 function onMapLocationClicked(locationData: MonitoringSite) {
   monitoringSite.latitude = locationData.latitude
   monitoringSite.longitude = locationData.longitude
-  monitoringSite.elevation_m = locationData.elevation_m
+  monitoringSite.elevationM = locationData.elevationM
   monitoringSite.adminArea1 = locationData.adminArea1
   monitoringSite.adminArea2 = locationData.adminArea2
   monitoringSite.country = locationData.country

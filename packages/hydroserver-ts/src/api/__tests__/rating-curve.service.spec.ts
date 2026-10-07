@@ -43,7 +43,7 @@ describe('RatingCurveService', () => {
     expect(response).toHaveLength(1)
     const url = new URL(fetchMock.mock.calls[0][0])
     expect(url.href).toBe(
-      'https://hydro.example.com/api/ogc/collections/data-product-rating-curves/items?sortby=name&monitoring_site_id=monitoringSite-1&offset=0&limit=200'
+      'https://hydro.example.com/api/ogc/collections/data-product-rating-curves/items?sortby=name&monitoringSiteId=monitoringSite-1&offset=0&limit=200'
     )
   })
 

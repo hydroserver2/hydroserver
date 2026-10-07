@@ -209,7 +209,7 @@ def test_get_observations_requests_only_the_properties_load_observations_accepts
 
     service.get_observations(uid="ds-1")
 
-    assert sent_params(client)["properties"] == "phenomenonTime,result,resultQualifierCodes"
+    assert sent_params(client)["properties"] == "phenomenonTime,result,resultQualifiers"
 
 
 def test_observations_from_get_observations_load_back_unchanged():
@@ -220,7 +220,7 @@ def test_observations_from_get_observations_load_back_unchanged():
                 "columns": {
                     "phenomenonTime": ["2024-01-01T00:00:00Z"],
                     "result": [1.5],
-                    "resultQualifierCodes": [["A"]],
+                    "resultQualifiers": [["A"]],
                 },
             }
         ],
@@ -232,7 +232,7 @@ def test_observations_from_get_observations_load_back_unchanged():
     dataframe = service.get_observations(uid="ds-1").dataframe
     service.load_observations(uid="ds-2", observations=dataframe)
 
-    assert sent_body(client, 1)["fields"] == ["phenomenonTime", "result", "resultQualifierCodes"]
+    assert sent_body(client, 1)["fields"] == ["phenomenonTime", "result", "resultQualifiers"]
 
 
 def test_load_observations_leaves_out_columns_the_server_assigns():

@@ -42,9 +42,7 @@ class MonitoringSiteAttributeFields(Schema):
     description: str
     code: str = Field(..., max_length=200)
     type: str = Field(..., max_length=200)
-    elevation_m: Optional[float] = Field(
-        None, ge=-99999, le=99999, alias="elevation_m"
-    )
+    elevation_m: Optional[float] = Field(None, ge=-99999, le=99999)
     elevation_datum: Optional[str] = Field(None, max_length=255)
     admin_area_1: Optional[str] = Field(None, max_length=200)
     admin_area_2: Optional[str] = Field(None, max_length=200)
@@ -87,7 +85,7 @@ _sortby_fields = (
     "isPrivate",
     "latitude",
     "longitude",
-    "elevation_m",
+    "elevationM",
     "elevationDatum",
     "adminArea1",
     "adminArea2",
@@ -101,8 +99,8 @@ _property_fields = (
     "id",
     "workspaceId",
     *(
-        "elevation_m" if name == "elevation_m" else to_camel(name)
-        for name in MonitoringSiteFields.model_fields
+        field.alias or to_camel(name)
+        for name, field in MonitoringSiteFields.model_fields.items()
     ),
     "tags",
     "linkedResources",
@@ -157,7 +155,9 @@ class MonitoringSiteQueryParameters(MonitoringSiteFilterFields, CollectionQueryP
     country: list[str | Literal["null"]] = Query([], description="Filter monitoring sites by country.")
     type: list[str] = Query([], description="Filter monitoring sites by type.")
     tag: list[str] = Query(
-        [], description="Filter monitoring sites by tag. Format tag filters as {key}:{value}"
+        [],
+        description="Filter monitoring sites by tag. Format tag filters as {key}:{value}. Repeat "
+        "the parameter to require several tags.",
     )
     is_private: Optional[QueryBool] = Query(
         None,
@@ -236,7 +236,7 @@ class MonitoringSitePostBody(BasePostBody, MonitoringSiteFields, NewItemId):
     tags: dict[str, str] = {}
     latitude: Decimal = Field(..., ge=-90, le=90)
     longitude: Decimal = Field(..., ge=-180, le=180)
-    elevation_m: Optional[Decimal] = Field(None, ge=-99999, le=99999, alias="elevation_m")
+    elevation_m: Optional[Decimal] = Field(None, ge=-99999, le=99999)
 
     _validate_tags = field_validator("tags", mode="after")(reject_empty_tag_keys_and_values)
 
@@ -245,6 +245,6 @@ class MonitoringSitePatchBody(BasePatchBody, MonitoringSiteFields):
     tags: dict[str, str | None] = {}
     latitude: Decimal = Field(..., ge=-90, le=90)
     longitude: Decimal = Field(..., ge=-180, le=180)
-    elevation_m: Optional[Decimal] = Field(None, ge=-99999, le=99999, alias="elevation_m")
+    elevation_m: Optional[Decimal] = Field(None, ge=-99999, le=99999)
 
     _validate_tags = field_validator("tags", mode="after")(reject_empty_tag_keys_and_values)

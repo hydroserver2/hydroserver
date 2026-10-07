@@ -305,7 +305,7 @@ const archiveMonitoringSite = async () => {
 
 onMounted(async () => {
   datastreams.value = await hs.datastreams.listAllItems({
-    monitoring_site_id: [monitoringSite.value!.id],
+    monitoringSiteId: [monitoringSite.value!.id],
   })
   if (!isEdit.value) generateDefaultFormData()
 })

@@ -33,13 +33,13 @@ export class MonitoringSiteService extends HydroServerBaseService<typeof C, Moni
   ): Promise<ApiResponse<MonitoringSiteMapSummary[]>> {
     return apiMethods.fetch<MonitoringSiteMapSummary[]>(
       this.withQuery(`${this._collectionRoute}/site-summaries`, {
-        workspace_id: workspaceId,
+        workspaceId,
       })
     )
   }
 
   listTaskSummaries(params: {
-    workspace_id?: string | string[]
+    workspaceId?: string | string[]
     type?: string | string[]
   }): Promise<ApiResponse<MonitoringSiteTaskSummary[]>> {
     return apiMethods.fetch<MonitoringSiteTaskSummary[]>(
@@ -56,7 +56,7 @@ export class MonitoringSiteService extends HydroServerBaseService<typeof C, Moni
     apiMethods.fetch<SiteTypeIcon[]>(`${this._collectionRoute}/site-type-icons`)
   /* ----------------------- Sub-resources: Tags ----------------------- */
 
-  getTagKeys(params: { workspace_id?: string; monitoring_site_id?: string }) {
+  getTagKeys(params: { workspaceId?: string; monitoringSiteId?: string }) {
     const url = this.withQuery(`${this._collectionRoute}/tags/keys`, params)
     return apiMethods.fetch<Record<string, string[]>>(url)
   }

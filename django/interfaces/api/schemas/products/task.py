@@ -106,10 +106,10 @@ class DataProductTaskQueryParameters(DataProductTaskFilterFields, CollectionQuer
         "whitespace-separated words within a term are combined with AND.",
     )
     monitoring_site: list[uuid.UUID] = Query(
-        [], description="Filter data product tasks by monitoring_site ID.", alias="monitoring_site_id"
+        [], description="Filter data product tasks by monitoring_site ID.", alias="monitoringSiteId"
     )
     workspace: list[uuid.UUID] = Query(
-        [], description="Filter data product tasks by workspace ID.", alias="workspace_id"
+        [], description="Filter data product tasks by workspace ID.", alias="workspaceId"
     )
     latest_run_status: list[str | Literal["null"]] = Query(
         [], description="Filter data product tasks by their most recent run status."
@@ -118,13 +118,13 @@ class DataProductTaskQueryParameters(DataProductTaskFilterFields, CollectionQuer
         [], description="Filter data product tasks by transformation type."
     )
     output_datastream: list[uuid.UUID] = Query(
-        [], description="Filter data product tasks by output datastream ID.", alias="output_datastream_id"
+        [], description="Filter data product tasks by output datastream ID.", alias="outputDatastreamId"
     )
     input_datastream: list[uuid.UUID] = Query(
-        [], description="Filter data product tasks by input datastream ID.", alias="input_datastream_id"
+        [], description="Filter data product tasks by input datastream ID.", alias="inputDatastreamId"
     )
     rating_curve: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter data product tasks by rating curve ID.", alias="rating_curve_id"
+        [], description="Filter data product tasks by rating curve ID.", alias="ratingCurveId"
     )
 
 

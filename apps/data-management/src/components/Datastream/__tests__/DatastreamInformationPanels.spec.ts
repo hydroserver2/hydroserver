@@ -51,7 +51,7 @@ const mergedDatastream = {
     type: 'Stream',
     latitude: 41.7,
     longitude: -111.8,
-    elevation_m: 1380,
+    elevationM: 1380,
     elevationDatum: 'WGS84',
     adminArea1: 'Utah',
     adminArea2: 'Cache',

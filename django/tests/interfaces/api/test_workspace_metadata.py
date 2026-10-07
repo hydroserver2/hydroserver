@@ -104,13 +104,13 @@ def test_observation_codes_use_qualifier_names(client, owner_workspace, global_)
     )
     body = {
         "datastreamId": str(datastream.id), "phenomenonTime": "2026-01-01T00:00:00Z",
-        "result": 1.0, "resultQualifierCodes": [qualifier.name],
+        "result": 1.0, "resultQualifiers": [qualifier.name],
     }
     response = client.post("/api/ogc/collections/observations/items", data=body, content_type="application/json")
     assert response.status_code == 201, response.content
-    response = client.get("/api/ogc/collections/observations/items", {"datastream_id": str(datastream.id), "result_qualifier_code": qualifier.name})
+    response = client.get("/api/ogc/collections/observations/items", {"datastreamId": str(datastream.id), "resultQualifiers": qualifier.name})
     assert response.status_code == 200
-    assert response.json()["data"][0]["resultQualifierCodes"] == [qualifier.name]
+    assert response.json()["data"][0]["resultQualifiers"] == [qualifier.name]
 
 
 def test_visualization_allows_observed_property_without_code(client, owner_workspace):
@@ -129,7 +129,7 @@ def test_bulk_observation_codes_use_qualifier_names(client, owner_workspace):
     qualifier = ResultQualifierFactory(workspace=owner_workspace, name="Estimated")
     body = {
         "datastreamId": str(datastream.id),
-        "fields": ["phenomenonTime", "result", "resultQualifierCodes"],
+        "fields": ["phenomenonTime", "result", "resultQualifiers"],
         "data": [["2026-01-01T00:00:00Z", 1.0, [qualifier.name]]],
     }
     response = client.post("/api/ogc/collections/observations/bulk-create?mode=insert", data=body, content_type="application/json")

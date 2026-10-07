@@ -1064,7 +1064,7 @@ def test_get_datastreams_combines_bbox_with_other_filters(client):
     _datastream_at(-111.5, 40.5)
 
     response = client.get(
-        DATASTREAMS_URL, {"bbox": "-112,40,-111,41", "monitoring_site_id": str(inside.monitoring_site_id)}
+        DATASTREAMS_URL, {"bbox": "-112,40,-111,41", "monitoringSiteId": str(inside.monitoring_site_id)}
     )
 
     assert response.status_code == 200

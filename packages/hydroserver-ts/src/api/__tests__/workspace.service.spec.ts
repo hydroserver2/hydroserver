@@ -17,14 +17,14 @@ describe('WorkspaceService', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     const client = new HydroServer({ host: 'https://hydro.example.com' })
-    await client.workspaces.list({ is_associated: true, is_private: false })
-    await client.units.list({ workspace_id: ['workspace-1', 'null'] } as any)
+    await client.workspaces.list({ isAssociated: true, isPrivate: false })
+    await client.units.list({ workspaceId: ['workspace-1', 'null'] } as any)
 
     const workspaceParams = new URL(String(fetchMock.mock.calls[0][0])).searchParams
-    expect(workspaceParams.get('is_associated')).toBe('true')
-    expect(workspaceParams.get('is_private')).toBe('false')
+    expect(workspaceParams.get('isAssociated')).toBe('true')
+    expect(workspaceParams.get('isPrivate')).toBe('false')
     const unitParams = new URL(String(fetchMock.mock.calls[1][0])).searchParams
-    expect(unitParams.getAll('workspace_id')).toEqual(['workspace-1', 'null'])
+    expect(unitParams.getAll('workspaceId')).toEqual(['workspace-1', 'null'])
   })
 
   it('uses the service-account endpoint for the workspace management table', async () => {

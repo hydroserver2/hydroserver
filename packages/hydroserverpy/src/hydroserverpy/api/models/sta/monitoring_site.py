@@ -17,9 +17,7 @@ class MonitoringSite(HydroServerBaseModel):
     is_private: bool
     latitude: float = Field(..., ge=-90, le=90)
     longitude: float = Field(..., ge=-180, le=180)
-    elevation_m: Optional[float] = Field(
-        None, ge=-99999, le=99999, alias="elevation_m"
-    )
+    elevation_m: Optional[float] = Field(None, ge=-99999, le=99999)
     elevation_datum: Optional[str] = Field(
         None, max_length=255
     )

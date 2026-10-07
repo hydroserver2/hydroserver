@@ -52,7 +52,7 @@ class ObservationCollection:
         )
         self.datastream = datastream
 
-    COLUMNS = ("phenomenon_time", "result", "result_qualifier_codes")
+    COLUMNS = ("phenomenon_time", "result", "result_qualifiers")
 
     @classmethod
     def _columns(cls, groups: list) -> dict[str, list]:

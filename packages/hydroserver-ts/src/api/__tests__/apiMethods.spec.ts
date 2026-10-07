@@ -58,7 +58,7 @@ describe('paginatedFetch', () => {
   })
 
   it('merges row-profile groups by datastream across pages', async () => {
-    const fields = ['phenomenonTime', 'result', 'resultQualifierCodes']
+    const fields = ['phenomenonTime', 'result', 'resultQualifiers']
     const pages: Record<string, unknown[]> = {
       '0': [
         {
@@ -114,7 +114,7 @@ describe('paginatedFetch', () => {
       columns: {
         phenomenonTime: [`t${offset}`],
         result: [offset],
-        resultQualifierCodes: [[]],
+        resultQualifiers: [[]],
       },
     })
     const fetchMock = vi
@@ -143,7 +143,7 @@ describe('paginatedFetch', () => {
         columns: {
           phenomenonTime: ['t0', 't1'],
           result: [0, 1],
-          resultQualifierCodes: [[], []],
+          resultQualifiers: [[], []],
         },
       },
     ])

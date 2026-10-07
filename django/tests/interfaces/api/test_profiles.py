@@ -26,7 +26,7 @@ pytestmark = pytest.mark.django_db
 OBSERVATIONS_PATH = "/api/ogc/collections/observations/items"
 ROW = f"{PROFILE_URI_BASE}/observations/row"
 COLUMN = f"{PROFILE_URI_BASE}/observations/column"
-OBSERVATION_FIELDS = ["id", "phenomenonTime", "result", "resultQualifierCodes"]
+OBSERVATION_FIELDS = ["id", "phenomenonTime", "result", "resultQualifiers"]
 
 
 def _datastream(workspace=None):
@@ -71,7 +71,7 @@ def test_pages_without_a_profile_hold_records_and_link_no_profile(client):
     datastream = _datastream()
     _observations(datastream, 1)
 
-    response = _get(client, datastream_id=str(datastream.id))
+    response = _get(client, datastreamId=str(datastream.id))
 
     assert "phenomenonTime" in response.json()["data"][0]
     assert "profile" not in links_by_rel(response)
@@ -81,7 +81,7 @@ def test_profile_links_have_no_media_type(client):
     datastream = _datastream()
     _observations(datastream, 1)
 
-    response = _get(client, datastream_id=str(datastream.id), profile=ROW)
+    response = _get(client, datastreamId=str(datastream.id), profile=ROW)
 
     assert links_by_rel(response)["profile"] == {
         "href": ROW,
@@ -94,7 +94,7 @@ def test_profiles_are_selected_by_uri(client):
     datastream = _datastream()
     _observations(datastream, 1)
 
-    response = _get(client, datastream_id=str(datastream.id), profile=ROW)
+    response = _get(client, datastreamId=str(datastream.id), profile=ROW)
 
     assert "rows" in response.json()["data"][0]
     assert links_by_rel(response)["profile"]["href"] == ROW
@@ -105,7 +105,7 @@ def test_values_other_than_profile_uris_fall_back_to_records(client, value):
     datastream = _datastream()
     _observations(datastream, 1)
 
-    response = _get(client, datastream_id=str(datastream.id), profile=value)
+    response = _get(client, datastreamId=str(datastream.id), profile=value)
 
     assert response.status_code == 200
     assert "phenomenonTime" in response.json()["data"][0]
@@ -116,7 +116,7 @@ def test_the_first_supported_requested_profile_is_used(client):
     datastream = _datastream()
     _observations(datastream, 1)
 
-    response = _get(client, datastream_id=str(datastream.id), profile=f"https://example.org/unknown,{COLUMN},{ROW}")
+    response = _get(client, datastreamId=str(datastream.id), profile=f"https://example.org/unknown,{COLUMN},{ROW}")
 
     assert "columns" in response.json()["data"][0]
 
@@ -125,7 +125,7 @@ def test_formats_without_profiles_ignore_the_profile_parameter(client):
     datastream = _datastream()
     _observations(datastream, 1)
 
-    response = _get(client, datastream_id=str(datastream.id), profile=ROW, f="geojson")
+    response = _get(client, datastreamId=str(datastream.id), profile=ROW, f="geojson")
 
     assert response.json()["type"] == "FeatureCollection"
     assert "profile" not in links_by_rel(response)
@@ -144,7 +144,7 @@ def test_page_links_keep_the_profile_and_alternates_drop_it(client):
     datastream = _datastream()
     _observations(datastream, 3)
 
-    response = _get(client, datastream_id=str(datastream.id), profile=COLUMN, limit=2)
+    response = _get(client, datastreamId=str(datastream.id), profile=COLUMN, limit=2)
 
     links = links_by_rel(response)
     assert query_params(links["next"]["href"])["profile"] == [COLUMN]
@@ -159,7 +159,7 @@ def test_groups_hold_the_shared_properties_of_their_observations(client, profile
     _observations(first, 2)
     _observations(second, 1)
 
-    response = _get(client, datastream_id=[str(first.id), str(second.id)], profile=profile)
+    response = _get(client, datastreamId=[str(first.id), str(second.id)], profile=profile)
 
     groups = response.json()["data"]
     assert [(group["datastreamId"], group["workspaceId"]) for group in groups] == [
@@ -181,7 +181,7 @@ def test_rows_and_columns_hold_the_same_information_as_records(client, profile, 
     ResultQualifierFactory(workspace=workspace, name="A")
     _observations(first, 2, result_qualifiers=["A"])
     _observations(second, 1)
-    params = {"datastream_id": [str(first.id), str(second.id)], **({"properties": properties} if properties else {})}
+    params = {"datastreamId": [str(first.id), str(second.id)], **({"properties": properties} if properties else {})}
 
     records = _get(client, **params).json()["data"]
     groups = _get(client, **params, profile=profile).json()["data"]
@@ -204,7 +204,7 @@ def test_included_resources_match_records(client, profile):
     ResultQualifierFactory(workspace=workspace, name="A")
     datastream = _datastream(workspace)
     _observations(datastream, 2, result_qualifiers=["A"])
-    params = {"datastream_id": str(datastream.id), "include": "datastream,workspace,resultQualifiers"}
+    params = {"datastreamId": str(datastream.id), "include": "datastream,workspace,resultQualifiers"}
 
     records = _get(client, **params).json()
     groups = _get(client, **params, profile=profile).json()
@@ -217,7 +217,7 @@ def test_included_resources_follow_their_page(client):
     first, second = _sorted_datastreams(_datastream(), _datastream())
     _observations(first, 2)
     _observations(second, 2)
-    params = {"datastream_id": [str(first.id), str(second.id)], "include": "datastream", "profile": ROW, "limit": 3}
+    params = {"datastreamId": [str(first.id), str(second.id)], "include": "datastream", "profile": ROW, "limit": 3}
 
     pages = [_get(client, **params), _get(client, **params, offset=3)]
 
@@ -232,7 +232,7 @@ def test_without_included_resources_only_the_selected_properties_are_read(client
     _observations(datastream, 2)
 
     with CaptureQueriesContext(connection) as context:
-        response = _get(client, datastream_id=str(datastream.id), profile=COLUMN, properties="phenomenonTime,result")
+        response = _get(client, datastreamId=str(datastream.id), profile=COLUMN, properties="phenomenonTime,result")
 
     (group,) = response.json()["data"]
     assert list(group["columns"]) == ["phenomenonTime", "result"]
@@ -248,7 +248,7 @@ def test_column_groups_without_selected_columns_still_page(client):
     datastream = _datastream()
     _observations(datastream, 3)
 
-    response = _get(client, datastream_id=str(datastream.id), profile=COLUMN, properties="datastreamId", limit=2)
+    response = _get(client, datastreamId=str(datastream.id), profile=COLUMN, properties="datastreamId", limit=2)
 
     (group,) = response.json()["data"]
     assert group == {"datastreamId": str(datastream.id), "columns": {}}
@@ -259,7 +259,7 @@ def test_grouped_pages_span_datastreams_and_return_every_observation_once(client
     first, second = _sorted_datastreams(_datastream(), _datastream())
     expected = {observation.id for observation in [*_observations(first, 3), *_observations(second, 2)]}
 
-    response = _get(client, datastream_id=[str(first.id), str(second.id)], profile=ROW, limit=2)
+    response = _get(client, datastreamId=[str(first.id), str(second.id)], profile=ROW, limit=2)
     pages = [response]
     while "next" in links_by_rel(pages[-1]):
         parts = urlsplit(links_by_rel(pages[-1])["next"]["href"])
@@ -281,7 +281,7 @@ def test_grouped_profiles_cover_every_viewable_datastream_without_a_filter(clien
 
 
 def test_an_empty_grouped_page_has_no_groups(client):
-    response = _get(client, profile=ROW, datastream_id=str(_datastream().id))
+    response = _get(client, profile=ROW, datastreamId=str(_datastream().id))
 
     assert response.status_code == 200
     assert response.json()["data"] == []
@@ -306,7 +306,7 @@ def test_properties_and_included_resources_combine_like_records(client, profile)
     workspace = WorkspaceFactory()
     datastream = _datastream(workspace)
     _observations(datastream, 2)
-    params = {"datastream_id": str(datastream.id), "include": "datastream", "properties": "result,workspaceId"}
+    params = {"datastreamId": str(datastream.id), "include": "datastream", "properties": "result,workspaceId"}
 
     records = _get(client, **params).json()
     groups = _get(client, **params, profile=profile).json()

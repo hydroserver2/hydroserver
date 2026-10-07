@@ -67,7 +67,7 @@ An Observation is the act of measuring or otherwise determining the value of a p
 | O        | quality_code      | A text code indicating the quality of the Observation.                                                                   | String       |
 | O        | result_qualifiers | A JSON array of ResultQualifier names. | JSON array |
 
-**NOTE**: `quality_code` is persisted in the database, but the current Data Management API does not include it in the main observation schema. The API retains `resultQualifierCodes` and the filter `result_qualifier_code`; their values are qualifier names, not optional external codes. Python client interfaces such as `result_qualifier_codes` keep their existing names.
+**NOTE**: `quality_code` is persisted in the database, but the current Data Management API does not include it in the main observation schema. The API exposes `result_qualifiers` as `resultQualifiers` in observation payloads and as the `resultQualifiers` filter on observation queries; their values are qualifier names, not optional external codes. The Python client uses `result_qualifiers` for the corresponding keyword argument and DataFrame column.
 
 ## ObservedProperty
 

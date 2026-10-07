@@ -22,31 +22,31 @@ pytestmark = pytest.mark.django_db
 COLLECTIONS_URL = "/api/ogc/collections"
 
 NULLABLE_PARAMETERS = {
-    ("data-product-tasks", "latest_run_status"),
-    ("data-product-tasks", "rating_curve_id"),
+    ("data-product-tasks", "latestRunStatus"),
+    ("data-product-tasks", "ratingCurveId"),
     ("datastreams", "status"),
-    ("etl-tasks", "latest_run_status"),
-    ("methods", "datastream_id"),
-    ("methods", "monitoring_site_id"),
-    ("methods", "sensor_model"),
-    ("methods", "sensor_model_manufacturer"),
-    ("methods", "workspace_id"),
-    ("monitoring-sites", "admin_area_1"),
-    ("monitoring-sites", "admin_area_2"),
+    ("etl-tasks", "latestRunStatus"),
+    ("methods", "datastreamId"),
+    ("methods", "monitoringSiteId"),
+    ("methods", "sensorModel"),
+    ("methods", "sensorModelManufacturer"),
+    ("methods", "workspaceId"),
+    ("monitoring-sites", "adminArea1"),
+    ("monitoring-sites", "adminArea2"),
     ("monitoring-sites", "country"),
-    ("monitoring-tasks", "latest_run_status"),
-    ("observed-properties", "datastream_id"),
-    ("observed-properties", "monitoring_site_id"),
-    ("observed-properties", "workspace_id"),
-    ("processing-levels", "datastream_id"),
-    ("processing-levels", "monitoring_site_id"),
-    ("processing-levels", "workspace_id"),
-    ("quality-control-histories", "source_datastream_id"),
-    ("result-qualifiers", "workspace_id"),
-    ("roles", "workspace_id"),
-    ("units", "datastream_id"),
-    ("units", "monitoring_site_id"),
-    ("units", "workspace_id"),
+    ("monitoring-tasks", "latestRunStatus"),
+    ("observed-properties", "datastreamId"),
+    ("observed-properties", "monitoringSiteId"),
+    ("observed-properties", "workspaceId"),
+    ("processing-levels", "datastreamId"),
+    ("processing-levels", "monitoringSiteId"),
+    ("processing-levels", "workspaceId"),
+    ("quality-control-histories", "sourceDatastreamId"),
+    ("result-qualifiers", "workspaceId"),
+    ("roles", "workspaceId"),
+    ("units", "datastreamId"),
+    ("units", "monitoringSiteId"),
+    ("units", "workspaceId"),
 }
 
 
@@ -83,7 +83,7 @@ def test_null_selects_items_without_a_value(client):
     global_role = RoleFactory(global_role=True)
     RoleFactory()
 
-    response = client.get(f"{COLLECTIONS_URL}/roles/items", {"workspace_id": "null"})
+    response = client.get(f"{COLLECTIONS_URL}/roles/items", {"workspaceId": "null"})
 
     assert response.status_code == 200
     ids = {item["id"] for item in response.json()["data"]}
@@ -100,7 +100,7 @@ def test_null_combines_with_other_values(client):
     client.force_login(user)
 
     response = client.get(
-        f"{COLLECTIONS_URL}/units/items?workspace_id={workspace.id}&workspace_id=null&limit=1000"
+        f"{COLLECTIONS_URL}/units/items?workspaceId={workspace.id}&workspaceId=null&limit=1000"
     )
 
     assert response.status_code == 200
@@ -113,8 +113,8 @@ def test_null_combines_with_other_values(client):
     "collection, parameter, field",
     [
         ("monitoring-sites", "country", "country"),
-        ("monitoring-sites", "admin_area_1", "admin_area_1"),
-        ("methods", "sensor_model", "sensor_model"),
+        ("monitoring-sites", "adminArea1", "admin_area_1"),
+        ("methods", "sensorModel", "sensor_model"),
     ],
 )
 def test_newly_nullable_string_filters_select_null_values(client, collection, parameter, field):
@@ -148,7 +148,7 @@ def test_null_matching_is_case_sensitive_for_string_filters(client):
     literal_site = MonitoringSiteFactory(admin_area_1="NULL")
 
     response = client.get(
-        f"{COLLECTIONS_URL}/monitoring-sites/items", {"admin_area_1": "NULL", "limit": 1000}
+        f"{COLLECTIONS_URL}/monitoring-sites/items", {"adminArea1": "NULL", "limit": 1000}
     )
 
     assert response.status_code == 200
@@ -159,7 +159,7 @@ def test_null_matching_is_case_sensitive_for_string_filters(client):
 
 @pytest.mark.parametrize("value", ["NULL", "Null"])
 def test_null_matching_is_case_sensitive_for_typed_filters(client, value):
-    response = client.get(f"{COLLECTIONS_URL}/roles/items", {"workspace_id": value})
+    response = client.get(f"{COLLECTIONS_URL}/roles/items", {"workspaceId": value})
 
     assert response.status_code == 400
 
@@ -173,10 +173,10 @@ def test_null_matching_is_case_sensitive_for_typed_filters(client, value):
         ("units", "datetime"),
         ("units", "sortby"),
         ("units", "properties"),
-        ("datastreams", "monitoring_site_id"),
-        ("datastreams", "is_private"),
-        ("workspaces", "is_associated"),
-        ("etl-tasks", "workspace_id"),
+        ("datastreams", "monitoringSiteId"),
+        ("datastreams", "isPrivate"),
+        ("workspaces", "isAssociated"),
+        ("etl-tasks", "workspaceId"),
     ],
 )
 def test_non_nullable_parameters_reject_null(client, collection, parameter):
@@ -204,7 +204,7 @@ def test_boolean_parameters_accept_lowercase_true_and_false(client, value, expec
     public_site = MonitoringSiteFactory()
     client.force_login(UserFactory(superuser=True))
 
-    response = client.get(f"{COLLECTIONS_URL}/monitoring-sites/items", {"is_private": value, "limit": 1000})
+    response = client.get(f"{COLLECTIONS_URL}/monitoring-sites/items", {"isPrivate": value, "limit": 1000})
 
     assert response.status_code == 200
     ids = {item["id"] for item in response.json()["data"]}
@@ -216,10 +216,10 @@ def test_boolean_parameters_accept_lowercase_true_and_false(client, value, expec
 @pytest.mark.parametrize(
     "path, parameter",
     [
-        ("workspaces/items", "is_private"),
-        ("workspaces/items", "is_associated"),
-        ("datastreams/items", "is_private"),
-        ("monitoring-sites/items", "is_private"),
+        ("workspaces/items", "isPrivate"),
+        ("workspaces/items", "isAssociated"),
+        ("datastreams/items", "isPrivate"),
+        ("monitoring-sites/items", "isPrivate"),
     ],
 )
 def test_boolean_parameters_reject_other_spellings(client, path, parameter, value):
@@ -236,7 +236,7 @@ def test_include_ancestors_rejects_other_spellings(client, value):
 
     response = client.get(
         f"{COLLECTIONS_URL}/quality-control-histories/items/{history_id}/sessions",
-        {"include_ancestors": value},
+        {"includeAncestors": value},
     )
 
     assert response.status_code == 400

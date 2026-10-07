@@ -270,7 +270,7 @@ def test_get_rating_curves_filters_by_monitoring_site_id(client):
     RatingCurveFactory(monitoring_site=site_b)
     client.force_login(owner)
 
-    response = client.get(RATING_CURVES_URL, {"monitoring_site_id": str(site_a.id)})
+    response = client.get(RATING_CURVES_URL, {"monitoringSiteId": str(site_a.id)})
 
     assert response.status_code == 200
     assert [r["id"] for r in response.json()["data"]] == [str(curve_a.id)]
@@ -284,7 +284,7 @@ def test_get_rating_curves_filters_by_workspace_id(client):
     _make_rating_curve(workspace_b)
     client.force_login(owner)
 
-    response = client.get(RATING_CURVES_URL, {"workspace_id": str(workspace_a.id)})
+    response = client.get(RATING_CURVES_URL, {"workspaceId": str(workspace_a.id)})
 
     assert response.status_code == 200
     assert [r["id"] for r in response.json()["data"]] == [str(curve_a.id)]
