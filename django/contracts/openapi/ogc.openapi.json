@@ -16514,7 +16514,7 @@
   "info": {
     "description": "Provides access to hydrologic monitoring sites, datastreams, and observations managed in HydroServer.",
     "title": "HydroServer Data Management API",
-    "version": "2.0.0b4"
+    "version": "2.0.0b5"
   },
   "openapi": "3.1.0",
   "paths": {
