@@ -1,5 +1,3 @@
-import uuid
-
 from datetime import datetime
 from typing import Literal, Optional, Annotated
 from ninja import Query
@@ -14,6 +12,7 @@ from interfaces.api.schemas import (
     split_sortby,
     sortby_array_schema,
 )
+from interfaces.api.schemas.base import ItemId
 
 
 _sortby_fields = ("id", "status", "startedAt", "finishedAt")
@@ -62,8 +61,7 @@ class TaskRunQueryParameters(CollectionQueryParameters):
     )
 
 
-class TaskRunResponse(BaseGetResponse):
-    id: uuid.UUID
+class TaskRunResponse(BaseGetResponse, ItemId):
     status: Literal["PENDING", "STARTED", "SUCCESS", "FAILURE"]
     message: str | None = None
     result: dict | None = None

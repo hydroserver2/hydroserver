@@ -19,6 +19,10 @@ if TYPE_CHECKING:
         ProcessingLevel,
     )
 
+COLUMN_PROFILE = "https://hydroserver.org/profiles/observations/column"
+LOADABLE_OBSERVATION_PROPERTIES = ("phenomenonTime", "result", "resultQualifiers")
+READ_ONLY_OBSERVATION_PROPERTIES = ("id", "workspaceId", "datastreamId")
+
 
 class DatastreamService(HydroServerBaseService):
     def __init__(self, client: "HydroServer"):
@@ -238,7 +242,8 @@ class DatastreamService(HydroServerBaseService):
             "sortby": ",".join(sortby_to_camel(o) for o in sortby) if sortby is not ... else sortby,
             "datetime": build_datetime_interval(phenomenon_time_min, phenomenon_time_max),
             "resultQualifiers": result_qualifiers,
-            "format": "column"
+            "profile": COLUMN_PROFILE,
+            "properties": ",".join(LOADABLE_OBSERVATION_PROPERTIES),
         }
         params = {
             k: ("null" if v is None else v)
@@ -275,6 +280,10 @@ class DatastreamService(HydroServerBaseService):
         mode: str = "insert"
     ) -> None:
         """Load observations to a datastream."""
+
+        observations = observations.drop(
+            columns=[col for col in observations.columns if to_camel(col) in READ_ONLY_OBSERVATION_PROPERTIES]
+        )
 
         path = f"/{self.client.base_route}/collections/observations/bulk-create"
         headers = {"Content-type": "application/json"}

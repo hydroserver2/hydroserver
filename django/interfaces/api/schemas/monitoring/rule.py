@@ -18,6 +18,7 @@ from interfaces.api.schemas import (
     split_sortby,
     sortby_array_schema,
 )
+from interfaces.api.schemas.base import ItemId, NewItemId
 
 
 WindowIntervalUnits = Literal["minutes", "hours", "days"]
@@ -47,6 +48,7 @@ MonitoringRuleSortByFields = Literal[
 
 _property_fields = (
     "id",
+    "taskId",
     "datastreamId",
     "ruleType",
     "lastCheckedAt",
@@ -99,16 +101,14 @@ class MonitoringRuleQueryParameters(MonitoringRuleFilterFields, CollectionQueryP
     )
 
 
-class MonitoringRuleResponse(BaseGetResponse, MonitoringRuleFields):
-    id: uuid.UUID
+class MonitoringRuleResponse(BaseGetResponse, MonitoringRuleFields, ItemId):
     task_id: uuid.UUID
     datastream_id: uuid.UUID
     rule_type: RuleType
     last_checked_at: Optional[datetime] = None
 
 
-class MonitoringRulePostBody(BasePostBody, MonitoringRuleFields):
-    id: Optional[uuid.UUID] = None
+class MonitoringRulePostBody(BasePostBody, MonitoringRuleFields, NewItemId):
     task_id: uuid.UUID
     datastream_id: uuid.UUID
     rule_type: RuleType

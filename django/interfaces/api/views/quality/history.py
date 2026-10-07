@@ -3,7 +3,7 @@ import uuid
 from ninja import Router, Path, Query
 
 from interfaces.api.http.request import HydroServerHttpRequest
-from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
+from interfaces.auth.security import session_auth, oidc_data_read_auth, oidc_data_write_auth, apikey_auth, basic_auth
 from interfaces.api.services.quality.history import QCHistoryAPIService
 from interfaces.api.schemas import PaginatedResponse, ItemResponse, CreatedResponse
 from interfaces.api.schemas.quality.history import (
@@ -19,7 +19,7 @@ qc_history_service = QCHistoryAPIService()
 
 @qc_history_router.get(
     "/items",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth],
     response={
         200: PaginatedResponse[QualityControlHistoryResponse],
         401: str,
@@ -46,7 +46,7 @@ def get_qc_histories(
 
 @qc_history_router.post(
     "/items",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={201: CreatedResponse, 400: str, 401: str, 403: str, 404: str},
     by_alias=True,
 )
@@ -61,7 +61,7 @@ def create_qc_history(
 
 @qc_history_router.get(
     "/items/{history_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth],
     response={
         200: ItemResponse[QualityControlHistoryResponse],
         401: str,
@@ -84,7 +84,7 @@ def get_qc_history(
 
 @qc_history_router.delete(
     "/items/{history_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={204: None, 401: str, 403: str, 404: str},
     by_alias=True,
 )

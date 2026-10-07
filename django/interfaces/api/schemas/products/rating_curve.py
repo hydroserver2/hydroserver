@@ -18,6 +18,7 @@ from interfaces.api.schemas import (
     split_sortby,
     sortby_array_schema,
 )
+from interfaces.api.schemas.base import ItemId, NewItemId
 
 
 FittingMethod = Literal["linear", "power_law"]
@@ -103,8 +104,7 @@ class RatingCurveQueryParameters(RatingCurveFilterFields, CollectionQueryParamet
     )
 
 
-class RatingCurveResponse(BaseGetResponse, RatingCurveFields):
-    id: uuid.UUID
+class RatingCurveResponse(BaseGetResponse, RatingCurveFields, ItemId):
     monitoring_site_id: uuid.UUID
 
     @staticmethod
@@ -116,8 +116,7 @@ class RatingCurveResponse(BaseGetResponse, RatingCurveFields):
         return [(p.input_value, p.output_value) for p in points.all()]
 
 
-class RatingCurvePostBody(BasePostBody, RatingCurveFields):
-    id: Optional[uuid.UUID] = None
+class RatingCurvePostBody(BasePostBody, RatingCurveFields, NewItemId):
     monitoring_site_id: uuid.UUID
 
 

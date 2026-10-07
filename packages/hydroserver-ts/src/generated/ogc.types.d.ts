@@ -2226,7 +2226,10 @@ export interface components {
         AggregationStatisticPostBody: {
             /** Description */
             description?: string | null;
-            /** Id */
+            /**
+             * Id
+             * @description The new item's identifier. Generated if omitted.
+             */
             id?: string | null;
             /** Name */
             name: string;
@@ -2238,6 +2241,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /** Name */
@@ -2362,8 +2366,12 @@ export interface components {
             description: string;
             /** Id */
             id: string;
-            /** Itemtype */
-            itemType?: string | null;
+            /**
+             * Itemtype
+             * @description The type of the collection's items: 'feature' for spatial items served as OGC API features, or 'resource' for non-spatial items.
+             * @enum {string}
+             */
+            itemType: "feature" | "resource";
             /** Links */
             links: components["schemas"]["Link"][];
             /** Title */
@@ -2392,6 +2400,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
         };
@@ -2526,6 +2535,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /** Name */
@@ -2718,6 +2728,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             latestRun?: components["schemas"]["TaskRunResponse"] | null;
@@ -2751,7 +2762,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
+            properties?: ("id" | "taskId" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
         };
         /** DataProductTransformationPatchBody */
         DataProductTransformationPatchBody: {
@@ -2789,7 +2800,10 @@ export interface components {
             aggregationMethod?: ("mean" | "sum" | "min" | "max" | "first" | "last" | "time_weighted_mean") | null;
             /** Formula */
             formula?: string | null;
-            /** Id */
+            /**
+             * Id
+             * @description The new item's identifier. Generated if omitted.
+             */
             id?: string | null;
             /**
              * Inputdatastreams
@@ -2873,7 +2887,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
+            properties?: ("id" | "taskId" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
             /**
              * Sortby
              * @description Select one or more fields to sort the response by.
@@ -2908,6 +2922,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /**
@@ -3035,7 +3050,10 @@ export interface components {
             aggregationStatistic: string;
             /** Description */
             description: string;
-            /** Id */
+            /**
+             * Id
+             * @description The new item's identifier. Generated if omitted.
+             */
             id?: string | null;
             /** Intendedtimespacing */
             intendedTimeSpacing?: number | null;
@@ -3102,6 +3120,95 @@ export interface components {
              * Format: uuid
              */
             unitId: string;
+        };
+        /** DatastreamProperties */
+        DatastreamProperties: {
+            /** Aggregationstatistic */
+            aggregationStatistic: string;
+            /** Description */
+            description: string;
+            /** Intendedtimespacing */
+            intendedTimeSpacing?: number | null;
+            /** Intendedtimespacingunit */
+            intendedTimeSpacingUnit?: ("seconds" | "minutes" | "hours" | "days") | null;
+            /**
+             * Isprivate
+             * @default false
+             */
+            isPrivate: boolean;
+            /**
+             * Isvisible
+             * @default true
+             */
+            isVisible: boolean;
+            /** Linkedresources */
+            linkedResources: components["schemas"]["LinkedResourceGetResponse"][];
+            /**
+             * Methodid
+             * Format: uuid
+             */
+            methodId: string;
+            /**
+             * Monitoringsiteid
+             * Format: uuid
+             */
+            monitoringSiteId: string;
+            /** Name */
+            name: string;
+            /** Nodatavalue */
+            noDataValue: number;
+            /** Observationtype */
+            observationType: string;
+            /**
+             * Observedpropertyid
+             * Format: uuid
+             */
+            observedPropertyId: string;
+            /** Phenomenonbegintime */
+            phenomenonBeginTime?: string | null;
+            /** Phenomenonendtime */
+            phenomenonEndTime?: string | null;
+            /**
+             * Processinglevelid
+             * Format: uuid
+             */
+            processingLevelId: string;
+            /** Resultbegintime */
+            resultBeginTime?: string | null;
+            /** Resultendtime */
+            resultEndTime?: string | null;
+            /** Resulttype */
+            resultType: string;
+            /** Sampledmedium */
+            sampledMedium: string;
+            /** Status */
+            status?: string | null;
+            /**
+             * Tags
+             * @default {}
+             */
+            tags: {
+                [key: string]: string;
+            };
+            /** Timeaggregationinterval */
+            timeAggregationInterval: number;
+            /**
+             * Timeaggregationintervalunit
+             * @enum {string}
+             */
+            timeAggregationIntervalUnit: "seconds" | "minutes" | "hours" | "days";
+            /**
+             * Unitid
+             * Format: uuid
+             */
+            unitId: string;
+            /** Valuecount */
+            valueCount?: number | null;
+            /**
+             * Workspaceid
+             * Format: uuid
+             */
+            workspaceId: string;
         };
         /** DatastreamQueryParameters */
         DatastreamQueryParameters: {
@@ -3239,6 +3346,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /** Intendedtimespacing */
@@ -3335,7 +3443,10 @@ export interface components {
         DatastreamStatusPostBody: {
             /** Description */
             description?: string | null;
-            /** Id */
+            /**
+             * Id
+             * @description The new item's identifier. Generated if omitted.
+             */
             id?: string | null;
             /** Name */
             name: string;
@@ -3347,6 +3458,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /** Name */
@@ -3383,7 +3495,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "sourceIdentifier" | "targetDatastreamId")[];
+            properties?: ("id" | "etlTaskId" | "sourceIdentifier" | "targetDatastreamId")[];
         };
         /** EtlMappingPatchBody */
         EtlMappingPatchBody: {
@@ -3402,7 +3514,10 @@ export interface components {
              * Format: uuid
              */
             etlTaskId: string;
-            /** Id */
+            /**
+             * Id
+             * @description The new item's identifier. Generated if omitted.
+             */
             id?: string | null;
             /** Sourceidentifier */
             sourceIdentifier: string;
@@ -3445,7 +3560,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "sourceIdentifier" | "targetDatastreamId")[];
+            properties?: ("id" | "etlTaskId" | "sourceIdentifier" | "targetDatastreamId")[];
             /**
              * Sortby
              * @description Select one or more fields to sort the response by.
@@ -3481,6 +3596,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /** Sourceidentifier */
@@ -3638,6 +3754,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             latestRun?: components["schemas"]["TaskRunResponse"] | null;
@@ -3661,6 +3778,256 @@ export interface components {
              * Format: uuid
              */
             workspaceId: string;
+        };
+        /** GeoJSONFeatureCollection[DatastreamProperties] */
+        GeoJSONFeatureCollection_DatastreamProperties_: {
+            /** Features */
+            features: components["schemas"]["GeoJSONFeature_DatastreamProperties_"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            /** Links */
+            links: components["schemas"]["Link"][];
+            /** Numbermatched */
+            numberMatched?: number | null;
+            /** Numberreturned */
+            numberReturned: number;
+            /**
+             * Type
+             * @constant
+             */
+            type: "FeatureCollection";
+        };
+        /** GeoJSONFeatureCollection[MonitoringSiteProperties] */
+        GeoJSONFeatureCollection_MonitoringSiteProperties_: {
+            /** Features */
+            features: components["schemas"]["GeoJSONFeature_MonitoringSiteProperties_"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            /** Links */
+            links: components["schemas"]["Link"][];
+            /** Numbermatched */
+            numberMatched?: number | null;
+            /** Numberreturned */
+            numberReturned: number;
+            /**
+             * Type
+             * @constant
+             */
+            type: "FeatureCollection";
+        };
+        /** GeoJSONFeatureCollection[ObservationProperties] */
+        GeoJSONFeatureCollection_ObservationProperties_: {
+            /** Features */
+            features: components["schemas"]["GeoJSONFeature_ObservationProperties_"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            /** Links */
+            links: components["schemas"]["Link"][];
+            /** Numbermatched */
+            numberMatched?: number | null;
+            /** Numberreturned */
+            numberReturned: number;
+            /**
+             * Type
+             * @constant
+             */
+            type: "FeatureCollection";
+        };
+        /** GeoJSONFeatureCollection[WorkspaceProperties] */
+        GeoJSONFeatureCollection_WorkspaceProperties_: {
+            /** Features */
+            features: components["schemas"]["GeoJSONFeature_WorkspaceProperties_"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            /** Links */
+            links: components["schemas"]["Link"][];
+            /** Numbermatched */
+            numberMatched?: number | null;
+            /** Numberreturned */
+            numberReturned: number;
+            /**
+             * Type
+             * @constant
+             */
+            type: "FeatureCollection";
+        };
+        /** GeoJSONFeatureDocument[DatastreamProperties] */
+        GeoJSONFeatureDocument_DatastreamProperties_: {
+            /** Bbox */
+            bbox?: number[] | null;
+            /** Geometry */
+            geometry: (components["schemas"]["GeoJSONPoint"] | components["schemas"]["GeoJSONPolygon"]) | null;
+            /** Id */
+            id: string;
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            /** Links */
+            links: components["schemas"]["Link"][];
+            properties: components["schemas"]["DatastreamProperties"];
+            /**
+             * Type
+             * @constant
+             */
+            type: "Feature";
+        };
+        /** GeoJSONFeatureDocument[MonitoringSiteProperties] */
+        GeoJSONFeatureDocument_MonitoringSiteProperties_: {
+            /** Bbox */
+            bbox?: number[] | null;
+            /** Geometry */
+            geometry: (components["schemas"]["GeoJSONPoint"] | components["schemas"]["GeoJSONPolygon"]) | null;
+            /** Id */
+            id: string;
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            /** Links */
+            links: components["schemas"]["Link"][];
+            properties: components["schemas"]["MonitoringSiteProperties"];
+            /**
+             * Type
+             * @constant
+             */
+            type: "Feature";
+        };
+        /** GeoJSONFeatureDocument[ObservationProperties] */
+        GeoJSONFeatureDocument_ObservationProperties_: {
+            /** Bbox */
+            bbox?: number[] | null;
+            /** Geometry */
+            geometry: (components["schemas"]["GeoJSONPoint"] | components["schemas"]["GeoJSONPolygon"]) | null;
+            /** Id */
+            id: string;
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            /** Links */
+            links: components["schemas"]["Link"][];
+            properties: components["schemas"]["ObservationProperties"];
+            /**
+             * Type
+             * @constant
+             */
+            type: "Feature";
+        };
+        /** GeoJSONFeatureDocument[WorkspaceProperties] */
+        GeoJSONFeatureDocument_WorkspaceProperties_: {
+            /** Bbox */
+            bbox?: number[] | null;
+            /** Geometry */
+            geometry: (components["schemas"]["GeoJSONPoint"] | components["schemas"]["GeoJSONPolygon"]) | null;
+            /** Id */
+            id: string;
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            /** Links */
+            links: components["schemas"]["Link"][];
+            properties: components["schemas"]["WorkspaceProperties"];
+            /**
+             * Type
+             * @constant
+             */
+            type: "Feature";
+        };
+        /** GeoJSONFeature[DatastreamProperties] */
+        GeoJSONFeature_DatastreamProperties_: {
+            /** Bbox */
+            bbox?: number[] | null;
+            /** Geometry */
+            geometry: (components["schemas"]["GeoJSONPoint"] | components["schemas"]["GeoJSONPolygon"]) | null;
+            /** Id */
+            id: string;
+            properties: components["schemas"]["DatastreamProperties"];
+            /**
+             * Type
+             * @constant
+             */
+            type: "Feature";
+        };
+        /** GeoJSONFeature[MonitoringSiteProperties] */
+        GeoJSONFeature_MonitoringSiteProperties_: {
+            /** Bbox */
+            bbox?: number[] | null;
+            /** Geometry */
+            geometry: (components["schemas"]["GeoJSONPoint"] | components["schemas"]["GeoJSONPolygon"]) | null;
+            /** Id */
+            id: string;
+            properties: components["schemas"]["MonitoringSiteProperties"];
+            /**
+             * Type
+             * @constant
+             */
+            type: "Feature";
+        };
+        /** GeoJSONFeature[ObservationProperties] */
+        GeoJSONFeature_ObservationProperties_: {
+            /** Bbox */
+            bbox?: number[] | null;
+            /** Geometry */
+            geometry: (components["schemas"]["GeoJSONPoint"] | components["schemas"]["GeoJSONPolygon"]) | null;
+            /** Id */
+            id: string;
+            properties: components["schemas"]["ObservationProperties"];
+            /**
+             * Type
+             * @constant
+             */
+            type: "Feature";
+        };
+        /** GeoJSONFeature[WorkspaceProperties] */
+        GeoJSONFeature_WorkspaceProperties_: {
+            /** Bbox */
+            bbox?: number[] | null;
+            /** Geometry */
+            geometry: (components["schemas"]["GeoJSONPoint"] | components["schemas"]["GeoJSONPolygon"]) | null;
+            /** Id */
+            id: string;
+            properties: components["schemas"]["WorkspaceProperties"];
+            /**
+             * Type
+             * @constant
+             */
+            type: "Feature";
+        };
+        /** GeoJSONPoint */
+        GeoJSONPoint: {
+            /** Coordinates */
+            coordinates: [
+                number,
+                number
+            ];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "Point";
+        };
+        /** GeoJSONPolygon */
+        GeoJSONPolygon: {
+            /** Coordinates */
+            coordinates: [
+                number,
+                number
+            ][][];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "Polygon";
         };
         /** ItemResponse[AggregationStatisticResponse] */
         ItemResponse_AggregationStatisticResponse_: {
@@ -4129,7 +4496,7 @@ export interface components {
             /** Title */
             title?: string | null;
             /** Type */
-            type: string;
+            type?: string | null;
         };
         /** LinkedResourceGetResponse */
         LinkedResourceGetResponse: {
@@ -4138,6 +4505,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /** Link */
@@ -4184,7 +4552,10 @@ export interface components {
         LinkedResourceTypePostBody: {
             /** Description */
             description?: string | null;
-            /** Id */
+            /**
+             * Id
+             * @description The new item's identifier. Generated if omitted.
+             */
             id?: string | null;
             /** Name */
             name: string;
@@ -4196,6 +4567,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /** Name */
@@ -4241,7 +4613,10 @@ export interface components {
             definition?: string | null;
             /** Description */
             description: string;
-            /** Id */
+            /**
+             * Id
+             * @description The new item's identifier. Generated if omitted.
+             */
             id?: string | null;
             /** Name */
             name: string;
@@ -4343,6 +4718,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /** Name */
@@ -4369,7 +4745,10 @@ export interface components {
         MethodTypePostBody: {
             /** Description */
             description?: string | null;
-            /** Id */
+            /**
+             * Id
+             * @description The new item's identifier. Generated if omitted.
+             */
             id?: string | null;
             /** Name */
             name: string;
@@ -4381,6 +4760,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /** Name */
@@ -4397,7 +4777,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "datastreamId" | "ruleType" | "lastCheckedAt" | "minValue" | "maxValue" | "windowInterval" | "windowIntervalUnits")[];
+            properties?: ("id" | "taskId" | "datastreamId" | "ruleType" | "lastCheckedAt" | "minValue" | "maxValue" | "windowInterval" | "windowIntervalUnits")[];
         };
         /** MonitoringRulePatchBody */
         MonitoringRulePatchBody: {
@@ -4417,7 +4797,10 @@ export interface components {
              * Format: uuid
              */
             datastreamId: string;
-            /** Id */
+            /**
+             * Id
+             * @description The new item's identifier. Generated if omitted.
+             */
             id?: string | null;
             /** Maxvalue */
             maxValue?: number | null;
@@ -4471,7 +4854,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "datastreamId" | "ruleType" | "lastCheckedAt" | "minValue" | "maxValue" | "windowInterval" | "windowIntervalUnits")[];
+            properties?: ("id" | "taskId" | "datastreamId" | "ruleType" | "lastCheckedAt" | "minValue" | "maxValue" | "windowInterval" | "windowIntervalUnits")[];
             /**
              * Ruletype
              * @description Filter rules by rule type.
@@ -4507,6 +4890,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /** Lastcheckedat */
@@ -4541,7 +4925,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "workspaceId" | "name" | "description" | "code" | "type" | "latitude" | "longitude" | "elevationM" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "dataDisclaimer" | "isPrivate" | "tags" | "linkedResources")[];
+            properties?: ("id" | "workspaceId" | "latitude" | "longitude" | "name" | "description" | "code" | "type" | "elevationM" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "dataDisclaimer" | "isPrivate" | "tags" | "linkedResources")[];
         };
         /** MonitoringSiteMapSummaryQueryParameters */
         MonitoringSiteMapSummaryQueryParameters: {
@@ -4565,6 +4949,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /** Isprivate */
@@ -4609,6 +4994,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /** Isprivate */
@@ -4678,7 +5064,10 @@ export interface components {
             elevationDatum?: string | null;
             /** Elevationm */
             elevationM?: number | string | null;
-            /** Id */
+            /**
+             * Id
+             * @description The new item's identifier. Generated if omitted.
+             */
             id?: string | null;
             /** Isprivate */
             isPrivate: boolean;
@@ -4686,6 +5075,45 @@ export interface components {
             latitude: number | string;
             /** Longitude */
             longitude: number | string;
+            /** Name */
+            name: string;
+            /**
+             * Tags
+             * @default {}
+             */
+            tags: {
+                [key: string]: string;
+            };
+            /** Type */
+            type: string;
+            /**
+             * Workspaceid
+             * Format: uuid
+             */
+            workspaceId: string;
+        };
+        /** MonitoringSiteProperties */
+        MonitoringSiteProperties: {
+            /** Adminarea1 */
+            adminArea1?: string | null;
+            /** Adminarea2 */
+            adminArea2?: string | null;
+            /** Code */
+            code: string;
+            /** Country */
+            country?: string | null;
+            /** Datadisclaimer */
+            dataDisclaimer?: string | null;
+            /** Description */
+            description: string;
+            /** Elevationdatum */
+            elevationDatum?: string | null;
+            /** Elevationm */
+            elevationM?: number | null;
+            /** Isprivate */
+            isPrivate: boolean;
+            /** Linkedresources */
+            linkedResources: components["schemas"]["LinkedResourceGetResponse"][];
             /** Name */
             name: string;
             /**
@@ -4753,7 +5181,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "workspaceId" | "name" | "description" | "code" | "type" | "latitude" | "longitude" | "elevationM" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "dataDisclaimer" | "isPrivate" | "tags" | "linkedResources")[];
+            properties?: ("id" | "workspaceId" | "latitude" | "longitude" | "name" | "description" | "code" | "type" | "elevationM" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "dataDisclaimer" | "isPrivate" | "tags" | "linkedResources")[];
             /**
              * Q
              * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
@@ -4805,6 +5233,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /** Isprivate */
@@ -4852,6 +5281,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /**
@@ -4890,7 +5320,10 @@ export interface components {
         MonitoringSiteTypePostBody: {
             /** Description */
             description?: string | null;
-            /** Id */
+            /**
+             * Id
+             * @description The new item's identifier. Generated if omitted.
+             */
             id?: string | null;
             /** Name */
             name: string;
@@ -4902,6 +5335,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /** Name */
@@ -5031,6 +5465,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             latestRun?: components["schemas"]["TaskRunResponse"] | null;
@@ -5128,39 +5563,38 @@ export interface components {
              */
             mode?: ("insert" | "append" | "backfill" | "replace") | null;
         };
-        /** ObservationColumnarData */
-        ObservationColumnarData: {
-            /** Phenomenontime */
-            phenomenonTime: unknown[];
-            /** Result */
-            result: unknown[];
-            /** Resultqualifiers */
-            resultQualifiers: unknown[];
-        };
-        /** ObservationColumnarResponse */
-        ObservationColumnarResponse: {
-            data: components["schemas"]["ObservationColumnarData"];
-            /** Included */
-            included?: {
-                [key: string]: unknown[];
-            } | null;
+        /** ObservationColumnResponse */
+        ObservationColumnResponse: {
+            columns: components["schemas"]["ObservationColumns"];
             /**
-             * Links
-             * @default []
+             * Datastreamid
+             * Format: uuid
              */
-            links: components["schemas"]["Link"][];
-            meta: components["schemas"]["PaginationMeta"];
+            datastreamId: string;
+            /** Workspaceid */
+            workspaceId?: string | null;
+        };
+        /** ObservationColumns */
+        ObservationColumns: {
+            /** Id */
+            id?: string[] | null;
+            /** Phenomenontime */
+            phenomenonTime?: unknown[] | null;
+            /** Result */
+            result?: unknown[] | null;
+            /** Resultqualifiers */
+            resultQualifiers?: unknown[] | null;
         };
         /** ObservationItemQueryParameters */
         ObservationItemQueryParameters: {
             /**
              * Include
-             * @description Comma-separated list of related resources to include in the response. Only applies to format=record.
+             * @description Comma-separated list of related resources to include in the response.
              */
             include?: ("datastream" | "workspace" | "resultQualifiers")[];
             /**
              * Properties
-             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted. Only applies to format=record.
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
             properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "result" | "resultQualifiers")[];
         };
@@ -5171,7 +5605,10 @@ export interface components {
              * Format: uuid
              */
             datastreamId: string;
-            /** Id */
+            /**
+             * Id
+             * @description The new item's identifier. Generated if omitted.
+             */
             id?: string | null;
             /** Phenomenontime */
             phenomenonTime: string;
@@ -5182,6 +5619,31 @@ export interface components {
              * @default []
              */
             resultQualifiers: string[];
+        };
+        /** ObservationProperties */
+        ObservationProperties: {
+            /**
+             * Datastreamid
+             * Format: uuid
+             */
+            datastreamId: string;
+            /**
+             * Phenomenontime
+             * Format: date-time
+             */
+            phenomenonTime: string;
+            /** Result */
+            result: number;
+            /**
+             * Resultqualifiers
+             * @default []
+             */
+            resultQualifiers: string[];
+            /**
+             * Workspaceid
+             * Format: uuid
+             */
+            workspaceId: string;
         };
         /** ObservationQueryParameters */
         ObservationQueryParameters: {
@@ -5196,13 +5658,8 @@ export interface components {
             /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
             datetime?: string;
             /**
-             * Format
-             * @description Controls the format of the observations response.
-             */
-            format?: ("record" | "row" | "column") | null;
-            /**
              * Include
-             * @description Comma-separated list of related resources to include in the response. Only applies to format=record.
+             * @description Comma-separated list of related resources to include in the response.
              */
             include?: ("datastream" | "workspace" | "resultQualifiers")[];
             /**
@@ -5219,7 +5676,7 @@ export interface components {
             offset: number | null;
             /**
              * Properties
-             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted. Only applies to format=record.
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
             properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "result" | "resultQualifiers")[];
             /**
@@ -5245,6 +5702,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /**
@@ -5265,26 +5723,19 @@ export interface components {
              */
             workspaceId: string;
         };
-        /** ObservationRowData */
-        ObservationRowData: {
-            /** Fields */
-            fields: ("phenomenonTime" | "result" | "resultQualifiers")[];
-            /** Rows */
-            rows: unknown[][];
-        };
         /** ObservationRowResponse */
         ObservationRowResponse: {
-            data: components["schemas"]["ObservationRowData"];
-            /** Included */
-            included?: {
-                [key: string]: unknown[];
-            } | null;
             /**
-             * Links
-             * @default []
+             * Datastreamid
+             * Format: uuid
              */
-            links: components["schemas"]["Link"][];
-            meta: components["schemas"]["PaginationMeta"];
+            datastreamId: string;
+            /** Fields */
+            fields: ("id" | "phenomenonTime" | "result" | "resultQualifiers")[];
+            /** Rows */
+            rows: unknown[][];
+            /** Workspaceid */
+            workspaceId?: string | null;
         };
         /** ObservedPropertyItemQueryParameters */
         ObservedPropertyItemQueryParameters: {
@@ -5320,7 +5771,10 @@ export interface components {
             definition?: string | null;
             /** Description */
             description: string;
-            /** Id */
+            /**
+             * Id
+             * @description The new item's identifier. Generated if omitted.
+             */
             id?: string | null;
             /** Name */
             name: string;
@@ -5404,6 +5858,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /** Name */
@@ -5424,7 +5879,10 @@ export interface components {
         ObservedPropertyTypePostBody: {
             /** Description */
             description?: string | null;
-            /** Id */
+            /**
+             * Id
+             * @description The new item's identifier. Generated if omitted.
+             */
             id?: string | null;
             /** Name */
             name: string;
@@ -5436,6 +5894,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /** Name */
@@ -5696,10 +6155,40 @@ export interface components {
             links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
+        /** PaginatedResponse[ObservationColumnResponse] */
+        PaginatedResponse_ObservationColumnResponse_: {
+            /** Data */
+            data: components["schemas"]["ObservationColumnResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
         /** PaginatedResponse[ObservationResponse] */
         PaginatedResponse_ObservationResponse_: {
             /** Data */
             data: components["schemas"]["ObservationResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[ObservationRowResponse] */
+        PaginatedResponse_ObservationRowResponse_: {
+            /** Data */
+            data: components["schemas"]["ObservationRowResponse"][];
             /** Included */
             included?: {
                 [key: string]: unknown[];
@@ -5940,10 +6429,18 @@ export interface components {
         PaginationMeta: {
             /** Limit */
             limit: number;
+            /**
+             * Numbermatched
+             * @description The number of items that match the request's selection parameters.
+             */
+            numberMatched: number;
+            /**
+             * Numberreturned
+             * @description The number of items in the response.
+             */
+            numberReturned: number;
             /** Offset */
             offset: number;
-            /** Totalcount */
-            totalCount: number;
         };
         /** PayloadPatchBody */
         PayloadPatchBody: {
@@ -6045,7 +6542,10 @@ export interface components {
             definition?: string | null;
             /** Description */
             description: string;
-            /** Id */
+            /**
+             * Id
+             * @description The new item's identifier. Generated if omitted.
+             */
             id?: string | null;
             /** Name */
             name: string;
@@ -6121,6 +6621,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /** Name */
@@ -6211,6 +6712,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /** Managedchecksum */
@@ -6315,6 +6817,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /**
@@ -6423,6 +6926,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /** Managedchecksum */
@@ -6484,7 +6988,10 @@ export interface components {
              * @enum {string}
              */
             fittingMethod: "linear" | "power_law";
-            /** Id */
+            /**
+             * Id
+             * @description The new item's identifier. Generated if omitted.
+             */
             id?: string | null;
             /**
              * Monitoringsiteid
@@ -6566,6 +7073,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /**
@@ -6608,7 +7116,10 @@ export interface components {
         ResultQualifierPostBody: {
             /** Description */
             description?: string | null;
-            /** Id */
+            /**
+             * Id
+             * @description The new item's identifier. Generated if omitted.
+             */
             id?: string | null;
             /** Name */
             name: string;
@@ -6668,6 +7179,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /** Name */
@@ -6731,6 +7243,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /** Name */
@@ -6751,7 +7264,10 @@ export interface components {
         SampledMediumPostBody: {
             /** Description */
             description?: string | null;
-            /** Id */
+            /**
+             * Id
+             * @description The new item's identifier. Generated if omitted.
+             */
             id?: string | null;
             /** Name */
             name: string;
@@ -6763,6 +7279,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /** Name */
@@ -6817,6 +7334,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /** Key */
@@ -6855,7 +7373,10 @@ export interface components {
         ServiceAccountPostBody: {
             /** Description */
             description?: string | null;
-            /** Id */
+            /**
+             * Id
+             * @description The new item's identifier. Generated if omitted.
+             */
             id?: string | null;
             /** Isactive */
             isActive: boolean;
@@ -6911,6 +7432,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /** Isactive */
@@ -6998,6 +7520,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /** Message */
@@ -7065,7 +7588,10 @@ export interface components {
         UnitPostBody: {
             /** Definition */
             definition?: string | null;
-            /** Id */
+            /**
+             * Id
+             * @description The new item's identifier. Generated if omitted.
+             */
             id?: string | null;
             /** Name */
             name: string;
@@ -7147,6 +7673,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /** Name */
@@ -7169,7 +7696,10 @@ export interface components {
         UnitTypePostBody: {
             /** Description */
             description?: string | null;
-            /** Id */
+            /**
+             * Id
+             * @description The new item's identifier. Generated if omitted.
+             */
             id?: string | null;
             /** Name */
             name: string;
@@ -7181,6 +7711,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /** Name */
@@ -7213,6 +7744,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /** Intendedtimespacing */
@@ -7275,6 +7807,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /** Name */
@@ -7292,6 +7825,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /** Name */
@@ -7302,6 +7836,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /** Name */
@@ -7377,12 +7912,28 @@ export interface components {
         };
         /** WorkspacePostBody */
         WorkspacePostBody: {
-            /** Id */
+            /**
+             * Id
+             * @description The new item's identifier. Generated if omitted.
+             */
             id?: string | null;
             /** Isprivate */
             isPrivate: boolean;
             /** Name */
             name: string;
+        };
+        /** WorkspaceProperties */
+        WorkspaceProperties: {
+            /** Collaboratorroleid */
+            collaboratorRoleId?: string | null;
+            /** Isprivate */
+            isPrivate: boolean;
+            /** Name */
+            name: string;
+            /** Owneremail */
+            ownerEmail: string;
+            /** Pendingtransfertoemail */
+            pendingTransferToEmail?: string | null;
         };
         /** WorkspaceQueryParameters */
         WorkspaceQueryParameters: {
@@ -7441,6 +7992,7 @@ export interface components {
             /**
              * Id
              * Format: uuid
+             * @description The item's unique identifier.
              */
             id: string;
             /** Isprivate */
@@ -7528,6 +8080,8 @@ export interface operations {
                 sortby?: ("name" | "-name" | "+name")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path?: never;
@@ -7611,6 +8165,8 @@ export interface operations {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "name" | "description")[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path: {
@@ -7761,6 +8317,8 @@ export interface operations {
                 monitoringSiteId?: string[];
                 /** @description Filter rating curves by workspace ID. */
                 workspaceId?: string[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path?: never;
@@ -7855,6 +8413,8 @@ export interface operations {
                 properties?: ("id" | "monitoringSiteId" | "name" | "description" | "fittingMethod" | "points")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "monitoringSite"[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path: {
@@ -8042,6 +8602,8 @@ export interface operations {
                 inputDatastreamId?: string[];
                 /** @description Filter data product tasks by rating curve ID. */
                 ratingCurveId?: (string | "null")[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path?: never;
@@ -8136,6 +8698,8 @@ export interface operations {
                 properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "latestRun" | "transformationTypes" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "monitoringSite"[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path: {
@@ -8467,7 +9031,7 @@ export interface operations {
                 /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
                 datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
+                properties?: ("id" | "taskId" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("outputDatastream" | "ratingCurve")[];
                 /** @description Number of items to skip. */
@@ -8486,6 +9050,8 @@ export interface operations {
                 taskId?: string[];
                 /** @description Filter transformations by workspace ID. */
                 workspaceId?: string[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path?: never;
@@ -8595,9 +9161,11 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
+                properties?: ("id" | "taskId" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("outputDatastream" | "ratingCurve")[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path: {
@@ -8771,6 +9339,8 @@ export interface operations {
                 sortby?: ("name" | "-name" | "+name")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path?: never;
@@ -8854,6 +9424,8 @@ export interface operations {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "name" | "description")[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path: {
@@ -9030,6 +9602,8 @@ export interface operations {
                 valueCountMax?: number | null;
                 /** @description Sets the minimum value count of filtered datastreams. */
                 valueCountMin?: number | null;
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json" | "geojson";
             };
             header?: never;
             path?: never;
@@ -9043,6 +9617,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    "application/geo+json": components["schemas"]["GeoJSONFeatureCollection_DatastreamProperties_"];
                     "application/json": components["schemas"]["PaginatedResponse_DatastreamResponse_"];
                 };
             };
@@ -9115,6 +9690,8 @@ export interface operations {
                 properties?: ("id" | "workspaceId" | "name" | "description" | "observationType" | "sampledMedium" | "noDataValue" | "aggregationStatistic" | "timeAggregationInterval" | "status" | "resultType" | "isPrivate" | "isVisible" | "timeAggregationIntervalUnit" | "intendedTimeSpacing" | "intendedTimeSpacingUnit" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "monitoringSiteId" | "methodId" | "observedPropertyId" | "processingLevelId" | "unitId" | "tags" | "linkedResources")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("workspace" | "monitoringSite" | "method" | "observedProperty" | "processingLevel" | "unit" | "sampledMedium" | "aggregationStatistic" | "status")[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json" | "geojson";
             };
             header?: never;
             path: {
@@ -9130,6 +9707,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    "application/geo+json": components["schemas"]["GeoJSONFeatureDocument_DatastreamProperties_"];
                     "application/json": components["schemas"]["ItemResponse_DatastreamResponse_"];
                 };
             };
@@ -9670,6 +10248,8 @@ export interface operations {
                 workspaceId?: string[];
                 /** @description Filter data connections by payload type. */
                 payloadType?: string[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path?: never;
@@ -9764,6 +10344,8 @@ export interface operations {
                 properties?: ("id" | "name" | "description" | "sourceUrl" | "authHeaderName" | "authHeaderValue" | "timezoneType" | "timezone" | "workspaceId" | "payload" | "placeholderVariables" | "notification" | "taskCount" | "taskAttentionCount")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "workspace"[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path: {
@@ -9917,7 +10499,7 @@ export interface operations {
                 /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
                 datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "sourceIdentifier" | "targetDatastreamId")[];
+                properties?: ("id" | "etlTaskId" | "sourceIdentifier" | "targetDatastreamId")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "targetDatastream"[];
                 /** @description Number of items to skip. */
@@ -9934,6 +10516,8 @@ export interface operations {
                 etlTaskId?: string[];
                 /** @description Filter mappings by workspace ID. */
                 workspaceId?: string[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path?: never;
@@ -10043,9 +10627,11 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "sourceIdentifier" | "targetDatastreamId")[];
+                properties?: ("id" | "etlTaskId" | "sourceIdentifier" | "targetDatastreamId")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "targetDatastream"[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path: {
@@ -10235,6 +10821,8 @@ export interface operations {
                 latestRunFinishedAtMin?: string | null;
                 /** @description Filter tasks whose latest run finished on or before this datetime. */
                 latestRunFinishedAtMax?: string | null;
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path?: never;
@@ -10329,6 +10917,8 @@ export interface operations {
                 properties?: ("id" | "workspaceId" | "dataConnectionId" | "schedule" | "latestRun" | "mappingCount" | "name" | "description" | "taskVariables")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "dataConnection"[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path: {
@@ -10671,6 +11261,8 @@ export interface operations {
                 sortby?: ("name" | "-name" | "+name")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path?: never;
@@ -10754,6 +11346,8 @@ export interface operations {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "name" | "description")[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path: {
@@ -10900,6 +11494,8 @@ export interface operations {
                 sortby?: ("name" | "-name" | "+name")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path?: never;
@@ -10983,6 +11579,8 @@ export interface operations {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "name" | "description")[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path: {
@@ -11141,6 +11739,8 @@ export interface operations {
                 sensorModel?: (string | "null")[];
                 /** @description Filter methods by sensor model manufacturer */
                 sensorModelManufacturer?: (string | "null")[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path?: never;
@@ -11235,6 +11835,8 @@ export interface operations {
                 properties?: ("id" | "workspaceId" | "name" | "code" | "type" | "description" | "definition" | "sensorModel" | "sensorModelManufacturer" | "sensorModelDefinition")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("workspace" | "type")[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path: {
@@ -11388,7 +11990,7 @@ export interface operations {
                 /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
                 datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "datastreamId" | "ruleType" | "lastCheckedAt" | "minValue" | "maxValue" | "windowInterval" | "windowIntervalUnits")[];
+                properties?: ("id" | "taskId" | "datastreamId" | "ruleType" | "lastCheckedAt" | "minValue" | "maxValue" | "windowInterval" | "windowIntervalUnits")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "datastream"[];
                 /** @description Number of items to skip. */
@@ -11405,6 +12007,8 @@ export interface operations {
                 taskId?: string[];
                 /** @description Filter rules by workspace ID. */
                 workspaceId?: string[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path?: never;
@@ -11514,9 +12118,11 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "datastreamId" | "ruleType" | "lastCheckedAt" | "minValue" | "maxValue" | "windowInterval" | "windowIntervalUnits")[];
+                properties?: ("id" | "taskId" | "datastreamId" | "ruleType" | "lastCheckedAt" | "minValue" | "maxValue" | "windowInterval" | "windowIntervalUnits")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "datastream"[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path: {
@@ -11690,6 +12296,8 @@ export interface operations {
                 sortby?: ("name" | "-name" | "+name")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path?: never;
@@ -11773,6 +12381,8 @@ export interface operations {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "name" | "description")[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path: {
@@ -11908,7 +12518,7 @@ export interface operations {
                 /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
                 datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "name" | "description" | "code" | "type" | "latitude" | "longitude" | "elevationM" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "dataDisclaimer" | "isPrivate" | "tags" | "linkedResources")[];
+                properties?: ("id" | "workspaceId" | "latitude" | "longitude" | "name" | "description" | "code" | "type" | "elevationM" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "dataDisclaimer" | "isPrivate" | "tags" | "linkedResources")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("workspace" | "type")[];
                 /** @description Number of items to skip. */
@@ -11933,6 +12543,8 @@ export interface operations {
                 tag?: string[];
                 /** @description Controls whether the returned monitoring sites should be private or public. */
                 isPrivate?: boolean | null;
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json" | "geojson";
             };
             header?: never;
             path?: never;
@@ -11946,6 +12558,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    "application/geo+json": components["schemas"]["GeoJSONFeatureCollection_MonitoringSiteProperties_"];
                     "application/json": components["schemas"]["PaginatedResponse_MonitoringSiteResponse_"];
                 };
             };
@@ -12006,9 +12619,11 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "name" | "description" | "code" | "type" | "latitude" | "longitude" | "elevationM" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "dataDisclaimer" | "isPrivate" | "tags" | "linkedResources")[];
+                properties?: ("id" | "workspaceId" | "latitude" | "longitude" | "name" | "description" | "code" | "type" | "elevationM" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "dataDisclaimer" | "isPrivate" | "tags" | "linkedResources")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("workspace" | "type")[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json" | "geojson";
             };
             header?: never;
             path: {
@@ -12024,6 +12639,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    "application/geo+json": components["schemas"]["GeoJSONFeatureDocument_MonitoringSiteProperties_"];
                     "application/json": components["schemas"]["ItemResponse_MonitoringSiteResponse_"];
                 };
             };
@@ -12624,6 +13240,8 @@ export interface operations {
                 datastreamId?: string[];
                 /** @description Filter monitoring tasks by rule type. */
                 ruleType?: string[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path?: never;
@@ -12718,6 +13336,8 @@ export interface operations {
                 properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "latestRun" | "ruleTypeCounts" | "recipients" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "monitoringSite"[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path: {
@@ -13140,9 +13760,9 @@ export interface operations {
                 bbox?: number[] & (unknown | unknown);
                 /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
                 datetime?: string;
-                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. Only applies to format=record. */
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "result" | "resultQualifiers")[];
-                /** @description Comma-separated list of related resources to include in the response. Only applies to format=record. */
+                /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("datastream" | "workspace" | "resultQualifiers")[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
@@ -13152,10 +13772,12 @@ export interface operations {
                 datastreamId?: string[];
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("phenomenonTime" | "datastreamId" | "-phenomenonTime" | "-datastreamId" | "+phenomenonTime" | "+datastreamId")[];
-                /** @description Controls the format of the observations response. */
-                format?: ("record" | "row" | "column") | null;
                 /** @description Filter observations by result qualifier. */
                 resultQualifiers?: string[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json" | "geojson";
+                /** @description Profiles to represent the items in, by URI, in order of preference. Profiles the response format doesn't support are ignored, and without a supported profile the items are in the format's standard representation. Profiles: https://hydroserver.org/profiles/observations/row: Observations as rows grouped by datastream (json); https://hydroserver.org/profiles/observations/column: Observations as columns grouped by datastream (json). */
+                profile?: ("https://hydroserver.org/profiles/observations/row" | "https://hydroserver.org/profiles/observations/column")[];
             };
             header?: never;
             path?: never;
@@ -13169,7 +13791,8 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponse_ObservationResponse_"] | components["schemas"]["ObservationRowResponse"] | components["schemas"]["ObservationColumnarResponse"];
+                    "application/geo+json": components["schemas"]["GeoJSONFeatureCollection_ObservationProperties_"];
+                    "application/json": components["schemas"]["PaginatedResponse_ObservationResponse_"] | components["schemas"]["PaginatedResponse_ObservationRowResponse_"] | components["schemas"]["PaginatedResponse_ObservationColumnResponse_"];
                 };
             };
             /** @description Bad Request */
@@ -13255,10 +13878,12 @@ export interface operations {
     interfaces_api_views_sta_observation_get_observation: {
         parameters: {
             query?: {
-                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. Only applies to format=record. */
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "result" | "resultQualifiers")[];
-                /** @description Comma-separated list of related resources to include in the response. Only applies to format=record. */
+                /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("datastream" | "workspace" | "resultQualifiers")[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json" | "geojson";
             };
             header?: never;
             path: {
@@ -13274,6 +13899,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    "application/geo+json": components["schemas"]["GeoJSONFeatureDocument_ObservationProperties_"];
                     "application/json": components["schemas"]["ItemResponse_ObservationResponse_"];
                 };
             };
@@ -13371,6 +13997,8 @@ export interface operations {
                 datastreamId?: (string | "null")[];
                 /** @description Filter observed properties by type */
                 type?: string[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path?: never;
@@ -13465,6 +14093,8 @@ export interface operations {
                 properties?: ("id" | "workspaceId" | "name" | "definition" | "description" | "type" | "code")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("workspace" | "type")[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path: {
@@ -13629,6 +14259,8 @@ export interface operations {
                 sortby?: ("name" | "-name" | "+name")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path?: never;
@@ -13712,6 +14344,8 @@ export interface operations {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "name" | "description")[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path: {
@@ -13864,6 +14498,8 @@ export interface operations {
                 monitoringSiteId?: (string | "null")[];
                 /** @description Filter processing levels by datastream ID. */
                 datastreamId?: (string | "null")[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path?: never;
@@ -13958,6 +14594,8 @@ export interface operations {
                 properties?: ("id" | "workspaceId" | "code" | "name" | "description" | "definition")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "workspace"[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path: {
@@ -14124,6 +14762,8 @@ export interface operations {
                 managedDatastreamId?: string[];
                 /** @description Filter histories by source datastream ID. */
                 sourceDatastreamId?: (string | "null")[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path?: never;
@@ -14227,6 +14867,8 @@ export interface operations {
                 properties?: ("id" | "managedDatastreamId" | "sourceDatastreamId" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "sourceChecksum" | "managedChecksum")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("managedDatastream" | "sourceDatastream")[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path: {
@@ -14981,6 +15623,8 @@ export interface operations {
                 q?: string | null;
                 /** @description Filter terms by workspace ID. */
                 workspaceId?: (string | "null")[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path?: never;
@@ -15066,6 +15710,8 @@ export interface operations {
                 properties?: ("id" | "workspaceId" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "workspace"[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path: {
@@ -15212,6 +15858,8 @@ export interface operations {
                 sortby?: ("name" | "-name" | "+name")[];
                 /** @description Filter roles by workspace ID. */
                 workspaceId?: (string | "null")[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path?: never;
@@ -15244,6 +15892,8 @@ export interface operations {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "workspaceId" | "name" | "description" | "permissions")[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path: {
@@ -15301,6 +15951,8 @@ export interface operations {
                 sortby?: ("name" | "-name" | "+name")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path?: never;
@@ -15384,6 +16036,8 @@ export interface operations {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "name" | "description")[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path: {
@@ -15530,6 +16184,8 @@ export interface operations {
                 sortby?: ("name" | "-name" | "+name")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path?: never;
@@ -15613,6 +16269,8 @@ export interface operations {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
                 properties?: ("id" | "name" | "description")[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path: {
@@ -15767,6 +16425,8 @@ export interface operations {
                 datastreamId?: (string | "null")[];
                 /** @description Filter units by type */
                 type?: string[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path?: never;
@@ -15852,6 +16512,8 @@ export interface operations {
                 properties?: ("id" | "workspaceId" | "name" | "symbol" | "definition" | "type")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("workspace" | "type")[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
             };
             header?: never;
             path: {
@@ -16020,6 +16682,8 @@ export interface operations {
                 isAssociated?: boolean | null;
                 /** @description Whether the returned workspaces should be private or public. */
                 isPrivate?: boolean | null;
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json" | "geojson";
             };
             header?: never;
             path?: never;
@@ -16033,6 +16697,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    "application/geo+json": components["schemas"]["GeoJSONFeatureCollection_WorkspaceProperties_"];
                     "application/json": components["schemas"]["PaginatedResponse_WorkspaceResponse_"];
                 };
             };
@@ -16105,6 +16770,8 @@ export interface operations {
                 properties?: ("id" | "ownerEmail" | "pendingTransferToEmail" | "collaboratorRoleId" | "name" | "isPrivate")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("owner" | "pendingTransferTo" | "collaboratorRole")[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json" | "geojson";
             };
             header?: never;
             path: {
@@ -16120,6 +16787,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    "application/geo+json": components["schemas"]["GeoJSONFeatureDocument_WorkspaceProperties_"];
                     "application/json": components["schemas"]["ItemResponse_WorkspaceResponse_"];
                 };
             };

@@ -26,18 +26,22 @@ from interfaces.api.schemas import (
 from interfaces.api.schemas.sta.linked_resource import LinkedResourceGetResponse
 from interfaces.api.schemas.sta.tags import reject_empty_tag_keys_and_values
 from interfaces.api.schemas.sta.vocabulary import VocabularyResponse
+from interfaces.api.schemas.base import ItemId, NewItemId
 
 
 valid_country_codes = [code for code, _ in countries_for_language("en")]
 
 
-class MonitoringSiteFields(Schema):
+class MonitoringSiteLocationFields(Schema):
+    latitude: float = Field(..., ge=-90, le=90)
+    longitude: float = Field(..., ge=-180, le=180)
+
+
+class MonitoringSiteAttributeFields(Schema):
     name: str = Field(..., max_length=200)
     description: str
     code: str = Field(..., max_length=200)
     type: str = Field(..., max_length=200)
-    latitude: float = Field(..., ge=-90, le=90)
-    longitude: float = Field(..., ge=-180, le=180)
     elevation_m: Optional[float] = Field(None, ge=-99999, le=99999)
     elevation_datum: Optional[str] = Field(None, max_length=255)
     admin_area_1: Optional[str] = Field(None, max_length=200)
@@ -53,6 +57,10 @@ class MonitoringSiteFields(Schema):
                 f"Invalid country code: {value}. Must be an ISO 3166-1 alpha-2 country code."
             )
         return value
+
+
+class MonitoringSiteFields(MonitoringSiteAttributeFields, MonitoringSiteLocationFields):
+    pass
 
 
 MONITORING_SITE_INCLUDE_RELATIONS = {
@@ -165,8 +173,7 @@ class MonitoringSiteMarkerQueryParameters(BaseQueryParameters):
     type: list[str] = Query([], description="Filter markers by monitoring site type.")
 
 
-class MonitoringSiteMarkerResponse(BaseGetResponse):
-    id: uuid.UUID
+class MonitoringSiteMarkerResponse(BaseGetResponse, ItemId):
     workspace_id: uuid.UUID
     name: str = Field(..., max_length=200)
     type: str = Field(..., max_length=200)
@@ -194,8 +201,7 @@ class MonitoringSiteTaskSummaryQueryParameters(BaseQueryParameters):
     type: list[str] = Query([], description="Filter summaries by monitoring site type.")
 
 
-class MonitoringSiteTaskSummaryResponse(BaseGetResponse):
-    id: uuid.UUID
+class MonitoringSiteTaskSummaryResponse(BaseGetResponse, ItemId):
     name: str
     type: str
     product_task_count: int = 0
@@ -204,8 +210,7 @@ class MonitoringSiteTaskSummaryResponse(BaseGetResponse):
     monitoring_task_attention_count: int = 0
 
 
-class MonitoringSiteMapSummaryResponse(BaseGetResponse):
-    id: uuid.UUID
+class MonitoringSiteMapSummaryResponse(BaseGetResponse, ItemId):
     workspace_id: uuid.UUID
     name: str = Field(..., max_length=200)
     code: str = Field(..., max_length=200)
@@ -216,15 +221,17 @@ class MonitoringSiteMapSummaryResponse(BaseGetResponse):
     tags: dict[str, str]
 
 
-class MonitoringSiteResponse(BaseGetResponse, MonitoringSiteFields):
-    id: uuid.UUID
+class MonitoringSiteProperties(BaseGetResponse, MonitoringSiteAttributeFields):
     workspace_id: uuid.UUID
     tags: dict[str, str] = {}
     monitoring_site_linked_resources: list[LinkedResourceGetResponse] = Field(..., alias="linkedResources")
 
 
-class MonitoringSitePostBody(BasePostBody, MonitoringSiteFields):
-    id: Optional[uuid.UUID] = None
+class MonitoringSiteResponse(MonitoringSiteProperties, MonitoringSiteLocationFields, ItemId):
+    pass
+
+
+class MonitoringSitePostBody(BasePostBody, MonitoringSiteFields, NewItemId):
     workspace_id: uuid.UUID
     tags: dict[str, str] = {}
     latitude: Decimal = Field(..., ge=-90, le=90)

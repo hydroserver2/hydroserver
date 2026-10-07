@@ -18,6 +18,7 @@ from interfaces.api.schemas import (
     split_sortby,
     sortby_array_schema,
 )
+from interfaces.api.schemas.base import ItemId, NewItemId
 
 
 class EtlMappingFields(Schema):
@@ -31,6 +32,7 @@ EtlMappingSortByFields = Literal[*_sortby_fields, *[f"-{f}" for f in _sortby_fie
 
 _property_fields = (
     "id",
+    "etlTaskId",
     *(to_camel(name) for name in EtlMappingFields.model_fields),
 )
 EtlMappingPropertyName = Literal[*_property_fields]
@@ -94,13 +96,11 @@ class EtlMappingQueryParameters(EtlMappingFilterFields, CollectionQueryParameter
     )
 
 
-class EtlMappingResponse(BaseGetResponse, EtlMappingFields):
-    id: uuid.UUID
+class EtlMappingResponse(BaseGetResponse, EtlMappingFields, ItemId):
     etl_task_id: uuid.UUID
 
 
-class EtlMappingPostBody(BasePostBody, EtlMappingFields):
-    id: Optional[uuid.UUID] = None
+class EtlMappingPostBody(BasePostBody, EtlMappingFields, NewItemId):
     etl_task_id: uuid.UUID
 
 

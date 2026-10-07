@@ -4,7 +4,6 @@ import hashlib
 
 from typing import Optional, Literal, get_args
 from datetime import datetime
-from pydantic.alias_generators import to_camel
 from psycopg.errors import UniqueViolation
 from django.http import HttpResponse
 from django.contrib.auth import get_user_model
@@ -17,7 +16,7 @@ from core.sta.models import Datastream, Observation, ResultQualifier
 from interfaces.api.service import APIService
 from interfaces.api.services.sta.datastream import DatastreamAPIService
 from interfaces.api.http.errors import BadRequestError, ConflictError, PermissionDeniedError, NotFoundError
-from interfaces.api.schemas import BoundingBox, TimeInterval
+from interfaces.api.schemas import BoundingBox, PaginatedResponse, TimeInterval
 from interfaces.api.schemas.sta.observation import (
     ObservationFields,
     ObservationSortByFields,
@@ -26,6 +25,11 @@ from interfaces.api.schemas.sta.observation import (
     ObservationBulkPostBody,
     ObservationBulkColumnarPostBody,
     ObservationBulkDeleteBody,
+    ObservationColumnResponse,
+    ObservationColumns,
+    ObservationRowResponse,
+    OBSERVATION_GROUP_FIELDS,
+    OBSERVATION_GROUP_WORKSPACE_FIELD,
     OBSERVATION_INCLUDE_RELATIONS,
 )
 
@@ -135,7 +139,7 @@ class ObservationAPIService(APIService):
             if datastream_ids
             else Datastream.objects
         )
-        queryset = DatastreamAPIService.apply_site_bbox(queryset, bbox)
+        queryset = DatastreamAPIService.apply_site_bbox(principal, queryset, bbox)
         queryset = principal.filter_by_permission(queryset, "can_view")
 
         return queryset.aggregate(total=Sum("value_count"))["total"] or 0
@@ -148,7 +152,8 @@ class ObservationAPIService(APIService):
         limit: Optional[int] = None,
         sortby: Optional[list[str]] = None,
         filtering: Optional[dict] = None,
-        response_format: Optional[str] = None,
+        profile: Optional[str] = None,
+        properties: Optional[list[str]] = None,
         include: Optional[list[str]] = None,
         bbox: Optional[BoundingBox] = None,
         datetime_interval: Optional[TimeInterval] = None,
@@ -157,11 +162,6 @@ class ObservationAPIService(APIService):
         queryset = Observation.objects
 
         datastream_ids = filtering.get("datastream_id") or []
-
-        if response_format in ("row", "column") and len(datastream_ids) != 1:
-            raise BadRequestError(
-                "format=row and format=column require exactly one datastream_id filter value"
-            )
 
         if "datastream_id" in filtering:
             queryset = self.apply_filters(queryset, "datastream_id", filtering["datastream_id"])
@@ -177,7 +177,7 @@ class ObservationAPIService(APIService):
         if bbox is not None:
             queryset = queryset.filter(
                 datastream_id__in=DatastreamAPIService.apply_site_bbox(
-                    Datastream.objects, bbox
+                    principal, Datastream.objects, bbox
                 ).values("id")
             )
 
@@ -211,43 +211,92 @@ class ObservationAPIService(APIService):
         )
 
         select_paths = ["datastream__monitoring_site"]
-        if response_format in ("record", None) and requested_includes:
+        if requested_includes:
             select_paths.extend(self._include_query_hints(requested_includes))
 
         queryset = queryset.select_related(*select_paths)
         queryset, meta = self.apply_pagination(queryset, offset, limit, count=count)
-        response["X-Checksum"] = self.generate_checksum(checksum_uuid, meta.total_count)
+        response["X-Checksum"] = self.generate_checksum(checksum_uuid, meta.number_matched)
 
-        if response_format == "row":
-            fields = ["phenomenon_time", "result", "result_qualifiers"]
-            return {
-                "data": {
-                    "fields": [to_camel(field) for field in fields],
-                    "rows": list(queryset.values_list(*fields)),
-                },
-                "meta": meta,
-            }
-        elif response_format == "column":
-            fields = ["phenomenon_time", "result", "result_qualifiers"]
-            observations = list(queryset.values_list(*fields))
-            columns = (
-                dict(zip(fields, zip(*observations)))
-                if observations
-                else {field: [] for field in fields}
+        if profile in ("row", "column"):
+            return self.grouped_values(queryset, meta, profile, properties, requested_includes)
+
+        observations = list(queryset.all())
+        return {
+            "data": [
+                ObservationResponse.model_validate(observation)
+                for observation in observations
+            ],
+            "meta": meta,
+            "included": self.resolve_includes(
+                observations, requested_includes, self.INCLUDE_RELATIONS
+            ),
+        }
+
+    def grouped_values(
+        self,
+        queryset,
+        meta,
+        profile: Literal["row", "column"],
+        properties: Optional[list[str]],
+        requested_includes: set[str],
+    ):
+        """
+        A page of observations as groups of their selected property values per datastream, in the order each
+        datastream first appears on the page, with each group's values in page order. Without included resources,
+        only the selected properties are read; with them, the observations are read to resolve what they include.
+        """
+
+        selected = [name for name in OBSERVATION_GROUP_FIELDS if properties is None or name in properties]
+        with_workspace = properties is None or "workspaceId" in properties
+        included = None
+
+        if requested_includes:
+            observations = list(queryset)
+            entries = (
+                (
+                    observation.datastream_id,
+                    observation.datastream.monitoring_site.workspace_id if with_workspace else None,
+                    [getattr(observation, OBSERVATION_GROUP_FIELDS[name]) for name in selected],
+                )
+                for observation in observations
             )
-            return {"data": columns, "meta": meta}
+            included = self.resolve_includes(observations, requested_includes, self.INCLUDE_RELATIONS)
         else:
-            observations = list(queryset.all())
-            return {
-                "data": [
-                    ObservationResponse.model_validate(observation)
-                    for observation in observations
-                ],
-                "meta": meta,
-                "included": self.resolve_includes(
-                    observations, requested_includes, self.INCLUDE_RELATIONS
-                ),
-            }
+            lookups = [
+                "datastream_id",
+                *([OBSERVATION_GROUP_WORKSPACE_FIELD] if with_workspace else []),
+                *(OBSERVATION_GROUP_FIELDS[name] for name in selected),
+            ]
+            offset = 2 if with_workspace else 1
+            entries = (
+                (row[0], row[1] if with_workspace else None, list(row[offset:]))
+                for row in queryset.values_list(*lookups)
+            )
+
+        groups: dict[uuid.UUID, tuple[Optional[uuid.UUID], list[list]]] = {}
+        for datastream_id, workspace_id, values in entries:
+            groups.setdefault(datastream_id, (workspace_id, []))[1].append(values)
+
+        returned = sum(len(rows) for _, rows in groups.values())
+
+        if profile == "row":
+            data = [
+                ObservationRowResponse(datastream_id=datastream_id, workspace_id=workspace_id, fields=selected, rows=rows)
+                for datastream_id, (workspace_id, rows) in groups.items()
+            ]
+            return PaginatedResponse[ObservationRowResponse](data=data, meta=meta, included=included, returned=returned)
+
+        data = [
+            ObservationColumnResponse(
+                datastream_id=datastream_id,
+                workspace_id=workspace_id,
+                columns=ObservationColumns(**{name: list(column) for name, column in zip(selected, zip(*rows))}),
+            )
+            for datastream_id, (workspace_id, rows) in groups.items()
+        ]
+
+        return PaginatedResponse[ObservationColumnResponse](data=data, meta=meta, included=included, returned=returned)
 
     def get_item(
         self,

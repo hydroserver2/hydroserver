@@ -1,9 +1,8 @@
-from typing import Optional
-
 from ninja import Schema
-from pydantic import ConfigDict
+from pydantic import ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
+from interfaces.api.collections import ItemType
 from interfaces.api.http.links import Link
 
 
@@ -13,7 +12,11 @@ class CollectionResponse(Schema):
     id: str
     title: str
     description: str
-    item_type: Optional[str] = None
+    item_type: ItemType = Field(
+        ...,
+        description="The type of the collection's items: 'feature' for spatial items served as "
+        "OGC API features, or 'resource' for non-spatial items.",
+    )
     links: list[Link]
 
     model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)

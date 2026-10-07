@@ -67,7 +67,7 @@ describe('TaskService', () => {
               result: rawResult,
             },
           ],
-          meta: { offset: 0, limit: 200, totalCount: 1 },
+          meta: { offset: 0, limit: 200, numberMatched: 1 },
         })
       )
     )
@@ -87,7 +87,7 @@ describe('TaskService', () => {
       '2': [{ id: 'c' }, { id: 'd' }],
       '4': [{ id: 'e' }, { id: 'f' }],
       // A real server returns an empty page once past the true end of data -
-      // this is what proves completion when totalCount (6) happens to be an
+      // this is what proves completion when numberMatched (6) happens to be an
       // exact multiple of limit, since a full last page alone can't tell the
       // client whether more data exists.
       '6': [],
@@ -98,7 +98,7 @@ describe('TaskService', () => {
       return Promise.resolve(
         jsonResponse({
           data: pageData[offset],
-          meta: { offset: Number(offset), limit: 2, totalCount: 6 },
+          meta: { offset: Number(offset), limit: 2, numberMatched: 6 },
         })
       )
     })
@@ -115,7 +115,7 @@ describe('TaskService', () => {
       'e',
       'f',
     ])
-    // first page + two remaining pages implied by totalCount + one
+    // first page + two remaining pages implied by numberMatched + one
     // confirming fetch proving there's nothing past the (exact) total
     expect(fetchMock).toHaveBeenCalledTimes(4)
   })

@@ -26,6 +26,7 @@ from interfaces.api.schemas.orchestration.schedule import (
     resolve_schedule,
 )
 from interfaces.api.schemas.orchestration.run import TaskRunResponse, resolve_latest_run
+from interfaces.api.schemas.base import ItemId
 
 
 class DataProductTaskFields(Schema):
@@ -127,8 +128,7 @@ class DataProductTaskQueryParameters(DataProductTaskFilterFields, CollectionQuer
     )
 
 
-class DataProductTaskResponse(BaseGetResponse, DataProductTaskFields):
-    id: uuid.UUID
+class DataProductTaskResponse(BaseGetResponse, DataProductTaskFields, ItemId):
     workspace_id: uuid.UUID = Field(
         ..., validation_alias=AliasChoices("workspaceId", AliasPath("monitoring_site", "workspace_id"))
     )

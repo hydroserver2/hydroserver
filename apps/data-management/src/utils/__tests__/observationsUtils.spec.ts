@@ -21,6 +21,9 @@ vi.mock('@hydroserver/client', () => {
       },
     },
     Datastream,
+    ObservationProfile: {
+      Column: 'https://hydroserver.org/profiles/observations/column',
+    },
     TimeSpacingUnit: {
       seconds: 'seconds',
       minutes: 'minutes',
@@ -107,10 +110,15 @@ describe('fetchObservations', () => {
   it('maps valid camelCase columnar responses', async () => {
     getObservationsMock.mockResolvedValue({
       ok: true,
-      data: {
-        phenomenonTime: ['2023-01-01T00:00:00Z', '2023-01-01T01:00:00Z'],
-        result: [1, 2],
-      },
+      data: [
+        {
+          datastreamId: '123',
+          columns: {
+            phenomenonTime: ['2023-01-01T00:00:00Z', '2023-01-01T01:00:00Z'],
+            result: [1, 2],
+          },
+        },
+      ],
     })
 
     const data = await fetchObservations(createDatastream())
@@ -123,10 +131,15 @@ describe('fetchObservations', () => {
   it('maps valid snake_case responses and forwards custom bounds', async () => {
     getObservationsMock.mockResolvedValue({
       ok: true,
-      data: {
-        phenomenon_time: ['2023-01-01T00:00:00Z'],
-        result: [5],
-      },
+      data: [
+        {
+          datastreamId: '123',
+          columns: {
+            phenomenon_time: ['2023-01-01T00:00:00Z'],
+            result: [5],
+          },
+        },
+      ],
     })
 
     const start = '2023-01-01T00:00:00Z'
@@ -137,7 +150,8 @@ describe('fetchObservations', () => {
     expect(getObservationsMock).toHaveBeenCalledWith('123', {
       sortby: ['phenomenonTime'],
       limit: 50_000,
-      format: 'column',
+      profile: ['https://hydroserver.org/profiles/observations/column'],
+      properties: ['phenomenonTime', 'result'],
       datetime: `${start}/${end}`,
     })
   })
@@ -149,9 +163,17 @@ describe('fetchObservations', () => {
     getObservationsMock.mockResolvedValueOnce({ ok: true, data: null })
     expect(await fetchObservations(createDatastream())).toEqual([])
 
+    getObservationsMock.mockResolvedValueOnce({ ok: true, data: [] })
+    expect(await fetchObservations(createDatastream())).toEqual([])
+
     getObservationsMock.mockResolvedValueOnce({
       ok: true,
-      data: { phenomenonTime: 'bad', result: [] },
+      data: [
+        {
+          datastreamId: '123',
+          columns: { phenomenonTime: 'bad', result: [] },
+        },
+      ],
     })
     expect(await fetchObservations(createDatastream())).toEqual([])
   })
@@ -161,14 +183,19 @@ describe('fetchRecentObservationsPage', () => {
   it('fetches the first newest-first page and returns chronological rows', async () => {
     getObservationsMock.mockResolvedValue({
       ok: true,
-      data: {
-        phenomenonTime: [
-          '2023-01-01T02:00:00Z',
-          '2023-01-01T01:00:00Z',
-          '2023-01-01T00:00:00Z',
-        ],
-        result: [3, 2, 1],
-      },
+      data: [
+        {
+          datastreamId: '123',
+          columns: {
+            phenomenonTime: [
+              '2023-01-01T02:00:00Z',
+              '2023-01-01T01:00:00Z',
+              '2023-01-01T00:00:00Z',
+            ],
+            result: [3, 2, 1],
+          },
+        },
+      ],
     })
 
     const data = await fetchRecentObservationsPage(createDatastream())
@@ -182,17 +209,23 @@ describe('fetchRecentObservationsPage', () => {
       offset: 0,
       sortby: ['-phenomenonTime'],
       limit: 200,
-      format: 'column',
+      profile: ['https://hydroserver.org/profiles/observations/column'],
+      properties: ['phenomenonTime', 'result'],
     })
   })
 
   it('allows overriding the page size', async () => {
     getObservationsMock.mockResolvedValue({
       ok: true,
-      data: {
-        phenomenon_time: ['2023-01-01T00:00:00Z'],
-        result: [1],
-      },
+      data: [
+        {
+          datastreamId: '123',
+          columns: {
+            phenomenon_time: ['2023-01-01T00:00:00Z'],
+            result: [1],
+          },
+        },
+      ],
     })
 
     await fetchRecentObservationsPage(createDatastream(), 25)
@@ -206,7 +239,9 @@ describe('fetchRecentObservationsPage', () => {
 
 describe('replaceNoDataValues', () => {
   it('returns original data if noDataValue is null/undefined', () => {
-    const points: DataPoint[] = [{ date: new Date('2023-01-01T00:00:00Z'), value: 1 }]
+    const points: DataPoint[] = [
+      { date: new Date('2023-01-01T00:00:00Z'), value: 1 },
+    ]
     expect(replaceNoDataValues(points, null)).toBe(points)
     expect(replaceNoDataValues(points, undefined)).toBe(points)
   })

@@ -40,17 +40,18 @@ def test_get_items_returns_at_most_the_maximum_number_of_items(client, max_limit
     assert response.json()["meta"]["limit"] == 2
 
 
-def test_get_observations_row_format_uses_the_maximum(client, max_limit_of_two):
+def test_get_observations_row_profile_uses_the_maximum(client, max_limit_of_two):
     datastream = DatastreamFactory()
     ObservationFactory.create_batch(3, datastream=datastream)
 
     response = client.get(
         "/api/ogc/collections/observations/items",
-        {"datastreamId": str(datastream.id), "format": "row", "limit": 5},
+        {"datastreamId": str(datastream.id), "profile": "https://hydroserver.org/profiles/observations/row", "limit": 5},
     )
 
     assert response.status_code == 200
-    assert len(response.json()["data"]["rows"]) == 2
+    (group,) = response.json()["data"]
+    assert len(group["rows"]) == 2
 
 
 def test_get_task_runs_uses_the_maximum(client, max_limit_of_two):

@@ -26,7 +26,7 @@ describe('QualityControl services', () => {
             createdAt: '2026-06-18T12:00:00Z',
           },
         ],
-        meta: { offset: 0, limit: 200, totalCount: 1 },
+        meta: { offset: 0, limit: 200, numberMatched: 1 },
       })
     )
     vi.stubGlobal('fetch', fetchMock)

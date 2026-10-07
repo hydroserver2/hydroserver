@@ -2,6 +2,8 @@ import json
 from datetime import datetime, timezone
 from unittest.mock import MagicMock
 
+import pandas as pd
+
 import pytest
 
 from hydroserverpy.api.services.sta.datastream import DatastreamService
@@ -54,7 +56,7 @@ def test_build_datetime_interval(start, end, expected):
 
 
 def test_list_sends_phenomenon_time_bounds_as_a_datetime_interval():
-    service, client = make_service({"data": [], "meta": {"offset": 0, "limit": 100, "totalCount": 0}})
+    service, client = make_service({"data": [], "meta": {"offset": 0, "limit": 100, "numberMatched": 0}})
 
     service.list(phenomenon_time_min=JAN_1)
 
@@ -64,7 +66,7 @@ def test_list_sends_phenomenon_time_bounds_as_a_datetime_interval():
 
 
 def test_list_omits_datetime_without_bounds():
-    service, client = make_service({"data": [], "meta": {"offset": 0, "limit": 100, "totalCount": 0}})
+    service, client = make_service({"data": [], "meta": {"offset": 0, "limit": 100, "numberMatched": 0}})
 
     service.list()
 
@@ -72,7 +74,7 @@ def test_list_omits_datetime_without_bounds():
 
 
 def test_list_keeps_the_phenomenon_time_bounds_when_paging():
-    page = {"data": [], "meta": {"offset": 0, "limit": 100, "totalCount": 0}}
+    page = {"data": [], "meta": {"offset": 0, "limit": 100, "numberMatched": 0}}
     service, client = make_service(page, page)
 
     collection = service.list(phenomenon_time_min=JAN_1, phenomenon_time_max=JAN_1)
@@ -88,9 +90,9 @@ def test_list_keeps_the_phenomenon_time_bounds_when_paging():
 def test_list_fetch_all_keeps_the_phenomenon_time_bounds():
     full_page = {
         "data": [{"id": f"00000000-0000-0000-0000-00000000000{i}"} for i in range(2)],
-        "meta": {"offset": 0, "limit": 2, "totalCount": 3},
+        "meta": {"offset": 0, "limit": 2, "numberMatched": 3},
     }
-    last_page = {"data": [], "meta": {"offset": 2, "limit": 2, "totalCount": 3}}
+    last_page = {"data": [], "meta": {"offset": 2, "limit": 2, "numberMatched": 3}}
     service, client = make_service(full_page, last_page)
     service.model = MagicMock()
 
@@ -105,8 +107,8 @@ def test_list_fetch_all_keeps_the_phenomenon_time_bounds():
 
 def test_get_observations_sends_a_datetime_interval_and_pages_with_the_same_bounds():
     columnar = {
-        "data": {"phenomenonTime": [], "result": [], "resultQualifiers": []},
-        "meta": {"offset": 0, "limit": 1, "totalCount": 0},
+        "data": [],
+        "meta": {"offset": 0, "limit": 1, "numberMatched": 0},
     }
     service, client = make_service(columnar, columnar)
     service.get = MagicMock()
@@ -192,3 +194,71 @@ def test_sync_phenomenon_end_time_reloads_it_from_hydroserver():
     assert datastream.phenomenon_end_time == FEB_1
     assert client.request.call_args_list[1].args[0] == "get"
 
+
+
+# --- observation round trip --------------------------------------------------------------------
+
+
+def sent_body(client, call=0):
+    return json.loads(client.request.call_args_list[call].kwargs["data"])
+
+
+def test_get_observations_requests_only_the_properties_load_observations_accepts():
+    service, client = make_service({"data": [], "meta": {"offset": 0, "limit": 100, "numberMatched": 0}})
+    service.get = MagicMock()
+
+    service.get_observations(uid="ds-1")
+
+    assert sent_params(client)["properties"] == "phenomenonTime,result,resultQualifiers"
+
+
+def test_observations_from_get_observations_load_back_unchanged():
+    page = {
+        "data": [
+            {
+                "datastreamId": "ds-1",
+                "columns": {
+                    "phenomenonTime": ["2024-01-01T00:00:00Z"],
+                    "result": [1.5],
+                    "resultQualifiers": [["A"]],
+                },
+            }
+        ],
+        "meta": {"offset": 0, "limit": 100, "numberMatched": 1},
+    }
+    service, client = make_service(page, {})
+    service.get = MagicMock()
+
+    dataframe = service.get_observations(uid="ds-1").dataframe
+    service.load_observations(uid="ds-2", observations=dataframe)
+
+    assert sent_body(client, 1)["fields"] == ["phenomenonTime", "result", "resultQualifiers"]
+
+
+def test_load_observations_leaves_out_columns_the_server_assigns():
+    service, client = make_service({})
+    dataframe = pd.DataFrame(
+        {
+            "id": ["o-1"],
+            "workspace_id": ["ws-1"],
+            "datastreamId": ["ds-1"],
+            "phenomenon_time": ["2024-01-01T00:00:00Z"],
+            "result": [1.5],
+        }
+    )
+
+    service.load_observations(uid="ds-2", observations=dataframe)
+
+    body = sent_body(client)
+    assert body["fields"] == ["phenomenonTime", "result"]
+    assert body["data"] == [["2024-01-01T00:00:00Z", 1.5]]
+
+
+def test_load_observations_still_sends_columns_it_does_not_recognize():
+    service, client = make_service({})
+    dataframe = pd.DataFrame({"phenomenon_time": ["2024-01-01T00:00:00Z"], "results": [1.5]})
+
+    service.load_observations(uid="ds-2", observations=dataframe)
+
+    # A misspelled column reaches the server, which rejects it, rather than being dropped silently.
+    assert sent_body(client)["fields"] == ["phenomenonTime", "results"]

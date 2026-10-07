@@ -84,12 +84,12 @@ the items most likely to bite a new team in the first three months.
 `store/qualifiers.ts` and `components/EditData/QualifyingComments.vue`
 collect qualifier codes per selection, but
 `composables/useQcSubmission.ts:42` only serializes
-`['phenomenonTime', 'result']` on the bulk POST. The row format would
-carry qualifiers, but it times out on >35k-point fetches today (see
-`src/utils/observations.ts:24`). Resolution is blocked on the
-HydroServer API team either making the columnar response carry
-qualifiers via opt-in (`include=resultQualifiers`) or speeding up
-the row mode. Tracked inline as a TODO.
+`['phenomenonTime', 'result']` on the bulk POST. The API no longer blocks
+this: the column profile returns `resultQualifiers` when it's listed in
+`properties`, and the bulk POST accepts it as a field. The remaining work is
+in the QC App: request `resultQualifiers` in
+`src/utils/observations.ts` and serialize it in `useQcSubmission.ts`.
+Tracked inline as a TODO.
 
 ### 2. Three large SFCs not yet unit-tested
 

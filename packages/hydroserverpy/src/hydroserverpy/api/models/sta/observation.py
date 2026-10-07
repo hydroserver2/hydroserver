@@ -35,10 +35,8 @@ class ObservationCollection:
             self.dataframe = data["dataframe"]
         elif response is not None:
             payload = response.json()
-            payload_meta = payload.pop("meta", {})
-            payload.pop("included", None)
-            columnar = payload.pop("data", payload)
-            self.dataframe = pd.DataFrame({to_snake(k): v for k, v in columnar.items()})
+            payload_meta = payload.get("meta", {})
+            self.dataframe = pd.DataFrame(self._columns(payload.get("data") or []))
             if "phenomenon_time" in self.dataframe.columns:
                 self.dataframe["phenomenon_time"] = pd.to_datetime(
                     self.dataframe["phenomenon_time"], utc=True, format="ISO8601"
@@ -50,9 +48,20 @@ class ObservationCollection:
         self.offset = self._resolve_int_metadata("offset", payload_meta, data)
         self.limit = self._resolve_int_metadata("limit", payload_meta, data)
         self.total_count = self._resolve_int_metadata(
-            "total_count", payload_meta, data, meta_key="totalCount"
+            "total_count", payload_meta, data, meta_key="numberMatched"
         )
         self.datastream = datastream
+
+    COLUMNS = ("phenomenon_time", "result", "result_qualifiers")
+
+    @classmethod
+    def _columns(cls, groups: list) -> dict[str, list]:
+        columns = {column: [] for column in cls.COLUMNS}
+        for group in groups:
+            for key, values in group.get("columns", {}).items():
+                columns.setdefault(to_snake(key), []).extend(values)
+
+        return columns
 
     @staticmethod
     def _resolve_int_metadata(

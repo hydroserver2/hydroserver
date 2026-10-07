@@ -1,5 +1,7 @@
 from allauth.idp.oidc.adapter import DefaultOIDCAdapter
 
+from core.iam.auth.scopes import SCOPES
+
 
 class HydroServerOIDCAdapter(DefaultOIDCAdapter):
     """
@@ -10,6 +12,11 @@ class HydroServerOIDCAdapter(DefaultOIDCAdapter):
     Kept out of the ID token to keep it lean and only returned to clients
     that request the standard "profile" scope.
     """
+
+    scope_display = {
+        **DefaultOIDCAdapter.scope_display,
+        **{scope: definition.label for scope, definition in SCOPES.items()},
+    }
 
     def get_claims(self, purpose, user, client, scopes, email=None, **kwargs):
         claims = super().get_claims(

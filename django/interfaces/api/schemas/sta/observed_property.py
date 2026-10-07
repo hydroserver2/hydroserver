@@ -20,6 +20,7 @@ from interfaces.api.schemas import (
     sortby_array_schema,
 )
 from interfaces.api.schemas.sta.vocabulary import VocabularyResponse
+from interfaces.api.schemas.base import ItemId, NewItemId
 
 
 class ObservedPropertyFields(Schema):
@@ -109,13 +110,11 @@ class ObservedPropertyQueryParameters(ObservedPropertyFilterFields, CollectionQu
     type: list[str] = Query([], description="Filter observed properties by type")
 
 
-class ObservedPropertyResponse(BaseGetResponse, ObservedPropertyFields):
-    id: uuid.UUID
+class ObservedPropertyResponse(BaseGetResponse, ObservedPropertyFields, ItemId):
     workspace_id: Optional[uuid.UUID] = None
 
 
-class ObservedPropertyPostBody(BasePostBody, ObservedPropertyFields):
-    id: Optional[uuid.UUID] = None
+class ObservedPropertyPostBody(BasePostBody, ObservedPropertyFields, NewItemId):
     workspace_id: Optional[uuid.UUID]
 
 

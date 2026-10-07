@@ -5,7 +5,7 @@ from ninja import Router, Path, Query
 
 from interfaces.api.http.links import build_self_link
 from interfaces.api.http.request import HydroServerHttpRequest
-from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
+from interfaces.auth.security import session_auth, oidc_task_read_auth, oidc_task_write_auth, oidc_task_run_auth, apikey_auth, basic_auth
 from processing.orchestration.models import TaskRun
 from interfaces.api.services.products.task import DataProductTaskAPIService
 from processing.products.tasks import run_data_product_task
@@ -25,7 +25,7 @@ data_product_task_service = DataProductTaskAPIService()
 
 @data_product_task_router.get(
     "/items",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_task_read_auth, apikey_auth, basic_auth],
     response={
         200: PaginatedResponse[DataProductTaskResponse],
         401: str,
@@ -53,7 +53,7 @@ def get_data_product_tasks(
 
 @data_product_task_router.post(
     "/items",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_task_write_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
         400: str,
@@ -76,7 +76,7 @@ def create_data_product_task(
 
 @data_product_task_router.get(
     "/items/{task_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_task_read_auth, apikey_auth, basic_auth],
     response={
         200: ItemResponse[DataProductTaskResponse],
         401: str,
@@ -101,7 +101,7 @@ def get_data_product_task(
 
 @data_product_task_router.patch(
     "/items/{task_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_task_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
         400: str,
@@ -129,7 +129,7 @@ def update_data_product_task(
 
 @data_product_task_router.delete(
     "/items/{task_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_task_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,
@@ -156,7 +156,7 @@ def delete_data_product_task(
 
 @data_product_task_router.post(
     "/items/{task_id}/trigger",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_task_run_auth, apikey_auth, basic_auth],
     response={
         202: ItemResponse[TaskRunResponse],
         401: str,
@@ -189,7 +189,7 @@ def trigger_data_product_task(
 
 @data_product_task_router.get(
     "/items/{task_id}/runs",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_task_read_auth, apikey_auth, basic_auth],
     response={
         200: PaginatedResponse[TaskRunResponse],
         401: str,
@@ -231,7 +231,7 @@ def get_data_product_task_runs(
 
 @data_product_task_router.get(
     "/items/{task_id}/runs/{run_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_task_read_auth, apikey_auth, basic_auth],
     response={
         200: ItemResponse[TaskRunResponse],
         401: str,

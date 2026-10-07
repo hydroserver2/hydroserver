@@ -29,7 +29,7 @@ describe('MonitoringSiteService', () => {
         const limit = Number(params.get('limit') ?? 100)
         return jsonResponse({
           data: items.slice(offset, offset + limit),
-          meta: { offset, limit, totalCount: items.length },
+          meta: { offset, limit, numberMatched: items.length },
         })
       })
       vi.stubGlobal('fetch', fetchMock)
@@ -446,7 +446,7 @@ describe('DatastreamService', () => {
       const fetchMock = vi.fn().mockResolvedValue(
         jsonResponse({
           data: [rawDatastream],
-          meta: { offset: 0, limit: 100, totalCount: 1 },
+          meta: { offset: 0, limit: 100, numberMatched: 1 },
           included,
         })
       )
