@@ -164,7 +164,7 @@ jobs:
 
       - name: Install local QC utils package
         working-directory: apps/qc-app
-        run: npm install ../../packages/qc-utils --no-save --package-lock=false --workspaces=false
+        run: npm install ../../packages/qc-utils --no-save --workspaces=false
 
       - name: Run QC app typecheck
         working-directory: apps/qc-app
@@ -395,7 +395,7 @@ jobs:
 
       - name: Install local QC utils package
         working-directory: apps/qc-app
-        run: npm install ../../packages/qc-utils --no-save --package-lock=false --workspaces=false
+        run: npm install ../../packages/qc-utils --no-save --workspaces=false
 
       - name: Install Playwright browsers
         working-directory: apps/qc-app
