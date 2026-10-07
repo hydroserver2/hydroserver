@@ -6,7 +6,7 @@ from ninja.files import UploadedFile
 from django.db import transaction
 
 from core.web.models import SiteTypeIcon
-from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth
+from interfaces.auth.security import session_auth, oidc_data_read_auth, oidc_data_write_auth, oidc_task_read_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.services.sta import MonitoringSiteAPIService
 from interfaces.api.schemas import (
@@ -36,7 +36,7 @@ monitoring_site_service = MonitoringSiteAPIService()
 
 @monitoring_site_router.get(
     "/items",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
+    auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: PaginatedResponse[MonitoringSiteResponse],
         401: str,
@@ -65,7 +65,7 @@ def get_monitoring_sites(
 
 @monitoring_site_router.get(
     "/markers",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
+    auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: list[MonitoringSiteMarkerResponse],
         401: str,
@@ -89,7 +89,7 @@ def get_monitoring_site_markers(
 
 @monitoring_site_router.get(
     "/site-summaries",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
+    auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: list[MonitoringSiteMapSummaryResponse],
         401: str,
@@ -112,7 +112,7 @@ def get_monitoring_site_summaries(
 
 @monitoring_site_router.get(
     "/task-summaries",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_task_read_auth, apikey_auth, basic_auth],
     response={
         200: list[MonitoringSiteTaskSummaryResponse],
         401: str,
@@ -136,7 +136,7 @@ def get_monitoring_site_task_summaries(
 
 @monitoring_site_router.post(
     "/items",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
         400: str,
@@ -158,7 +158,7 @@ def create_monitoring_site(
 
 @monitoring_site_router.get(
     "/tags/keys",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
+    auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: dict[str, list[str]],
         401: str,
@@ -195,7 +195,7 @@ def get_site_type_icons(request: HydroServerHttpRequest):
 
 @monitoring_site_router.get(
     "/items/{monitoring_site_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
+    auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: ItemResponse[MonitoringSiteResponse],
         401: str,
@@ -219,7 +219,7 @@ def get_monitoring_site(
 
 @monitoring_site_router.patch(
     "/items/{monitoring_site_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
         400: str,
@@ -249,7 +249,7 @@ def update_monitoring_site(
 
 @monitoring_site_router.delete(
     "/items/{monitoring_site_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,
@@ -268,7 +268,7 @@ def delete_monitoring_site(request: HydroServerHttpRequest, monitoring_site_id: 
 
 @monitoring_site_router.get(
     "/items/{monitoring_site_id}/linked-resources",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
+    auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: PaginatedResponse[LinkedResourceGetResponse],
         401: str,
@@ -296,7 +296,7 @@ def get_monitoring_site_linked_resources(
 
 @monitoring_site_router.post(
     "/items/{monitoring_site_id}/linked-resources",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
         400: str,
@@ -334,7 +334,7 @@ def add_monitoring_site_linked_resource(
 
 @monitoring_site_router.get(
     "/items/{monitoring_site_id}/linked-resources/{linked_resource_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
+    auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: ItemResponse[LinkedResourceGetResponse],
         401: str,
@@ -363,7 +363,7 @@ def get_monitoring_site_linked_resource(
 
 @monitoring_site_router.patch(
     "/items/{monitoring_site_id}/linked-resources/{linked_resource_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
         400: str,
@@ -405,7 +405,7 @@ def update_monitoring_site_linked_resource(
 
 @monitoring_site_router.delete(
     "/items/{monitoring_site_id}/linked-resources/{linked_resource_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,

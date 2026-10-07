@@ -16535,20 +16535,6 @@
             "description": "OK"
           }
         },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
         "summary": "Get Landing Page",
         "tags": [
           "Capabilities"
@@ -16572,20 +16558,6 @@
             "description": "OK"
           }
         },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
         "summary": "Get Collections",
         "tags": [
           "Collections"
@@ -39907,20 +39879,6 @@
             "description": "Not Found"
           }
         },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
         "summary": "Get Collection Metadata",
         "tags": [
           "Collections"
@@ -39944,20 +39902,6 @@
             "description": "OK"
           }
         },
-        "security": [
-          {
-            "SessionAuth": []
-          },
-          {
-            "OIDCAuth": []
-          },
-          {
-            "APIKeyAuth": []
-          },
-          {
-            "BasicAuth": []
-          }
-        ],
         "summary": "Get Conformance",
         "tags": [
           "Capabilities"

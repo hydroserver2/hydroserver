@@ -3,7 +3,7 @@ import uuid
 from ninja import Router, Path, Query
 
 from interfaces.api.http.request import HydroServerHttpRequest
-from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
+from interfaces.auth.security import session_auth, oidc_task_read_auth, oidc_task_write_auth, apikey_auth, basic_auth
 from interfaces.api.services.products.rating_curve import RatingCurveAPIService
 from interfaces.api.schemas import PaginatedResponse, ItemResponse, CreatedResponse
 from interfaces.api.schemas.products.rating_curve import (
@@ -20,7 +20,7 @@ rating_curve_service = RatingCurveAPIService()
 
 @rating_curve_router.get(
     "/items",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_task_read_auth, apikey_auth, basic_auth],
     response={
         200: PaginatedResponse[RatingCurveResponse],
         401: str,
@@ -47,7 +47,7 @@ def get_rating_curves(
 
 @rating_curve_router.post(
     "/items",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_task_write_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
         400: str,
@@ -73,7 +73,7 @@ def create_rating_curve(
 
 @rating_curve_router.get(
     "/items/{rating_curve_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_task_read_auth, apikey_auth, basic_auth],
     response={
         200: ItemResponse[RatingCurveResponse],
         401: str,
@@ -100,7 +100,7 @@ def get_rating_curve(
 
 @rating_curve_router.patch(
     "/items/{rating_curve_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_task_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
         400: str,
@@ -130,7 +130,7 @@ def update_rating_curve(
 
 @rating_curve_router.delete(
     "/items/{rating_curve_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_task_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,

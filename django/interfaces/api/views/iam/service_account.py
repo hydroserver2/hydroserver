@@ -3,7 +3,7 @@ import uuid
 from ninja import Router, Path, Query
 from django.db import transaction
 
-from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth
+from interfaces.auth.security import session_auth, oidc_iam_read_auth, oidc_iam_write_auth, apikey_auth, basic_auth
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.services.iam import ServiceAccountAPIService
 from interfaces.api.schemas import (
@@ -24,7 +24,7 @@ service_account_service = ServiceAccountAPIService()
 
 @service_account_router.get(
     "",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_iam_read_auth, apikey_auth, basic_auth],
     response={
         200: PaginatedResponse[ServiceAccountResponse],
         401: str,
@@ -53,7 +53,7 @@ def get_service_accounts(
 
 @service_account_router.post(
     "",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_iam_write_auth, apikey_auth, basic_auth],
     response={
         201: ServiceAccountCreatedResponse,
         401: str,
@@ -79,7 +79,7 @@ def create_service_account(
 
 @service_account_router.get(
     "/{service_account_id}",
-    auth=[session_auth, oidc_auth],
+    auth=[session_auth, oidc_iam_read_auth],
     response={
         200: ItemResponse[ServiceAccountResponse],
         401: str,
@@ -107,7 +107,7 @@ def get_service_account(
 
 @service_account_router.patch(
     "/{service_account_id}",
-    auth=[session_auth, oidc_auth],
+    auth=[session_auth, oidc_iam_write_auth],
     response={
         204: None,
         401: str,
@@ -138,7 +138,7 @@ def update_service_account(
 
 @service_account_router.delete(
     "/{service_account_id}",
-    auth=[session_auth, oidc_auth],
+    auth=[session_auth, oidc_iam_write_auth],
     response={
         204: None,
         401: str,
@@ -163,7 +163,7 @@ def delete_service_account(
 
 @service_account_router.put(
     "/{service_account_id}/regenerate",
-    auth=[session_auth, oidc_auth],
+    auth=[session_auth, oidc_iam_write_auth],
     response={
         201: ServiceAccountKeyResponse,
         400: str,

@@ -1,5 +1,5 @@
 {% extends "allauth/layouts/entrance.html" %}
-{% load i18n allauth %}
+{% load i18n allauth oidc_scopes %}
 {% block head_title %}
     {% blocktrans with client_name=client.name|default:"An application" %}
         Authorize {{ client_name }}
@@ -23,10 +23,18 @@
         <p class="hs-title">{% trans "Requested permissions:" %}</p>
         <div class="hs-scope-list">
             {% for checkbox in form.scopes %}
-                <label class="hs-checkbox-label">
-                    {{ checkbox.tag }}
-                    {{ checkbox.choice_label }}
-                </label>
+                {% oidc_scope_warning checkbox.data.value as warning %}
+                <div class="hs-scope">
+                    <label class="hs-checkbox-label">
+                        {{ checkbox.tag }}
+                        {{ checkbox.choice_label }}
+                    </label>
+                    {% if warning %}
+                        <p class="hs-alert hs-scope__warning {% if warning.level == 'danger' %}hs-alert--danger{% else %}hs-alert--warning{% endif %}">
+                            {{ warning.text }}
+                        </p>
+                    {% endif %}
+                </div>
             {% endfor %}
         </div>
     </div>

@@ -3,7 +3,7 @@ import uuid
 from ninja import Router, Path, Query
 from django.db import transaction
 
-from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth
+from interfaces.auth.security import session_auth, oidc_data_read_auth, oidc_data_write_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.services.sta import MonitoringSiteTypeAPIService
 from interfaces.api.schemas import PaginatedResponse, ItemResponse, CreatedResponse
@@ -23,7 +23,7 @@ monitoring_site_type_service = MonitoringSiteTypeAPIService()
 
 @monitoring_site_type_router.get(
     "/items",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
+    auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: PaginatedResponse[MonitoringSiteTypeResponse],
         400: str,
@@ -50,7 +50,7 @@ def get_monitoring_site_types(
 
 @monitoring_site_type_router.post(
     "/items",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
         401: str,
@@ -75,7 +75,7 @@ def create_monitoring_site_type(
 
 @monitoring_site_type_router.get(
     "/items/{monitoring_site_type_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
+    auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: ItemResponse[MonitoringSiteTypeResponse],
         400: str,
@@ -102,7 +102,7 @@ def get_monitoring_site_type(
 
 @monitoring_site_type_router.patch(
     "/items/{monitoring_site_type_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,
@@ -130,7 +130,7 @@ def update_monitoring_site_type(
 
 @monitoring_site_type_router.delete(
     "/items/{monitoring_site_type_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,

@@ -3,7 +3,7 @@ import uuid
 from ninja import Router, Path, Query
 from django.db import transaction
 
-from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth
+from interfaces.auth.security import session_auth, oidc_data_read_auth, oidc_data_write_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.services.sta import ProcessingLevelAPIService
 from interfaces.api.schemas import (
@@ -23,7 +23,7 @@ processing_level_service = ProcessingLevelAPIService()
 
 @processing_level_router.get(
     "/items",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
+    auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: PaginatedResponse[ProcessingLevelResponse],
         400: str,
@@ -51,7 +51,7 @@ def get_processing_levels(
 
 @processing_level_router.post(
     "/items",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         201: CreatedResponse,
         400: str,
@@ -76,7 +76,7 @@ def create_processing_level(
 
 @processing_level_router.get(
     "/items/{processing_level_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
+    auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
         200: ItemResponse[ProcessingLevelResponse],
         400: str,
@@ -104,7 +104,7 @@ def get_processing_level(
 
 @processing_level_router.patch(
     "/items/{processing_level_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
         400: str,
@@ -134,7 +134,7 @@ def update_processing_level(
 
 @processing_level_router.delete(
     "/items/{processing_level_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,

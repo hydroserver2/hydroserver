@@ -1,6 +1,5 @@
 from ninja import Router, Path
 
-from interfaces.auth.security import session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.collections import COLLECTIONS, CollectionDefinition, get_collection
 from interfaces.api.http.errors import NotFoundError
 from interfaces.api.formats import collection_formats, formats_conformance
@@ -43,7 +42,6 @@ ogc_router = Router(tags=["Collections"])
 
 @ogc_router.get(
     "",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={200: LandingPageResponse},
     by_alias=True,
     exclude_none=True,
@@ -96,7 +94,6 @@ def get_landing_page(request: HydroServerHttpRequest):
 
 @ogc_router.get(
     "/conformance",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={200: ConformanceResponse},
     by_alias=True,
     tags=["Capabilities"],
@@ -154,7 +151,6 @@ def build_items_links(collection: CollectionDefinition, collection_url: str) -> 
 
 @ogc_router.get(
     "/collections",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={200: CollectionsResponse},
     by_alias=True,
     exclude_none=True,
@@ -172,7 +168,6 @@ def get_collections(request: HydroServerHttpRequest):
 
 @ogc_router.get(
     "/collections/{collection_id}",
-    auth=[session_auth, oidc_auth, apikey_auth, basic_auth, anonymous_auth],
     response={200: CollectionResponse, 404: str},
     by_alias=True,
     exclude_none=True,

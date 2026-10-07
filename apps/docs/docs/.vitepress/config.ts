@@ -231,6 +231,10 @@ export default defineConfig({
                 text: "Using the TypeScript Client",
                 link: "/developing-and-contributing/how-to/using-the-typescript-client",
               },
+              {
+                text: "Using OIDC Scopes",
+                link: "/developing-and-contributing/how-to/using-oidc-scopes",
+              },
             ],
           },
         ],
