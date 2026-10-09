@@ -8,7 +8,7 @@
         <div class="hs-field">
             <fieldset class="hs-field__control">
                 <legend class="hs-field__legend">
-                    {{ field.label }}{% if field.field.required %}<span class="hs-field__required" aria-hidden="true"> *</span>{% endif %}
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>{% if field.field.required %}<span class="hs-field__required" aria-hidden="true"> *</span>{% endif %}
                 </legend>
                 {{ field }}
             </fieldset>
@@ -27,7 +27,7 @@
             {% if field.name in "org_name,org_code,org_type,org_link,org_description" %}
                 <div class="hs-field">
                     <fieldset class="hs-field__control">
-                        <legend class="hs-field__legend">{{ field.label }}</legend>
+                        <legend class="hs-field__legend"><label for="{{ field.id_for_label }}">{{ field.label }}</label></legend>
                         {{ field }}
                     </fieldset>
                     {% if field.errors %}<p class="hs-field__error">{{ field.errors.0 }}</p>{% endif %}

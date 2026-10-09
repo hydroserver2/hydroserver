@@ -11,7 +11,7 @@
             {% else %}
                 <fieldset class="hs-field__control">
                     <legend class="hs-field__legend">
-                        {{ field.label }}{% if field.field.required %}<span class="hs-field__required" aria-hidden="true"> *</span>{% endif %}
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>{% if field.field.required %}<span class="hs-field__required" aria-hidden="true"> *</span>{% endif %}
                     </legend>
                     {{ field }}
                 </fieldset>
