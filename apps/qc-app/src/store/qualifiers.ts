@@ -20,6 +20,14 @@ export interface QualifierApplication {
   appliedBy: string
 }
 
+/**
+ * Applications live only in this browser, keyed by array index, so edits that
+ * move points move the flags onto other points and commits never include
+ * them. The tool, plot band and table column stay hidden until qualifiers
+ * are saved as session operations.
+ */
+export const QUALIFIER_TOOL_ENABLED = false
+
 type ApplicationsByIndex = Record<number, QualifierApplication[]>
 type ApplicationsByDatastream = Record<string, ApplicationsByIndex>
 
@@ -67,7 +75,9 @@ export const useQualifierStore = defineStore(
         // the dictionary arrived, `buildQualifierBand` will have dropped
         // them (unknown `qualifierId`). Refresh options so any imminent
         // initial `handleNewPlot` picks up the band, and if a plot is
-        // already live, replot so the band materialises.
+        // already live, replot so the band materialises. The replot does
+        // not restore the plot's selection highlight.
+        if (!QUALIFIER_TOOL_ENABLED) return
         const { usePlotlyStore } = await import('@/store/plotly')
         const plotStore = usePlotlyStore()
         plotStore.updateOptions()

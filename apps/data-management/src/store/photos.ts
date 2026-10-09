@@ -10,6 +10,12 @@ export const usePhotosStore = defineStore('photos', () => {
   const photosToDelete = ref<string[]>([])
   const loading = ref(false)
 
+  const resetPendingPhotos = () => {
+    newPhotos.value = []
+    newLinks.value = []
+    photosToDelete.value = []
+  }
+
   const uploadNewPhotos = async (monitoringSiteId: string) => {
     if (!newPhotos.value.length && !newLinks.value.length) return
 
@@ -76,9 +82,7 @@ export const usePhotosStore = defineStore('photos', () => {
       Snackbar.error('Unable to update photos.')
     } finally {
       loading.value = false
-      newPhotos.value = []
-      newLinks.value = []
-      photosToDelete.value = []
+      resetPendingPhotos()
     }
   }
 
@@ -88,6 +92,7 @@ export const usePhotosStore = defineStore('photos', () => {
     newLinks,
     photosToDelete,
     loading,
+    resetPendingPhotos,
     updatePhotos,
   }
 })

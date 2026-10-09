@@ -1,6 +1,7 @@
 import { routes } from '@/router/routes'
 import { createRouter, createWebHistory } from 'vue-router'
-import { guards } from '@/router/guards'
+import { guards, updateHead } from '@/router/guards'
+import { isLeavingPage } from '@/router/navigationState'
 
 const router = createRouter({
   history: createWebHistory('/qc/'),
@@ -8,20 +9,19 @@ const router = createRouter({
 })
 
 export function setupRouteGuards() {
-  guards.map((fn) => {
-    router.beforeEach(async (to, from, next) => {
-      const activatedRouteGuard = await fn(to, from, next)
-      if (activatedRouteGuard === false) {
-        next(false)
-      } else if (
-        activatedRouteGuard !== null &&
-        activatedRouteGuard !== undefined
-      ) {
-        next(activatedRouteGuard)
-      } else {
-        next()
-      }
+  // `false` cancels, a location redirects, and null/undefined continues.
+  guards.forEach((fn) => {
+    router.beforeEach(async (to, from) => {
+      const result = await fn(to, from)
+      if (result === false) return false
+      if (result === null || result === undefined) return true
+      return result
     })
+  })
+  router.afterEach((to, from, failure) => {
+    // The leave guard's navigation has landed or been cancelled.
+    isLeavingPage.value = false
+    if (!failure) updateHead(to, from)
   })
 }
 

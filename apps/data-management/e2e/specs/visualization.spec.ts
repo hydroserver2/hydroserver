@@ -308,20 +308,22 @@ test.describe("visualization", () => {
 
     await plotPublicDatastream(page);
 
-    // Date preset chips use abbreviated labels: 1m, 6m, YTD, 1y, all
+    // Date preset chips use abbreviated labels: 1w, 1m, 6m, YTD, 1y, all
+    await expect(page.getByText("1w").first()).toBeVisible();
     await expect(page.getByText("1m").first()).toBeVisible();
     await expect(page.getByText("6m").first()).toBeVisible();
     await expect(page.getByText("1y").first()).toBeVisible();
 
+    await page.getByText("1w").first().click();
     await page.getByText("1m").first().click();
     await page.getByText("6m").first().click();
     await page.getByText("1y").first().click();
 
     // Quick-range selection is mirrored into the route query.
-    await expect(page).toHaveURL(/selectedDateBtnId=3/);
+    await expect(page).toHaveURL(/selectedDateBtnId=4/);
     const copiedUrl = new URL(page.url());
 
-    expect(copiedUrl.searchParams.get("selectedDateBtnId")).toBe("3");
+    expect(copiedUrl.searchParams.get("selectedDateBtnId")).toBe("4");
     expect(copiedUrl.searchParams.has("beginDate")).toBe(false);
     expect(copiedUrl.searchParams.has("endDate")).toBe(false);
     expect(copiedUrl.searchParams.has("xStart")).toBe(false);

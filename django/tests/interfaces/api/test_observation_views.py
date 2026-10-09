@@ -3,6 +3,7 @@ from urllib.parse import urlencode
 
 import pytest
 from django.db import connection
+from django.test import override_settings
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
@@ -449,6 +450,21 @@ def test_get_observations_properties_filters_response_fields(client):
 # --- create_observation ----------------------------------------------------------------
 
 
+@override_settings(CORS_ALLOW_ALL_ORIGINS=True)
+def test_get_observations_checksum_header_is_readable_cross_origin(client):
+    datastream = _make_datastream(WorkspaceFactory())
+    ObservationFactory(datastream=datastream)
+
+    response = client.get(
+        _observations_url(datastream.id), HTTP_ORIGIN="http://qc.example.org"
+    )
+
+    assert response.status_code == 200
+    assert response["X-Checksum"]
+    exposed = response["Access-Control-Expose-Headers"].lower().split(", ")
+    assert "x-checksum" in exposed
+
+
 def test_create_observation_succeeds_for_workspace_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
@@ -836,6 +852,97 @@ def test_insert_observations_replace_mode_succeeds(client):
     observations = Observation.objects.filter(datastream=datastream)
     assert observations.count() == 1
     assert observations.get().result == 42.0
+
+
+def _replace_observations(client, rows, **params):
+    """Replace with two existing points (t0, t0 + 2h); returns the response and the remaining results."""
+
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    t0 = timezone.now().replace(microsecond=0) - timedelta(days=1)
+    ObservationFactory(datastream=datastream, phenomenon_time=t0, result=1.0)
+    ObservationFactory(datastream=datastream, phenomenon_time=t0 + timedelta(hours=2), result=3.0)
+    client.force_login(owner)
+
+    query = urlencode({"mode": params.pop("mode", "replace"), **params})
+    response = client.post(
+        f"{_BULK_CREATE_URL}?{query}",
+        data=_with_datastream(
+            datastream.id,
+            {"fields": ["phenomenonTime", "result"], "data": rows(t0)},
+        ),
+        content_type="application/json",
+    )
+    results = sorted(
+        Observation.objects.filter(datastream=datastream).values_list("result", flat=True)
+    )
+    return response, results
+
+
+def test_insert_observations_replace_mode_deletes_the_given_range(client):
+    # Both existing points sit outside the upload's own span, but inside the range.
+    response, results = _replace_observations(
+        client,
+        lambda t0: [[_iso(t0 + timedelta(hours=1)), 5.5]],
+        phenomenonTimeStart=_iso(timezone.now() - timedelta(days=2)),
+        phenomenonTimeEnd=_iso(timezone.now()),
+    )
+
+    assert response.status_code == 201
+    assert results == [5.5]
+
+
+def test_insert_observations_replace_mode_with_an_empty_upload_clears_the_range(client):
+    response, results = _replace_observations(
+        client,
+        lambda t0: [],
+        phenomenonTimeStart=_iso(timezone.now() - timedelta(days=2)),
+        phenomenonTimeEnd=_iso(timezone.now()),
+    )
+
+    assert response.status_code == 201
+    assert results == []
+
+
+def test_insert_observations_replace_mode_without_a_range_uses_the_upload_span(client):
+    response, results = _replace_observations(
+        client, lambda t0: [[_iso(t0 + timedelta(hours=1)), 5.5]]
+    )
+
+    assert response.status_code == 201
+    assert results == [1.0, 3.0, 5.5]
+
+
+def test_insert_observations_replace_mode_returns_400_for_an_empty_upload_without_a_range(client):
+    response, results = _replace_observations(client, lambda t0: [])
+
+    assert response.status_code == 400
+    assert results == [1.0, 3.0]
+
+
+def test_insert_observations_replace_mode_returns_400_for_half_a_range(client):
+    response, results = _replace_observations(
+        client,
+        lambda t0: [[_iso(t0 + timedelta(hours=1)), 5.5]],
+        phenomenonTimeStart=_iso(timezone.now() - timedelta(days=2)),
+    )
+
+    assert response.status_code == 400
+    assert results == [1.0, 3.0]
+
+
+def test_insert_observations_returns_400_for_a_range_outside_replace_mode(client):
+    response, results = _replace_observations(
+        client,
+        lambda t0: [[_iso(t0 + timedelta(hours=1)), 5.5]],
+        mode="insert",
+        phenomenonTimeStart=_iso(timezone.now() - timedelta(days=2)),
+        phenomenonTimeEnd=_iso(timezone.now()),
+    )
+
+    assert response.status_code == 400
+    assert results == [1.0, 3.0]
 
 
 def test_insert_observations_returns_403_without_create_permission(client):

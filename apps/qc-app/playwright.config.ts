@@ -18,6 +18,8 @@ const reporter = process.env.CI
 
 export default defineConfig({
   testDir: './e2e',
+  // Loads the app once so the first test does not pay Vite's cold transform.
+  globalSetup: './e2e/support/global-setup.ts',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: 1,
@@ -40,7 +42,12 @@ export default defineConfig({
         '**/all-operations.spec.ts',
         '**/submit.spec.ts',
       ],
-      use: { ...devices['Desktop Firefox'] },
+      use: {
+        ...devices['Desktop Firefox'],
+        // The plots are WebGL. Without a GPU (CI) Firefox turns WebGL off and
+        // Plotly covers each plot with a notice, which blocks clicks on it.
+        launchOptions: { firefoxUserPrefs: { 'webgl.force-enabled': true } },
+      },
     },
   ],
   webServer: {

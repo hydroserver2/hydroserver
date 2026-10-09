@@ -9,6 +9,7 @@ import { usePlotlyStore } from '@/store/plotly'
 import { storeToRefs } from 'pinia'
 import { Y_AXIS_KEY_RE } from './internal'
 import type { AppPlotlyTrace, AxisChip } from './options'
+import { fromPlot, plotCoord, plotCoordToDate } from './plotTime'
 
 // Throttle the per-pixel mousemove work to one frame. DOM mousemove
 // fires ~hundreds of events/sec on modern displays; each one used to
@@ -39,7 +40,7 @@ const processMouseMove = (event: MouseEvent) => {
 
   // PRIVATE-API: `_fullLayout` (and the `xaxis.p2c` / `yaxis.p2c` pixel-to-data
   // converters it exposes) are undocumented Plotly internals used here for
-  // mouse-move coordinate conversion. They have no public type — see
+  // mouse-move coordinate conversion. They have no public type; see
   // `src/types/plotly-dist.d.ts` for the local `PrivatePlotlyHTMLElement`
   // augmentation. If these break in a future Plotly version, switch to a
   // published gestures API or recompute coordinates from `layout.range`.
@@ -88,14 +89,14 @@ const processMouseMove = (event: MouseEvent) => {
   if (!insidePlot) {
     // Leaving the plot area while still over the root element (e.g.
     // cursor dropped onto the qualifier band or a tick gutter) should
-    // hide the readout and crosshair — otherwise they freeze at the
+    // hide the readout and crosshair, otherwise they freeze at the
     // last in-plot position.
     showCoordinates.value = false
     if (crosshair.value.visible) crosshair.value.visible = false
     return
   }
 
-  hover.value.x = Number(xaxis.p2c(cursorX - plotLeft))
+  hover.value.x = fromPlot(Number(xaxis.p2c(cursorX - plotLeft)))
   hover.value.y = Number(yaxis.p2c(cursorY - plotTop)).toFixed(4)
   showCoordinates.value = true
 
@@ -189,7 +190,7 @@ const collectRightAxes = (
     // user sees the blue hover tint on top of the chart (from the
     // `.drag.cursor-*:hover` styling in Plot.vue) in a region that
     // isn't a visible axis column. The wheel-zoom picker has the
-    // same concern — routing scroll to an axis with no visible
+    // same concern: routing scroll to an axis with no visible
     // chrome is surprising.
     if (ax.visible === false) continue
     if (typeof ax._mainLinePosition !== 'number') continue
@@ -236,7 +237,7 @@ export const widenYAxisDragRects = (gd: HTMLElement): void => {
   type Span = { subplotId: string; zoneLeft: number; zoneRight: number }
   const spans: Span[] = []
 
-  // Primary y-axis (side: 'left'). No `_shift` — autoshift only
+  // Primary y-axis (side: 'left'). No `_shift`: autoshift only
   // applies to overlays with `anchor: 'free'`. Zone is from the
   // graph's left edge out to the axis line.
   const primaryY = fl.yaxis as
@@ -304,7 +305,7 @@ export const widenYAxisDragRects = (gd: HTMLElement): void => {
  * the counter-axis origin (plot-left), so the hidden axis's drag
  * column lands right next to the primary QC axis. With the hover
  * tint from `.drag.cursor-*:hover` in Plot.vue, that renders as a
- * stray blue rectangle hugging the QC axis — even though the axis
+ * stray blue rectangle hugging the QC axis, even though the axis
  * chrome itself is gone. Reproduces with as few as two plotted
  * datastreams (one QC + one hidden overlay).
  *
@@ -315,7 +316,7 @@ export const widenYAxisDragRects = (gd: HTMLElement): void => {
  * selectors in Plot.vue can't match. `pointer-events: none` is a
  * belt-and-braces in case any sibling CSS still widens them.
  *
- * Must re-run after every `plotly_afterplot` — Plotly rebuilds drag
+ * Must re-run after every `plotly_afterplot`: Plotly rebuilds drag
  * rects on each relayout and our DOM edits don't survive a rebuild.
  */
 export const suppressHiddenAxisDragRects = (gd: HTMLElement): void => {
@@ -332,7 +333,7 @@ export const suppressHiddenAxisDragRects = (gd: HTMLElement): void => {
   ]
 
   for (const key of Object.keys(fl)) {
-    // Guard the primary yaxis — it's always visible and owns the QC
+    // Guard the primary yaxis: it's always visible and owns the QC
     // axis's drag column; zeroing it would break rescale-drag on QC.
     if (!Y_AXIS_KEY_RE.test(key) || key === 'yaxis') continue
     const ax = fl[key] as
@@ -391,7 +392,8 @@ export const updateAxisChips = (gd: PlotlyHTMLElement | null): void => {
   const graphWidth = (gd as HTMLElement).clientWidth
   let leftIdx = 0
   let rightIdx = 0
-  // Iterate `graphSeriesArray` — it's the authoritative sidebar
+  const seenAxes = new Set<string>()
+  // Iterate `graphSeriesArray`: it's the authoritative sidebar
   // order; `gd.data` gets reversed so traces paint top-over-bottom
   // (see `createPlotlyOption`), which would flip the stacked chips.
   for (const series of graphSeriesArray.value) {
@@ -404,6 +406,9 @@ export const updateAxisChips = (gd: PlotlyHTMLElement | null): void => {
     // on `y2`/`y3`/...
     const isPrimary = axisRef === 'y'
     const axisKey = isPrimary ? 'yaxis' : `yaxis${axisRef.slice(1)}`
+    // Series sharing an axis (the edit target and its source) share its chip.
+    if (seenAxes.has(axisKey)) continue
+    seenAxes.add(axisKey)
     const ax = fl[axisKey] as
       | { visible?: boolean; _mainLinePosition?: number; _shift?: number }
       | undefined
@@ -563,7 +568,7 @@ export const handleWheel = (event: WheelEvent) => {
   // `ax.range`), so on the second-and-later wheel tick in a burst
   // the pivot would land tens of milliseconds off the cursor's
   // actual data position. That offset accumulates and reads as a
-  // pan on top of the zoom — exactly what the user reported.
+  // pan on top of the zoom, exactly what the user reported.
   // Computing the pivot manually from the up-to-date range
   // sidesteps the stale closure entirely.
   const live = (gd as { layout?: Record<string, unknown> } | null)?.layout
@@ -575,10 +580,8 @@ export const handleWheel = (event: WheelEvent) => {
     ]
     const r = ax?.range
     if (!r || r.length < 2) return null
-    const toNum = (v: string | number) =>
-      typeof v === 'string' ? Date.parse(v) : Number(v)
-    const lo = toNum(r[0] as string | number)
-    const hi = toNum(r[1] as string | number)
+    const lo = plotCoord(r[0] as string | number)
+    const hi = plotCoord(r[1] as string | number)
     return Number.isFinite(lo) && Number.isFinite(hi) ? { lo, hi } : null
   }
 
@@ -629,25 +632,22 @@ const applyWheelZoom = async (zoom: WheelPending): Promise<void> => {
 
   const update: Record<string, unknown> = {}
 
-  // Plotly serialises date-axis range endpoints as ISO strings; convert
-  // back to epoch ms so the pivot arithmetic matches `p2c`'s space.
-  const toNumber = (v: string | number): number =>
-    typeof v === 'string' ? Date.parse(v) : Number(v)
-
   const applyAxis = (key: string, pivot: number, factor: number): void => {
     const range = liveLayout[key]?.range as Array<string | number> | undefined
     if (!range) return
     const r0 = range[0]
     const r1 = range[1]
     if (r0 === undefined || r1 === undefined) return
-    const a = toNumber(r0)
-    const b = toNumber(r1)
+    const a = plotCoord(r0)
+    const b = plotCoord(r1)
     if (!Number.isFinite(a) || !Number.isFinite(b)) return
     const newA = pivot - (pivot - a) * factor
     const newB = pivot + (b - pivot) * factor
     // Bail on degenerate ranges (excessive zoom past axis resolution).
     if (!Number.isFinite(newA) || !Number.isFinite(newB) || newA >= newB) return
-    update[`${key}.range`] = [newA, newB]
+    // The date axis takes strings; see `plotTime.ts`.
+    update[`${key}.range`] =
+      key === 'xaxis' ? [plotCoordToDate(newA), plotCoordToDate(newB)] : [newA, newB]
     update[`${key}.autorange`] = false
   }
 

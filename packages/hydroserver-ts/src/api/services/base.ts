@@ -90,17 +90,24 @@ export abstract class HydroServerBaseService<
     return res.ok ? res.data : null
   }
 
-  create = async (body: M): Promise<ApiResponse<M>> => {
+  /** Create the item, then read it back with `params` (the same params `get` takes). */
+  create = async (
+    body: M,
+    params?: Record<string, unknown>
+  ): Promise<ApiResponse<M>> => {
     const res = await apiMethods.post<{ id: string }>(
       this._route,
       this.serialize(body)
     )
     if (!res.ok) return res as ApiResponse<M>
-    return this.get(res.data.id)
+    return this.get(res.data.id, params)
   }
 
-  createItem = async (body: M): Promise<M | null> => {
-    const res = await this.create(body)
+  createItem = async (
+    body: M,
+    params?: Record<string, unknown>
+  ): Promise<M | null> => {
+    const res = await this.create(body, params)
     return res.ok ? res.data : null
   }
 

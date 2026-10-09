@@ -9,6 +9,7 @@ import {
 } from "../../types";
 import { measureEllapsedTime } from "../ellapsed-time";
 import { timeUnitMultipliers } from "../format";
+import { isValidTimeZone } from "../timeZone";
 import { findFirstGreaterOrEqual, findLastLessOrEqual } from "../observations";
 // @ts-ignore
 import DeleteDataWorker from "./delete-data.worker?worker&inline";
@@ -43,9 +44,11 @@ import {
   fillGapsCore,
   findGapsCore,
   interpolateCore,
+  type InterpolateGroup,
   persistenceCore,
   rateOfChangeCore,
   shiftDatetimesCollection,
+  type ShiftDatetimesParams,
   valueThresholdCore,
 } from "./operation-cores";
 import { shouldUseWorker } from "./calibration";
@@ -87,6 +90,15 @@ function growBuffer(buffer: ArrayBufferLike, newByteLength: number): void {
   } else if (typeof anyBuf.resize === "function") {
     anyBuf.resize(newByteLength);
   }
+}
+
+/** The distinct indices in `[0, length)`, ascending. Both delete paths
+ *  size their output by this count. */
+function existingIndices(indices: ArrayLike<number>, length: number): number[] {
+  const sorted = Array.from(indices)
+    .filter((i) => i >= 0 && i < length)
+    .sort((a, b) => a - b);
+  return sorted.filter((i, k) => k === 0 || i !== sorted[k - 1]);
 }
 
 /**
@@ -145,13 +157,22 @@ function consumesPrecedingSelection(
   }
 }
 
+/** Thrown by an edit dispatched while an earlier history step is previewed.
+ *  Previewing only shows a step; return to the latest step to edit. */
+export class HistoryPreviewError extends Error {
+  constructor() {
+    super("An earlier step is being previewed. Return to the latest step to edit.");
+    this.name = "HistoryPreviewError";
+  }
+}
+
 export class ObservationRecord {
   /** The generated dataset to be used for plotting */
   dataset: {
     source: {
       // Store datetimes in a Float64Array because plotly can't parse BigInts correctly.
       x: Float64Array<ArrayBufferLike>;
-      y: Float32Array<ArrayBufferLike>;
+      y: Float64Array<ArrayBufferLike>;
     };
   } = {
       source: {
@@ -161,10 +182,10 @@ export class ObservationRecord {
             INCREASE_AMOUNT * Float64Array.BYTES_PER_ELEMENT,
           ),
         ),
-        y: new Float32Array(
+        y: new Float64Array(
           makeBuffer(
-            INCREASE_AMOUNT * Float32Array.BYTES_PER_ELEMENT,
-            INCREASE_AMOUNT * Float32Array.BYTES_PER_ELEMENT,
+            INCREASE_AMOUNT * Float64Array.BYTES_PER_ELEMENT,
+            INCREASE_AMOUNT * Float64Array.BYTES_PER_ELEMENT,
           ),
         ),
       },
@@ -184,6 +205,14 @@ export class ObservationRecord {
    */
   private _isReplaying: boolean = false;
   /**
+   * The history step the data currently shows, when it is an earlier one
+   * than the last. `history` still lists every step; those after this one
+   * are not applied. Null when the data reflects the whole history. Set by
+   * `previewHistory`, cleared by `exitPreview`, `undo`, `redo` and any
+   * reload of the data.
+   */
+  previewIndex: number | null = null;
+  /**
    * Set by each operation handler (or any of its subroutines) to record
    * whether a worker was actually spawned during this dispatch. Sticky-
    * upgrade semantics: the wrapper resets it to `"inline"` before the
@@ -198,7 +227,7 @@ export class ObservationRecord {
   isLoading: boolean = true;
   rawData: {
     datetimes: Float64Array<ArrayBuffer> | number[];
-    dataValues: Float32Array<ArrayBuffer> | number[];
+    dataValues: Float64Array<ArrayBuffer> | number[];
   };
 
   /**
@@ -211,10 +240,29 @@ export class ObservationRecord {
   windowBegin: number = -Infinity;
   windowEnd: number = Infinity;
 
-  constructor(dataArrays: {
-    datetimes: Float64Array<ArrayBuffer> | number[];
-    dataValues: Float32Array<ArrayBuffer> | number[];
-  }) {
+  /**
+   * Bumped whenever the data may have changed: every load (including the
+   * reloads behind undo, redo and preview) and every edit operation.
+   * Filters and selections leave it alone. Lets a consumer holding
+   * index-keyed state tell that the points under those indices moved.
+   */
+  revision = 0;
+
+  /**
+   * The datastream's placeholder for a missing reading. Arithmetic and
+   * drift edits skip it, and interpolation never anchors on it. Null treats
+   * every value as a measurement.
+   */
+  noDataValue: number | null = null;
+
+  constructor(
+    dataArrays: {
+      datetimes: Float64Array<ArrayBuffer> | number[];
+      dataValues: Float64Array<ArrayBuffer> | number[];
+    },
+    options: { noDataValue?: number | null } = {},
+  ) {
+    this.noDataValue = options.noDataValue ?? null;
     this.history = [];
     this.rawData = dataArrays;
     this.loadData(this.rawData);
@@ -222,7 +270,7 @@ export class ObservationRecord {
 
   async loadData(dataArrays: {
     datetimes: Float64Array<ArrayBuffer> | number[];
-    dataValues: Float32Array<ArrayBuffer> | number[];
+    dataValues: Float64Array<ArrayBuffer> | number[];
   }) {
     if (!dataArrays) {
       return;
@@ -239,17 +287,32 @@ export class ObservationRecord {
     this.loadingTime = measurement.duration;
 
     this.history.length = 0;
+    this.previewIndex = null;
     this.isLoading = false;
+    this.revision++;
   }
 
   /**
    * Materialize the inclusive epoch-ms window `[begin, end]` of `rawData`
-   * into `dataset.source`. A real window change clears history — the new
-   * window is a fresh QC baseline. An unchanged window is a no-op so an
-   * unrelated reload doesn't discard in-flight edits.
+   * into `dataset.source`. Passing `rawData` replaces the full series first,
+   * e.g. after a cache filled a gap. A real window or data change clears
+   * history, since it is a fresh QC baseline. An unchanged window over the
+   * same data is a no-op so an unrelated reload doesn't discard in-flight
+   * edits.
    */
-  async applyWindow(begin: number, end: number) {
-    if (begin === this.windowBegin && end === this.windowEnd) return;
+  async applyWindow(
+    begin: number,
+    end: number,
+    rawData: ObservationRecord["rawData"] = this.rawData,
+  ) {
+    if (
+      begin === this.windowBegin &&
+      end === this.windowEnd &&
+      rawData === this.rawData
+    ) {
+      return;
+    }
+    this.rawData = rawData;
     this.windowBegin = begin;
     this.windowEnd = end;
     await this.loadData(this._windowedRaw());
@@ -300,7 +363,7 @@ export class ObservationRecord {
       this.dataset.source.x.buffer,
     ).subarray(0, length);
 
-    this.dataset.source.y = new Float32Array(
+    this.dataset.source.y = new Float64Array(
       this.dataset.source.y.buffer,
     ).subarray(0, length);
   }
@@ -330,11 +393,11 @@ export class ObservationRecord {
 
       const outputBufferY = makeBuffer(
         this.dataY.buffer.byteLength,
-        maxByteLengthNeeded * Float32Array.BYTES_PER_ELEMENT,
+        maxByteLengthNeeded * Float64Array.BYTES_PER_ELEMENT,
       );
 
       const outputArrayX = new Float64Array(outputBufferX);
-      const outputArrayY = new Float32Array(outputBufferY);
+      const outputArrayY = new Float64Array(outputBufferY);
       outputArrayX.set(this.dataX);
       outputArrayY.set(this.dataY);
 
@@ -348,7 +411,7 @@ export class ObservationRecord {
       newLength * Float64Array.BYTES_PER_ELEMENT
     ) {
       growBuffer(this.dataX.buffer, newLength * Float64Array.BYTES_PER_ELEMENT);
-      growBuffer(this.dataY.buffer, newLength * Float32Array.BYTES_PER_ELEMENT);
+      growBuffer(this.dataY.buffer, newLength * Float64Array.BYTES_PER_ELEMENT);
     }
   }
 
@@ -359,49 +422,134 @@ export class ObservationRecord {
     this.loadingTime = null;
     this.isLoading = true;
     this.history.length = 0;
+    this.previewIndex = null;
     await this.loadData(this._windowedRaw());
   }
 
   /**
-   * Truncate history at `index` (inclusive), reload from raw, and
-   * replay the surviving entries. Used by the "Reload from this step"
-   * button in EditHistory.
+   * Dispatch one recorded step and carry its comment and `performedBy`
+   * onto the entry it produces. `dispatch` rebuilds an entry from
+   * `[method, ...args]` alone, so without this every undo, redo or replay
+   * would drop them. The entry is the one this step pushed or replaced;
+   * a step that merges into nothing new (a selection echo) stamps nothing.
+   * Execution timings are not carried: they describe the run that just
+   * happened.
    */
-  async reloadHistory(index: number): Promise<number[]> {
-    const newHistory = this.history.slice(0, index + 1);
-    this.redoStack.length = 0;
-    await this.reload();
+  async dispatchStep(
+    step: Pick<HistoryItem, "method" | "args" | "comment" | "performedBy">,
+  ): Promise<number[]> {
+    const before = this.history[this.history.length - 1];
+    const selection = await this.dispatch([[step.method, ...(step.args || [])]]);
+    const produced = this.history[this.history.length - 1];
+    if (produced && produced !== before && produced.method === step.method) {
+      if (step.comment !== undefined) produced.comment = step.comment;
+      if (step.performedBy !== undefined) {
+        produced.performedBy = step.performedBy;
+      }
+    }
+    return selection;
+  }
 
-    return await this.dispatch(newHistory.map((h) => [h.method, ...(h.args || [])]));
+  /** Reload from raw and replay `steps`, keeping the redo stack. */
+  private async _replay(steps: HistoryItem[]): Promise<number[]> {
+    await this.reload();
+    this._isReplaying = true;
+    try {
+      let selection: number[] = [];
+      for (const step of steps) selection = await this.dispatchStep(step);
+      return selection;
+    } finally {
+      this._isReplaying = false;
+    }
+  }
+
+  /**
+   * Show the data as of history step `index` (-1 for the untouched data)
+   * without dropping the steps after it: they stay listed in `history`,
+   * unapplied, until `exitPreview`. Edits are refused meanwhile. Previewing
+   * the last step is the same as `exitPreview`. Returns the selection the
+   * shown step leaves.
+   */
+  async previewHistory(index: number): Promise<number[]> {
+    const steps = [...this.history];
+    if (index >= steps.length - 1) return this.exitPreview();
+    const shown = steps.slice(0, index + 1);
+    const selection = await this._replay(shown);
+    const tail = steps.slice(index + 1);
+    this.history.push(...tail);
+    this.previewIndex = this.history.length - tail.length - 1;
+    return selection;
+  }
+
+  /**
+   * Drop every step after `index` for good (discarding unsaved edits):
+   * reload from raw and replay the steps kept. Clears the redo stack and
+   * ends a preview. To look at an earlier step, use `previewHistory`.
+   */
+  async truncateHistory(index: number): Promise<number[]> {
+    const kept = this.history.slice(0, index + 1);
+    this.redoStack.length = 0;
+    return this._replay(kept);
+  }
+
+  /** Reload from raw and replay `steps` as the whole history, dropping the
+   *  redo stack. For putting back a saved history that undo and new edits
+   *  have diverged from. */
+  async restoreHistory(steps: HistoryItem[]): Promise<number[]> {
+    this.redoStack.length = 0;
+    return this._replay([...steps]);
+  }
+
+  /** Apply the whole history again after `previewHistory`. A no-op
+   *  returning no selection when nothing is previewed. */
+  async exitPreview(): Promise<number[]> {
+    if (this.previewIndex === null) return [];
+    return this._replay([...this.history]);
+  }
+
+  /** First and last datetime among `indices`, or undefined if none are in
+   *  range. Indices need not be sorted. */
+  private _extentOf(
+    indices: ArrayLike<number>,
+  ): { begin: number; end: number } | undefined {
+    const xs = this.dataX;
+    let begin = Infinity;
+    let end = -Infinity;
+    for (let k = 0; k < indices.length; k++) {
+      const t = xs[indices[k]];
+      if (t === undefined || !Number.isFinite(t)) continue;
+      if (t < begin) begin = t;
+      if (t > end) end = t;
+    }
+    return begin <= end ? { begin, end } : undefined;
+  }
+
+  private _refuseWhilePreviewing() {
+    if (this.previewIndex !== null) throw new HistoryPreviewError();
   }
 
   /** Splice the history entry at `index`, reload from raw, and replay
    *  the survivors. */
   async removeHistoryItem(index: number): Promise<number[]> {
+    this._refuseWhilePreviewing();
     const newHistory = [...this.history];
     newHistory.splice(index, 1);
     this.redoStack.length = 0;
-    await this.reload();
-    return await this.dispatch(newHistory.map((h) => [h.method, ...(h.args || [])]));
+    return this._replay(newHistory);
   }
 
   /**
    * Undo the most recent history entry. Pushes it onto `redoStack` so a
    * subsequent `redo()` can re-apply it, then reloads from the raw
-   * dataset and replays the remaining history in order.
+   * dataset and replays the remaining history in order. Ends a preview:
+   * it acts on the whole history, not on the step shown.
    */
   async undo(): Promise<number[]> {
     if (!this.history.length) return [];
     const popped = this.history[this.history.length - 1];
     const newHistory = this.history.slice(0, -1);
-    await this.reload();
     this.redoStack.push(popped);
-    this._isReplaying = true;
-    try {
-      return await this.dispatch(newHistory.map((h) => [h.method, ...(h.args || [])]));
-    } finally {
-      this._isReplaying = false;
-    }
+    return this._replay(newHistory);
   }
 
   /**
@@ -412,10 +560,12 @@ export class ObservationRecord {
    */
   async redo(): Promise<number[]> {
     if (!this.redoStack.length) return [];
+    // Redo builds on the whole history, so a preview ends first.
+    await this.exitPreview();
     const item = this.redoStack.pop()!;
     this._isReplaying = true;
     try {
-      return await this.dispatch([[item.method, ...(item.args || [])]]);
+      return await this.dispatchStep(item);
     } finally {
       this._isReplaying = false;
     }
@@ -449,6 +599,7 @@ export class ObservationRecord {
    * can pass locally-computed indices without going through history.
    */
   async dispatchAction(action: EnumEditOperations, ...args: any) {
+    this._refuseWhilePreviewing();
     const actions: EnumDictionary<EnumEditOperations, Function> = {
       [EnumEditOperations.ADD_POINTS]: this._addDataPoints,
       [EnumEditOperations.CHANGE_VALUES]: this._changeValues,
@@ -474,17 +625,14 @@ export class ObservationRecord {
       // survives the internal re-dispatch.
       if (!this._isReplaying) this.redoStack.length = 0;
 
-      // Selection-consuming edits read the preceding SELECTION's
-      // size at push time so the audit record reflects what the
-      // handler will operate on. `consumesPrecedingSelection` gates
-      // the read so non-selection edits (ADD_POINTS, FILL_GAPS)
-      // don't pick up a stale value.
-      const prevSelLen =
-        consumesPrecedingSelection(action, args) &&
-          this.history[this.history.length - 1]?.method ===
-          EnumFilterOperations.SELECTION
-          ? this.history[this.history.length - 1].selected?.length
-          : undefined;
+      // Selection-consuming edits read the preceding entry's selection
+      // (a SELECTION or a filter's result, as the handlers do) at push
+      // time so the audit record reflects what the handler will operate
+      // on. `consumesPrecedingSelection` gates the read so non-selection
+      // edits (ADD_POINTS, FILL_GAPS) don't pick up a stale value.
+      const prevSelected = consumesPrecedingSelection(action, args)
+        ? this.history[this.history.length - 1]?.selected
+        : undefined;
 
       historyItem = {
         method: action,
@@ -493,7 +641,9 @@ export class ObservationRecord {
           startedAt: Date.now(),
           inFlight: true,
           datasetSize: this.dataset.source.x?.length ?? 0,
-          selectionSize: prevSelLen,
+          selectionSize: prevSelected?.length,
+          // Read before the edit moves or removes those points.
+          extent: prevSelected && this._extentOf(prevSelected),
         },
       };
       this.history.push(historyItem);
@@ -535,6 +685,10 @@ export class ObservationRecord {
           durationMs: measurement.duration,
           mode: this._pendingExecutionMode,
           inFlight: false,
+          // Inserting ops have no prior selection; their result is it.
+          extent:
+            stored.execution.extent ??
+            (newSelection?.length ? this._extentOf(newSelection) : undefined),
         };
       }
     } catch (e) {
@@ -562,6 +716,8 @@ export class ObservationRecord {
         }
       }
     }
+    // A failed edit may still have moved points before throwing.
+    this.revision++;
 
     return newSelection;
   }
@@ -599,6 +755,7 @@ export class ObservationRecord {
 
   /** Filter operations do not transform the data and return a selection */
   async dispatchFilter(action: EnumFilterOperations, ...args: any): Promise<number[]> {
+    this._refuseWhilePreviewing();
     const filters: EnumDictionary<EnumFilterOperations, Function> = {
       [EnumFilterOperations.FIND_GAPS]: this._findGaps,
       [EnumFilterOperations.VALUE_THRESHOLD]: this._valueThreshold,
@@ -713,6 +870,9 @@ export class ObservationRecord {
           durationMs: measurement.duration,
           mode: this._pendingExecutionMode,
           selectionSize: measurement.response?.length,
+          extent: measurement.response?.length
+            ? this._extentOf(measurement.response)
+            : undefined,
           inFlight: false,
         };
       }
@@ -749,10 +909,17 @@ export class ObservationRecord {
     operator: Operator,
     value: number,
   ): Promise<number[]> {
-    const selection = this.history[this.history.length - 2]?.selected;
-    if (!selection || selection.length === 0) return [];
+    const selected = this.history[this.history.length - 2]?.selected;
+    if (!selected || selected.length === 0) return [];
 
+    // Setting a value is how a missing reading gets filled; arithmetic on a
+    // no-data placeholder would only disguise it as a measurement.
+    const selection =
+      operator === Operator.ASSIGN || this.noDataValue === null
+        ? selected
+        : selected.filter((i) => this.dataY[i] !== this.noDataValue);
     const N = selection.length;
+    if (N === 0) return [];
 
     // Fast path: for small selections, the worker-startup cost dominates
     // the actual work. The calibration layer predicts the crossover per-
@@ -897,11 +1064,8 @@ export class ObservationRecord {
     if (groups.length === 0 || groups[0].length === 0) return;
 
     const len = this.dataset.source.y.length;
-    const preparedGroups = groups.map((g) => ({
-      indexes: g,
-      lowerIdx: Math.max(0, g[0] - 1),
-      upperIdx: Math.min(len - 1, g[g.length - 1] + 1),
-    }));
+    const preparedGroups = this._interpolationGroups(groups);
+    if (preparedGroups.length === 0) return;
 
     // Inline fast path: for small selections the worker-per-group-bucket
     // orchestration dominates. `selectionSize` is the point count we
@@ -955,37 +1119,88 @@ export class ObservationRecord {
   }
 
   /**
+   * Anchor each consecutive group on the nearest point on either side that
+   * is neither selected nor no-data, so anchors are never rewritten by the
+   * same edit. A group with one anchor fills flat from it (`lowerIdx ===
+   * upperIdx`); a group with none is left out.
+   */
+  private _interpolationGroups(groups: number[][]): InterpolateGroup[] {
+    const y = this.dataY;
+    const len = y.length;
+    const isAnchor = (i: number) => y[i] !== this.noDataValue;
+    const prepared: InterpolateGroup[] = [];
+    for (let k = 0; k < groups.length; k++) {
+      let lower = groups[k][0] - 1;
+      for (let p = k - 1; lower >= 0; ) {
+        if (p >= 0 && lower === groups[p][groups[p].length - 1]) {
+          lower = groups[p][0] - 1;
+          p--;
+        } else if (isAnchor(lower)) break;
+        else lower--;
+      }
+      let upper = groups[k][groups[k].length - 1] + 1;
+      for (let n = k + 1; upper < len; ) {
+        if (n < groups.length && upper === groups[n][0]) {
+          upper = groups[n][groups[n].length - 1] + 1;
+          n++;
+        } else if (isAnchor(upper)) break;
+        else upper++;
+      }
+      const hasLower = lower >= 0;
+      const hasUpper = upper < len;
+      if (!hasLower && !hasUpper) continue;
+      prepared.push({
+        indexes: groups[k],
+        lowerIdx: hasLower ? lower : upper,
+        upperIdx: hasUpper ? upper : lower,
+      });
+    }
+    return prepared;
+  }
+
+  /**
    * Dispatch wrapper around `_shift` — reads target indices from
-   * `history[length - 2].selected`. The `amount` and `unit` args
-   * stay parametric on the public dispatch signature.
+   * `history[length - 2].selected`. The `amount`, `unit` and `timeZone`
+   * args stay parametric on the public dispatch signature.
    */
   private async _shiftFromSelection(
     amount: number,
     unit: TimeUnit,
+    timeZone: string,
   ): Promise<number[]> {
     const selection = this.history[this.history.length - 2]?.selected;
     if (!selection || selection.length === 0) return [];
-    return (await this._shift(selection, amount, unit)) ?? [];
+    return (await this._shift(selection, amount, unit, timeZone)) ?? [];
   }
 
   /**
    * Shifts the selected indexes by specified amount of units. Elements are reinserted according to their datetime.
    * @param index The index of the elements to shift
-   * @param amount Number of {@link TimeUnit}
+   * @param amount Number of {@link TimeUnit}; whole for months and years
    * @param unit {@link TimeUnit}
-   * @returns
+   * @param timeZone The zone whose calendar month and year shifts follow:
+   *   `UTC`, a fixed offset like `-0700`, or an IANA name
    */
   private async _shift(
     index: number[],
     amount: number,
     unit: TimeUnit,
+    timeZone: string,
   ): Promise<number[]> {
+    if (!isValidTimeZone(timeZone)) {
+      throw new Error(`Shift datetimes: unknown time zone "${String(timeZone)}".`);
+    }
+    const calendar = unit === TimeUnit.MONTH || unit === TimeUnit.YEAR;
+    if (calendar && !Number.isInteger(amount)) {
+      throw new Error("Shift datetimes: months and years shift by whole numbers.");
+    }
     if (index.length === 0) return [];
 
-    const isMonth = unit === TimeUnit.MONTH;
-    const isYear = unit === TimeUnit.YEAR;
-    const deltaMs =
-      !isMonth && !isYear ? amount * timeUnitMultipliers[unit] * 1000 : 0;
+    const params: ShiftDatetimesParams = {
+      months: calendar ? (unit === TimeUnit.YEAR ? amount * 12 : amount) : 0,
+      deltaMs: calendar ? 0 : amount * timeUnitMultipliers[unit] * 1000,
+      timeZone,
+    };
 
     const N = index.length;
 
@@ -1006,7 +1221,7 @@ export class ObservationRecord {
         this.dataX,
         this.dataY,
         index,
-        { amount, isMonth, isYear, deltaMs }
+        params
       );
       await this._deleteDataPoints(index);
       // The post-add inserted indices ARE the new positions of the
@@ -1018,7 +1233,7 @@ export class ObservationRecord {
 
     // Output buffers hold the shifted (x, y) pairs for the selection, in the same order as `index`
     const outputBufferX = makeBuffer(N * Float64Array.BYTES_PER_ELEMENT);
-    const outputBufferY = makeBuffer(N * Float32Array.BYTES_PER_ELEMENT);
+    const outputBufferY = makeBuffer(N * Float64Array.BYTES_PER_ELEMENT);
 
     const numWorkers = Math.min(navigator.hardwareConcurrency || 1, N);
     const chunkSize = Math.ceil(N / numWorkers);
@@ -1044,10 +1259,7 @@ export class ObservationRecord {
             outputBufferY,
             indexes: indexesChunk,
             outStart: start,
-            amount,
-            isMonth,
-            isYear,
-            deltaMs,
+            ...params,
           });
           worker.onmessage = (event: MessageEvent) => {
             resolve(event.data);
@@ -1064,7 +1276,7 @@ export class ObservationRecord {
 
     // Build the [x, y] collection from the shifted buffers for re-insertion.
     const shiftedX = new Float64Array(outputBufferX);
-    const shiftedY = new Float32Array(outputBufferY);
+    const shiftedY = new Float64Array(outputBufferY);
     const collection: [number, number][] = new Array(N);
     for (let i = 0; i < N; i++) {
       collection[i] = [shiftedX[i], shiftedY[i]];
@@ -1162,7 +1374,7 @@ export class ObservationRecord {
     // Output buffers sized for the new length — same allocation in
     // both the inline and worker paths.
     const newByteLengthX = newLength * Float64Array.BYTES_PER_ELEMENT;
-    const newByteLengthY = newLength * Float32Array.BYTES_PER_ELEMENT;
+    const newByteLengthY = newLength * Float64Array.BYTES_PER_ELEMENT;
     const outputBufferX = makeBuffer(
       newByteLengthX,
       Math.max(this.dataX.buffer.maxByteLength, newByteLengthX),
@@ -1182,7 +1394,7 @@ export class ObservationRecord {
     });
     if (!decision.useWorker) {
       const outX = new Float64Array(outputBufferX);
-      const outY = new Float32Array(outputBufferY);
+      const outY = new Float64Array(outputBufferY);
       fillGapsCore(
         this.dataX,
         this.dataY,
@@ -1194,7 +1406,8 @@ export class ObservationRecord {
         0,
         fillDelta,
         interpolateValues,
-        fillValue
+        fillValue,
+        this.noDataValue
       );
       this.dataset.source.x = outX;
       this.dataset.source.y = outY;
@@ -1254,6 +1467,7 @@ export class ObservationRecord {
             fillDelta,
             interpolate: interpolateValues,
             fillValue,
+            noDataValue: this.noDataValue,
           });
           worker.onmessage = (event: MessageEvent) => {
             resolve(event.data);
@@ -1269,7 +1483,7 @@ export class ObservationRecord {
     workers.forEach((worker) => worker.terminate());
 
     this.dataset.source.x = new Float64Array(outputBufferX);
-    this.dataset.source.y = new Float32Array(outputBufferY);
+    this.dataset.source.y = new Float64Array(outputBufferY);
     this._resizeTo(newLength);
     return insertedIndices;
   }
@@ -1288,15 +1502,17 @@ export class ObservationRecord {
   }
 
   /**
-   * Delete points by ascending `deleteIndices` from x/y. Inline path
+   * Delete the points at `indices` from x/y. Indices past the end and
+   * repeats are ignored, and order doesn't matter. Inline path
    * runs a single skip-on-delete copy on the main thread; worker path:
    *  1. Main thread splits the original array into equal segments.
    *  2. Per-segment binary search locates the indexes to delete (deleteSegment) for efficient lookups.
    *  3. Cumulative deletions before each segment give each worker's output startTarget so segments don't overlap.
    *  4. Each worker walks its segment linearly, skipping deletions and copying kept elements into place.
    */
-  private async _deleteDataPoints(deleteIndices: number[]) {
+  private async _deleteDataPoints(indices: number[]) {
     const oldLen = this.dataX.length;
+    const deleteIndices = existingIndices(indices, oldLen);
     const newLength = oldLen - deleteIndices.length;
 
     // Inline fast path: skip segmentation + worker spawns; allocate
@@ -1320,7 +1536,7 @@ export class ObservationRecord {
         this.dataY.buffer.maxByteLength,
       );
       const outX = new Float64Array(outputBufferX);
-      const outY = new Float32Array(outputBufferY);
+      const outY = new Float64Array(outputBufferY);
       deleteDataPointsCore(
         this.dataX,
         this.dataY,
@@ -1410,7 +1626,7 @@ export class ObservationRecord {
     workers.forEach((worker) => worker.terminate()); // Important to terminate the workers
 
     this.dataset.source.x = new Float64Array(outputBufferX);
-    this.dataset.source.y = new Float32Array(outputBufferY);
+    this.dataset.source.y = new Float64Array(outputBufferY);
     this._resizeTo(newLength);
   }
 
@@ -1437,7 +1653,7 @@ export class ObservationRecord {
   }
 
   /**
-   * Multi-threaded drift correction over one or more [start, end, value] ranges.
+   * Multi-threaded drift correction over one or more inclusive [start, end, value] ranges.
    *  1. Main thread reads each range's anchors (startDatetime, extent) once and chunks the range.
    *  2. All chunks across all ranges are flattened into jobs and distributed round-robin across a fixed pool of workers.
    *  3. Each worker applies y_n = y_0 + value * ((x_i - startDatetime) / extent) in place on its jobs.
@@ -1455,14 +1671,14 @@ export class ObservationRecord {
     // range) this skips `numWorkers` worker spawns entirely.
     let totalWork = 0;
     for (const [start, end] of ranges) {
-      if (end > start) totalWork += end - start;
+      if (end > start) totalWork += end - start + 1;
     }
     const decision = shouldUseWorker(EnumEditOperations.DRIFT_CORRECTION, {
       datasetSize: xData.length,
       selectionSize: totalWork,
     });
     if (!decision.useWorker) {
-      driftCorrectionCore(xData, this.dataY, ranges);
+      driftCorrectionCore(xData, this.dataY, ranges, this.noDataValue);
       return;
     }
     this._pendingExecutionMode = "worker";
@@ -1482,12 +1698,13 @@ export class ObservationRecord {
       const extent = xData[end] - startDatetime;
       if (extent === 0) continue;
 
-      const total = end - start;
+      // `end` is the last selected index; chunks are half-open.
+      const total = end - start + 1;
       const chunkSize = Math.max(1, Math.ceil(total / hwConcurrency));
-      for (let s = start; s < end; s += chunkSize) {
+      for (let s = start; s <= end; s += chunkSize) {
         jobs.push({
           chunkStart: s,
-          chunkEnd: Math.min(s + chunkSize, end),
+          chunkEnd: Math.min(s + chunkSize, end + 1),
           startDatetime,
           value,
           extent,
@@ -1518,6 +1735,7 @@ export class ObservationRecord {
             bufferX: this.dataX.buffer,
             bufferY: this.dataY.buffer,
             jobs: bucket,
+            noDataValue: this.noDataValue,
           });
           worker.onmessage = (event: MessageEvent) => {
             resolve(event.data);
@@ -1591,7 +1809,7 @@ export class ObservationRecord {
 
     // Output buffers sized for the new length
     const newByteLengthX = newLength * Float64Array.BYTES_PER_ELEMENT;
-    const newByteLengthY = newLength * Float32Array.BYTES_PER_ELEMENT;
+    const newByteLengthY = newLength * Float64Array.BYTES_PER_ELEMENT;
     const outputBufferX = makeBuffer(
       newByteLengthX,
       Math.max(this.dataX.buffer.maxByteLength, newByteLengthX),
@@ -1613,7 +1831,7 @@ export class ObservationRecord {
     });
     if (!decision.useWorker) {
       const outX = new Float64Array(outputBufferX);
-      const outY = new Float32Array(outputBufferY);
+      const outY = new Float64Array(outputBufferY);
       addDataPointsCore(
         this.dataX,
         this.dataY,
@@ -1692,7 +1910,7 @@ export class ObservationRecord {
     workers.forEach((worker) => worker.terminate());
 
     this.dataset.source.x = new Float64Array(outputBufferX);
-    this.dataset.source.y = new Float32Array(outputBufferY);
+    this.dataset.source.y = new Float64Array(outputBufferY);
     this._resizeTo(newLength);
     return insertedIndices;
   }

@@ -96,8 +96,9 @@
             :monitoring-site-id="monitoringSiteId"
           />
         </v-dialog>
-        <v-dialog v-if="monitoringSite" v-model="isRegisterModalOpen" width="80rem">
+        <v-dialog v-model="isRegisterModalOpen" width="80rem">
           <SiteForm
+            v-if="monitoringSite && isRegisterModalOpen"
             @close="onSiteFormClosed"
             :monitoring-site-id="monitoringSiteId"
             :workspace-id="monitoringSite.workspaceId"

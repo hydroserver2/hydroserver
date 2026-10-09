@@ -117,7 +117,7 @@ def update_qc_session(
 @qc_session_router.delete(
     "/{session_id}",
     auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
-    response={204: None, 401: str, 403: str, 404: str},
+    response={204: None, 400: str, 401: str, 403: str, 404: str},
     by_alias=True,
 )
 def delete_qc_session(

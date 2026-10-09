@@ -23,7 +23,7 @@
     "@fortawesome/fontawesome-free": "^7.2.0",
     "@hydroserver/client": "file:../../packages/hydroserver-ts",
     "@mdi/js": "^7.4.47",
-    "@uwrl/qc-utils": "^0.1.1",
+    "@uwrl/qc-utils": "file:../../packages/qc-utils",
     "dotenv": "^17.4.2",
     "jsdom": "^27.4.0",
     "jszip": "^3.10.1",

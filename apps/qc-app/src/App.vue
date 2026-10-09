@@ -6,11 +6,14 @@
     </v-main>
 
     <Notifications />
+    <!-- One dialog for every exit from an edit session, wherever it starts. -->
+    <LeaveSessionDialog />
   </v-app>
 </template>
 
 <script setup lang="ts">
 import Notifications from '@/components/base/Notifications.vue'
+import LeaveSessionDialog from '@/components/EditData/LeaveSessionDialog.vue'
 import FullScreenLoader from '@/components/base/FullScreenLoader.vue'
 
 import { setupRouteGuards } from '@/router/router'
@@ -25,8 +28,13 @@ import type { Datastream, DatastreamExtended } from '@hydroserver/client'
 // auth guard sees `hs.session.isAuthenticated` on first navigation.
 const isLoading = ref(false)
 
-const { monitoringSites, processingLevels, observedProperties, datastreams } =
-  storeToRefs(useDataVisStore())
+const {
+  monitoringSites,
+  processingLevels,
+  observedProperties,
+  datastreams,
+  qcHistories,
+} = storeToRefs(useDataVisStore())
 
 const { hs } = storeToRefs(useHydroServer())
 const { selectedWorkspaceId } = storeToRefs(useWorkspaceStore())
@@ -37,6 +45,7 @@ async function loadWorkspaceCatalog(workspaceId: string) {
     datastreamsResponse,
     processingLevelsResponse,
     observedPropertiesResponse,
+    histories,
   ] = await Promise.all([
     hs.value.monitoringSites.list({ workspaceId } as any),
     hs.value.datastreams.list({
@@ -45,6 +54,9 @@ async function loadWorkspaceCatalog(workspaceId: string) {
     } as any),
     hs.value.processingLevels.list({ workspaceId } as any),
     hs.value.observedProperties.list({ workspaceId } as any),
+    // QC histories aren't workspace-filterable server-side; entries for
+    // other workspaces simply never match this catalog's datastream ids.
+    hs.value.qualityControlHistories.listAllItems(),
   ])
 
   monitoringSites.value = monitoringSitesResponse.ok ? monitoringSitesResponse.data : []
@@ -57,6 +69,7 @@ async function loadWorkspaceCatalog(workspaceId: string) {
   observedProperties.value = observedPropertiesResponse.ok
     ? observedPropertiesResponse.data
     : []
+  qcHistories.value = histories
 }
 
 // Clearing the selection wipes catalogs so stale data from the old

@@ -1,4 +1,5 @@
 import type { PlotData, PlotlyHTMLElement } from 'plotly.js-dist'
+import { plotX } from './plotTime'
 
 // DATA-CAST: Plotly.Data.x is typed broadly (Datum[] | Datum[][] | TypedArray
 // | undefined) but every trace this app produces stores numeric epoch
@@ -9,13 +10,16 @@ import type { PlotData, PlotlyHTMLElement } from 'plotly.js-dist'
 // `Partial<PlotData>` cast escapes the wide `Data` union (which includes
 // shapes like `PieData` that don't carry `.x`); every trace this app
 // produces is `scatter` / `scattergl`.
+//
+// Values come back in Plotly's own frame (`plotX`), where they line up with
+// the axis ranges.
 export const traceXAsNumbers = (
   gd: PlotlyHTMLElement | null | undefined,
   traceIndex: number
 ): number[] => {
   const trace = gd?.data[traceIndex] as Partial<PlotData> | undefined
-  const x = trace?.x
-  return (x ?? []) as number[]
+  const x = (trace?.x ?? []) as unknown as ArrayLike<number>
+  return plotX(x) as number[]
 }
 
 // Marker-density threshold. Above this many visible points per trace,

@@ -12,7 +12,7 @@ def create_cache_table(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("web", "0002_sitetypeicon"),
+        ("web", "0003_google_analytics"),
     ]
 
     operations = [

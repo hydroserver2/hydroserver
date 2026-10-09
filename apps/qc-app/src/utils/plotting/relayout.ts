@@ -11,6 +11,8 @@ import { storeToRefs } from 'pinia'
 import { isEqual } from 'lodash-es'
 import { findFirstGreaterOrEqual } from '@uwrl/qc-utils'
 import { traceXAsNumbers, DENSITY_HIDE_MARKERS } from './internal'
+import { plotCoord, plotCoordToDate } from './plotTime'
+import { toWall } from '@/utils/timeZone'
 import type { AppPlotlyTrace } from './options'
 import { handleSelected } from './selected'
 
@@ -52,8 +54,9 @@ export const intendedSpacingMs = (): number | null => {
 
 /**
  * Compute an explicit tick-position array aligned to the datastream's
- * intended cadence, bounded to the visible x-range. Returns `null` when
- * we should hand back to Plotly's auto tick picker.
+ * intended cadence, bounded to the visible x-range, in Plotly's frame (see
+ * `plotTime.ts`). Returns `null` when we should hand back to Plotly's auto
+ * tick picker.
  */
 export const computeIntendedTickvals = (
   xStart: number,
@@ -87,7 +90,7 @@ export const computeIntendedTickvals = (
   const { qcDatastream } = storeToRefs(useDataVisStore())
   const anchorSource = qcDatastream.value?.phenomenonBeginTime
   const anchor = anchorSource
-    ? new Date(anchorSource).getTime()
+    ? toWall(new Date(anchorSource).getTime())
     : xStart
 
   const firstK = Math.ceil((xStart - anchor) / step)
@@ -164,20 +167,19 @@ export const handleRelayout = async (
   isUpdating.value = true
 
   setTimeout(async () => {
+    // The plot this pass measures. It stops once the plot is replaced or
+    // unmounted, since what it would write belongs to a plot that is gone.
+    const gd = plotlyRef.value
+    const isLive = () => !!gd && plotlyRef.value === gd
     try {
+      if (!gd) return
       // Always read from the LIVE plotly layout.
-      const liveLayout =
-        (plotlyRef.value as unknown as { layout?: Partial<Layout> })?.layout
+      const liveLayout = (gd as unknown as { layout?: Partial<Layout> }).layout
       const liveXaxis = liveLayout?.xaxis as Partial<LayoutAxis> | undefined
       const xRange = liveXaxis?.range as Array<string | number> | undefined
-
-      if (xRange && typeof xRange[0] == 'string') {
-        xRange[0] = Date.parse(xRange[0])
-        xRange[1] = Date.parse(xRange[1] as string)
-      }
-
-      const xStart = Number(xRange?.[0])
-      const xEnd = Number(xRange?.[1])
+      // In Plotly's frame, like the trace values counted against it.
+      const xStart = xRange?.[0] !== undefined ? plotCoord(xRange[0]) : NaN
+      const xEnd = xRange?.[1] !== undefined ? plotCoord(xRange[1]) : NaN
 
       // Only rescan when the visible x-range actually moved.
       if (
@@ -199,11 +201,11 @@ export const handleRelayout = async (
       visiblePoints.value = 0
 
       // Find number of visible points per trace.
-      const liveTraces = (plotlyRef.value?.data ?? []) as AppPlotlyTrace[]
+      const liveTraces = (gd.data ?? []) as AppPlotlyTrace[]
       const traceCount = liveTraces.length
       const perTraceVisible: number[] = new Array(traceCount).fill(0)
       for (let i = 0; i < traceCount; i++) {
-        const xs = traceXAsNumbers(plotlyRef.value, i)
+        const xs = traceXAsNumbers(gd, i)
         const startIdx = findFirstGreaterOrEqual(xs, xStart)
         const endIdx = findFirstGreaterOrEqual(xs, xEnd)
         const count = endIdx - startIdx
@@ -221,32 +223,32 @@ export const handleRelayout = async (
       // markers fade past the density threshold so the lines stay
       // readable. `areTooltipsEnabled` already encodes the mode
       // policy (manual override vs. threshold-driven auto), so the
-      // threshold isn't checked again here — doing so would make a
+      // threshold isn't checked again here; doing so would make a
       // user's manual "on" silently flip off past the cap.
       //
       // Scatter-only series (datastreams without a declared
       // `intendedTimeSpacing`) ship no gap-overlay line, so fading
       // their markers would leave nothing on screen. Identify them
-      // by the absence of a companion `_gapOverlayFor` trace and
-      // pin their opacity at 1.
+      // by the absence of a gap overlay `_partOf` them and pin their
+      // opacity at 1. Companion point traces count as their series.
       const tooltipsWillRun = areTooltipsEnabled.value
       const { qcDatastream } = storeToRefs(useDataVisStore())
       const qcId = qcDatastream.value?.id
       const traces = liveTraces
       const lineBackedIds = new Set<string>()
       for (const t of traces) {
-        if (t._gapOverlayFor) lineBackedIds.add(t._gapOverlayFor)
+        if (t._isGapOverlay && t._partOf) lineBackedIds.add(t._partOf)
       }
       const perTraceOpacity = perTraceVisible.map((n, i) => {
         if (tooltipsWillRun) return 1
         const trace = traces[i] as AppPlotlyTrace | undefined
-        const id = trace?.id
+        const id = trace?.id ?? trace?._partOf
         if (id && !trace?._isGapOverlay && !lineBackedIds.has(id)) return 1
         if (tooltipsMode.value === 'manual') return 0
         return n > DENSITY_HIDE_MARKERS ? 0 : 1
       })
 
-      const currentOpacities = (plotlyRef.value?.data ?? []).map((t) => {
+      const currentOpacities = (gd.data ?? []).map((t) => {
         const m = (t as Partial<PlotData>).marker as
           | { opacity?: number }
           | undefined
@@ -255,30 +257,30 @@ export const handleRelayout = async (
       const opacitiesChanged = perTraceOpacity.some(
         (o, i) => o !== (currentOpacities[i] ?? 1)
       )
-      if (opacitiesChanged && plotlyRef.value) {
+      if (opacitiesChanged && isLive()) {
         // Keep `unselected.marker.opacity` in lockstep with the
         // density-driven `marker.opacity` for non-QC traces so they
         // stay opted out of Plotly's global selection-fade no matter
         // what density bucket they land in. Pass `null` for the QC
-        // trace to leave its `selected.marker` config untouched —
+        // trace to leave its `selected.marker` config untouched.
         // Plotly's restyle skips entries whose array slot is null.
         const perTraceUnselectedOpacity = perTraceOpacity.map((o, i) => {
           const isQc = qcId != null && traces[i]?.id === qcId
           return isQc ? null : o
         })
-        await Plotly.restyle(plotlyRef.value, {
+        await Plotly.restyle(gd, {
           'marker.opacity': perTraceOpacity,
           'unselected.marker.opacity': perTraceUnselectedOpacity,
         } as unknown as Partial<PlotData>)
       }
 
       // Align x-axis ticks to the datastream's intended cadence.
-      if (Number.isFinite(xStart) && Number.isFinite(xEnd) && plotlyRef.value) {
+      if (Number.isFinite(xStart) && Number.isFinite(xEnd) && isLive()) {
         const wantedTickvals = computeIntendedTickvals(xStart, xEnd)
         const currentTickmode =
           (liveXaxis?.tickmode as string | undefined) ?? 'auto'
         const currentTickvals = Array.isArray(liveXaxis?.tickvals)
-          ? (liveXaxis?.tickvals as number[])
+          ? (liveXaxis?.tickvals as Array<number | string>).map(plotCoord)
           : null
 
         const wantedTickmode = wantedTickvals ? 'array' : 'auto'
@@ -289,9 +291,9 @@ export const handleRelayout = async (
         )
 
         if (tickmodeChanged || tickvalsChanged) {
-          await Plotly.relayout(plotlyRef.value as unknown as HTMLElement, {
+          await Plotly.relayout(gd as unknown as HTMLElement, {
             'xaxis.tickmode': wantedTickvals ? 'array' : 'auto',
-            'xaxis.tickvals': wantedTickvals ?? null,
+            'xaxis.tickvals': wantedTickvals?.map(plotCoordToDate) ?? null,
           } as unknown as Partial<Layout>)
         }
       }
@@ -305,13 +307,14 @@ export const handleRelayout = async (
         newHoverTemplate = ''
       }
 
-      const firstTrace = plotlyRef.value?.data[0] as Partial<PlotData> | undefined
+      if (!isLive()) return
+      const firstTrace = gd.data[0] as Partial<PlotData> | undefined
       if (firstTrace?.hoverinfo !== newHoverState) {
         if (newHoverState === 'x+y' && !areTooltipsEnabled.value) {
           return
         }
 
-        await Plotly.restyle(plotlyRef.value as Plotly.Root, {
+        await Plotly.restyle(gd as Plotly.Root, {
           hoverinfo: newHoverState,
           hovertemplate: newHoverTemplate,
         } as Partial<PlotData>)
