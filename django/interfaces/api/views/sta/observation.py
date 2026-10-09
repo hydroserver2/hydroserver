@@ -113,6 +113,8 @@ def insert_observations(
         data=data,
         datastream_id=data.datastream_id,
         mode=query.mode or "append",
+        phenomenon_time_start=query.phenomenon_time_start,
+        phenomenon_time_end=query.phenomenon_time_end,
     )
 
 

@@ -451,8 +451,8 @@ export async function runBenchmarks(): Promise<BenchmarkDetail> {
 
   const hwConcurrency = navigator.hardwareConcurrency || 4
 
-  // Inline baseline — one Float32Array, no workers.
-  const inlineBuf = new Float32Array(BENCH_SIZE_INLINE)
+  // Inline baseline — one Float64Array, no workers.
+  const inlineBuf = new Float64Array(BENCH_SIZE_INLINE)
   for (let i = 0; i < BENCH_SIZE_INLINE; i++) inlineBuf[i] = Math.sin(i)
   const inlineSamples = await sample(3, () => {
     const t0 = performance.now()
@@ -464,9 +464,9 @@ export async function runBenchmarks(): Promise<BenchmarkDetail> {
 
   // Worker roundtrip — measure spawn + noop postMessage + terminate.
   // We call the real ValueThresholdWorker with a tiny payload so the
-  // in-worker setup (Float32Array creation etc.) is included; the
+  // in-worker setup (Float64Array creation etc.) is included; the
   // actual scan time on a 256-element buffer is negligible.
-  const tinyBuf = new SharedArrayBuffer(256 * Float32Array.BYTES_PER_ELEMENT)
+  const tinyBuf = new SharedArrayBuffer(256 * Float64Array.BYTES_PER_ELEMENT)
   const spawnSamples = await sample(3, async () => {
     const t0 = performance.now()
     await new Promise<void>((resolve) => {
@@ -491,9 +491,9 @@ export async function runBenchmarks(): Promise<BenchmarkDetail> {
   // dominates spawn cost. We subtract the measured spawn overhead
   // to isolate in-loop throughput.
   const bigBuf = new SharedArrayBuffer(
-    BENCH_SIZE_WORKER * Float32Array.BYTES_PER_ELEMENT
+    BENCH_SIZE_WORKER * Float64Array.BYTES_PER_ELEMENT
   )
-  const bigView = new Float32Array(bigBuf)
+  const bigView = new Float64Array(bigBuf)
   for (let i = 0; i < BENCH_SIZE_WORKER; i++) bigView[i] = Math.sin(i)
   const workerSamples = await sample(3, async () => {
     const t0 = performance.now()

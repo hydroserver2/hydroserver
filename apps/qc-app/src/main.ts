@@ -10,12 +10,15 @@ import hs, { createHydroServer, User } from '@hydroserver/client'
 import { useUserStore } from '@/store/user'
 import { useHydroServer } from '@/store/hydroserver'
 import { useWorkspaceStore } from '@/store/workspaces'
+import { useQcPreferencesStore } from '@/store/qcPreferences'
 import { ensureCalibration } from '@uwrl/qc-utils'
 
 const app = createApp(App)
 
 async function initializeApp() {
   app.use(store)
+  // Restores the chosen time zone before anything is formatted.
+  useQcPreferencesStore()
 
   const hydroServerHost = import.meta.env.VITE_APP_PROXY_BASE_URL || ''
 
@@ -74,7 +77,7 @@ async function initializeApp() {
   // Run qc-utils' worker/inline calibration when the browser is idle so
   // the crossover thresholds match this device. Results are cached in
   // `localStorage`; the "Recalibrate" button in the nav rail can force
-  // a rerun. Non-critical — failures just fall back to conservative
+  // a rerun. Non-critical: failures just fall back to conservative
   // defaults baked into qc-utils.
   const kickoffCalibration = () => {
     ensureCalibration().catch((err) => {

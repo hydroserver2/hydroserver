@@ -5559,9 +5559,19 @@ export interface components {
         ObservationBulkPostQueryParameters: {
             /**
              * Mode
-             * @description Specifies how new observations are added to the datastream. `insert` allows observations at any timestamp. `append` adds only future observations (after the latest existing timestamp). `backfill` adds only historical observations (before the earliest existing timestamp). `replace` deletes all observations in the range of provided observations before inserting new ones.
+             * @description Specifies how new observations are added to the datastream. `insert` allows observations at any timestamp. `append` adds only future observations (after the latest existing timestamp). `backfill` adds only historical observations (before the earliest existing timestamp). `replace` deletes all observations in the range of provided observations before inserting new ones, or in `phenomenonTimeStart` to `phenomenonTimeEnd` when given.
              */
             mode?: ("insert" | "append" | "backfill" | "replace") | null;
+            /**
+             * Phenomenontimeend
+             * @description End of the range `replace` deletes. Requires `phenomenonTimeStart`.
+             */
+            phenomenonTimeEnd?: string | null;
+            /**
+             * Phenomenontimestart
+             * @description Start of the range `replace` deletes. Requires `phenomenonTimeEnd`.
+             */
+            phenomenonTimeStart?: string | null;
         };
         /** ObservationColumnResponse */
         ObservationColumnResponse: {
@@ -13664,8 +13674,12 @@ export interface operations {
     interfaces_api_views_sta_observation_insert_observations: {
         parameters: {
             query?: {
-                /** @description Specifies how new observations are added to the datastream. `insert` allows observations at any timestamp. `append` adds only future observations (after the latest existing timestamp). `backfill` adds only historical observations (before the earliest existing timestamp). `replace` deletes all observations in the range of provided observations before inserting new ones. */
+                /** @description Specifies how new observations are added to the datastream. `insert` allows observations at any timestamp. `append` adds only future observations (after the latest existing timestamp). `backfill` adds only historical observations (before the earliest existing timestamp). `replace` deletes all observations in the range of provided observations before inserting new ones, or in `phenomenonTimeStart` to `phenomenonTimeEnd` when given. */
                 mode?: ("insert" | "append" | "backfill" | "replace") | null;
+                /** @description Start of the range `replace` deletes. Requires `phenomenonTimeEnd`. */
+                phenomenonTimeStart?: string | null;
+                /** @description End of the range `replace` deletes. Requires `phenomenonTimeStart`. */
+                phenomenonTimeEnd?: string | null;
             };
             header?: never;
             path?: never;
@@ -15165,6 +15179,15 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
             };
             /** @description Unauthorized */
             401: {

@@ -47,6 +47,12 @@ const rangeSelectorOptions = {
   y: -0.15,
   buttons: [
     {
+      step: 'day',
+      stepmode: 'backward',
+      count: 7,
+      label: '1w',
+    },
+    {
       step: 'month',
       stepmode: 'backward',
       count: 1,

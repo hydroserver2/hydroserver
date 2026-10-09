@@ -86,6 +86,19 @@ export const apiMethods = {
     return await limit(() => interceptedFetch<T>(endpoint, options))
   },
 
+  /** GET `endpoint` and return the value of response header `name`. */
+  async fetchHeader(endpoint: string, name: string): Promise<ApiResponse<string>> {
+    const opts = await requestInterceptor({ method: 'GET' })
+    const response = await limit(() => fetch(endpoint, opts))
+    const res = await responseInterceptor<unknown>(response)
+    if (!res.ok) return res
+    const value = response.headers.get(name)
+    if (value === null) {
+      return { ok: false, status: res.status, message: `Missing ${name} header.` }
+    }
+    return { ok: true, status: res.status, data: value }
+  },
+
   async paginatedFetch<T>(base: string): Promise<ApiResponse<T>> {
     const url = new URL(String(base), globalThis.location?.origin ?? undefined)
     const urlAlreadyHasOffset = url.searchParams.has('offset')
