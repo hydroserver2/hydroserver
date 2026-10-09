@@ -1,0 +1,31 @@
+{% extends "socialaccount/base_entrance.html" %}
+{% load allauth i18n %}
+{% block head_title %}
+    {% trans "Sign up" %}
+{% endblock head_title %}
+{% block content %}
+    {% element h1 %}
+        {% trans "Sign up" %}
+    {% endelement %}
+    {% element p %}
+        {% blocktrans with provider_name=account.get_provider.name site_name=site.name %}You are about to use your {{provider_name}} account to login to
+{{site_name}}. As a final step, please complete the following form:{% endblocktrans %}
+    {% endelement %}
+    {% url 'socialaccount_signup' as action_url %}
+    {% element form form=form method="post" action=action_url tags="entrance,signup" %}
+        {% slot body %}
+            {% csrf_token %}
+            {% include "account/snippets/signup_fields.html" %}
+            {{ redirect_field }}
+        {% endslot %}
+        {% slot actions %}
+            {% element button tags="prominent,signup" type="submit" %}
+                {% trans "Sign up" %}
+            {% endelement %}
+        {% endslot %}
+    {% endelement %}
+{% endblock content %}
+{% block extra_body %}
+    {{ block.super }}
+    {% include "account/snippets/signup_org_toggle.html" %}
+{% endblock extra_body %}

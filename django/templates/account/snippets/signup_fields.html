@@ -1,0 +1,38 @@
+{% if form.non_field_errors %}
+    <div class="hs-alert hs-alert--error">
+        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+    </div>
+{% endif %}
+{% for field in form %}
+    {% if field.name != "has_organization" and field.name not in "org_name,org_code,org_type,org_link,org_description" %}
+        <div class="hs-field">
+            <fieldset class="hs-field__control">
+                <legend class="hs-field__legend">
+                    {{ field.label }}{% if field.field.required %}<span class="hs-field__required" aria-hidden="true"> *</span>{% endif %}
+                </legend>
+                {{ field }}
+            </fieldset>
+            {% if field.errors %}<p class="hs-field__error">{{ field.errors.0 }}</p>{% endif %}
+        </div>
+    {% endif %}
+{% endfor %}
+<section class="auth-section">
+    <label for="{{ form.has_organization.id_for_label }}" class="hs-checkbox-label">
+        {{ form.has_organization }}
+        {{ form.has_organization.label }}
+    </label>
+    {% if form.has_organization.errors %}<p class="hs-field__error">{{ form.has_organization.errors.0 }}</p>{% endif %}
+    <fieldset id="org-fields" class="auth-organization-fields" {% if not form.has_organization.value %}hidden disabled{% endif %}>
+        {% for field in form %}
+            {% if field.name in "org_name,org_code,org_type,org_link,org_description" %}
+                <div class="hs-field">
+                    <fieldset class="hs-field__control">
+                        <legend class="hs-field__legend">{{ field.label }}</legend>
+                        {{ field }}
+                    </fieldset>
+                    {% if field.errors %}<p class="hs-field__error">{{ field.errors.0 }}</p>{% endif %}
+                </div>
+            {% endif %}
+        {% endfor %}
+    </fieldset>
+</section>

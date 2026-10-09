@@ -1,8 +1,23 @@
-{% load allauth %}
 {% for field in attrs.form %}
-    {% element field type=field.widget_type id=field.html_name name=field.html_name value=field.value required=field.field.required errors=field.errors help_text=field.help_text autocomplete=field.autocomplete checked=field.checked disabled=field.disabled readonly=field.readonly %}
-        {% slot label %}{{ field.label }}{% endslot %}
-        {% slot value %}{{ field.value|default:"" }}{% endslot %}
-        {% slot help_text %}{{ field.help_text|default:"" }}{% endslot %}
-    {% endelement %}
+    {% if field.is_hidden %}
+        {{ field }}
+    {% else %}
+        <div class="hs-field">
+            {% if field.widget_type == "checkbox" or field.widget_type == "radioselect" %}
+                <label for="{{ field.id_for_label }}" class="hs-checkbox-label">
+                    {{ field }}
+                    {{ field.label }}
+                </label>
+            {% else %}
+                <fieldset class="hs-field__control">
+                    <legend class="hs-field__legend">
+                        {{ field.label }}{% if field.field.required %}<span class="hs-field__required" aria-hidden="true"> *</span>{% endif %}
+                    </legend>
+                    {{ field }}
+                </fieldset>
+            {% endif %}
+            {% if field.help_text %}<p class="hs-help">{{ field.help_text }}</p>{% endif %}
+            {% if field.errors %}<p class="hs-field__error">{{ field.errors.0 }}</p>{% endif %}
+        </div>
+    {% endif %}
 {% endfor %}
