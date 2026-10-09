@@ -148,3 +148,28 @@ def test_queryset_delete_query_count_does_not_scale_with_user_count(
         User.objects.filter(pk__in=[u.pk for u in large]).delete()
 
     assert len(small_queries) == len(large_queries)
+
+
+@pytest.mark.parametrize(
+    "factory_kwargs, expected",
+    [
+        ({}, {"isStaff": False, "isSuperuser": False, "ownedWorkspaceLimit": 1}),
+        (
+            {"owned_workspace_limit": 0},
+            {"isStaff": False, "isSuperuser": False, "ownedWorkspaceLimit": 0},
+        ),
+        (
+            {"is_staff": True},
+            {"isStaff": True, "isSuperuser": False, "ownedWorkspaceLimit": 1},
+        ),
+        (
+            {"superuser": True, "owned_workspace_limit": None},
+            {"isStaff": True, "isSuperuser": True, "ownedWorkspaceLimit": None},
+        ),
+    ],
+)
+def test_to_profile_claims_exposes_access_fields(factory_kwargs, expected):
+    claims = UserFactory(**factory_kwargs).to_profile_claims()
+
+    assert {key: claims[key] for key in expected} == expected
+    assert "accountType" not in claims

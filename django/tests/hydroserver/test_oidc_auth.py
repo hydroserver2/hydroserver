@@ -517,7 +517,7 @@ def test_userinfo_includes_custom_claims_when_profile_scope_granted(oidc_client)
     expected = user.to_profile_claims()
     for key, value in expected.items():
         assert claims[key] == value
-    assert claims["accountType"] == "admin"
+    assert claims["isSuperuser"] is True
 
 
 def test_userinfo_omits_custom_claims_without_profile_scope(oidc_client):
@@ -526,7 +526,7 @@ def test_userinfo_omits_custom_claims_without_profile_scope(oidc_client):
 
     claims = adapter.get_claims("userinfo", user, oidc_client, ["openid"])
 
-    assert "accountType" not in claims
+    assert "isSuperuser" not in claims
     assert "organization" not in claims
 
 
@@ -546,7 +546,7 @@ def test_id_token_never_gets_custom_claims(oidc_client):
         "id_token", user, oidc_client, ["openid", "profile", "email"]
     )
 
-    assert "accountType" not in claims
+    assert "isSuperuser" not in claims
     assert "organization" not in claims
 
 
@@ -564,7 +564,10 @@ def test_userinfo_endpoint_returns_custom_claims(client, oidc_client):
     assert response.status_code == 200
     body = response.json()
     assert body["firstName"] == "Jane"
-    assert body["accountType"] == "standard"
+    assert body["isStaff"] is False
+    assert body["isSuperuser"] is False
+    assert body["ownedWorkspaceLimit"] == 1
+    assert "accountType" not in body
 
 
 def test_userinfo_endpoint_rejects_invalid_token(client):
