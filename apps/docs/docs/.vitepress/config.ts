@@ -280,6 +280,10 @@ export default defineConfig({
                 text: "Building the Docker Image from Source",
                 link: "/hosting-and-deployment/how-to/building-the-docker-image-from-source",
               },
+              {
+                text: "Migrating from HydroServer v1 to v2",
+                link: "/hosting-and-deployment/how-to/migrating-from-v1-to-v2",
+              },
             ],
           },
         ],
