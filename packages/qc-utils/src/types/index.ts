@@ -511,7 +511,10 @@ export class User {
   organization?: Organization | null;
   type: string;
   link: string;
-  accountType: "admin" | "standard" | "limited";
+  isStaff: boolean;
+  isSuperuser: boolean;
+  /** `null` means unlimited; `0` means the user can't own workspaces. */
+  ownedWorkspaceLimit: number | null;
   hydroShareConnected: boolean;
 
   constructor() {
@@ -525,7 +528,9 @@ export class User {
     this.address = "";
     this.type = "";
     this.link = "";
-    this.accountType = "standard";
+    this.isStaff = false;
+    this.isSuperuser = false;
+    this.ownedWorkspaceLimit = 1;
     this.hydroShareConnected = false;
   }
 }

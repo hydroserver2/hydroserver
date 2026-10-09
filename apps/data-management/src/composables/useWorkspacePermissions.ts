@@ -35,7 +35,7 @@ export function useWorkspacePermissions(
   }
 
   function isAdmin() {
-    return user.value?.accountType === 'admin'
+    return user.value?.isSuperuser === true
   }
   const getUserRoleName = (workspace: Workspace): string => {
     if (isOwner(workspace)) return 'Owner'
