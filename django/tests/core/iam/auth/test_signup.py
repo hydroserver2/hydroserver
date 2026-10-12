@@ -100,3 +100,12 @@ def test_signup_requires_organization_fields_when_affiliated(client):
     assert form.errors.get("org_name")
     assert form.errors.get("org_code")
     assert form.errors.get("org_type")
+
+
+def test_signup_sets_username(client):
+    client.post(reverse("account_signup"), data=_signup_data(email="first@example.com"))
+    client.logout()
+    client.post(reverse("account_signup"), data=_signup_data(email="second@example.com"))
+
+    assert User.objects.get(email="first@example.com").username == "first@example.com"
+    assert User.objects.get(email="second@example.com").username == "second@example.com"

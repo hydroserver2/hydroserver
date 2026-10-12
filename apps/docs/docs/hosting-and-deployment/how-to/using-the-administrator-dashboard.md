@@ -38,8 +38,10 @@ The **Identity and Access Management** section also exposes the following admin 
 
 | Model                | Purpose                                                                                                                                                                      |
 | --- | --- |
-| **Users**            | Manage user profile fields, account status, staff/superuser access, and workspace ownership limits.                                                                          |
-| **Organizations**    | Manage organizations that can be associated with users and workspaces.                                                                                                       |
+| **Users**            | Manage user profile fields (including user type, which accepts any text), account status, staff/superuser access, and workspace ownership limits. Superusers created with `createsuperuser` get the user type `Admin`. |
+| **User Types**       | Manage the account types users can choose from when signing up or editing their profile. Only types marked **Public** are offered. If there are none, users are given the type `Other`. Use **Load Default Data** to add HydroServer's default types. |
+| **Organizations**    | Review or edit the organizations users are affiliated with.                                                                                                                  |
+| **Organization Types** | Manage the organization types users can choose from for their organization. Only types marked **Public** are offered. If there are none, organizations are given the type `Other`. Use **Load Default Data** to add HydroServer's default types. |
 | **Workspaces**       | Review or edit workspace ownership, privacy, and workspace metadata.                                                                                                         |
 | **Roles**            | Configure reusable permission bundles for user and service-account collaborators.                                                                                            |
 | **Permissions**      | Review the resource-level permissions that belong to roles.                                                                                                                  |
@@ -166,19 +168,16 @@ below.
 
 | Model | Purpose                                                                 |
 | --- |-------------------------------------------------------------------------|
-| **Things** | Manage monitoring sites and their workspace/privacy metadata.           |
-| **Locations** | Review or edit site location records.                                   |
+| **Monitoring Sites** | Manage monitoring sites, including their location, tags, and workspace/privacy metadata. |
 | **Methods** | Manage reusable method metadata, including optional instrument details. |
 | **Observed Properties** | Manage reusable observed property metadata.                             |
 | **Units** | Manage reusable unit metadata.                                          |
 | **Processing Levels** | Manage reusable processing level metadata.                              |
-| **Datastreams** | Review datastream metadata and run selected maintenance actions.        |
-| **Result Qualifiers** | Manage result qualifier codes.                                          |
+| **Datastreams** | Review datastream metadata and tags, and run selected maintenance actions. |
+| **Result Qualifiers** | Manage result qualifiers.                                               |
 | **Linked Resource Types** | Manage linked resource type vocabulary values.                          |
 | **Monitoring Site Linked Resources** | Review linked resources attached to monitoring sites.                   |
 | **Datastream Linked Resources** | Review linked resources associated with datastreams.                    |
-| **Monitoring Site Tags** | Review key/value tags associated with monitoring sites.                 |
-| **Datastream Tags** | Review key/value tags attached to datastreams.                          |
 
 The **Datastreams** admin page includes two actions for selected datastreams:
 
@@ -203,12 +202,11 @@ models below and click its **Load Default ...** button in the upper-right corner
 | **Measurement Data** | **Observed Properties** | Default observed property metadata. |
 | **Measurement Data** | **Processing Levels** | Default processing level metadata. |
 | **Measurement Data** | **Units** | Default unit metadata. |
-| **Measurement Data** | **Site Types** | Default monitoring site type vocabulary values. |
-| **Measurement Data** | **Sampling Feature Types** | Default sampling feature type vocabulary values. |
+| **Measurement Data** | **Monitoring Site Types** | Default monitoring site type vocabulary values. |
 | **Measurement Data** | **Method Types** | Default method type vocabulary values. |
-| **Measurement Data** | **Variable Types** | Default variable type vocabulary values. |
+| **Measurement Data** | **Observed Property Types** | Default observed property type vocabulary values. |
 | **Measurement Data** | **Unit Types** | Default unit type vocabulary values. |
-| **Measurement Data** | **Datastream Aggregations** | Default aggregation statistic vocabulary values. |
+| **Measurement Data** | **Aggregation Statistics** | Default aggregation statistic vocabulary values. |
 | **Measurement Data** | **Datastream Statuses** | Default datastream status vocabulary values. |
 | **Measurement Data** | **Sampled Mediums** | Default sampled medium vocabulary values. |
 | **Measurement Data** | **Linked Resource Types** | Default linked resource type vocabulary values. |
@@ -224,7 +222,7 @@ see in metadata forms:
 | Section | Models |
 | --- | --- |
 | **Identity and Access Management** | **User Types**, **Organization Types**, **Roles** |
-| **Measurement Data** | **Datastream Aggregations**, **Datastream Statuses**, **Linked Resource Types**, **Method Types**, **Sampled Mediums**, **Sampling Feature Types**, **Site Types**, **Unit Types**, **Variable Types** |
+| **Measurement Data** | **Aggregation Statistics**, **Datastream Statuses**, **Linked Resource Types**, **Method Types**, **Monitoring Site Types**, **Observed Property Types**, **Sampled Mediums**, **Unit Types** |
 
 Workspace-scoped metadata such as observed properties, units, processing levels, methods, and result qualifiers can also
 be reviewed in the admin dashboard. When a record has no workspace, it is available as system-level metadata.

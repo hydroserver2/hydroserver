@@ -108,6 +108,8 @@ class User(AbstractUser, ResourcePermissionMixin):
 
     def save(self, *args, **kwargs):
         self.email = self.email.lower()
+        if not self.username:
+            self.username = self.email
         super().save(*args, **kwargs)
 
     def to_profile_claims(self) -> dict:
