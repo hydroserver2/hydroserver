@@ -596,10 +596,25 @@ class DataProductTransformationService(ServiceUtils):
         if start is not None and end <= start:
             return 0
 
+        since = None
+        if start is None:
+            input_starts = [
+                Observation.objects.filter(datastream=entry.datastream)
+                .order_by("phenomenon_time")
+                .values_list("phenomenon_time", flat=True)
+                .first()
+                for entry in input_entries
+            ]
+            if any(s is None for s in input_starts):
+                return 0
+            since = max(input_starts)
+            if since > end:
+                return 0
+
         inputs = {}
         input_no_data_values = {}
         for entry in input_entries:
-            df = self._fetch_observations(entry.datastream, after=start, through=end)
+            df = self._fetch_observations(entry.datastream, after=start, since=since, through=end)
             if len(df) == 0:
                 return 0
             inputs[entry.variable_name] = df
@@ -704,6 +719,7 @@ class DataProductTransformationService(ServiceUtils):
         datastream: Datastream,
         after=None,
         through=None,
+        since=None,
     ) -> pd.DataFrame:
         """
         Fetch observations for a datastream as a canonical pandas timeseries DataFrame.
@@ -713,6 +729,8 @@ class DataProductTransformationService(ServiceUtils):
 
         if after is not None:
             qs = qs.filter(phenomenon_time__gt=after)
+        if since is not None:
+            qs = qs.filter(phenomenon_time__gte=since)
         if through is not None:
             qs = qs.filter(phenomenon_time__lte=through)
 
