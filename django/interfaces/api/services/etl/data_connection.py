@@ -26,6 +26,7 @@ from interfaces.api.schemas.etl.data_connection import (
     DATA_CONNECTION_INCLUDE_RELATIONS,
     DataConnectionSortByFields,
     DataConnectionResponse,
+    DataIngestionWindowPostBody,
 )
 
 
@@ -205,6 +206,7 @@ class DataConnectionAPIService(SchedulingService, APIService):
         data_start_row: int | Unset = Field(Unset, gt=0),
         delimiter: Literal[",", "|", "\t", ";", " "] | Unset = Field(Unset, min_length=1, max_length=1),
         jmespath: str | Unset = Unset,
+        data_ingestion_window: dict | None | Unset = Unset,
         placeholder_variables: list[dict] | Unset = Unset,
         notification_recipient_emails: list[str] | Unset = Unset,
         notification_crontab: Union[Optional[str], Unset] = Unset,
@@ -247,6 +249,7 @@ class DataConnectionAPIService(SchedulingService, APIService):
             data_start_row=data_start_row,
             delimiter=delimiter,
             jmespath=jmespath,
+            data_ingestion_window=data_ingestion_window,
         )
 
         if placeholder_variables is not Unset:
@@ -288,6 +291,7 @@ class DataConnectionAPIService(SchedulingService, APIService):
         data_start_row: int | Unset = Field(Unset, gt=0),
         delimiter: str | Unset = Field(Unset, min_length=1, max_length=1),
         jmespath: str | Unset = Unset,
+        data_ingestion_window: dict | None | Unset = Unset,
         placeholder_variables: list[dict] | Unset = Unset,
         notification_recipient_emails: list[str] | Unset = Unset,
         notification_crontab: Union[Optional[str], Unset] = Unset,
@@ -303,7 +307,8 @@ class DataConnectionAPIService(SchedulingService, APIService):
         )
 
         if any(field is not Unset for field in [payload_type, timestamp_key, timestamp_format,
-                                                header_row, data_start_row, delimiter, jmespath]):
+                                                header_row, data_start_row, delimiter, jmespath,
+                                                data_ingestion_window]):
             resolved_payload_type = payload_type if payload_type is not Unset else data_connection.payload.payload_type
             self.apply_payload(
                 data_connection=data_connection,
@@ -314,6 +319,7 @@ class DataConnectionAPIService(SchedulingService, APIService):
                 data_start_row=data_start_row,
                 delimiter=delimiter,
                 jmespath=jmespath,
+                data_ingestion_window=data_ingestion_window,
             )
 
         if placeholder_variables is not Unset:
@@ -372,16 +378,13 @@ class DataConnectionAPIService(SchedulingService, APIService):
         data_start_row: Annotated[int, Field(gt=0)] | Unset = Unset,
         delimiter: Annotated[str, Field(min_length=1, max_length=1)] | Unset = Unset,
         jmespath: str | Unset = Unset,
+        data_ingestion_window: dict | None | Unset = Unset,
     ):
         data_connection = self.get(data_connection)
 
         try:
             current_payload = data_connection.payload
         except Payload.DoesNotExist:
-            current_payload = None
-
-        if current_payload and current_payload.payload_type != payload_type:
-            current_payload.delete()
             current_payload = None
 
         if payload_type == "CSV":
@@ -406,6 +409,24 @@ class DataConnectionAPIService(SchedulingService, APIService):
             }
         else:
             raise BadRequestError(f"Unsupported payload type {payload_type}")
+
+        if data_ingestion_window is not Unset:
+            # Omitted boundaries and fields retain their values; null clears them.
+            window = (
+                DataIngestionWindowPostBody.model_validate(data_ingestion_window).model_dump(exclude_unset=True)
+                if data_ingestion_window is not None else {"start": None, "end": None}
+            )
+            for side, boundary in window.items():
+                for field, suffix in (
+                    ("anchor", "anchor"),
+                    ("lookback", "lookback"),
+                    ("lookback_units", "lookback_unit"),
+                    ("timestamp", "timestamp"),
+                ):
+                    if boundary is None or field in boundary:
+                        fields[f"data_ingestion_window_{side}_{suffix}"] = (
+                            boundary[field] if boundary is not None else None
+                        )
 
         if current_payload:
             for field, value in fields.items():

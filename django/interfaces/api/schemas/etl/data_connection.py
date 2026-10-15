@@ -134,7 +134,7 @@ class DataIngestionWindowResponse(BaseGetResponse):
 
 class DataIngestionWindowBoundaryPostBody(BasePostBody):
     anchor: Optional[DataIngestionWindowAnchorType] = None
-    lookback: Optional[int] = None
+    lookback: Optional[int] = Field(None, ge=0)
     lookback_units: Optional[DataIngestionWindowLookbackUnits] = None
     timestamp: Optional[datetime] = None
 
@@ -145,6 +145,15 @@ class DataIngestionWindowPostBody(BasePostBody):
 
 
 def _resolve_data_ingestion_window(obj):
+    if isinstance(obj, dict):
+        if "dataIngestionWindow" in obj:
+            return obj["dataIngestionWindow"]
+        if "data_ingestion_window" in obj:
+            return obj["data_ingestion_window"]
+        raise AttributeError("data_ingestion_window")
+    if not hasattr(obj, "data_ingestion_window_start_anchor"):
+        return getattr(obj, "data_ingestion_window")
+
     start = end = None
 
     if obj.data_ingestion_window_start_anchor:
