@@ -112,7 +112,7 @@ export class UserService {
    *
    * OIDC mode: fetched once from the OIDC UserInfo endpoint and cached.
    * HydroServer's OIDC provider adds HydroServer-specific claims
-   * (organization, accountType, etc.) to that response for clients
+   * (organization, isSuperuser, etc.) to that response for clients
    * requesting the `profile` scope (see core/iam/auth/oidc_adapter.py).
    * The access token is attached automatically by requestInterceptor via
    * the accessTokenProvider registered in runtime.ts.
@@ -159,7 +159,7 @@ export class UserService {
 }
 
 function isAdmin(user: User | null): boolean {
-  return (user?.accountType as string) === 'admin'
+  return user?.isSuperuser === true
 }
 
 function isOwner(

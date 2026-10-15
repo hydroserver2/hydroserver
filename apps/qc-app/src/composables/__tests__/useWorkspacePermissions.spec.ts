@@ -64,8 +64,8 @@ const globalWs = ws({
   ]),
 })
 
-function setUser(email: string, accountType = 'standard') {
-  useUserStore().user = { email, accountType } as unknown as User
+function setUser(email: string, isSuperuser = false) {
+  useUserStore().user = { email, isSuperuser } as unknown as User
 }
 
 describe('useWorkspacePermissions', () => {
@@ -121,7 +121,7 @@ describe('useWorkspacePermissions', () => {
   })
 
   it('admin overrides a read-only role', () => {
-    setUser('me@x.org', 'admin')
+    setUser('me@x.org', true)
     const { canEdit, canCreateDatastream } = useWorkspacePermissions()
     expect(canEdit(viewerWs)).toBe(true)
     expect(canCreateDatastream(viewerWs)).toBe(true)

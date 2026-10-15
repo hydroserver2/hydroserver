@@ -406,9 +406,7 @@ watch(
   { immediate: true }
 )
 
-const canCreateWorkspace = computed(() =>
-  ['admin', 'standard'].includes(user.value?.accountType ?? '')
-)
+const canCreateWorkspace = computed(() => user.value?.ownedWorkspaceLimit !== 0)
 
 /** Workspaces that are pending a transfer to the current user */
 const pendingWorkspaces = computed(() =>

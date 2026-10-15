@@ -18,9 +18,7 @@ export function useWorkspacePermissions() {
   const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
   const { user } = storeToRefs(useUserStore())
 
-  const isAdmin = computed(
-    () => (user.value?.accountType as string) === 'admin'
-  )
+  const isAdmin = computed(() => user.value?.isSuperuser === true)
 
   function isOwner(ws?: Workspace | null): boolean {
     if (!ws) return false

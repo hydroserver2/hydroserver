@@ -94,6 +94,14 @@
                 title="About"
               />
 
+              <v-list-item
+                v-if="user.isStaff"
+                :prepend-icon="mdiViewDashboardOutline"
+                :href="adminDashboardUrl"
+                data-testid="admin-menu-item"
+                title="Admin dashboard"
+              />
+
               <v-divider />
 
               <v-list-item
@@ -154,6 +162,13 @@
           >About</v-list-item
         >
         <v-list-item
+          v-if="user.isStaff"
+          :href="adminDashboardUrl"
+          :prepend-icon="mdiViewDashboardOutline"
+          data-testid="admin-drawer-item"
+          >Admin dashboard</v-list-item
+        >
+        <v-list-item
           :prepend-icon="mdiLogout"
           @click.prevent="onLogout"
           data-testid="logout-drawer-item"
@@ -202,6 +217,7 @@ import {
   mdiShieldCheckOutline,
   mdiShieldEditOutline,
   mdiTransitConnectionVariant,
+  mdiViewDashboardOutline,
 } from '@mdi/js'
 
 const route = useRoute()
@@ -209,6 +225,7 @@ const { resetState } = useDataVisStore()
 const { user } = storeToRefs(useUserStore())
 const signupEnabled =
   import.meta.env.VITE_APP_DISABLE_ACCOUNT_CREATION !== 'true'
+const adminDashboardUrl = hs.resolveUrl('/admin/')
 
 const sidebar = useSidebarStore()
 const drawer = ref(false)

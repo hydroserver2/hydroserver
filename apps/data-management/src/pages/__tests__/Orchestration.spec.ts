@@ -64,7 +64,7 @@ vi.mock('@hydroserver/client', () => ({
   },
   DataConnection: class {},
   User: class {
-    accountType = 'standard'
+    isSuperuser = false
     email = 'user@example.com'
   },
   PermissionAction: {

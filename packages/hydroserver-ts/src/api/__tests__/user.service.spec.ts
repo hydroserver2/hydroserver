@@ -13,7 +13,6 @@ function makeClientWithCachedUser(user: User): HydroServer {
 function makeStandardUser(email = 'collaborator@example.com'): User {
   const user = new User()
   user.email = email
-  user.accountType = 'standard'
   return user
 }
 
@@ -27,7 +26,7 @@ function makeWorkspace(overrides: Partial<Workspace> = {}): Workspace {
 describe('UserService.can', () => {
   it('allows an admin regardless of role permissions', async () => {
     const admin = makeStandardUser('admin@example.com')
-    admin.accountType = 'admin'
+    admin.isSuperuser = true
     const client = makeClientWithCachedUser(admin)
     const workspace = makeWorkspace()
 
