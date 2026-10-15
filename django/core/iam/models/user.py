@@ -98,14 +98,6 @@ class User(AbstractUser, ResourcePermissionMixin):
     def organization_name(self):
         return self.organization.name if self.organization else None
 
-    @property
-    def account_type(self):
-        if self.is_superuser:
-            return "admin"
-        if self.owned_workspace_limit == 0:
-            return "limited"
-        return "standard"
-
     def save(self, *args, **kwargs):
         self.email = self.email.lower()
         super().save(*args, **kwargs)
@@ -117,13 +109,6 @@ class User(AbstractUser, ResourcePermissionMixin):
         OIDC /userinfo endpoint (core/iam/auth/oidc_adapter.py), so both
         surfaces describe a user the same way.
         """
-
-        if self.is_superuser:
-            account_type = "admin"
-        elif self.owned_workspace_limit == 0:
-            account_type = "limited"
-        else:
-            account_type = "standard"
 
         organization = (
             {
@@ -147,7 +132,9 @@ class User(AbstractUser, ResourcePermissionMixin):
             "address": self.address,
             "link": self.link,
             "type": self.user_type,
-            "accountType": account_type,
+            "isStaff": self.is_staff,
+            "isSuperuser": self.is_superuser,
+            "ownedWorkspaceLimit": self.owned_workspace_limit,
             "organization": organization,
             "hydroShareConnected": self.socialaccount_set.filter(
                 provider="hydroshare"

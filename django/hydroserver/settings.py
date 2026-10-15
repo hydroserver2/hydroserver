@@ -113,7 +113,7 @@ INSTALLED_APPS = [
     "processing.products.apps.ProductsConfig",
     "processing.monitoring.apps.MonitoringConfig",
     "processing.quality.apps.QualityConfig",
-    "django.contrib.admin",
+    "hydroserver.apps.HydroServerAdminConfig",
 ]
 
 MIDDLEWARE = [
@@ -259,6 +259,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ACCOUNT_LOGOUT_ON_GET = True
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = urlparse(PROXY_BASE_URL).scheme
 
+LOGIN_URL = "account_login"
 LOGIN_REDIRECT_URL = WEB_CLIENT_URL
 LOGOUT_REDIRECT_URL = WEB_CLIENT_URL
 
