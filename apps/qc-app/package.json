@@ -35,7 +35,7 @@
     "pinia-plugin-persistedstate": "^4.7.1",
     "plotly.js-dist": "^3.5.1",
     "tslib": "^2.8.1",
-    "vue": "^3.5.35",
+    "vue": "^3.5.40",
     "vue-router": "^5.1.0",
     "vuetify": "^4.1.1"
   },

@@ -48,12 +48,12 @@ export default defineConfig(({ mode }) => {
       strictPort: true,
       proxy: {
         ...(apiProxyTarget
-          ? {
-              '/api': {
-                target: apiProxyTarget,
-                changeOrigin: true,
-              },
-            }
+          ? Object.fromEntries(
+              // Account pages and their assets share the API's Django server.
+              ['/api', '/accounts', '/identity', '/.well-known', '/static'].map(
+                (path) => [path, { target: apiProxyTarget, changeOrigin: true }]
+              )
+            )
           : {}),
         '/qc': {
           target: qcProxyTarget,
