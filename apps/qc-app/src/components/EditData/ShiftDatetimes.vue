@@ -24,10 +24,10 @@
           v-model.number="shiftAmount"
           density="comfortable"
           variant="outlined"
+          :error="!amountValid"
           hide-details
-          @keyup.enter="
-            !isUpdating && selectedData?.length && onShiftDatetimes()
-          "
+          data-testid="shift-amount"
+          @keyup.enter="canShift && onShiftDatetimes()"
         />
         <v-select
           class="flex-grow-1"
@@ -38,7 +38,21 @@
           density="comfortable"
           variant="outlined"
           hide-details
+          data-testid="shift-unit"
         />
+      </div>
+
+      <div
+        v-if="isCalendarUnit"
+        class="text-body-small mt-2"
+        :class="amountValid ? 'text-medium-emphasis' : 'text-error'"
+        data-testid="shift-calendar-note"
+      >
+        {{
+          amountValid
+            ? `Months and years follow the calendar in ${zoneName()}, keeping the clock time. A day past the end of a month moves to its last day.`
+            : 'Months and years shift by whole numbers.'
+        }}
       </div>
 
       <div v-if="snapChips.length" class="d-flex ga-1 mt-2 flex-wrap">
@@ -61,7 +75,7 @@
       <v-btn
         color="primary"
         variant="flat"
-        :disabled="isUpdating || !selectedData?.length"
+        :disabled="!canShift"
         @click="onShiftDatetimes"
       >
         Shift
@@ -78,6 +92,7 @@ import { EnumEditOperations, TimeUnit } from '@uwrl/qc-utils'
 import { usePlotlyStore } from '@/store/plotly'
 import { useUIStore, timeSpacingUnitToTimeUnitKey } from '@/store/userInterface'
 import { useFilterDispatch } from '@/composables/useFilterDispatch'
+import { zoneId, zoneName } from '@/utils/timeZone'
 
 const { selectedData, qcDatastream } = storeToRefs(useDataVisStore())
 const { selectedSeries, isUpdating } = storeToRefs(usePlotlyStore())
@@ -104,7 +119,7 @@ const snapChips = computed<SnapChip[]>(() => {
   return [0.5, 1, 2].map((m) => {
     const amount = n * m
     return {
-      label: `${m}Ã— intended (${amount} ${unitKey.toLowerCase()})`,
+      label: `${m}× intended (${amount} ${unitKey.toLowerCase()})`,
       amount,
       unit: unitKey,
       active:
@@ -119,12 +134,21 @@ const applySnap = (chip: SnapChip) => {
   selectedShiftUnit.value = chip.unit
 }
 
+const isCalendarUnit = computed(
+  () => selectedShiftUnit.value === 'MONTH' || selectedShiftUnit.value === 'YEAR'
+)
+const amountValid = computed(() => {
+  const n = Number(shiftAmount.value)
+  return Number.isFinite(n) && (!isCalendarUnit.value || Number.isInteger(n))
+})
+const canShift = computed(
+  () => !isUpdating.value && !!selectedData.value?.length && amountValid.value
+)
+
 const emit = defineEmits(['close'])
 
 const onShiftDatetimes = async () => {
-  if (!selectedData.value?.length) {
-    return
-  }
+  if (!canShift.value) return
 
   isUpdating.value = true
 
@@ -134,7 +158,8 @@ const onShiftDatetimes = async () => {
         EnumEditOperations.SHIFT_DATETIMES,
         +shiftAmount.value,
         // @ts-ignore
-        TimeUnit[selectedShiftUnit.value]
+        TimeUnit[selectedShiftUnit.value],
+        zoneId()
       )) as number[] | undefined) ?? []
 
     isUpdating.value = false

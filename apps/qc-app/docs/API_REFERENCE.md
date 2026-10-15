@@ -1,6 +1,6 @@
 # APIs &amp; Interoperability
 
-This is a reference for the surfaces a developer integrates against —
+This is a reference for the surfaces a developer integrates against:
 both the in-app TypeScript surfaces (Pinia stores, composables, plotting
 utils) and the external HydroServer REST endpoints the app consumes.
 
@@ -12,7 +12,7 @@ utils) and the external HydroServer REST endpoints the app consumes.
   and the QC History JSON file format.
 - **JSON over the wire, typed arrays in memory.** The app fetches
   observations in HydroServer's columnar JSON format and inflates them
-  to `Float64Array` + `Float32Array` inside `ObservationRecord`.
+  to `Float64Array`s inside `ObservationRecord`.
 - **History is the contract.** The QC History file format is the
   durable record of edits. It is not pinned to a datastream id, so the
   same script can be replayed against many datastreams.
@@ -75,20 +75,26 @@ hs.datastreams.createObservations(
     fields: ['phenomenonTime', 'result'],
     data: dataX.map((ts, i) => [new Date(ts).toISOString(), dataY[i]]),
   },
-  { mode: 'replace' }
+  {
+    mode: 'replace',
+    phenomenonTimeStart: session.phenomenonTimeStart,
+    phenomenonTimeEnd: session.phenomenonTimeEnd,
+  }
 )
 ```
 
-Replace mode tells HydroServer to overwrite any observation inside the
-posted window. The QC App always submits the full edited window —
-incremental submission is not implemented today.
+Replace mode deletes every observation between `phenomenonTimeStart` and
+`phenomenonTimeEnd`, then inserts the posted ones. The QC App always sends
+the session window as that range, so points deleted at the window's edges are
+removed too, and a session that deleted every point commits an empty body.
+Without the range, the backend falls back to the span of the posted
+observations. Incremental submission is not implemented today.
 
 ### Result qualifier codes
 
-Listed via `fetchWorkspaceResultQualifiers`. The QC App tracks selected
-qualifiers in `store/qualifiers.ts`, but **does not yet serialize them on
-submit** (see [QUALITY.md](./QUALITY.md) tech-debt section and the TODO
-in `useQcSubmission.ts:42`).
+Listed via `fetchWorkspaceResultQualifiers`. Applying qualifiers is hidden
+behind `QUALIFIER_TOOL_ENABLED`, and commits **do not serialize qualifier
+codes** (see [QUALITY.md](./QUALITY.md) tech-debt section).
 
 ## Internal: composables
 
@@ -117,32 +123,299 @@ await setSelected([0, 1, 2, 5])      // dispatches SELECTION
 await clearSelected({ recordHistory: false })  // skip history append on cleanup
 ```
 
+### `useEditEntry()`
+
+```ts
+const { enterEdit, startSessionOver, openEditor, leaveEdit, closeEditor } =
+  useEditEntry()
+
+const result = await enterEdit(managedId, window)
+// result: 'editing' | 'needs-window' | 'not-managed' | 'superseded' | 'kept'
+```
+
+Sets the edit target and switches to the Edit view. Shared by the row Edit
+flow (`StartEditingFlow.vue`), reload resume (`useResumeEditSession()`
+below), and share-link hydration (the `ed` query param).
+
+- `enterEdit(managedId, window?, view?)`: sets the edit target
+  (`setEditTarget`), resolves its QC history via `beginEditing()`, and
+  resumes an in-progress session. With no session and no `window`, returns
+  `'needs-window'` so the caller opens `SessionWindowDialog.vue` (the
+  session-window step) and calls back in with the chosen window, or calls
+  `startSessionOver` instead; with a `window`, starts the session
+  immediately. `view` is the layout to land on, `Edit` by default; a share
+  link made from the Select view passes `Select`, so the session reopens
+  behind it. The view shows as soon as the entry starts, with
+  `qcSession.openingDatastreamId` set until the session has loaded, so the
+  plot shows a loading state; a view the user switches to meanwhile is kept.
+  Called on the target already open, with no `window`, it only
+  shows that view: nothing about the session is re-entered. Taking over from
+  another open session first asks `useLeaveSession().requestLeave()`, and
+  returns `'kept'` when the user keeps the open one. The create step in
+  `StartEditingFlow.vue` asks earlier, through `closeEditor()`: a created
+  managed datastream is always a new target, so the takeover is certain and
+  the question must come before anything reaches the server.
+  When the load is superseded it returns `'superseded'`. It shows the
+  `ResumeSupersededError` message only when the same target is still open; a
+  newer entry taking over, or the editor being closed mid-load, ends it
+  quietly, since the user asked for that.
+- `startSessionOver(window)`: starts a new session on the current edit
+  target over `window` (a `utils/timeRangePresets.ts` `TimeWindow`); backs
+  **Start new session** and the editor footer's **New session**.
+- `openEditor()`: shows the Edit layout for the current target. Pure
+  navigation, used by the nav rail's Edit button and the Select view's
+  **Open editor**. A datastream picked from a row enters with
+  `view = DrawerType.Select`, so it lands on that preview first.
+- `leaveEdit()`: returns to the Select view, clears the resume pointer and
+  the edit target (`clearEditTarget`). The user has already been asked by
+  then, or there was nothing to ask about. Switching views is not an exit and
+  does not use it.
+- `closeEditor()`: what a user's exit calls. Runs the leave flow
+  (`useLeaveSession().requestLeave()`) and, once it resolves true, ends the
+  session with `leaveEdit()`. Returns false when the user chose to stay, so
+  the caller abandons its own exit. Backs the editor footer's **Close** and
+  the nav rail's Home and Log out.
+
+Entries can overlap (a reload resume and a click land close together);
+whichever call sets the edit target last owns the view: a call that finds
+the target changed after an `await` stands down without touching view
+state, the target, or the resume pointer.
+
+### `useLeaveSession()`
+
+```ts
+const { requestLeave } = useLeaveSession()
+if (!(await requestLeave())) return // the user stayed; nothing changed
+```
+
+The one decision point for leaving an open edit session, used by every exit:
+the editor footer's **Close**, the nav rail's Home, workspace switch and log
+out, the row Edit button on a different datastream, and in-app navigation
+(`leaveSessionGuard` in `router/guards.ts`). Switching between the Select and
+Edit views is not an exit, so it never asks. The prompt state is module-wide
+and `LeaveSessionDialog.vue`, mounted once in `App.vue`, shows it.
+
+- `leaveCase()`: which of the four situations applies right now.
+  `'none'` (nothing being edited, no session, or committed history being
+  viewed) leaves silently; `'unsaved'` has edits that never reached the
+  session; `'empty'` is a session holding no operations at all; `'saved'` is
+  a session whose work is all saved.
+- `requestLeave()`: decides the case, shows the matching prompt and carries
+  the answer out. Resolves true when the caller may go on, false when the
+  user stays. A second request supersedes the first, whose caller stays put;
+  once an answer is being carried out (`leaveWork`), a second request is
+  refused outright rather than inheriting that answer.
+- `saveAndLeave()` / `discardEditsAndLeave()`: the `'unsaved'` answers.
+  Saving is refused with no session open. Discarding that empties the session
+  falls through to the `'empty'` prompt rather than leaving silently.
+- `keepSession()` / `discardSessionAndLeave()`: the `'empty'` answers.
+  `keepSession()` is also the `'saved'` answer, keeping the session as it is.
+  Discarding deletes the session through
+  `useManagedDatastreams().deleteSession`. A failed delete keeps the user in
+  the session.
+- `cancelLeave()`: stay, with the zoom, staged band and unsaved edits intact.
+- `forgetSession()`: drop the resume pointer only. For exits that unmount the
+  editor, where clearing the edit target would have the editor's URL writer
+  replace the route mid-navigation.
+- `leavePrompt` / `leaveWork`: what the dialog renders (the case, the name of
+  the datastream being left, the unsaved count and whether saving is
+  possible), and which answer is currently running.
+
+### `useResumeEditSession()`
+
+```ts
+const { settled } = useResumeEditSession(async (id) => {
+  await startEditing.value?.resume(id) // StartEditingFlow
+})
+```
+
+`settled` turns true once the resume has finished (or failed), or the catalog
+landed with nothing to resume. `VisualizeData.vue` holds the share URL as it
+came in until then. It also holds it from the leave guard asking the user
+until that navigation lands (`isLeavingPage` in `router/navigationState.ts`):
+replacing the route then would cancel the navigation being answered for,
+such as a workspace switch. If the user stays, the URL catches up.
+
+Reopens the editor after a page reload, using the persisted
+`qcSession.resumeDatastreamId`: waits for the workspace catalog to arrive
+(it's empty at mount), then calls the supplied callback with the managed
+datastream id (normally wired to `StartEditingFlow`'s exposed `resume`, which
+enters through `useEditEntry()` and opens the session-window step when there
+is no session to continue). Resumes at
+most once, and the chance closes as soon as the catalog lands: a pointer set
+after that belongs to an entry already navigating on its own, and a later
+catalog refresh (a commit rewrites the managed datastream) must not re-enter
+behind the user. A pointer to a datastream missing from the catalog (deleted,
+or another workspace) is dropped rather than retried.
+
+Note the watcher must not use Vue's `once` together with `immediate`: the
+immediate call fires on the initial empty catalog and stops the watcher, so
+the resume would never run on the cold reload it exists for.
+
+### `useUnsavedChangesWarning()`
+
+```ts
+useUnsavedChangesWarning(hasUnsavedChanges) // Ref<boolean>
+```
+
+Asks the browser for its native "leave site?" confirmation while the ref is
+true, so a reload mid-session can't silently drop edits that never reached
+the server. Registers on mount and removes the listener on unmount. Browsers
+ignore any custom message and only honour the prompt once the user has
+interacted with the page.
+
 ### `useQcHistory()`
 
 ```ts
-const { exportHistory, importHistory } = useQcHistory()
+const { exportHistory } = useQcHistory()
 
-await exportHistory()             // downloads qc-history-<datastream>-<isoTimestamp>.json
-const report = await importHistory(file)
-// report = { applied: 12, failed: [{ index, method, error }, ...] }
+await exportHistory() // downloads qc-history-<datastream>-<isoTimestamp>.json
 ```
 
-`exportHistory` reads the current wall-clock window from
-`useDataVisStore`. `importHistory` fetches the script's authored window
-into the active datastream **before** replay (selection-coupled ops
-reference indices against this windowed dataset).
+Serializes the edit record's history with the session window (the viewed or
+in-progress session, or the loaded range when there is none). Download only;
+the app has no import.
 
-### `useQcSubmission()`
+### `useEditLock()`
+
+`src/composables/useEditLock.ts`. The one answer to "can the edit record take
+a new operation right now?", read by every surface that starts an edit: the
+Operations drawer, `OperationPanel`, plot selections (`handleSelected`,
+`clearSelected`) and the data table's cells and Save button.
+
+| Name       | Kind     | Type                                  | Notes |
+|------------|----------|---------------------------------------|-------|
+| `editLock` | computed | `'readOnly' \| 'preview' \| null` | `readOnly` while a committed session is on screen (`useQcSessionStore().isReadOnly`), else `preview` while an earlier history step is shown (`usePlotlyStore().previewIndex`), else `null`. |
+
+### `useEditSession()`
+
+Orchestrates the server-backed QC session workflow against the
+`services/qualityControl/` glue:
 
 ```ts
-const { submitQcEdits } = useQcSubmission()
-await submitQcEdits()    // POST observations with mode=replace, clear history
+const {
+  beginEditing, startSession, saveDraft, discardUnsavedEdits, commit,
+  hasUnsavedChanges, unsavedEditCount,
+} = useEditSession()
 ```
 
-Single-shot: guards on (selectedSeries + qcDatastream + non-empty
-history), serializes `[phenomenonTime, result]` rows, POSTs with
-`mode: 'replace'`, surfaces a Snackbar, and clears the history in place
-on success.
+- `beginEditing()`: resolves the QC history for the QC datastream, loads
+  its sessions and resumes the in-progress one. Returns `'resumed'`,
+  `'needs-session'` when there is none to resume, or `'not-managed'` when
+  the datastream isn't QC-managed yet. Resuming rebuilds the shared working
+  copy; if that rebuild is superseded it throws `ResumeSupersededError`
+  rather than asking for a session, and `enterEdit` returns to the Select
+  view. Entries can overlap, so it also throws
+  `ResumeSupersededError` when the edit target changes during any of its
+  fetches, and it never writes the session store (source, sessions) for a
+  target it no longer owns: sessions are fetched with `fetchSessions` and
+  applied only while still the owner.
+- `startSession(spec)`: creates a session and copies the source window in.
+  When the history already has an in-progress session it resumes that one
+  through the same replay instead (throwing `ResumeSupersededError` the same
+  way), so saved draft operations are never dropped. The same ownership rule
+  guards its session reload.
+- `saveDraft()`: persists the record's edit operations to the session
+  (append-only reconcile).
+- `discardUnsavedEdits()`: drops edits made since the last save and restores
+  edited comments.
+- `commit()`: saves, checks that the source window's checksum
+  (`datastreams.getObservationsChecksum`) still matches the one the session
+  started with, pushes observations (`mode: 'replace'` over the session
+  window), then locks the session and reloads the sessions. A failed push
+  throws before the session is locked, so it stays in progress. If
+  another target took over the editor while they reloaded, it leaves the
+  session store and the saved-edits baseline alone and still resolves, since
+  the commit itself went through.
+- `hasUnsavedChanges` / `unsavedEditCount`: the working copy compared with
+  the saved-edits baseline (`qcSession.savedEdits` / `savedComments`). The
+  baseline lives in the store, so every caller agrees: the editor footer and
+  the leave flow both read it.
+
+### `useCreateManagedDatastream()`
+
+```ts
+const { create } = useCreateManagedDatastream()
+const { managedDatastream, history } = await create({
+  source,
+  processingLevelId,
+  name,
+  description,
+  status, // omitted to create the datastream without one
+  methodId,
+})
+```
+
+`description`, `status` and `methodId` are writable on a datastream create
+(see the client's `writableKeys`). They are passed as overrides, so they win
+over the values copied from the source.
+
+Delegates to the tested `createManagedDatastream` orchestration with the
+live client (`hs.datastreams` + `hs.qualityControlHistories`). A create
+answers with the new id only, so both are read back: the datastream with
+`expand_related: true`, so `managedDatastream` comes back in the same
+`Datastream & DatastreamExtended` shape as the `datastreams` catalog and can be
+appended to it directly. Without the flag the read is the flat model (FK ids
+only) and catalog consumers reading `ds.processingLevel.id` would break.
+
+### `useManagedDatastreams()`
+
+```ts
+const { loadForSource } = useManagedDatastreams()
+const options = await loadForSource(sourceDatastreamId)
+// options: [{ historyId, managed, sessions }]
+```
+
+Resolves a source datastream's managed (QC) datastreams from the loaded QC
+histories and fetches each one's sessions. Feeds the row Edit button's
+chooser (`StartEditingFlow.vue`), which lists managed datastreams with their
+in-progress/committed sessions.
+
+- `deleteManaged(historyId, managedId)`: removes the QC history, then the
+  managed datastream.
+- `deleteSession(historyId, sessionId)`: removes the in-progress session and
+  throws the server's message when it refuses. The server refuses a committed
+  session, since its edits are already on the managed datastream.
+
+### `useDatastreamMetadata()`
+
+```ts
+const { methods, statuses, load } = useDatastreamMetadata()
+await load()
+```
+
+Reference data for the create-datastream form: the active workspace's methods
+(`hs.methods`, every page, including the system-level ones) and the datastream
+status vocabulary (`hs.datastreamStatuses`). Loaded on demand when the form
+opens rather than with the workspace catalog in `App.vue`, since nothing else
+needs it. Neither request throws: a list that fails to load stays empty and
+the form falls back to the source datastream's own value.
+
+### `useWorkspacePermissions()`
+
+Synchronous, reactive role/permission checks for gating UI. The role
+travels with the `Workspace` object (`collaboratorRole.permissions`; owners
+have a null role; `accountType === 'admin'` overrides), so no separate
+endpoint is needed.
+
+```ts
+const { canEdit, canCommit, canCreateDatastream, roleName } =
+  useWorkspacePermissions()
+canEdit()                 // selected workspace: can work in QC sessions?
+canCommit()               // ...and commit them?
+canCreateDatastream(ws)   // can create a managed datastream here?
+roleName(ws)              // 'Owner' | <collaborator role> | 'Admin' | 'Read-only'
+```
+
+Each check is what the API enforces for that step:
+
+| Check | Needs | Gates |
+|---|---|---|
+| `canEdit` | edit Datastream (QC sessions and operations) | row Edit, New session, Save |
+| `canCommit` | `canEdit` and create Observation (the push to the managed datastream) | Commit |
+| `canCreateDatastream` | `canEdit` and create Datastream (its QC history needs edit) | the create-datastream form |
+
+`roleName` labels each workspace's role on the picker.
 
 ### `useResizable()`
 
@@ -151,7 +424,7 @@ and the plot's table-vs-chart splitter.
 
 ### `useBufferedNumber()`
 
-Debounced numeric input wrapper for filter panels — avoids dispatching
+Debounced numeric input wrapper for filter panels. Avoids dispatching
 on every keystroke when a user is typing a threshold.
 
 ## Internal: Pinia stores
@@ -168,79 +441,135 @@ Columns in the per-store tables:
   `T` inside `Ref<T>`; actions list the call signature.
 
 The "Persistence" line at the top of each store cites the
-`pinia-plugin-persistedstate` config — the storage key and the
+`pinia-plugin-persistedstate` config: the storage key and the
 specific slice picked. Stores with no Persistence line are session-only.
 
-### `useDataVisStore()` — `src/store/dataVisualization.ts`
+Persisting a store deep-watches all of its state (pinia's `$subscribe`),
+whatever `pick` says, so every change walks the whole store. Stores that
+hold series, records or selections are therefore never persisted: their
+preferences live in small persisted stores (`qcPreferences`, `editResume`)
+and the data stores expose those same refs.
+
+### `useDataVisStore()` (`src/store/dataVisualization.ts`)
 
 Catalog data (sites, datastreams, taxonomy), sidebar filters, plotted
-set + QC target, time-range window. The orchestrator for everything in
+set + edit target, time-range window. The orchestrator for everything in
 the Select drawer and the rebuild pipeline that owns `rebuildPlot()`.
 
-Persistence: `selectedDateBtnId` only (so the user's preset choice
-survives reload); catalogs, filters, and in-flight maps refetch cleanly
-on boot.
+Not persisted. `selectedDateBtnId`, `contextPresetId` and
+`showSourceContext` are `qcPreferences` refs, so they survive a reload
+there; catalogs, filters, and in-flight maps refetch cleanly on boot.
 
 | Name                                | Kind     | Type / signature                                  | Notes |
 |-------------------------------------|----------|---------------------------------------------------|-------|
 | `monitoringSites`                            | state    | `MonitoringSite[]`                                         | Sites in the active workspace; fetched once on workspace mount. |
 | `datastreams`                       | state    | `(Datastream & DatastreamExtended)[]`             | All visible datastreams (with `expand_related` nested objects). |
+| `qcHistories`                       | state    | `QualityControlHistory[]`                         | Workspace QC histories (each links a managed datastream to its source); loaded with the catalog. |
+| `managedDatastreamIds`              | computed | `Set<string>`                                     | Ids of every managed (QC) datastream; hidden from the catalog (reached via the row Edit chooser). |
+| `historiesBySource`                 | computed | `Map<string, QualityControlHistory[]>`            | `sourceDatastreamId` -> its QC histories; drives the row Edit chooser. |
+| `addQcHistory`                      | action   | `(history: QualityControlHistory) => void`        | Register a newly-created history so its managed datastream hides from the catalog and shows in the chooser without a reload. |
+| `removeManagedDatastream`           | action   | `(historyId: string, managedId: string) => void`  | Drop a deleted managed datastream + its history from local state (chooser/catalog) after deleting it server-side. |
+| `replaceDatastream`                 | action   | `(ds: Datastream & DatastreamExtended) => void`   | Swap a fresh copy into the catalog and plotted set (used after a commit moves a managed datastream's phenomenon times). |
 | `observedProperties`                | state    | `ObservedProperty[]`                              | Taxonomy for the filter chips. |
 | `processingLevels`                  | state    | `ProcessingLevel[]`                               | Taxonomy for the filter chips. |
 | `selectedMonitoringSites`           | state    | `MonitoringSite[]`                                         | Site filter selection (sidebar). |
 | `selectedObservedPropertyNames`     | state    | `string[]`                                        | Observed-property filter selection. |
 | `selectedProcessingLevelNames`      | state    | `string[]`                                        | Processing-level filter selection. |
-| `filteredDatastreams`               | computed | `(Datastream & DatastreamExtended)[]`             | `datastreams` narrowed by the three filter selections. |
-| `plottedDatastreams`                | state    | `Datastream[]`                                    | Up to 5 streams currently on the chart. |
-| `qcDatastreamId`                    | state    | `string \| null`                                  | Storage form of the QC target; survives plotted-list mutations. |
-| `qcDatastream`                      | computed | `Datastream \| null`                              | Live lookup of `qcDatastreamId` in `plottedDatastreams`. |
-| `qualifierSet`                      | state    | `Set<string>`                                     | Qualifier codes seen on the QC target's loaded points. |
+| `filteredDatastreams`               | computed | `(Datastream & DatastreamExtended)[]`             | `datastreams` narrowed by the three filter selections, with managed (QC) datastreams excluded. |
+| `plottedDatastreams`                | state    | `Datastream[]`                                    | Up to 4 streams the user chose to plot. Editing never adds to or removes from it (snapshots are the exception, dropped on leave); the 4-stream cap doesn't count the edit target or its source, so the plot holds at most 6 series while editing. |
+| `qcDatastreamId`                    | state    | `string \| null`                                  | The edit target's id. Set only by the edit flow (`setEditTarget` / `clearEditTarget`); null in the Select view. |
+| `qcDatastream`                      | computed | `Datastream \| null`                              | Live catalog lookup of `qcDatastreamId` in `datastreams`, not `plottedDatastreams`, since the edit target isn't a plotted entry. |
+| `sourceContextDatastream`           | computed | `Datastream \| null`                              | The source drawn around the edit target as context (light grey, cut around the session window), with a `ctx:` id so the user can also plot the source as an ordinary series beside it. Null without an edit target or with context switched off. |
+| `seriesDatastreams`                 | computed | `Datastream[]`                                    | What the plot actually draws, in order: `[edit target, its source, ...plotted minus the source]` while editing, otherwise `plottedDatastreams` unchanged. A plotted edit target is drawn under its `ctx:` id, from its committed data, beside the edit record. `toggleDatastream` takes either id. Refresh, colour assignment, series ordering, working-copy invalidation, `PlottedDatastreams`, the share watcher, and snapshots all iterate this instead of `plottedDatastreams`. |
+| `qualifierSet`                      | state    | `Set<string>`                                     | Qualifier codes seen on the edit target's loaded points. |
 | `selectedQualifier`                 | state    | `string`                                          | Active qualifier in the picker. |
 | `selectedData`                      | state    | `number[] \| null`                                | Index list of the active selection (lasso, box, click). |
 | `hasSelectionShape`                 | state    | `boolean`                                         | True while a box/lasso shape exists, even when it captured zero points. |
-| `loadingStates`                     | state    | `Map<string, boolean>`                            | Per-datastream in-flight observation fetches. |
-| `beginDate` / `endDate`             | state    | `Date`                                            | Active loaded time-range window (the date pickers' source of truth). |
-| `dateOptions`                       | state    | `Array<{ id, icon, label, title, calculateBeginDate }>` | Preset definitions (1w, 1m, 6m, 1y, YTD, All). |
-| `selectedDateBtnId`                 | state    | `number`                                          | Active preset id; `-1` when the user picked dates manually. |
+| `loadingStates`                     | state    | `Map<string, boolean>`                            | Per-datastream in-flight observation fetches. Only the latest request for a datastream clears its flag. |
+| `isEditorReady`                     | computed | `boolean`                                         | True while editing once the session window is known, the edit record is on the plot, no session is opening (`isSwitchingSession`), and no plot work is pending: no queued or running plot load (including the context re-anchor around the session window) and no tracked draw. Bound to `data-editor-ready` on the edit view's `edit-plot-column`; e2e `waitForEditorReady` waits on it. |
+| `trackPlotWork`                     | action   | `(work: () => Promise<void>) => Promise<void>`    | Run `work` counted as pending plot work for `isEditorReady`. Plot loads and `setEditRecord` use it, and `Plot.vue` counts its first draw from the moment the plot element appears. |
+| `beginDate` / `endDate`             | state    | `Date`                                            | Active loaded window. A preset re-resolves it on every plot rebuild: around the edit session's window while one is set (`presetAroundWindow`), otherwise back from the context data's (`seriesDatastreams` minus the edit target) end (`presetWindow`). It also re-resolves when the edit session's window loads or changes. A custom range stays fixed. |
+| `selectedDateBtnId`                 | state    | `number`                                          | The Select view's Time range preset id (default `1`, 1m); `-1` (`CUSTOM_PRESET_ID`) for a manual range. Presets are defined in `utils/timeRangePresets.ts`. |
+| `contextPresetId`                   | state    | `number`                                          | The editor's Context range preset id, remembered apart from `selectedDateBtnId` so neither moves the other. Persisted by `qcPreferences`. |
+| `activePresetId`                    | computed | `number` (writable)                               | The preset the loaded range follows: `contextPresetId` while an edit target is set, else `selectedDateBtnId`. `onDateBtnClick` and a custom `setDateRange` write it. |
+| `editSessionWindow`                 | computed | `TimeWindow \| null`                             | The viewed session's window, else the in-progress one's; null without an edit target. |
+| `editSourceDatastream`              | computed | `Datastream \| null`                             | The edit target's source datastream, however it is drawn. |
+| `showSourceContext`                 | state    | `boolean`                                         | Whether the edit target's source is drawn around it as context (default `true`). Persisted by `qcPreferences`. |
+| `setShowSourceContext`              | action   | `(show: boolean) => Promise<void>`                | Turn the source context on or off from the Context menu; rebuilds the plot while editing. |
 | `matchesSelectedMonitoringSite`     | action   | `(ds) => boolean`                                 | Filter predicate; exposed so the table can reuse it on row updates. |
 | `matchesSelectedObservedProperty`   | action   | `(ds) => boolean`                                 | Same shape as above. |
 | `matchesSelectedProcessingLevel`    | action   | `(ds) => boolean`                                 | Same shape as above. |
-| `setDateRange`                      | action   | `({ begin?, end?, update?, custom? }) => Promise<void>` | No-ops when neither bound moves; clears zoom history when it does. |
-| `onDateBtnClick`                    | action   | `(id: number) => void`                            | Anchors `endDate` to today, recomputes `beginDate`, applies the preset. |
-| `syncRangeToPreset`                 | action   | `() => void`                                      | Re-derives `beginDate`/`endDate` from `selectedDateBtnId`. Run on `afterHydrate` so the restored preset's window applies to the first load. |
-| `refreshGraphSeriesArray`           | action   | `() => Promise<unknown[]>`                        | Reconciles `graphSeriesArray` against `plottedDatastreams` (fetch deltas + reorder + recolor). |
-| `resetState`                        | action   | `() => void`                                      | Clears filters + plotted set on a workspace swap; preserves the preset preference. |
+| `setDateRange`                      | action   | `({ begin?, end?, update?, custom? }) => Promise<void>` | No-ops when neither bound moves. Otherwise sets the bounds at once and queues a range reload as a plot load (see `rebuildPlot`), which joins a queued rebuild instead of loading on its own and is skipped when an earlier load already caught up with the range. While editing it reloads context only and preserves the zoom (`redraw(false, true)`), since the edit target's data isn't fetched here. Otherwise it clears zoom history and applies the new window. |
+| `onDateBtnClick`                    | action   | `(id: number) => Promise<void>`                   | Selects the preset and applies the window the internal `resolvePresetWindow` gives it: around the edit session's window while editing one, otherwise back from the context data's end. With nothing to anchor to, only the selection changes. |
+| `refreshGraphSeriesArray`           | action   | `() => Promise<unknown[]>`                        | Reconciles `graphSeriesArray` against `seriesDatastreams` (fetch deltas + reorder + recolor), skipping the edit target (its data is owned by the edit session, not this refresh). A managed datastream with a loaded working copy (`useWorkingCopiesStore`) uses it instead of fetching. Invalidates the working copy of any managed datastream no longer in `seriesDatastreams`, except the edit target. |
+| `resetState`                        | action   | `() => void`                                      | Clears filters, the plotted set, and the edit target, and drops every working copy, on a workspace swap; preserves the preset preference. |
 | `toggleDatastream`                  | action   | `(ds: Datastream) => Promise<void>`               | Plot if absent, unplot if present. |
-| `plotDatastream`                    | action   | `(ds: Datastream) => Promise<void>`               | Add to plot; promotes to QC when nothing's there yet. |
-| `unplotDatastream`                  | action   | `(id: string) => Promise<void>`                   | Remove; promotes the previous plotted entry to QC if removing the QC target. |
+| `plotDatastream`                    | action   | `(ds: Datastream) => Promise<void>`               | Add to plot. Plotting never picks or changes the edit target. |
+| `unplotDatastream`                  | action   | `(id: string) => Promise<void>`                   | Remove from the plotted set. Never touches the edit target. |
 | `clearPlottedDatastreams`           | action   | `() => Promise<void>`                             | Drop the entire plotted set. |
-| `setPlottedDatastreams`             | action   | `(items: Datastream[], qcId?: string \| null) => Promise<void>` | Wholesale replace; used by URL hydration. |
-| `setQcDatastream`                   | action   | `(id: string \| null) => Promise<void>`           | Change QC target; preserves the current zoom. |
-| `rebuildPlot`                       | action   | `() => Promise<void>`                             | Serialized rebuild (drop zoom history, refresh series, regenerate options, render). Coalesces concurrent callers. |
+| `sourceGroupIds`                    | action   | `(sourceId: string) => string[]`                  | The source datastream plus every managed (QC) datastream derived from it. |
+| `plotSourceSelection`               | action   | `(sourceId: string, ids: string[]) => Promise<void>` | Apply a whole "what to plot for this source" choice at once: `ids` is the complete set wanted from that source's group. Group members absent from `ids` are unplotted, additions are appended in `ids` order. One rebuild for the whole selection; never touches the edit target. |
+| `addSnapshotSeries`                 | action   | `(id: string, record: ObservationRecord, meta: SnapshotMeta) => Promise<void>` | Add a frozen history snapshot as an extra comparison line under the synthetic id `snap:<sessionId>:<opIndex>`. Never touches the edit target; `refreshGraphSeriesArray` skips its fetch. |
+| `removeSnapshotSeries`              | action   | `(id: string) => Promise<void>`                   | Drop one snapshot line. Leaves the edit target alone. |
+| `setPlottedDatastreams`             | action   | `(items: Datastream[]) => Promise<void>`          | Replace the plotted set wholesale (used by URL hydration). Doesn't touch the edit target. Hydrate that separately with `setEditTarget`. |
+| `setEditTarget`                     | action   | `(managedId: string) => Promise<void>`            | Begin editing `managedId`: drops snapshots, resets the `qcSession` store (not `resumeDatastreamId`) and clears zoom history when the target changes, sets `qcDatastreamId`, rebuilds the plot. Its data arrives later via `setEditRecord`. This action doesn't fetch it. |
+| `setEditRecord`                     | action   | `(record: ObservationRecord) => Promise<void>`    | Put the edit target's record on the plot: updates its graph series in place if one exists, otherwise adds it (`buildGraphSeries`), then re-plots keeping the x view and refitting the target's y axis (`handleNewPlot` with `refitSeriesIds`). The only path by which the edit target's data reaches the plot. Counted as plot work until drawn. |
+| `clearEditTarget`                   | action   | `() => Promise<void>`                             | Stop editing: drops snapshots, invalidates the edit target's working copy, clears `qcDatastreamId`, removes its graph series, and rebuilds. Plotted datastreams are left exactly as they were. |
+| `rebuildPlot`                       | action   | `() => Promise<void>`                             | Rebuild (refresh series, regenerate options, render) as a plot load. Plot loads (rebuilds and `setDateRange` range reloads) run one at a time; requests made while one runs share one queued follow-up, which is a rebuild if any of them was, and every caller resolves only after a load that started after its change. A load whose range moves while it loads drops those responses and loads again before drawing. Drops zoom history in the Select view; keeps the zoom while an edit target is set. |
 
-### `usePlotlyStore()` — `src/store/plotly.ts`
+### `useWorkingCopiesStore()` (`src/store/workingCopies.ts`)
+
+One working copy per managed datastream, keyed by its in-progress
+session: the Select-view plot and the editor share it so the preview
+shows exactly what editing opens. Not persisted, not reactive (records
+hold large typed arrays that must not be proxied).
+
+Concurrency: a per-managed-id generation counter, bumped by `invalidate`,
+`set`, `clear`, and every new build, guards each build's cache write: a
+build whose generation is no longer current is discarded rather than
+resurrecting a stale copy. Concurrent `load()` calls for the same managed
+id share one in-flight build and resolve to the same record, and a `load()`
+that meets an in-flight `rebuild()` joins it instead of starting its own
+build. A superseded `rebuild()` or `load()` never returns the record it
+discarded: it resolves to the newer in-flight `rebuild()`'s result
+(whichever fetch finishes first), otherwise to whatever is now cached
+(`null` after `invalidate` or `clear`). `invalidate`, `set`, and `clear`
+also drop the in-flight load they supersede, so the next `load()` starts
+fresh.
+
+| Name         | Kind   | Type / signature                                                                                     | Notes |
+|--------------|--------|-------------------------------------------------------------------------------------------------------|-------|
+| `get`        | action | `(managedId: string) => WorkingCopy \| undefined`                                                     | Current cached copy for a managed datastream, if any. |
+| `load`       | action | `(managed: Datastream, source: Datastream, historyId: string) => Promise<WorkingCopy \| null>`        | Returns the cached copy when it matches the history's in-progress session; rebuilds and caches otherwise; `null` (and evicts any stale cache entry) when the history has no in-progress session. Concurrent calls for the same managed id dedupe onto one build, and a call made while a `rebuild()` is in flight joins it. If superseded mid-build, resolves to the superseding `rebuild()`'s result or the now-current cache entry (or `null`) instead of the discarded build. |
+| `rebuild`    | action | `(managed: Datastream, source: Datastream, historyId: string, session: SessionWindow) => Promise<WorkingCopy \| null>` | Always reconstructs from the session window and replays its operations, even when a cached copy already matches; supersedes any in-flight `load()` build or earlier `rebuild()` for this managed id and overwrites the cache. If superseded itself while awaiting, never returns the discarded build: resolves to a later in-flight `rebuild()`'s result, or reads the cache after a synchronous `invalidate`/`set`/`clear`, which is `null` when nothing ended up cached. |
+| `set`        | action | `(managedId: string, sessionId: string, record: ObservationRecord, begin: Date, end: Date) => void`   | Insert or replace a cache entry directly (used by `startSession` to store a new session's fresh base); supersedes any in-flight build or load for this managed id. |
+| `invalidate` | action | `(managedId: string) => void`                                                                          | Drop a managed datastream's cached copy; supersedes any in-flight build or load for this managed id. |
+| `clear`      | action | `() => void`                                                                                           | Drop every cached copy and supersede every in-flight build and load; called by `useDataVisStore().resetState()` on a workspace reset. |
+| `extents`    | action | `(managedIds: string[]) => { phenomenonBeginTime: string; phenomenonEndTime: string }[]`               | The cached copies' windows for the given managed ids, in ISO form; ids with no cached copy are omitted. |
+
+### `usePlotlyStore()` (`src/store/plotly.ts`)
 
 Owns the Plotly DOM ref, the per-series array driving the chart,
 viewport state (tooltips, crosshair, hover, zoom history), and the
 redraw / restyle plumbing.
 
-Persistence: `tooltipsMaxDataPoints`, `tooltipsMode`, and
-`tooltipsManualEnabled` (key `qc.plot.tooltipsMaxDataPoints`) — the
-user's data-points-mode preference. Everything else is ephemeral (DOM
-handles, live chart caches).
+Not persisted. `tooltipsMaxDataPoints`, `tooltipsMode`, and
+`tooltipsManualEnabled` are `qcPreferences` refs, so the user's
+data-points-mode preference survives a reload there. Everything else is
+ephemeral (DOM handles, live chart caches).
 
 | Name                       | Kind     | Type / signature                                  | Notes |
 |----------------------------|----------|---------------------------------------------------|-------|
 | `graphSeriesArray`         | state    | `GraphSeries[]`                                   | Per-series state driving traces, colors, and axis chips. |
 | `plotlyOptions`            | state    | `PlotlyChartOptions`                              | Cached `createPlotlyOption` output; seeded empty so consumers can read without null-guards. |
 | `plotlyRef`                | state    | `AppPlotlyHTMLElement \| null`                    | Live Plotly DOM element; populated by `handleNewPlot`. |
-| `mainPlotEpoch`            | state    | `number`                                          | Monotonic counter — bumped per `handleNewPlot` so listeners can re-attach. |
-| `selectedSeriesIndex`      | computed | `number`                                          | Index of the QC target in `graphSeriesArray` (`-1` when none). |
+| `mainPlotEpoch`            | state    | `number`                                          | Monotonic counter, bumped per `handleNewPlot` so listeners can re-attach. |
+| `selectedSeriesIndex`      | computed | `number`                                          | Index of the edit target in `graphSeriesArray` (`-1` when none). |
 | `selectedSeries`           | computed | `GraphSeries`                                     | Convenience for `graphSeriesArray[selectedSeriesIndex]`. |
-| `editHistory`              | state    | `HistoryItem[]`                                   | Mirrors `selectedSeries.data.history` (mutated in place — never reassign). |
+| `editHistory`              | state    | `HistoryItem[]`                                   | Mirrors `selectedSeries.data.history` (mutated in place; never reassign). |
+| `previewIndex`             | computed | `number \| null`                                  | The earlier history step the edit target shows (`-1` for the starting state), or null for the whole history. While set, edits wait: operations, plot selections and table saves are held. |
 | `suppressedEchoSelection`  | state    | `number[] \| null`                                | Sentinel armed by programmatic Plotly writes to suppress the echo SELECTION dispatch. |
 | `isUpdating`               | state    | `boolean`                                         | Surfaced in the nav rail while a redraw runs. |
-| `isSubmitting`             | state    | `boolean`                                         | True during a QC submit POST. |
 | `showLegend`               | state    | `boolean`                                         | Drives Plotly's legend visibility. |
 | `showTooltip`              | state    | `boolean`                                         | Legacy flag; tooltip control routes through the auto/manual mode below. |
 | `tooltipsMaxDataPoints`    | state    | `number`                                          | Auto-mode cutoff (default 10 000); user-tunable from the data-points menu. |
@@ -254,28 +583,29 @@ handles, live chart caches).
 | `hiddenAxisIds`            | state    | `Set<string>`                                     | Datastream ids whose right-side y-axis chrome is hidden. |
 | `hiddenTraceIds`           | state    | `Set<string>`                                     | Datastream ids whose trace is fully hidden (eye toggle). |
 | `activeTab`                | state    | `'plot' \| 'table'`                               | Center-column tab; captured by the share URL. |
-| `tableScrollRequest`       | state    | `{ time: number; seq: number } \| null`           | Signal from the "zoom to range" presets; `DataTable` scrolls to the first row at/after `time`. `seq` re-triggers on repeats. |
+| `tableScrollRequest`       | state    | `{ time: number; seq: number } \| null`           | Set when the plot zooms to the session window; `DataTable` scrolls to the first row at/after `time`. `seq` re-triggers on repeats. |
 | `requestTableScroll`       | action   | `(time: number) => void`                          | Publish a `tableScrollRequest` for the given epoch-ms range start (bumps `seq`). |
 | `axisChips`                | state    | `AxisChip[]`                                      | Horizontal axis title chips (replaces Plotly's rotated titles). |
-| `previewMode`              | state    | `boolean`                                         | Strips select/lasso/etc when the chart is rendered in the Select view's preview slot. |
 | `zoomUndoStack`            | state    | `ZoomState[]`                                     | Captured viewports for the modebar's Undo zoom button. |
 | `zoomRedoStack`            | state    | `ZoomState[]`                                     | Cleared on every new user-initiated zoom. |
 | `suppressZoomHistory`      | state    | `boolean`                                         | Flipped on during programmatic restores so the recorder doesn't double-capture. |
-| `pendingShareZoom`         | state    | `ZoomState \| null`                               | URL-hydrated zoom; applied once on mount then cleared. |
+| `pendingShareZoom`         | state    | `ZoomState \| null`                               | URL-hydrated zoom; applied once by the first draw with data, recorded in the zoom history, then cleared. The share URL keeps writing it until then. |
+| `shareZoomEditTarget`      | state    | `string \| null`                                  | The `ed` target of that link, when it carried one: the one session window the share zoom outranks. |
 | `canUndoZoom`              | computed | `boolean`                                         | `zoomUndoStack.length > 1`. |
 | `canRedoZoom`              | computed | `boolean`                                         | `zoomRedoStack.length > 0`. |
 | `currentZoom`              | computed | `ZoomState \| null`                               | Top of the undo stack; what the share URL writer subscribes to. |
 | `updateOptions`            | action   | `() => void`                                      | Rebuild `plotlyOptions` from `graphSeriesArray`. |
-| `redraw`                   | action   | `(recomputeXaxisRange?: boolean, preserveZoom?: boolean) => Promise<void>` | Push typed-array updates + restyle; preserves the user's zoom by default. |
+| `redraw`                   | action   | `(recomputeXaxisRange?: boolean, preserveZoom?: boolean) => Promise<void>` | Push typed-array updates + restyle; preserves the user's zoom by default, except on a y axis that had no points drawn. Leaves `layout.shapes` (the staging band) alone. |
 | `clearChartState`          | action   | `() => void`                                      | Drop all series + zoom history (used on workspace swap). |
-| `fetchGraphSeries`         | action   | `(ds, start: Date, end: Date) => Promise<GraphSeries>` | Build a fresh `GraphSeries` from observations; colour is filled later by `assignSeriesColors`. |
+| `fetchGraphSeries`         | action   | `(ds, start: Date, end: Date) => Promise<GraphSeries>` | Fetch observations for `ds` over `[start, end]` and build a `GraphSeries` via `buildGraphSeries`. |
+| `buildGraphSeries`         | action   | `(ds: Datastream, data: ObservationRecord) => GraphSeries` | Build a `GraphSeries` from an already-loaded record, no fetch. Used directly for a managed datastream's working copy. |
 | `assignSeriesColors`       | action   | `(orderedIds: string[]) => void`                  | Stable per-id colour assignment over the legend order. |
-| `colorForDatastream`       | action   | `(id?: string) => string`                         | Resolve the line colour for a datastream (QC is always black). |
+| `colorForDatastream`       | action   | `(id?: string) => string`                         | Resolve the line colour for a datastream (QC is always dark grey, `#3f3f3f`). |
 | `labelColorForDatastream`  | action   | `(id?: string) => string`                         | Darker companion for legend text. |
 | `clearZoomHistory`         | action   | `() => void`                                      | Empty both stacks. |
 | `pushZoomState`            | action   | `(state: ZoomState) => void`                      | Called by the debounced recorder in `utils/plotting/zoom.ts`. |
 
-### `useObservationStore()` — `src/store/observations.ts`
+### `useObservationStore()` (`src/store/observations.ts`)
 
 Fetches + caches observation windows and inflates them into
 `ObservationRecord` instances.
@@ -283,12 +613,14 @@ Fetches + caches observation windows and inflates them into
 | Name                       | Kind     | Type / signature                                  | Notes |
 |----------------------------|----------|---------------------------------------------------|-------|
 | `observations`             | state    | `Record<string, ObservationRecord>`               | Per-datastream record; reused across rebuilds. |
-| `observationsRaw`          | state    | `Record<string, ObservationData>`                 | Typed-array cache (`Float64Array` datetimes + `Float32Array` values). |
-| `fetchObservationsInRange` | action   | `(ds: Datastream, b: Date, e: Date) => Promise<ObservationRecord>` | Extends the cached range minimally; only fetches segments outside the existing window. |
+| `observationsRaw`          | state    | `Record<string, ObservationData>`                 | Typed-array cache (`Float64Array` datetimes and values). |
+| `fetchObservationsInRange` | action   | `(ds: Datastream, b: Date, e: Date, exclude?: { begin: Date; end: Date }) => Promise<ObservationRecord>` | Fetches only the parts of `[b, e]` never asked for before, skipping `exclude`, and returns the shared record windowed to `[b, e]`. Requests for one datastream run in order, so the record ends on the latest requested window; a request matching the last queued one shares its promise. |
+| `fetchDetachedRecord`      | action   | `(ds: Datastream, b: Date, e: Date) => Promise<ObservationRecord>` | Fills the same cache through the same per-datastream queue, but returns a record of its own windowed to `[b, e]`. For working copies and snapshots: never re-windows the shared record the plot draws. |
+| `forget`                   | action   | `(datastreamId: string) => void`                                   | Drops a datastream's cached observations so the next load asks the server again. Called by `commit()` after its upload; a load already in flight discards its result and retries. |
 
-### `useWorkspaceStore()` — `src/store/workspaces.ts`
+### `useWorkspaceStore()` (`src/store/workspaces.ts`)
 
-Workspace selection + role-derived edit permission.
+Workspace selection. Permissions come from `useWorkspacePermissions()`.
 
 Persistence: `selectedWorkspace` only (key
 `qc:selectedWorkspace:v1`) so the router's `hasWorkspaceGuard` sees a
@@ -301,16 +633,15 @@ restored selection on the first navigation.
 | `isLoading`                | state    | `boolean`                                         | True while `loadWorkspaces` is in flight. |
 | `selectedWorkspaceId`      | computed | `string \| null`                                  | Shortcut for `selectedWorkspace?.id`. |
 | `hasSelection`             | computed | `boolean`                                         | True iff `selectedWorkspace` is non-null. |
-| `canEditSelected`          | computed | `boolean`                                         | True for workspace owners; for collaborators, true when their role includes an Observation create/edit permission. |
 | `loadWorkspaces`           | action   | `() => Promise<Workspace[]>`                      | Refetch + reconcile against the stored selection (drops the selection if the user lost access). |
 | `selectWorkspace`          | action   | `(id: string \| null) => Workspace \| null`       | Pick by id from `availableWorkspaces`. |
-| `applyWorkspaceById`       | action   | `(id: string) => Workspace \| null`               | Falls back to a placeholder `{ id }` when the list isn't loaded yet — used by URL hydration. |
+| `applyWorkspaceById`       | action   | `(id: string) => Workspace \| null`               | Falls back to a placeholder `{ id }` when the list isn't loaded yet. Used by URL hydration. |
 | `clearSelection`           | action   | `() => void`                                      | Drop the selection. |
 
-### `useUIStore()` — `src/store/userInterface.ts`
+### `useUIStore()` (`src/store/userInterface.ts`)
 
 Drawer / view chrome state plus the per-operation form fields read
-by every filter / edit panel. Mostly a flat bag — the panel
+by every filter / edit panel. Mostly a flat bag: the panel
 components own the validation; this store just keeps the values
 reactive between mounts.
 
@@ -320,12 +651,13 @@ defaults are reseeded from the datastream on each mount.
 
 | Name                              | Kind   | Type / signature                                  | Notes |
 |-----------------------------------|--------|---------------------------------------------------|-------|
-| `selectedDrawer`                  | state  | `DrawerType`                                      | `Edit`, `Select`, or `None` — which left drawer is active. |
+| `selectedDrawer`                  | state  | `DrawerType`                                      | `Edit`, `Select`, or `None`: which left drawer is active. |
 | `isDrawerOpen`                    | state  | `boolean`                                         | Drawer open/collapsed. |
 | `currentView`                     | state  | `'Edit' \| 'Select'`                              | Current main view (drives the nav rail's active state). |
+| `isPlotPreview`                   | computed | `boolean`                                       | True only in the Select view with nothing being edited; an open edit target keeps the full plot chrome in both views. |
 | `selectedOperation`               | state  | `string \| null`                                  | Open operation panel id; `null` when nothing is open. |
 | `cardHeight` / `tableHeight`      | state  | `number`                                          | Select-view top/bottom split. |
-| `operators`                       | state  | `string[]`                                        | `Object.keys(Operator)` — Change-values operator choices. |
+| `operators`                       | state  | `string[]`                                        | `Object.keys(Operator)`: Change-values operator choices. |
 | `selectedOperator`                | state  | `number`                                          | Index into `operators`. |
 | `operationValue`                  | state  | `number`                                          | Change-values numeric operand. |
 | `interpolateValues`               | state  | `boolean`                                         | Fill-gaps: interpolate vs constant. |
@@ -342,13 +674,15 @@ defaults are reseeded from the datastream on each mount.
 | `filterRangeActive`               | state  | `boolean`                                         | Toggles the shared filter-window UX; the only persisted field. |
 | `filterRangeFromTs` / `filterRangeToTs` | state | `number \| null`                            | Filter-window epoch bounds; reseed on each panel mount. |
 | `onRailItemClicked`               | action | `(title: DrawerType) => void`                     | Nav-rail click handler: toggles open/closed on repeat, switches view on first click. |
+| `showView`                        | action | `(view: View) => void`                            | Switch layouts (view + drawer). Layout only: an open edit session is untouched. |
 
-### `useQualifierStore()` — `src/store/qualifiers.ts`
+### `useQualifierStore()` (`src/store/qualifiers.ts`)
 
 Workspace-scoped qualifier dictionary plus the per-observation
-applications added via the Qualifying Comments panel.
+applications added via the Qualifying Comments panel. The panel and every
+view of the applications are off while `QUALIFIER_TOOL_ENABLED` is `false`.
 
-Persistence: `applied` only — the dictionary is reloaded on every
+Persistence: `applied` only; the dictionary is reloaded on every
 workspace change.
 
 | Name                            | Kind     | Type / signature                                  | Notes |
@@ -359,12 +693,12 @@ workspace change.
 | `qualifierById`                 | computed | `Record<string, Qualifier>`                       | Lookup map for the chips. |
 | `loadQualifiers`                | action   | `() => Promise<void>`                             | Fetch dictionary for the active workspace; triggers a plot refresh so the qualifier band materialises. |
 | `createQualifier`               | action   | `(name: string, description: string) => Promise<Qualifier>` | Server-side create with a local-only fallback when no workspace is active. |
-| `applyQualifiers`               | action   | `(datastreamId, indices, qualifierIds, appliedBy) => void` | Idempotent merge — already-applied (qualifier, index) pairs are skipped. |
+| `applyQualifiers`               | action   | `(datastreamId, indices, qualifierIds, appliedBy) => void` | Idempotent merge: already-applied (qualifier, index) pairs are skipped. |
 | `removeQualifier`               | action   | `(datastreamId, index, qualifierId) => void`      | Drops a single (qualifier, index) application. |
 | `getApplicationsForDatastream`  | action   | `(datastreamId) => Array<{ index, qualifierId, appliedAt, appliedBy }>` | Flat list suitable for plotting. |
 | `getApplicationsAtIndex`        | action   | `(datastreamId, index) => QualifierApplication[]` | Per-point lookup. |
 
-### `useUiLayoutStore()` — `src/store/uiLayout.ts`
+### `useUiLayoutStore()` (`src/store/uiLayout.ts`)
 
 Persisted drawer / splitter geometry. A bag of values keyed by
 strings the calling composable supplies, so new resizable components
@@ -381,7 +715,7 @@ Persistence: both `sizes` and `flags` (key `qc:uiLayout:v1`).
 | `getFlag` | action | `(key: string) => boolean \| null`                | `null` lets callers distinguish "unset" from "explicit false". |
 | `setFlag` | action | `(key: string, value: boolean) => void`           | Same fresh-object pattern. |
 
-### `useOperationParamsStore()` — `src/store/operationParams.ts`
+### `useOperationParamsStore()` (`src/store/operationParams.ts`)
 
 Per-datastream remembered slots for Find Gaps / Fill Gaps
 parameters. `useUIStore` reads these to seed defaults; otherwise
@@ -395,7 +729,7 @@ Persistence: `byDatastream` (key `qc:opParams:v1`).
 | `load`         | action | `(id?: string \| null) => PersistedOpParams \| null`      | `null` when nothing's stored. |
 | `save`         | action | `(id?: string \| null, patch: PersistedOpParams) => void` | Merges; partial patches don't clobber unrelated fields. |
 
-### `useUserStore()` — `src/store/user.ts`
+### `useUserStore()` (`src/store/user.ts`)
 
 The signed-in user. Persisted in full.
 
@@ -404,10 +738,10 @@ The signed-in user. Persisted in full.
 | `user`    | state  | `User`                | Defaults to a fresh `new User()` until auth resolves. |
 | `setUser` | action | `(u: User) => void`   | Replace wholesale (called by the session resolver in `main.ts`). |
 
-### `useHydroServer()` — `src/store/hydroserver.ts`
+### `useHydroServer()` (`src/store/hydroserver.ts`)
 
 Holds the `@hydroserver/client` instance. Initialized in `main.ts`
-after settings load — every other store reaches `hs.value` through
+after settings load; every other store reaches `hs.value` through
 `storeToRefs(useHydroServer())`. Not persisted (the client carries
 ephemeral connection state).
 
@@ -415,29 +749,185 @@ ephemeral connection state).
 |------|-------|--------------------|-------|
 | `hs` | state | `Ref<HydroServer>` | Non-null after `main.ts` finishes settings load; type-asserted as non-null for ergonomic consumer code. |
 
+### `useQcSessionStore()` (`src/store/qcSession.ts`)
+
+View-mode state for QC sessions: which session is editable (the single
+in-progress one) and which is being viewed. Viewing a committed session
+puts the editor in read-only mode.
+
+| Name                | Kind     | Type / signature                        | Notes |
+|---------------------|----------|-----------------------------------------|-------|
+| `historyId`         | state    | `string \| null`                        | The managed datastream's QC history being navigated. |
+| `resumeDatastreamId`| state    | `string \| null`                        | Managed datastream the editor was last open on. The `editResume` store's ref, persisted there under `qc:editResume:v1`: a page reload replots it and resumes its session from the last save. Set on entering the editor, cleared on exit. |
+| `sessions`          | state    | `QualityControlSession[]`               | Committed + in-progress sessions for the history. |
+| `currentSessionId`  | state    | `string \| null`                        | The single in-progress (editable) session. |
+| `viewedSessionId`   | state    | `string \| null`                        | The session currently being viewed. |
+| `isSwitchingSession`| state    | `boolean`                               | True while another session's data and operations load. The operations panel renders a loading state instead of the outgoing session's entries, which would otherwise linger and read as the incoming session's. |
+| `openingDatastreamId`| state   | `string \| null`                        | Managed datastream whose editor is loading its history, sessions and working copy, set by `enterEdit`. `DataVisualization.vue` shows "Opening the edit session…" over the plot while it matches the edit target. Keyed by id since entries can overlap. |
+| `savedEdits`        | state    | `HistoryItem[]`                         | Edit history entries (by reference) at the last load or save. `useEditSession` compares the working copy against it for `hasUnsavedChanges`; kept in the store so the editor footer and the leave flow agree. |
+| `savedComments`     | state    | `string[]`                              | Comment text of `savedEdits`, since comments are edited in place. |
+| `isReadOnly`        | computed | `boolean`                               | True when sessions exist and the viewed one isn't the in-progress session. Guarded on `sessions.length` so plain editing outside the session workflow isn't treated as read-only. |
+| `inProgressSession` | computed | `QualityControlSession \| null`         | The editable session, if any. |
+| `viewedSession`     | computed | `QualityControlSession \| null`         | The session for `viewedSessionId`. |
+| `hasSessionOperations` | computed | `boolean`                            | True when the in-progress session holds any work: the operations the server returned with it, plus anything saved since (a save leaves them in `savedEdits` before the sessions are re-fetched). The leave flow tells an untouched session from one worth keeping with it. |
+| `fetchSessions`     | action   | `(historyId: string) => Promise<QualityControlSession[]>` | Fetch a history's sessions with their operations without writing any state, so a caller can drop a result that went stale (see `useEditSession`). |
+| `applySessions`     | action   | `(historyId: string, sessions: QualityControlSession[]) => void` | Adopt fetched sessions; default the view to the in-progress one, else the one committed last (by `committedAt`), so a commit leaves the session it just made on screen. |
+| `viewSession`       | action   | `(sessionId: string) => void`           | View a session read-only (no-op for an unknown id). |
+| `returnToCurrent`   | action   | `() => void`                            | Return to the editable in-progress session. |
+| `reset`             | action   | `() => void`                            | Clear all state. |
+
+### `useQcPreferencesStore()` (`src/store/qcPreferences.ts`)
+
+Persisted QC preferences. Persistence: key `qc:preferences:v1`, the whole
+store. A preset id that isn't a real preset (Custom, or stale) is reset to
+the default on hydration, since it comes back with no window to resolve
+against. `main.ts` creates the store at startup so the zone is restored
+before anything is formatted.
+
+| Name                | Kind  | Type / signature | Notes |
+|---------------------|-------|------------------|-------|
+| `processingLevelId` | state | `string \| null` | Last-used processing level for the Create-Datastream-for-Editing form; null on first use (no assumed default). |
+| `displayZone`       | state | `DisplayZone`    | The time zone dates are shown in; the same ref `utils/timeZone.ts` exports. Defaults to the browser's IANA zone. |
+| `tooltipsMaxDataPoints` / `tooltipsMode` / `tooltipsManualEnabled` | state | `number` / `'auto' \| 'manual'` / `boolean` | Data-points mode; exposed by `usePlotlyStore`. |
+| `selectedDateBtnId` / `contextPresetId` | state | `number` | Select view and editor Context range presets; exposed by `useDataVisStore`. |
+| `showSourceContext` | state | `boolean`        | Source context toggle; exposed by `useDataVisStore`. |
+
+### `useEditResumeStore()` (`src/store/editResume.ts`)
+
+Persistence: key `qc:editResume:v1`, the whole store. Holds only
+`resumeDatastreamId`, which `useQcSessionStore` exposes; a store of its own
+so `qcSession`, with its sessions and saved edits, is never persisted.
+
 ## Internal: utilities
 
 ### `src/utils/plotting/plotly.ts` (barrel)
 
-Re-exports:
+Re-exports `options`, `zoom`, `relayout`, `selected`, `events`,
+`interaction` and `operations`. `internal.ts` stays private. The ones most
+callers reach for:
 
-| Function                 | Purpose                                                          |
-|--------------------------|------------------------------------------------------------------|
-| `handleNewPlot(...)`     | First-mount: build traces, wire events, set initial range.       |
-| `setSelectedPoints(...)` | Programmatic selection update via `Plotly.restyle`.              |
-| `clearSelection(...)`    | Drop the selection shape + restyle.                              |
-| `redrawTraces(...)`      | Push new typed-array x/y into all plotted traces.                |
-| `updateOptions(...)`     | Apply axis label / range / tick-formatting changes.              |
+| Function                 | From            | Purpose                                                          |
+|--------------------------|-----------------|------------------------------------------------------------------|
+| `handleNewPlot(...)`     | `events.ts`     | First draw: build traces, wire events, set the initial range.    |
+| `createPlotlyOption(...)`| `options.ts`    | Build the traces and layout for the plotted series.              |
+| `setSelectedPoints(...)` | `operations.ts` | Programmatic selection update via `Plotly.restyle`.              |
+| `clearSelection(...)`    | `operations.ts` | Drop the selection shape + restyle.                              |
+
+`updateOptions()` is on the plotly store (`store/plotly.ts`), not here.
 
 ### `src/utils/observations.ts`
 
-`fetchObservationsSync(datastream, startTime?, endTime?)` — paged
+`fetchObservationsSync(datastream, startTime?, endTime?)`: paged
 columnar fetch, returns `{ datetimes: number[]; dataValues: number[] }`.
+
+### `src/utils/timeZone.ts`
+
+The time zone dates are shown and typed in. `displayZone` holds a
+`DisplayZone`, `{ mode: 'utc' | 'fixedOffset' | 'iana', zone }`, where
+`zone` is a fixed offset like `-0700` or an IANA name, the same choice a
+data connection's timestamps offer (the lists are qc-utils'
+`FIXED_OFFSET_TIMEZONES` and `DST_AWARE_TIMEZONES`). `browserZone()` is the
+default.
+
+Instants stay epoch ms everywhere. A **wall** value is an instant moved by
+the zone's offset, so its UTC fields read as the zone's clock:
+
+- `offsetMs(ms)`, `toWall(ms)`, `fromWall(wall)`, `toWallArray(xs)`: the
+  conversion, on qc-utils' zone math (see its Time zones section) with the
+  chosen zone filled in.
+- `zoneId()`: the chosen zone as qc-utils takes it (`UTC`, `-0700`, or an
+  IANA name). The shift dialog passes it to `SHIFT_DATETIMES`, which saves
+  it with the step.
+- `wallParts(ms)` / `fromWallParts(y, m, d, h, mi, s)`: the zone's clock
+  fields, for pickers and calendar arithmetic.
+- `zoneAbbreviation(ms)`, `zoneDescription(ms)`, `zoneName()`: labels.
+
+`utils/time.ts` formats through it, and `dateMath.ts`, the YTD presets,
+`DatePickerField` and the table's datetime input all work on the zone's
+clock. Change the zone with `useDisplayZone().setZone(zone)`: it reads the
+plot's view as real instants, switches the zone, rebuilds the plot, puts
+the view back and redraws the stage band.
+
+### `src/utils/plotting/plotTime.ts`
+
+Plotly has no time zones. Its own frame on a date axis is a clock's fields
+read as UTC, and that frame holds the chosen zone's wall values, so its
+axis, ticks and `%{x}` hover read in that zone. Ranges, shapes and tick
+values are written as Plotly date strings (`toPlotDate`,
+`plotCoordToDate`), which it reads as written. A trace's numeric x it reads
+as the browser's local clock (`new Date(ms)`), so `toPlotX` hands it the
+instant whose browser-local clock shows the wall time: in the browser's own
+zone the instants go in untouched, with no copy. `plotX` reads trace x back
+as Plotly draws it; `traceXAsNumbers` uses it, so the visible-points
+counter and Fit X / Fit Y compare against the points on screen. A wall time
+the browser's clock skips (its daylight saving gap) has no such instant, so
+with another zone chosen a point there draws beside it. `plotCoord` reads a
+range or shape value in Plotly's frame, and `fromPlot` turns any Plotly x
+back into an instant. Values the app keeps (zoom history,
+share-link zoom, the stage band, hover readout) are real instants.
 
 ### `src/utils/dateMath.ts`
 
 `subtractDays`, `subtractMonths`, `subtractYears` for the time-range
-preset buttons.
+preset buttons, on the chosen zone's clock.
+
+### `src/utils/timeRangePresets.ts`
+
+Preset definitions (`TIME_RANGE_PRESETS`, ids stable for the share URL)
+and their pure resolution:
+
+- `dataExtent(datastreams)`: earliest begin to latest end over the given
+  phenomenon times; `null` when none has observations.
+- `presetWindow(id, extent)`: the preset counted back from `extent.end`
+  (All is the whole extent, YTD starts Jan 1 of the end year). Used in the
+  Select view and while editing without a session window.
+- `presetAroundWindow(id, window, extent)`: the editor's rule while a
+  session window is known. 1w / 1m / 6m / 1y return
+  `[window.begin - span, window.end + span]`, not clipped to the data.
+  All returns `extent` widened to cover `window` (or `window` when `extent`
+  is `null`); YTD resolves the same as All. `null` for an unknown id.
+- `EDITOR_PRESETS`: the presets the editor's Context menu offers, without
+  YTD and titled for the session window.
+- `shownPresetId(selectedId, presets)`: the chip that shows the selection
+  among `presets`. YTD shows as All where it is not offered; `null` for
+  Custom or an unknown id. Display only: `DataVisTimeFilters` highlights it
+  and `selectedDateBtnId` is unchanged.
+
+### `src/utils/sessionWindow.ts`
+
+Pure validation for the session-window step (`SessionWindowDialog.vue`,
+opened from the row Edit chooser or the editor footer's **New session**):
+
+- `defaultSessionWindow(source, sessions)`. The step's default window,
+  where the last session left off: from the committed history's end to the
+  source's end (the **Since commit** preset). The source's full extent when
+  nothing is committed, when no data arrived after the history, or when the
+  history ends outside the source. `null` when the source has no
+  observations. The rules below accept it whenever the committed history
+  lies inside the source's extent; the dialog reports the rare case where it
+  does not.
+- `sessionWindowIssue(window, source, sessions)`: `null` when `window` is
+  valid, otherwise `{ kind, message, fix }` for the first broken rule. The
+  window must lie inside the source's extent, and it can't leave a gap
+  before or after the committed history.
+  Touching an edge or overlapping is fine. `fix` carries only the
+  endpoints at fault, set to the nearest valid value (source start or end,
+  committed end for a gap after, committed start for a gap before), plus
+  button copy naming the date. It is `null` when the start is not before
+  the end, or when the correction would itself break a rule. The dialog
+  shows it as a button on the warning.
+- `NO_SOURCE_DATA_ISSUE`: the issue for a source without observations.
+- `sessionWindowPresets(source, sessions)`: the dialog's preset chips.
+  `All` (the whole record), then `1y`, `6m`, `1m` counting back from the
+  source's last observation through `presetWindow`, and, when something is
+  committed, `Since commit` (committed end to source end). The default
+  window is `defaultSessionWindow` above: `Since commit` when there is
+  committed work after which data arrived, else `All`.
+  Each carries its `window` and a short `disabledReason` when that window
+  breaks a rule; the dialog disables it and shows the reason as its
+  tooltip. Empty when the source has no observations.
+- `committedExtent(sessions)`: the earliest committed start to the latest
+  committed end, or `null` with nothing committed.
 
 ### `src/utils/rules.ts`
 
@@ -446,7 +936,7 @@ Vuetify validation rules used across forms (required, numeric, range).
 ## Test hooks
 
 When `VITE_APP_E2E_HOOKS=1` (Playwright sets this), `src/testHooks.ts`
-attaches `window.__vbwTestHooks` with the handles E2E specs need —
+attaches `window.__vbwTestHooks` with the handles E2E specs need:
 selecting a datastream programmatically, reading the current edit
 history, asserting the plot is ready. These are e2e plumbing, not a
 public surface; treat the names as unstable.
@@ -473,8 +963,8 @@ Wire shape:
 
 ## Integrating from outside
 
-If you want to reuse the QC engine in a non-Vue context — a Jupyter
-notebook driven by Pyodide, a Node CLI, another web app — depend on
+If you want to reuse the QC engine in a non-Vue context (a Jupyter
+notebook driven by Pyodide, a Node CLI, another web app), depend on
 `@uwrl/qc-utils` directly and skip the QC App entirely. The QC App is a
 UI shell; the engine is independent.
 

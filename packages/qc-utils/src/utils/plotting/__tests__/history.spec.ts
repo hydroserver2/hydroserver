@@ -62,6 +62,28 @@ describe('serializeHistory', () => {
     expect(history.operations[0].args).toEqual([{ 'Greater than': 5 }]);
   });
 
+  it('persists an operator comment, trimmed', async () => {
+    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 });
+    rec.history[0].comment = '  sensor fouling  ';
+    const history = serializeHistory(rec, SAMPLE_WINDOW);
+    expect(history.operations[0].comment).toBe('sensor fouling');
+  });
+
+  it('omits the comment field when absent or blank', async () => {
+    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 });
+    expect(serializeHistory(rec, SAMPLE_WINDOW).operations[0].comment).toBeUndefined();
+    rec.history[0].comment = '   ';
+    expect(serializeHistory(rec, SAMPLE_WINDOW).operations[0].comment).toBeUndefined();
+  });
+
+  it('persists who performed the operation, trimmed', async () => {
+    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 });
+    rec.history[0].performedBy = '  Ada Lovelace  ';
+    expect(serializeHistory(rec, SAMPLE_WINDOW).operations[0].performedBy).toBe(
+      'Ada Lovelace'
+    );
+  });
+
   it('strips runtime-only fields (isLoading, duration, executionMode, selected, icon)', async () => {
     await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 });
     const history = serializeHistory(rec, SAMPLE_WINDOW);
@@ -168,6 +190,75 @@ describe('parseHistory', () => {
     const history = parseHistory(json);
     expect(history.operations).toHaveLength(1);
     expect(history.window).toEqual(SAMPLE_WINDOW);
+  });
+
+  it('round-trips a per-op comment and tolerates its absence', () => {
+    const base = {
+      version: '1',
+      createdAt: '2024-01-01T00:00:00.000Z',
+      window: SAMPLE_WINDOW,
+    };
+    const withComment = parseHistory({
+      ...base,
+      operations: [
+        { method: 'VALUE_THRESHOLD', args: [{ 'Greater than': 5 }], comment: 'sensor fouling' },
+      ],
+    });
+    expect(withComment.operations[0].comment).toBe('sensor fouling');
+
+    const without = parseHistory({
+      ...base,
+      operations: [{ method: 'VALUE_THRESHOLD', args: [{ 'Greater than': 5 }] }],
+    });
+    expect(without.operations[0].comment).toBeUndefined();
+  });
+
+  it('trims a parsed comment and author, and drops blank ones', () => {
+    const parsed = parseHistory({
+      version: '1',
+      createdAt: '2024-01-01T00:00:00.000Z',
+      window: SAMPLE_WINDOW,
+      operations: [
+        { method: 'VALUE_THRESHOLD', args: [], comment: '  fouling  ', performedBy: ' Ada ' },
+        { method: 'VALUE_THRESHOLD', args: [], comment: '   ', performedBy: '' },
+      ],
+    });
+    expect(parsed.operations[0]).toMatchObject({ comment: 'fouling', performedBy: 'Ada' });
+    expect(parsed.operations[1].comment).toBeUndefined();
+    expect(parsed.operations[1].performedBy).toBeUndefined();
+  });
+
+  it('round-trips performedBy and rejects a non-string one', () => {
+    const base = {
+      version: '1',
+      createdAt: '2024-01-01T00:00:00.000Z',
+      window: SAMPLE_WINDOW,
+    };
+    const parsed = parseHistory({
+      ...base,
+      operations: [
+        { method: 'VALUE_THRESHOLD', args: [], performedBy: 'Ada Lovelace' },
+      ],
+    });
+    expect(parsed.operations[0].performedBy).toBe('Ada Lovelace');
+
+    expect(() =>
+      parseHistory({
+        ...base,
+        operations: [{ method: 'VALUE_THRESHOLD', args: [], performedBy: 7 }],
+      })
+    ).toThrow(/`performedBy` must be a string/);
+  });
+
+  it('rejects a non-string comment', () => {
+    expect(() =>
+      parseHistory({
+        version: '1',
+        createdAt: '2024-01-01T00:00:00.000Z',
+        window: SAMPLE_WINDOW,
+        operations: [{ method: 'VALUE_THRESHOLD', args: [], comment: 42 }],
+      })
+    ).toThrow(/`comment` must be a string/);
   });
 
   it('rejects an unknown version', () => {
@@ -392,6 +483,30 @@ describe('applyHistory — round-trip', () => {
     expect(fresh.history[0].args).toEqual([{ 'Greater than': 10 }]);
   });
 
+  it('carries comments onto the replayed entries', async () => {
+    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 10 });
+    rec.history[0].comment = 'sensor fouling';
+    const history = serializeHistory(rec, SAMPLE_WINDOW);
+
+    const fresh = makeRecord(20);
+    await fresh.reload();
+    await applyHistory(fresh, history);
+
+    expect(fresh.history[0].comment).toBe('sensor fouling');
+  });
+
+  it('carries performedBy onto the replayed entries', async () => {
+    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 10 });
+    rec.history[0].performedBy = 'Ada Lovelace';
+    const history = serializeHistory(rec, SAMPLE_WINDOW);
+
+    const fresh = makeRecord(20);
+    await fresh.reload();
+    await applyHistory(fresh, history);
+
+    expect(fresh.history[0].performedBy).toBe('Ada Lovelace');
+  });
+
   it('round-trips a SELECTION → DELETE_POINTS pair (selection-coupled)', async () => {
     const indices = [0, 1, 2, 5, 10];
     await rec.dispatch([
@@ -417,7 +532,7 @@ describe('applyHistory — round-trip', () => {
   it('round-trips SELECTION → SHIFT_DATETIMES with non-index args preserved', async () => {
     await rec.dispatch([
       [EnumFilterOperations.SELECTION, [7, 8, 9]],
-      [EnumEditOperations.SHIFT_DATETIMES, 1, TimeUnit.HOUR],
+      [EnumEditOperations.SHIFT_DATETIMES, 1, TimeUnit.HOUR, 'UTC'],
     ]);
     const xAfter = Array.from(rec.dataX);
     const history = serializeHistory(rec, SAMPLE_WINDOW);
@@ -428,7 +543,36 @@ describe('applyHistory — round-trip', () => {
 
     expect(report.failed).toEqual([]);
     expect(Array.from(fresh.dataX)).toEqual(xAfter);
-    expect(fresh.history[1].args).toEqual([1, TimeUnit.HOUR]);
+    expect(fresh.history[1].args).toEqual([1, TimeUnit.HOUR, 'UTC']);
+  });
+
+  it('replays a month shift on its saved zone calendar', async () => {
+    await rec.dispatch([
+      [EnumFilterOperations.SELECTION, [19]],
+      [EnumEditOperations.SHIFT_DATETIMES, 1, TimeUnit.MONTH, 'America/Denver'],
+    ]);
+    const xAfter = Array.from(rec.dataX);
+    const history = serializeHistory(rec, SAMPLE_WINDOW);
+
+    const fresh = makeRecord(20);
+    await fresh.reload();
+    const report = await applyHistory(fresh, history);
+
+    expect(report.failed).toEqual([]);
+    expect(Array.from(fresh.dataX)).toEqual(xAfter);
+  });
+
+  it('fails a shift step saved without a zone', async () => {
+    const fresh = makeRecord(20);
+    await fresh.reload();
+    const report = await applyHistory(fresh, {
+      ...serializeHistory(fresh, SAMPLE_WINDOW),
+      operations: [
+        { method: EnumFilterOperations.SELECTION, args: [[1]] },
+        { method: EnumEditOperations.SHIFT_DATETIMES, args: [1, TimeUnit.MONTH] },
+      ],
+    });
+    expect(report.failed.map((f) => f.index)).toEqual([1]);
   });
 
   it('round-trips SELECTION → CHANGE_VALUES (consumes preceding selected at runtime)', async () => {
@@ -621,7 +765,7 @@ describe('applyHistory — round-trip', () => {
       history: [],
       redoStack: [],
       reload: async () => { },
-      dispatch: async () => { throw new Error('boom-with-stack'); },
+      dispatchStep: async () => { throw new Error('boom-with-stack'); },
     } as unknown as ObservationRecord;
 
     const history = parseHistory({
@@ -638,7 +782,7 @@ describe('applyHistory — round-trip', () => {
   it('catches non-Error throws from dispatch and stringifies the value into the report', async () => {
     // `dispatchAction` / `dispatchFilter` normally swallow handler
     // errors themselves, but the catch in `applyHistory` is defensive
-    // and handles a bare throw too. Stub `record.dispatch` so it
+    // and handles a bare throw too. Stub `record.dispatchStep` so it
     // throws a plain string — the catch path must stringify it
     // (line 220's `e instanceof Error ? e.message : String(e)`
     // ternary) and record it in `report.failed[].error` without
@@ -647,7 +791,7 @@ describe('applyHistory — round-trip', () => {
       history: [],
       redoStack: [],
       reload: async () => { },
-      dispatch: async () => { throw 'plain-string-failure'; },
+      dispatchStep: async () => { throw 'plain-string-failure'; },
     } as unknown as ObservationRecord;
 
     const history = parseHistory({

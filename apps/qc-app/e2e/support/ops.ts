@@ -17,8 +17,8 @@ import { openOp, waitForSelection } from './app'
  * "Add filter" button. The button path occasionally flaked on Firefox
  * because Playwright fired the click before Vuetify's v-text-field
  * committed the typed value via `update:modelValue`, leaving the
- * button's `:disabled` guard "still true" and swallowing the click
- * — the panel saw no add-filter event, `selectedData` stayed empty,
+ * button's `:disabled` guard "still true" and swallowing the click.
+ * The panel saw no add-filter event, `selectedData` stayed empty,
  * and `waitForSelection` timed out. Pressing Enter on the focused
  * input commits and dispatches in one event, so there's no window
  * for the value commit to race the click.
@@ -30,6 +30,19 @@ export async function selectAllPoints(page: Page): Promise<void> {
   await value.fill('0')
   await value.press('Enter')
   await waitForSelection(page, 1)
+}
+
+/**
+ * Select every point and change their values: one unsaved edit. Enter on
+ * the field, not a click on Apply, for the same reason as `selectAllPoints`.
+ */
+export async function applyChangeValues(page: Page): Promise<void> {
+  await selectAllPoints(page)
+  await openOp(page, 'changeValues')
+  const value = page.getByLabel('Value')
+  await value.fill('1')
+  await value.press('Enter')
+  await expectHistoryContains(page, 'Change Values')
 }
 
 /**

@@ -358,7 +358,7 @@ const fillSnapChips = computed<SnapChip[]>(() => {
   return [0.5, 1, 2].map((m) => {
     const amount = i.amount * m
     return {
-      label: `${m}Ã— intended (${amount} ${i.unit.toLowerCase()})`,
+      label: `${m}× intended (${amount} ${i.unit.toLowerCase()})`,
       amount,
       unit: i.unit,
       active:

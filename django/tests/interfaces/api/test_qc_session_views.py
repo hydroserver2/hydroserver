@@ -302,7 +302,38 @@ def test_delete_qc_session_returns_400_for_committed_session(client):
 
     response = client.delete(_detail_url(history.id, session.id))
 
+    # A committed session's edits are on the managed datastream, so it stays as their record.
     assert response.status_code == 400
+    assert client.get(_detail_url(history.id, session.id)).status_code == 200
+
+
+def test_delete_qc_session_keeps_the_committed_sessions_it_depends_on(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    history = _make_history(workspace)
+    committed = QCSessionFactory(history=history, committed=True)
+    client.force_login(owner)
+
+    created = client.post(
+        _sessions_url(history.id),
+        data=_session_body(
+            phenomenonTimeStart=_iso(committed.phenomenon_time_start + timedelta(hours=1)),
+            phenomenonTimeEnd=_iso(committed.phenomenon_time_end - timedelta(hours=1)),
+        ),
+        content_type="application/json",
+    )
+    assert created.status_code == 201
+    session_id = created.json()["id"]
+    dependency_ids = client.get(_detail_url(history.id, session_id)).json()["data"][
+        "dependencyIds"
+    ]
+    assert str(committed.id) in dependency_ids
+
+    response = client.delete(_detail_url(history.id, session_id))
+
+    assert response.status_code == 204
+    assert client.get(_detail_url(history.id, session_id)).status_code == 404
+    assert client.get(_detail_url(history.id, committed.id)).status_code == 200
 
 
 # --- commit_qc_session --------------------------------------------------------------------

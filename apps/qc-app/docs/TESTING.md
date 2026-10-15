@@ -12,10 +12,10 @@ the operator's manual; QUALITY.md is the policy.
 
 | Layer      | Runner                          | Where                        | Count    |
 | ---------- | ------------------------------- | ---------------------------- | -------- |
-| Unit       | Vitest                          | `src/**/__tests__/*.spec.ts` | 24 files |
-| End-to-end | Playwright (Chromium + Firefox) | `e2e/*.spec.ts`              | 22 files |
+| Unit       | Vitest                          | `src/**/__tests__/*.spec.ts` | 85 files |
+| End-to-end | Playwright (Chromium + Firefox) | `e2e/*.spec.ts`              | 38 files |
 
-There is no separate "integration" tier — component tests live in the
+There is no separate "integration" tier; component tests live in the
 unit tier and mount real Vue components with the Vue Test Utils
 `mount()` helper, mocking only the store boundary.
 
@@ -49,11 +49,11 @@ npx vue-tsc --noEmit
 ### Running a single file or test
 
 ```bash
-# Unit — file or pattern
+# Unit: file or pattern
 npx vitest run src/utils/plotting/__tests__/options.spec.ts
 npx vitest run -t "createPlotlyOption"
 
-# E2E — file, project, repeat
+# E2E: file, project, repeat
 npx playwright test tooltip-threshold.spec.ts
 npx playwright test --project=firefox --workers=1 --headed
 npx playwright test history.spec.ts --repeat-each=5 --retries=0
@@ -69,30 +69,37 @@ For interactive debugging of a Playwright spec, prefer `--ui` over
 ### Runner config
 
 Vitest is configured in [`vite.config.ts`](../vite.config.ts) under
-the `test` key — there is no separate `vitest.config.ts`. The
+the `test` key; there is no separate `vitest.config.ts`. The
 notable knobs:
 
 - `environment: 'jsdom'` globally; `src/components/**` matches
   `jsdom` again via `environmentMatchGlobs` for symmetry.
-- `setupFiles: ['@vitest/web-worker', './src/utils/test/setup.ts']`
-  — the worker plugin lets `?worker&inline` imports resolve in
+- `setupFiles: ['@vitest/web-worker', './src/utils/test/setup.ts']`:
+  the worker plugin lets `?worker&inline` imports resolve in
   Vitest; `setup.ts` stubs `HTMLCanvasElement.prototype.getContext`
   because jsdom doesn't implement it and Vuetify's mount cycle
   spams "Not implemented" warnings without the stub.
-- `server.deps.inline: ['vuetify']` — Vuetify ships ESM that
+- `server.deps.inline: ['vuetify']`: Vuetify ships ESM that
   Vitest's default externalization mishandles; inlining lets it
   load.
+- `env: { TZ: 'UTC' }`: every unit test runs in UTC, so the browser's
+  zone, the app's default display zone, is the same on every machine. A
+  test about a zone sets it explicitly (`displayZone.spec.ts` passes a
+  `DisplayZone`). The offset math itself is tested in qc-utils.
+- Specs that mock all of `@uwrl/qc-utils` hand back the real `offsetMs`,
+  `toWall`, `fromWall` and `toWallArray` from `importOriginal`, since the
+  app's date helpers run on them.
 
 ### Test scaffolding
 
 Live in `src/utils/test/`:
 
-- `pinia.ts` — `createTestPinia()` creates a fresh Pinia and calls
+- `pinia.ts`: `createTestPinia()` creates a fresh Pinia and calls
   `setActivePinia()`. No `pinia-plugin-persistedstate` is wired so
   unit tests don't read or write `localStorage`.
-- `vuetify.ts` — `createTestVuetify()` returns a default Vuetify
+- `vuetify.ts`: `createTestVuetify()` returns a default Vuetify
   instance for `mount()` plugin lists.
-- `setup.ts` — the canvas stub described above.
+- `setup.ts`: the canvas stub described above.
 
 Use them in component specs:
 
@@ -146,9 +153,20 @@ undefined (reading 'value')` from inside a `setTimeout` (the
    via a `resetStoreState` helper. Drift across describe blocks is
    the most common cause of order-dependent failures.
 
+6. **Don't let a test outlive its own async work.** Components that
+   defer through `setTimeout` (EditHistory's undo, redo and reload)
+   read the shared mock refs when the timer fires. If a test ends
+   before that, the timer runs in the next test against its mocks and
+   surfaces as an unhandled rejection blamed on the wrong test. Wait
+   for the settle signal (`isUpdating` back to `false`) or drain with
+   `vi.runAllTimersAsync()` under fake timers. Specs for components
+   that listen on `window` should also call
+   `enableAutoUnmount(afterEach)`, or wrappers from earlier tests keep
+   handling the events later tests dispatch.
+
 ### Coverage thresholds
 
-Configured in [`vite.config.ts:130-140`](../vite.config.ts). The
+Configured in [`vite.config.ts`](../vite.config.ts) (`test.coverage.thresholds`). The
 gate is:
 
 - Lines / statements / functions: **80%**
@@ -158,7 +176,7 @@ gate is:
   worth the marginal signal)
 
 The exclusion list (`coverage.exclude`) is the longest single bit
-of config in the file. Each entry is a deliberate scope decision —
+of config in the file. Each entry is a deliberate scope decision;
 read the inline comments before adding to it. The current shape:
 
 - **Untested stores** (`observations`, `hydroserver`, `user`) are
@@ -178,7 +196,7 @@ read the inline comments before adding to it. The current shape:
   `router/`, `plugins/`, `types/`, `config/`, `*.d.ts`).
 
 When you add a new file that should be tested but isn't yet,
-**do not add it to the exclude list to keep coverage green** —
+**do not add it to the exclude list to keep coverage green**;
 add a test or fail the build.
 
 ### When coverage fails
@@ -208,31 +226,43 @@ The CI gate prints uncovered line numbers per file. Common causes:
 - `fullyParallel: true` with `workers: process.env.CI ? 1 : 2`.
   The local default of 2 (instead of the Playwright default ~50%
   of cores) is **deliberate**: more workers overwhelm the shared
-  Vite dev server and starve Firefox of CPU during boot — 12 of 24
+  Vite dev server and starve Firefox of CPU during boot: 12 of 24
   specs used to time out on `waitForSelection` before this cap.
-- `retries: process.env.CI ? 2 : 1` — local runs allow one retry to
+- `retries: process.env.CI ? 2 : 1`: local runs allow one retry to
   swallow the occasional dev-server cold-start flake.
 - `projects: chromium, firefox` only. WebKit is **excluded on
   purpose**: `SharedArrayBuffer` + COOP/COEP behavior diverges in
   Safari and would need its own validation pass.
-- `baseURL: http://127.0.0.1:5173` — **never `localhost`**. The
+- Firefox launches with `webgl.force-enabled`. The plots are WebGL, and
+  without a GPU (CI) Firefox turns WebGL off, so Plotly covers each plot
+  with a notice that swallows clicks on it and its toolbar.
+- `baseURL: http://127.0.0.1:15173` (`E2E_APP_HOST` / `E2E_APP_PORT`): **never `localhost`**. The
   backend (`playground.hydroserver.org`) CORS-allowlists
   the `127.0.0.1` origins only; using `localhost` makes API requests fail
   with `net::ERR_FAILED` and the app never mounts.
 - `webServer.command: npm run dev` with
   `env: { VITE_APP_E2E_HOOKS: '1' }`. The env var arms test hooks
   (see [Test hooks](#test-hooks)).
+- `globalSetup: './e2e/support/global-setup.ts'`. Playwright starts
+  `webServer` before global setup, so the setup boots the app once
+  (same mocks, same seeded workspace) and waits for the datastreams
+  table. Vite transforms the module graph on demand, and paying for
+  it inside a test made the first `page.goto('/')` of a file exceed
+  the 30 s test timeout; warming it once moves that cost out of the
+  tests and every worker reuses the cached transform.
 
 ### Support layout
 
 ```
 e2e/
 ├── support/
-│   ├── app.ts        — flow helpers (gotoHome, setupEditView, openOp, waitForSelection)
-│   ├── fixtures.ts   — workspace / datastream / observation fixtures
-│   ├── mocks.ts      — page.route() handlers that stand in for HydroServer
-│   └── ops.ts        — op-specific preambles (selectAllPoints, expectHistoryContains)
-└── *.spec.ts         — one file per feature
+│   ├── app.ts        : flow helpers (gotoHome, setupEditView, startSessionFromRow, waitForEditorReady, openOp, waitForSelection)
+│   ├── fixtures.ts   : workspace / datastream / observation fixtures
+│   ├── global-setup.ts : warms the dev server before the first test
+│   ├── mocks.ts      : page.route() handlers that stand in for HydroServer
+│   ├── ops.ts        : op-specific preambles (selectAllPoints, applyChangeValues, expectHistoryContains)
+│   └── plot.ts       : the main plot's x range and trace extents, read back as instants
+└── *.spec.ts         : one file per feature
 ```
 
 ### How a spec is structured
@@ -258,7 +288,10 @@ test.describe('edit: delete points', () => {
 Everything except `qc-golden-path.spec.ts` happens against the mocked
 backend. The live golden-path spec is gated by `E2E_LIVE=1`, expects both
 frontends to be running, and enters QC through the Data Management
-same-origin entrypoint.
+same-origin entrypoint. It edits through a QC session, so the workspace
+needs a source datastream with a managed datastream and QC history: the
+spec plots the first source showing the managed-count badge, clicks its
+row's Edit button, and ends by saving and committing the session.
 
 ### Mocks
 
@@ -274,9 +307,47 @@ Per-spec overrides go through `options`:
 await installMocks(page, {
   observations: { phenomenonTime: [...], result: [...] },
   submissions: collectedSubmissions,   // accumulates bulk POSTs for assertion
+  datastreamCreates: collectedBodies,   // accumulates datastream create bodies
   authenticated: false,                 // simulate signed-out
+  qcHistories: true,                    // give DATASTREAM_ID a managed datastream
+  qcSessionState: sessions,             // live QC sessions, for assertions
+  qcCommittedSession: false,            // leave out the fixture's committed session
 })
 ```
+
+`qcHistories` is off by default. When on, the catalog gains
+`managedDatastream` and the QC history linking it to `DATASTREAM_ID`, so
+that source row shows the managed-count badge and its plot check box opens
+`PlotSourceDialog`. Leaving it off keeps a catalog where every row plots
+straight from its check box, which is what the other specs assume.
+
+The QC session and operation routes are stateful. They start from the
+session fixtures and apply the app's creates, saves, commits and deletes, so
+a spec can pass a `qcSessionState` array and assert on what was persisted
+(see `submit.spec.ts`). They refuse what the API refuses, with the same 400:
+a second in-progress session, and commits, operation changes and deletes on a
+committed session. A new session
+depends on the committed sessions its window overlaps, and `ancestorOf`
+lists those dependencies transitively, as the API does.
+
+The committed session's id is `COMMITTED_SESSION_ID` in
+`support/fixtures.ts`. Shared steps live in `support/app.ts` (`goToSelect`,
+`leaveDialog`, the entry helpers) and `support/ops.ts` (`selectAllPoints`,
+`applyChangeValues`).
+
+The fixtures include a committed session over the whole observation window,
+and the app treats the managed datastream as the truth inside committed
+windows. A spec whose managed observations don't match that (nothing
+committed yet, or a commit over only part of the window) sets
+`qcCommittedSession: false` and passes the sessions it means in
+`qcSessionState` (see `managed-preview.spec.ts`, `editor-y-range.spec.ts`).
+
+Save and Commit only appear once a session is open. `setupEditView` enters
+through a row's Edit button rather than the nav rail, so it needs
+`installMocks(page, { qcHistories: true })` to give the source a managed
+datastream for the chooser to pick. Use `startSessionFromRow` (also with
+`qcHistories: true`) when a spec needs to plot or pick a range first and
+then enter from the row; `setupEditView` is `gotoHome` plus that call.
 
 ### Fixtures: "now"-anchored timestamps
 
@@ -299,13 +370,18 @@ function observationsWithGap() {
 }
 ```
 
+Playwright runs in the machine's zone unless a spec sets `timezoneId`.
+`time-zone.spec.ts` runs in `Asia/Tokyo`, so a time read as browser-local
+instead of in the chosen zone would show. `edit-shift-datetimes.spec.ts`
+does too, and checks that a month shift saves `Asia/Tokyo` with the step.
+
 ### Test hooks
 
 `src/testHooks.ts` registers `window.__vbwTestHooks` when
 `import.meta.env.DEV` or `VITE_APP_E2E_HOOKS` is set. Today it
 exposes one helper:
 
-- `waitForSelectedData(minLength, timeoutMs)` — resolves when the
+- `waitForSelectedData(minLength, timeoutMs)`: resolves when the
   Pinia store's `selectedData` has at least `minLength` entries.
   Used by `support/app.ts#waitForSelection`.
 
@@ -361,12 +437,29 @@ them so the next contributor doesn't rediscover them.
    foreground OS window. If a previously-green spec started
    failing only after you alt-tabbed, that's why.
 
+5. **Wait for the editor to be ready, not just its buttons.** Entering
+   the editor or reloading into it loads the sessions, places the edit
+   record, then reloads the context range around the session window, and
+   the plot draws its first frame after a mount delay. The footer buttons
+   and a hidden loading overlay can both show before that settles.
+   `waitForEditorReady` waits for `edit-plot-column` to carry
+   `data-editor-ready="true"` (`useDataVisStore().isEditorReady`: the
+   session window is known, the edit record is on the plot, no session is
+   opening, and no plot load or tracked draw is pending).
+
+6. **With an edit target set, the editor stays mounted behind the Select
+   view.** It is hidden with `v-show`, not unmounted, so its test ids exist
+   twice in the DOM: `plotted-item-*`, `history-item-*` and the rest resolve
+   to two elements and a bare `getByTestId` is strict-mode ambiguous. Scope
+   Select-view assertions through the panel, as `select-while-editing.spec.ts`
+   does with `page.getByTestId('select-side-panel')`.
+
 ### Debugging a failure
 
 Playwright's HTML report (`playwright-report/index.html`) opens
 automatically after a local run. Per-failure trace zips
 (`test-results/<name>/trace.zip`) can be replayed with
-`npx playwright show-trace <path>` — they include screenshots, DOM
+`npx playwright show-trace <path>`. They include screenshots, DOM
 snapshots, console logs, and network traffic at every step. This
 is the single most useful debugging tool the suite has.
 
@@ -387,9 +480,9 @@ patterns above.
 `.github/workflows/ci.yml` runs on every push and on every PR
 targeting `main`. The job:
 
-1. `npx vue-tsc --noEmit` — type-check.
-2. `npm run coverage` — Vitest with the 80%/78% gates above.
-3. `npm run build` — Vite production build.
+1. `npx vue-tsc --noEmit`: type-check.
+2. `npm run coverage`: Vitest with the 80%/78% gates above.
+3. `npm run build`: Vite production build.
 
 ---
 
@@ -402,7 +495,7 @@ targeting `main`. The job:
    `setActivePinia(createPinia())` (or `createTestPinia()`) in
    `beforeEach`.
 3. Mock collaborator stores with `vi.mock(...)` and ref-backed
-   fakes — see `selected.spec.ts` for a representative shape.
+   fakes (see `selected.spec.ts` for a representative shape).
 4. Run `npx vitest run <file>` until green; run
    `npm run coverage` once to verify the gate still passes.
 
@@ -412,7 +505,7 @@ targeting `main`. The job:
 2. `mount()` the component with
    `global: { plugins: [createTestVuetify()] }`.
 3. Mock `@/store/*` and `@/composables/*` imports with refs you
-   control from the spec — never import the real stores in a
+   control from the spec; never import the real stores in a
    component test.
 4. If the component imports `@uwrl/qc-utils`, mock the enum
    constants it uses (see `EditHistory.spec.ts` line 28-77 for
@@ -437,12 +530,14 @@ targeting `main`. The job:
 ### A new test hook
 
 1. Add the implementation in `src/testHooks.ts` under the
-   `installTestHooks()` function — same registration pattern as
+   `installTestHooks()` function, same registration pattern as
    `waitForSelectedData`.
-2. Update the `Window['__vbwTestHooks']` interface in
-   `e2e/support/app.ts` so spec callers get type-checking.
+2. Update the `Window['__vbwTestHooks']` interface in both
+   `src/testHooks.ts` and `e2e/support/app.ts` (the app and the e2e specs
+   are separate TypeScript projects), so callers on both sides get
+   type-checking.
 3. Hooks ship only when `import.meta.env.DEV` or
-   `VITE_APP_E2E_HOOKS` is set — production builds never expose
+   `VITE_APP_E2E_HOOKS` is set; production builds never expose
    them.
 
 ---
@@ -458,7 +553,7 @@ When a Vuetify upgrade lands:
 
 When a `qc-utils` upgrade lands:
 
-- Re-run unit specs that mock `@uwrl/qc-utils` enums — the
+- Re-run unit specs that mock `@uwrl/qc-utils` enums. The
   canonical sites are `EditHistory.spec.ts` and any spec under
   `src/utils/plotting/__tests__/` that imports the enums.
 - If a new `HistoryItem` field is added, the qc-app's `EditHistory`
@@ -475,7 +570,7 @@ debounced path:
 
 When a Playwright spec starts flaking:
 
-- Check the trace.zip first — it almost always shows the cause.
+- Check the trace.zip first; it almost always shows the cause.
 - If it's `waitForSelection` timing out, the suspect is a
   `fill('...').click(button)` pattern; switch to
   `field.press('Enter')`.
@@ -494,9 +589,9 @@ When coverage drops below threshold after a code change:
 
 ## See also
 
-- [QUALITY.md](./QUALITY.md) — what is covered, what isn't, and why
-- [ONBOARDING.md](./ONBOARDING.md) — the wider learning path
-- [`vite.config.ts`](../vite.config.ts) — source of truth on
+- [QUALITY.md](./QUALITY.md): what is covered, what isn't, and why
+- [ONBOARDING.md](./ONBOARDING.md): the wider learning path
+- [`vite.config.ts`](../vite.config.ts): source of truth on
   Vitest config and coverage policy
-- [`playwright.config.ts`](../playwright.config.ts) — source of
+- [`playwright.config.ts`](../playwright.config.ts): source of
   truth on Playwright config

@@ -9562,8 +9562,40 @@
                 "type": "null"
               }
             ],
-            "description": "Specifies how new observations are added to the datastream. `insert` allows observations at any timestamp. `append` adds only future observations (after the latest existing timestamp). `backfill` adds only historical observations (before the earliest existing timestamp). `replace` deletes all observations in the range of provided observations before inserting new ones.",
+            "description": "Specifies how new observations are added to the datastream. `insert` allows observations at any timestamp. `append` adds only future observations (after the latest existing timestamp). `backfill` adds only historical observations (before the earliest existing timestamp). `replace` deletes all observations in the range of provided observations before inserting new ones, or in `phenomenonTimeStart` to `phenomenonTimeEnd` when given.",
             "title": "Mode"
+          },
+          "phenomenonTimeEnd": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "End of the range `replace` deletes. Requires `phenomenonTimeStart`.",
+            "title": "Phenomenontimeend"
+          },
+          "phenomenonTimeStart": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Start of the range `replace` deletes. Requires `phenomenonTimeEnd`.",
+            "title": "Phenomenontimestart"
           }
         },
         "title": "ObservationBulkPostQueryParameters",
@@ -30652,7 +30684,7 @@
         "operationId": "interfaces_api_views_sta_observation_insert_observations",
         "parameters": [
           {
-            "description": "Specifies how new observations are added to the datastream. `insert` allows observations at any timestamp. `append` adds only future observations (after the latest existing timestamp). `backfill` adds only historical observations (before the earliest existing timestamp). `replace` deletes all observations in the range of provided observations before inserting new ones.",
+            "description": "Specifies how new observations are added to the datastream. `insert` allows observations at any timestamp. `append` adds only future observations (after the latest existing timestamp). `backfill` adds only historical observations (before the earliest existing timestamp). `replace` deletes all observations in the range of provided observations before inserting new ones, or in `phenomenonTimeStart` to `phenomenonTimeEnd` when given.",
             "in": "query",
             "name": "mode",
             "required": false,
@@ -30671,8 +30703,52 @@
                   "type": "null"
                 }
               ],
-              "description": "Specifies how new observations are added to the datastream. `insert` allows observations at any timestamp. `append` adds only future observations (after the latest existing timestamp). `backfill` adds only historical observations (before the earliest existing timestamp). `replace` deletes all observations in the range of provided observations before inserting new ones.",
+              "description": "Specifies how new observations are added to the datastream. `insert` allows observations at any timestamp. `append` adds only future observations (after the latest existing timestamp). `backfill` adds only historical observations (before the earliest existing timestamp). `replace` deletes all observations in the range of provided observations before inserting new ones, or in `phenomenonTimeStart` to `phenomenonTimeEnd` when given.",
               "title": "Mode"
+            }
+          },
+          {
+            "description": "Start of the range `replace` deletes. Requires `phenomenonTimeEnd`.",
+            "in": "query",
+            "name": "phenomenonTimeStart",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Start of the range `replace` deletes. Requires `phenomenonTimeEnd`.",
+              "title": "Phenomenontimestart"
+            }
+          },
+          {
+            "description": "End of the range `replace` deletes. Requires `phenomenonTimeStart`.",
+            "in": "query",
+            "name": "phenomenonTimeEnd",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "End of the range `replace` deletes. Requires `phenomenonTimeStart`.",
+              "title": "Phenomenontimeend"
             }
           }
         ],
@@ -34276,6 +34352,17 @@
         "responses": {
           "204": {
             "description": "No Content"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
           },
           "401": {
             "content": {

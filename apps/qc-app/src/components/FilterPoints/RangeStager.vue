@@ -79,6 +79,7 @@ import {
   stagePanMode,
 } from '@/utils/plotting/staging'
 import DatePickerField from '@/components/VisualizeData/DatePickerField.vue'
+import { fromWallParts, wallParts } from '@/utils/timeZone'
 
 const { selectedSeries } = storeToRefs(usePlotlyStore())
 
@@ -205,7 +206,7 @@ const rangePresets = computed<RangePreset[]>(() => {
       {
         label: 'YTD',
         compute: (b) => {
-          const jan1 = new Date(new Date().getFullYear(), 0, 1).getTime()
+          const jan1 = fromWallParts(wallParts(Date.now()).year, 0, 1)
           const start = Math.max(jan1, b.min)
           if (start >= b.max) return null
           return [start, b.max]

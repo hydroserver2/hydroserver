@@ -178,7 +178,7 @@ class ObservationPostBody(BasePostBody, ObservationFields, NewItemId):
     datastream_id: uuid.UUID
 
 
-class ObservationBulkPostQueryParameters(Schema):
+class ObservationBulkPostQueryParameters(BaseQueryParameters):
     mode: Optional[Literal["insert", "append", "backfill", "replace"]] = Query(
         None,
         description=(
@@ -186,8 +186,17 @@ class ObservationBulkPostQueryParameters(Schema):
             "`insert` allows observations at any timestamp. "
             "`append` adds only future observations (after the latest existing timestamp). "
             "`backfill` adds only historical observations (before the earliest existing timestamp). "
-            "`replace` deletes all observations in the range of provided observations before inserting new ones."
+            "`replace` deletes all observations in the range of provided observations before inserting new ones, "
+            "or in `phenomenonTimeStart` to `phenomenonTimeEnd` when given."
         ),
+    )
+    phenomenon_time_start: Optional[ISODatetime] = Query(
+        None,
+        description="Start of the range `replace` deletes. Requires `phenomenonTimeEnd`.",
+    )
+    phenomenon_time_end: Optional[ISODatetime] = Query(
+        None,
+        description="End of the range `replace` deletes. Requires `phenomenonTimeStart`.",
     )
 
 

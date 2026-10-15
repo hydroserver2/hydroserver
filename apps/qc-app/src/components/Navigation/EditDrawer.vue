@@ -2,6 +2,17 @@
   <div class="edit-drawer d-flex flex-column fill-height">
     <div class="flex-grow-1 overflow-y-auto" style="min-height: 0">
       <div
+        v-if="isReadOnly"
+        class="edit-drawer__locked d-flex align-start ga-2 px-3 py-2 text-body-small text-medium-emphasis"
+        data-testid="edit-drawer-read-only"
+      >
+        <v-icon icon="mdi-lock-outline" size="16" class="mt-1" />
+        <span>
+          Viewing a committed session. Operations are unavailable until you
+          return to the current session or start a new one.
+        </span>
+      </div>
+      <div
         class="edit-drawer__section-header d-flex align-center ga-1 px-3 py-1 cursor-pointer"
         role="button"
         tabindex="0"
@@ -23,6 +34,7 @@
           rounded="lg"
           class="mb-1"
           :active="selectedOperation === item.id"
+          :disabled="isReadOnly"
           :data-testid="`op-${item.id}`"
           @click="selectOperation(item.id)"
         >
@@ -64,7 +76,7 @@
           rounded="lg"
           class="mb-1"
           :active="selectedOperation === item.id"
-          :disabled="item.requiresSelection && !selectedData?.length"
+          :disabled="isReadOnly || (item.requiresSelection && !selectedData?.length)"
           :data-testid="`op-${item.id}`"
           @click="selectOperation(item.id)"
         >
@@ -106,6 +118,7 @@
           rounded="lg"
           class="mb-1"
           :active="selectedOperation === item.id"
+          :disabled="isReadOnly"
           :data-testid="`op-${item.id}`"
           @click="selectOperation(item.id)"
         >
@@ -127,6 +140,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { useUIStore } from '@/store/userInterface'
@@ -135,9 +149,12 @@ import {
   colorForOperation,
 } from '@/components/EditData/operations'
 import { usePersistedFlag } from '@/composables/useResizable'
+import { useEditLock } from '@/composables/useEditLock'
 
 const { selectedData } = storeToRefs(useDataVisStore())
+const { editLock } = useEditLock()
 const { selectedOperation } = storeToRefs(useUIStore())
+const isReadOnly = computed(() => editLock.value === 'readOnly')
 
 const filterPoints = operationsByGroup.filter
 const editData = operationsByGroup.edit
@@ -162,6 +179,9 @@ function selectOperation(id: string) {
 .edit-drawer__section-header {
   background-color: rgba(var(--v-theme-primary), 0.04);
   min-height: 28px;
+}
+.edit-drawer__locked {
+  background-color: rgba(var(--v-theme-primary), 0.06);
 }
 .edit-drawer__section-header:hover,
 .edit-drawer__section-header:focus {

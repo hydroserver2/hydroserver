@@ -32,13 +32,13 @@ class LoadDefaultsMixin(ModelAdmin):
         ] + urls
 
     def _get_fixture_objects(self):
-        fixture_name = self.default_fixture + ".json"
+        fixture_name = self.default_fixture + ".yaml"
 
         for app_config in django_apps.get_app_configs():
             fixture_path = Path(app_config.path) / "fixtures" / fixture_name
             if fixture_path.exists():
                 with fixture_path.open() as f:
-                    return [d.object for d in serializers.deserialize("json", f)]
+                    return [d.object for d in serializers.deserialize("yaml", f)]
 
         return []
 

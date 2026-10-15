@@ -76,9 +76,9 @@ jobs:
         working-directory: packages/hydroserver-ts
         run: npm run coverage
 
-      - name: Build TypeScript client
+      - name: Verify packed TypeScript client
         working-directory: packages/hydroserver-ts
-        run: npm run build
+        run: npm run test:package
 
   data-management:
     name: Data Management App 80% Coverage
@@ -161,10 +161,6 @@ jobs:
       - name: Install QC app dependencies
         working-directory: apps/qc-app
         run: npm ci --workspaces=false
-
-      - name: Install local QC utils package
-        working-directory: apps/qc-app
-        run: npm install ../../packages/qc-utils --no-save --workspaces=false
 
       - name: Run QC app typecheck
         working-directory: apps/qc-app
@@ -392,10 +388,6 @@ jobs:
       - name: Install QC app dependencies
         working-directory: apps/qc-app
         run: npm ci --workspaces=false
-
-      - name: Install local QC utils package
-        working-directory: apps/qc-app
-        run: npm install ../../packages/qc-utils --no-save --workspaces=false
 
       - name: Install Playwright browsers
         working-directory: apps/qc-app

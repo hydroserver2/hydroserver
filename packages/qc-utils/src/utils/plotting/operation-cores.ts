@@ -15,6 +15,8 @@
  *     diffed against inline output when debugging drift).
  */
 
+import { addCalendarMonths } from '../timeZone'
+
 /** Opcode encoding used by `valueThresholdCore` (matches the worker). */
 export const enum ThresholdOp {
   LT = 0,
@@ -30,7 +32,7 @@ export const enum ThresholdOp {
  * circuits on first match per element (matches worker semantics).
  */
 export function valueThresholdCore(
-  arrayY: Float32Array | Float32Array<SharedArrayBuffer>,
+  arrayY: Float64Array | Float64Array<SharedArrayBuffer>,
   start: number,
   end: number,
   ops: number[],
@@ -67,7 +69,7 @@ export function valueThresholdCore(
  * the worker exactly (FilterOperation enum values).
  */
 export function changeCore(
-  arrayY: Float32Array | Float32Array<SharedArrayBuffer>,
+  arrayY: Float64Array | Float64Array<SharedArrayBuffer>,
   start: number,
   end: number,
   comparator: string,
@@ -103,7 +105,7 @@ export function changeCore(
  * comparator semantics as `changeCore`.
  */
 export function rateOfChangeCore(
-  arrayY: Float32Array | Float32Array<SharedArrayBuffer>,
+  arrayY: Float64Array | Float64Array<SharedArrayBuffer>,
   start: number,
   end: number,
   comparator: string,
@@ -166,7 +168,7 @@ export function findGapsCore(
  * adjacent chunk triplets before applying the min-run-length filter.
  */
 export function persistenceCore(
-  arrayY: Float32Array | Float32Array<SharedArrayBuffer>,
+  arrayY: Float64Array | Float64Array<SharedArrayBuffer>,
   start: number,
   end: number
 ): number[] {
@@ -193,8 +195,8 @@ export function persistenceCore(
  * `[leftIdx, rightIdx]` pairs, sorted by left index. `fillDelta` is
  * the spacing between inserted points in the same unit as `sourceX`.
  * When `interpolate` is true the filled Y values are linearly
- * interpolated between the gap's endpoints; otherwise `fillValue` is
- * written (used for "sentinel" -9999 fills).
+ * interpolated between the gap's endpoints; otherwise, or when either
+ * endpoint holds `noDataValue`, `fillValue` is written.
  *
  * Shared by the `FillGapsWorker`'s per-segment write and the inline
  * full-array path. Returns the number of elements written so callers
@@ -202,16 +204,17 @@ export function persistenceCore(
  */
 export function fillGapsCore(
   sourceX: Float64Array | Float64Array<SharedArrayBuffer>,
-  sourceY: Float32Array | Float32Array<SharedArrayBuffer>,
+  sourceY: Float64Array | Float64Array<SharedArrayBuffer>,
   gaps: ReadonlyArray<[number, number]>,
   outX: Float64Array | Float64Array<SharedArrayBuffer>,
-  outY: Float32Array | Float32Array<SharedArrayBuffer>,
+  outY: Float64Array | Float64Array<SharedArrayBuffer>,
   start: number,
   end: number,
   outStart: number,
   fillDelta: number,
   interpolate: boolean,
-  fillValue: number
+  fillValue: number,
+  noDataValue: number | null = null
 ): number {
   let gapPtr = 0
   let writePtr = outStart
@@ -229,11 +232,13 @@ export function fillGapsCore(
       const rightValue = sourceY[rightIdx]
       const span = rightDatetime - leftDatetime
       const valueSpan = rightValue - leftValue
+      const canInterpolate =
+        interpolate && leftValue !== noDataValue && rightValue !== noDataValue
 
       let nextFillDatetime = leftDatetime + fillDelta
       while (nextFillDatetime < rightDatetime) {
         outX[writePtr] = nextFillDatetime
-        outY[writePtr] = interpolate
+        outY[writePtr] = canInterpolate
           ? leftValue + ((nextFillDatetime - leftDatetime) * valueSpan) / span
           : fillValue
         writePtr++
@@ -260,10 +265,10 @@ export function fillGapsCore(
  */
 export function addDataPointsCore(
   sourceX: Float64Array | Float64Array<SharedArrayBuffer>,
-  sourceY: Float32Array | Float32Array<SharedArrayBuffer>,
+  sourceY: Float64Array | Float64Array<SharedArrayBuffer>,
   insertions: ReadonlyArray<[number, number]>,
   outX: Float64Array | Float64Array<SharedArrayBuffer>,
-  outY: Float32Array | Float32Array<SharedArrayBuffer>,
+  outY: Float64Array | Float64Array<SharedArrayBuffer>,
   origStart: number,
   origEnd: number,
   outStart: number
@@ -311,10 +316,10 @@ export function addDataPointsCore(
  */
 export function deleteDataPointsCore(
   sourceX: Float64Array | Float64Array<SharedArrayBuffer>,
-  sourceY: Float32Array | Float32Array<SharedArrayBuffer>,
+  sourceY: Float64Array | Float64Array<SharedArrayBuffer>,
   deleteIndices: ArrayLike<number>,
   outX: Float64Array | Float64Array<SharedArrayBuffer>,
-  outY: Float32Array | Float32Array<SharedArrayBuffer>,
+  outY: Float64Array | Float64Array<SharedArrayBuffer>,
   readStart: number,
   readEnd: number,
   outStart: number
@@ -338,47 +343,37 @@ export function deleteDataPointsCore(
 
 /** Params for `shiftDatetimesCollection`; mirrors the worker payload. */
 export interface ShiftDatetimesParams {
-  amount: number
-  isMonth: boolean
-  isYear: boolean
-  /** Precomputed scalar ms offset; unused when `isMonth || isYear`. */
+  /** Calendar months to move by on `timeZone`'s clock; 0 for a fixed span. */
+  months: number
+  /** A fixed span in ms; unused when `months` is set. */
   deltaMs: number
+  timeZone: string
+}
+
+/** One shifted datetime. */
+export function shiftDatetime(x: number, params: ShiftDatetimesParams): number {
+  return params.months
+    ? addCalendarMonths(x, params.months, params.timeZone)
+    : x + params.deltaMs
 }
 
 /**
  * Compute shifted `(x, y)` pairs for each index in `indexes` without
- * allocating a `SharedArrayBuffer`. Mirrors the shift worker's branches
- * for month / year / scalar units. Returned in the same order as
+ * allocating a `SharedArrayBuffer`. Returned in the same order as
  * `indexes` so the caller can hand the collection straight to
  * `_addDataPoints` after a `_deleteDataPoints(indexes)`.
  */
 export function shiftDatetimesCollection(
   arrayX: Float64Array | Float64Array<SharedArrayBuffer>,
-  arrayY: Float32Array | Float32Array<SharedArrayBuffer>,
+  arrayY: Float64Array | Float64Array<SharedArrayBuffer>,
   indexes: ArrayLike<number>,
   params: ShiftDatetimesParams
 ): [number, number][] {
   const n = indexes.length
   const out: [number, number][] = new Array(n)
-  if (params.isMonth) {
-    for (let i = 0; i < n; i++) {
-      const idx = indexes[i]
-      const d = new Date(arrayX[idx])
-      d.setMonth(d.getMonth() + params.amount)
-      out[i] = [d.getTime(), arrayY[idx]]
-    }
-  } else if (params.isYear) {
-    for (let i = 0; i < n; i++) {
-      const idx = indexes[i]
-      const d = new Date(arrayX[idx])
-      d.setFullYear(d.getFullYear() + params.amount)
-      out[i] = [d.getTime(), arrayY[idx]]
-    }
-  } else {
-    for (let i = 0; i < n; i++) {
-      const idx = indexes[i]
-      out[i] = [arrayX[idx] + params.deltaMs, arrayY[idx]]
-    }
+  for (let i = 0; i < n; i++) {
+    const idx = indexes[i]
+    out[i] = [shiftDatetime(arrayX[idx], params), arrayY[idx]]
   }
   return out
 }
@@ -399,7 +394,7 @@ export interface InterpolateGroup {
  */
 export function interpolateCore(
   arrayX: Float64Array | Float64Array<SharedArrayBuffer>,
-  arrayY: Float32Array | Float32Array<SharedArrayBuffer>,
+  arrayY: Float64Array | Float64Array<SharedArrayBuffer>,
   groups: InterpolateGroup[]
 ): void {
   for (let gi = 0; gi < groups.length; gi++) {
@@ -422,21 +417,22 @@ export function interpolateCore(
 }
 
 /**
- * Apply linear drift correction over one or more `[start, end, value]`
- * ranges in place on `arrayY`, using `arrayX` only to compute each
+ * Apply linear drift correction over one or more inclusive `[start, end,
+ * value]` ranges in place on `arrayY`, using `arrayX` only to compute each
  * range's time anchors. Per-point formula:
  *
  *     y_i += value * (x_i - startDatetime) / extent
  *
  * where `startDatetime = x[start]` and `extent = x[end] - x[start]`.
  * Ranges with non-positive extent are skipped to match the worker's
- * behaviour. The whole operation is O(total range length) — no
+ * behaviour, and so are points holding `noDataValue`. The whole operation is O(total range length) — no
  * chunking or spawning, suitable for the inline calibration path.
  */
 export function driftCorrectionCore(
   arrayX: Float64Array | Float64Array<SharedArrayBuffer>,
-  arrayY: Float32Array | Float32Array<SharedArrayBuffer>,
-  ranges: [number, number, number][]
+  arrayY: Float64Array | Float64Array<SharedArrayBuffer>,
+  ranges: [number, number, number][],
+  noDataValue: number | null = null
 ): void {
   for (let r = 0; r < ranges.length; r++) {
     const start = ranges[r][0]
@@ -446,7 +442,8 @@ export function driftCorrectionCore(
     const startDatetime = arrayX[start]
     const extent = arrayX[end] - startDatetime
     if (extent === 0) continue
-    for (let i = start; i < end; i++) {
+    for (let i = start; i <= end; i++) {
+      if (arrayY[i] === noDataValue) continue
       arrayY[i] = arrayY[i] + value * ((arrayX[i] - startDatetime) / extent)
     }
   }
@@ -457,7 +454,7 @@ export function driftCorrectionCore(
  * `indexes`. Operator strings match `Operator` enum values.
  */
 export function changeValuesCore(
-  arrayY: Float32Array | Float32Array<SharedArrayBuffer>,
+  arrayY: Float64Array | Float64Array<SharedArrayBuffer>,
   indexes: ArrayLike<number>,
   operator: string,
   value: number

@@ -26,6 +26,11 @@ const tableScrollRequest = ref<{ time: number; seq: number } | null>(null)
 const selectedData = ref<number[] | null>(null)
 const qcDatastream = ref<any>({ id: 'ds-1' })
 
+const editLock = ref<'readOnly' | 'preview' | null>(null)
+vi.mock('@/composables/useEditLock', () => ({
+  useEditLock: () => ({ editLock }),
+}))
+
 const qualifierById = ref<Record<string, any>>({})
 const applied = ref<Record<string, any>>({})
 
@@ -42,7 +47,11 @@ vi.mock('@/store/dataVisualization', () => ({
   useDataVisStore: () => ({ selectedData, qcDatastream }),
 }))
 
+const qualifierTool = vi.hoisted(() => ({ enabled: false }))
 vi.mock('@/store/qualifiers', () => ({
+  get QUALIFIER_TOOL_ENABLED() {
+    return qualifierTool.enabled
+  },
   useQualifierStore: () => ({ qualifierById, applied }),
 }))
 
@@ -51,24 +60,35 @@ vi.mock('@/composables/useDataSelection', () => ({
   useDataSelection: () => ({ clearSelected }),
 }))
 
-vi.mock('@uwrl/qc-utils', () => ({
-  EnumEditOperations: {
-    ASSIGN_VALUES_BULK: 'ASSIGN_VALUES_BULK',
-    ASSIGN_DATETIMES_BULK: 'ASSIGN_DATETIMES_BULK',
-  },
-  EnumFilterOperations: { SELECTION: 'SELECTION' },
-  // Guard against Invalid Date (null/undefined/NaN epochs) during render.
-  formatDate: (d: Date) => {
-    const t = d?.getTime?.()
-    if (t == null || Number.isNaN(t)) return ''
-    return d.toISOString()
-  },
-}))
+const snackInfo = vi.hoisted(() => vi.fn())
+vi.mock('@uwrl/qc-utils', async (importOriginal) => {
+  // The real time zone math, which the app's date helpers use.
+  const { offsetMs, toWall, fromWall, toWallArray } =
+    await importOriginal<typeof import('@uwrl/qc-utils')>()
+  return {
+    offsetMs,
+    toWall,
+    fromWall,
+    toWallArray,
+    Snackbar: { info: snackInfo },
+    EnumEditOperations: {
+      ASSIGN_VALUES_BULK: 'ASSIGN_VALUES_BULK',
+      ASSIGN_DATETIMES_BULK: 'ASSIGN_DATETIMES_BULK',
+    },
+    EnumFilterOperations: { SELECTION: 'SELECTION' },
+    // Guard against Invalid Date (null/undefined/NaN epochs) during render.
+    formatDate: (d: Date) => {
+      const t = d?.getTime?.()
+      if (t == null || Number.isNaN(t)) return ''
+      return d.toISOString()
+    },
+  }
+})
 
 vi.mock('@/components/VisualizeData/EditableCell.vue', () => ({
   default: {
     name: 'EditableCell',
-    props: ['value', 'display', 'edited', 'originalDisplay', 'editedDisplay', 'inputType', 'align'],
+    props: ['value', 'display', 'edited', 'originalDisplay', 'editedDisplay', 'inputType', 'align', 'readonly'],
     emits: ['save', 'clear'],
     template: '<div class="editable-cell-stub" />',
   },
@@ -82,7 +102,7 @@ import DataTable from '@/components/VisualizeData/DataTable.vue'
 function virtualTableStub() {
   return {
     name: 'VDataTableVirtualStub',
-    props: ['items', 'rowProps'],
+    props: ['items', 'rowProps', 'headers'],
     template: `
       <div class="vdtv-stub">
         <div
@@ -92,10 +112,9 @@ function virtualTableStub() {
           :data-index="index"
           :class="resolveRowClass(index)"
         >
-          <slot name="item.actions" :index="index" />
-          <slot name="item.datetime" :index="index" />
-          <slot name="item.value" :index="index" />
-          <slot name="item.qualifiers" :index="index" />
+          <template v-for="h in headers" :key="h.key">
+            <slot :name="'item.' + h.key" :index="index" />
+          </template>
         </div>
       </div>
     `,
@@ -152,6 +171,7 @@ function createWrapperWithSlots() {
 
 afterEach(() => {
   while (openWrappers.length) openWrappers.pop()!.unmount()
+  editLock.value = null
 })
 
 describe('DataTable.vue', () => {
@@ -509,6 +529,80 @@ describe('DataTable.vue discardEdits', () => {
   })
 })
 
+describe('DataTable.vue staged edits when the data changes', () => {
+  beforeEach(() => {
+    isUpdating.value = false
+    selectedData.value = null
+    qcDatastream.value = { id: 'ds-1' }
+    selectedSeries.value = {
+      data: {
+        dataX: [1000, 2000, 3000],
+        dataY: [10, 20, 30],
+        revision: 0,
+        dispatch: vi.fn().mockResolvedValue(undefined),
+      },
+    }
+    vi.clearAllMocks()
+  })
+
+  const stageOne = async () => {
+    const wrapper = createWrapperWithSlots()
+    await flushPromises()
+    valueCell(wrapper, 0).vm.$emit('save', '99')
+    await flushPromises()
+    expect(wrapper.text()).toContain('1 unsaved')
+    return wrapper
+  }
+
+  it('drops staged edits and says so when an operation changes the data', async () => {
+    const wrapper = await stageOne()
+    selectedSeries.value.data.revision++
+    await flushPromises()
+    expect(wrapper.text()).not.toContain('unsaved')
+    expect(snackInfo).toHaveBeenCalledWith(
+      '1 unsaved table edit was discarded because the data changed.'
+    )
+  })
+
+  it('drops staged edits when the record is replaced', async () => {
+    const wrapper = await stageOne()
+    selectedSeries.value = { data: { ...selectedSeries.value.data } }
+    await flushPromises()
+    expect(wrapper.text()).not.toContain('unsaved')
+    expect(snackInfo).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps its own save from discarding the edits it applies', async () => {
+    const dispatch = vi.fn(async (_actions: unknown) => {
+      selectedSeries.value.data.revision++
+    })
+    selectedSeries.value.data.dispatch = dispatch
+    const wrapper = await stageOne()
+    valueCell(wrapper, 1).vm.$emit('save', '42')
+    datetimeCell(wrapper, 2).vm.$emit('save', '2030-01-01T00:00:00')
+    await flushPromises()
+    const saveBtn = wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('Save changes'))!
+    await saveBtn.trigger('click')
+    await flushPromises()
+    expect(dispatch).toHaveBeenCalledTimes(2)
+    expect(dispatch.mock.calls[0]![0]).toEqual([
+      ['SELECTION', [0, 1]],
+      ['ASSIGN_VALUES_BULK', [99, 42]],
+    ])
+    expect(snackInfo).not.toHaveBeenCalled()
+  })
+
+  it('says so when closing the table drops staged edits', async () => {
+    const wrapper = await stageOne()
+    wrapper.unmount()
+    expect(snackInfo).toHaveBeenCalledWith(
+      '1 unsaved table edit was discarded when the table was closed.'
+    )
+  })
+})
+
 describe('DataTable.vue qualifier rendering (qualifierApplicationsAt, Name, Tooltip)', () => {
   beforeEach(() => {
     isUpdating.value = false
@@ -523,7 +617,21 @@ describe('DataTable.vue qualifier rendering (qualifierApplicationsAt, Name, Tool
     qcDatastream.value = { id: 'ds-1' }
     qualifierById.value = {}
     applied.value = {}
+    qualifierTool.enabled = true
     vi.clearAllMocks()
+  })
+
+  afterEach(() => {
+    qualifierTool.enabled = false
+  })
+
+  it('hides the column while the qualifier tool is disabled', async () => {
+    qualifierTool.enabled = false
+    applied.value = { 'ds-1': { 0: [{ qualifierId: 'q1', appliedAt: 't', appliedBy: 'u' }] } }
+    qualifierById.value = { q1: { code: 'ABC', description: 'desc' } }
+    const wrapper = createWrapperWithSlots()
+    await flushPromises()
+    expect(wrapper.text()).not.toContain('ABC')
   })
 
   it('renders nothing when qcDatastream is null', async () => {
@@ -613,7 +721,7 @@ describe('DataTable.vue onSelectChange / getRowProps', () => {
     const wrapper = createWrapperWithSlots()
     await flushPromises()
     const checkboxes = wrapper.findAllComponents({ name: 'VCheckbox' })
-    // toggle row 2 first, then row 0 — result should be sorted [0, 2]
+    // toggle row 2 first, then row 0; result should be sorted [0, 2]
     await checkboxes[2].vm.$emit('update:modelValue', true)
     await checkboxes[0].vm.$emit('update:modelValue', true)
     await flushPromises()
@@ -697,7 +805,7 @@ describe('DataTable.vue ResizeObserver integration', () => {
 
   it('uses bodyEl.clientHeight when non-zero and updates on resize', async () => {
     // The cast tells TS the class-constructor assignment widens the
-    // value back to the callable type — without it the analyzer pins
+    // value back to the callable type. Without it the analyzer pins
     // the variable to `null` after the literal initialiser.
     let capturedCallback = null as ((entries: any) => void) | null
     class CapturingRO {
@@ -884,11 +992,11 @@ describe('DataTable.vue onSaveChanges', () => {
   })
 })
 
-// Drives the "zoom to range" scroll: a request on the plotly store should
+// Drives `requestTableScroll`: a request on the plotly store should
 // scroll the virtual list so the first in-range row lands on top. The stub
 // exposes v-data-table-virtual's `scrollToIndex` so we can capture the index
 // the component asks to scroll to.
-describe('DataTable.vue zoom-to-range scroll', () => {
+describe('DataTable.vue scroll requests', () => {
   let scrollToIndexCalls: number[]
 
   beforeEach(() => {
@@ -987,5 +1095,54 @@ describe('DataTable.vue zoom-to-range scroll', () => {
     requestScroll(3000)
     await flushPromises()
     expect(scrollToIndexCalls.at(-1)).toBe(0)
+  })
+})
+
+describe('DataTable.vue edit lock', () => {
+  beforeEach(() => {
+    isUpdating.value = false
+    selectedSeries.value = {
+      data: {
+        dataX: [1000, 2000],
+        dataY: [10, 20],
+        dispatch: vi.fn().mockResolvedValue(undefined),
+      },
+    }
+    selectedData.value = null
+    qcDatastream.value = { id: 'ds-1' }
+    qualifierById.value = {}
+    applied.value = {}
+  })
+
+  it('makes cells read-only and blocks saving on a committed session', async () => {
+    const wrapper = createWrapperWithSlots()
+    await flushPromises()
+    valueCell(wrapper, 0).vm.$emit('save', '99')
+    await flushPromises()
+
+    editLock.value = 'readOnly'
+    await flushPromises()
+
+    expect(valueCell(wrapper, 0).props('readonly')).toBe(true)
+    expect(datetimeCell(wrapper, 0).props('readonly')).toBe(true)
+    expect(wrapper.text()).toContain('Committed session, read-only')
+    const save = wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('Save changes'))!
+    expect(save.attributes('disabled')).toBeDefined()
+  })
+
+  it('keeps cells editable while previewing, but blocks saving', async () => {
+    const wrapper = createWrapperWithSlots()
+    await flushPromises()
+    valueCell(wrapper, 0).vm.$emit('save', '99')
+    editLock.value = 'preview'
+    await flushPromises()
+
+    expect(valueCell(wrapper, 0).props('readonly')).toBe(false)
+    const save = wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('Save changes'))!
+    expect(save.attributes('disabled')).toBeDefined()
   })
 })

@@ -16,7 +16,7 @@ what a Web Worker host provides. It powers
 but any browser-shaped JavaScript environment can consume it.
 
 The single state container is `ObservationRecord` — a paired
-`Float64Array` (datetimes, ms epoch) + `Float32Array` (values) with a
+`Float64Array` (datetimes, ms epoch) + `Float64Array` (values) with a
 replayable, undo / redo-able edit history.
 
 ## Stack and reasoning
@@ -47,7 +47,7 @@ exists in two places at the consumer's discretion:
    decides where to put the bytes. See [QC_HISTORY.md](./QC_HISTORY.md).
 
 The in-memory data path uses `SharedArrayBuffer`-backed
-`Float64Array` / `Float32Array` when COOP / COEP are present, falling
+`Float64Array`s when COOP / COEP are present, falling
 back to plain `ArrayBuffer` otherwise. The worker code paths gracefully
 degrade to inline kernels when SAB is unavailable, so consumers without
 cross-origin isolation still get correct (just slower) results.
@@ -65,7 +65,7 @@ cross-origin isolation still get correct (just slower) results.
             │  ObservationRecord    │  (state container)
             │  ────────────────     │
             │  dataX (Float64Array) │
-            │  dataY (Float32Array) │
+            │  dataY (Float64Array) │
             │  history[]            │
             │  redoStack[]          │
             │  dispatch(...)        │
@@ -89,8 +89,9 @@ unit tests.
 
 The record holds the full series in `rawData`, but `dataX` / `dataY` (the
 operation surface) carry only the active **window**. `applyWindow(begin,
-end)` slices `rawData` into `dataX` / `dataY`; `reload()` restores that
-windowed baseline. A window change clears history — operations only ever see
+end, rawData?)` slices `rawData` into `dataX` / `dataY`, optionally taking
+new `rawData` first (a cache that grew); `reload()` restores that windowed
+baseline. A window or data change clears history: operations only ever see
 data inside the current window, so a new window starts from a fresh QC
 baseline.
 
@@ -148,7 +149,7 @@ Two enums define the entire dispatch surface:
 | `ASSIGN_DATETIMES_BULK` | Parallel `datetimes[i] → dataX[selection[i]]` via combined delete+add.   | inline  |
 | `DELETE_POINTS`         | Drop the selection in a single skip-on-delete pass.                       | yes     |
 | `INTERPOLATE`           | Linear interpolation per consecutive group in the selection.              | yes     |
-| `SHIFT_DATETIMES`       | Offset the selection's timestamps by `(amount, TimeUnit)`.                | yes     |
+| `SHIFT_DATETIMES`       | Offset the selection's timestamps by `(amount, TimeUnit, timeZone)`.      | yes     |
 | `DRIFT_CORRECTION`      | Apply linear drift across each consecutive group in the selection.         | yes     |
 | `FILL_GAPS`             | Detect gaps above threshold; insert points at fillCadence (interpolated). | yes     |
 
@@ -239,13 +240,24 @@ last `reload()`. Each `HistoryItem`:
     mode?: 'worker' | 'inline', // calibration routing decision
     datasetSize?: number,       // observation count at dispatch time
     selectionSize?: number,     // indices the op acted on
+    extent?: { begin: number, end: number }, // datetimes of the first / last point acted on
   },
 }
 ```
 
 `undo()` truncates the last entry, pushes it onto `redoStack`, and
 replays the remaining history from scratch against the freshly
-`reload()`-ed dataset. `redo()` is the inverse. This is conservative
+`reload()`-ed dataset. `redo()` is the inverse. Every replay runs each
+step through `dispatchStep`, which carries the step's `comment` and
+`performedBy` onto the entry it produces, so they survive even when a
+replay merges entries (two filters left side by side collapse into one).
+
+`previewHistory(index)` replays only up to `index` and leaves the later
+steps listed but unapplied, with `previewIndex` marking the step shown.
+Edits throw `HistoryPreviewError` until `exitPreview()` replays the whole
+history again. `truncateHistory(index)` drops the later steps for good,
+and `restoreHistory(steps)` replaces the history wholesale, for going back
+to a saved one. This is conservative
 (every undo is O(history-length)) but correctness is straightforward —
 no rollback / inverse-op machinery to maintain. For typical QC sessions
 (<100 ops) it's instant.

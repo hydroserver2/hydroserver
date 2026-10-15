@@ -2,8 +2,8 @@
  * Plotting policy for datastreams without a declared `intendedTimeSpacing`.
  *
  * Two related guarantees, both covered here:
- *   1. The main trace renders as a pure scatter — `mode: 'markers'` with
- *      no companion `_gapOverlayFor` lines trace pushed alongside it.
+ *   1. The main trace renders as a pure scatter: `mode: 'markers'` with
+ *      no companion `_partOf` lines trace pushed alongside it.
  *   2. The "data points" toggle (manual mode + click off) does not hide
  *      the markers of such a series. Without a line fallback, honouring
  *      the toggle would leave the series invisible, so the relayout
@@ -20,7 +20,8 @@ import { expect, test, type Page, type Route } from '@playwright/test'
 import { installMocks } from './support/mocks'
 import {
   datastreams,
-  DATASTREAM_ID,
+  managedDatastream,
+  MANAGED_DATASTREAM_ID,
   workspaces,
   monitoringSites,
   methods,
@@ -30,13 +31,13 @@ import {
 } from './support/fixtures'
 import { setupEditView } from './support/app'
 
-type DatastreamRecord = (typeof datastreams)[number]
+type DatastreamRecord = (typeof datastreams)[number] | typeof managedDatastream
 type RoutedTrace = {
   id?: string
   mode?: string
   marker?: { opacity?: number }
   _isGapOverlay?: boolean
-  _gapOverlayFor?: string
+  _partOf?: string
 }
 
 /**
@@ -62,10 +63,13 @@ function withoutIntendedSpacing(ds: DatastreamRecord): DatastreamRecord {
   // Mirror what the backend serves for an older / minimally-configured
   // datastream: both spacing fields cleared. The QC app's
   // `spacingMsFromDatastream` returns null for either missing field, so
-  // wiping the unit alone would already trip the scatter path — clearing
+  // wiping the unit alone would already trip the scatter path; clearing
   // both keeps the fixture honest about the upstream shape.
   return { ...ds, intendedTimeSpacing: null, intendedTimeSpacingUnit: null }
 }
+
+// The managed datastream is served too, so the row Edit flow can enter the editor.
+const catalog: DatastreamRecord[] = [...datastreams, managedDatastream]
 
 async function patchDatastreamFixture(route: Route): Promise<void> {
   const request = route.request()
@@ -79,7 +83,7 @@ async function patchDatastreamFixture(route: Route): Promise<void> {
     'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Allow-Methods': 'GET,POST,PATCH,DELETE,OPTIONS',
     'Access-Control-Allow-Headers': '*',
-    'Access-Control-Expose-Headers': 'X-Total-Pages,X-Total-Count',
+    'Access-Control-Expose-Headers': 'X-Checksum',
   }
   const included = {
     workspaces,
@@ -90,14 +94,19 @@ async function patchDatastreamFixture(route: Route): Promise<void> {
     units,
   }
   if (/\/api\/ogc\/collections\/datastreams\/items$/.test(path)) {
-    const patched = datastreams.map(withoutIntendedSpacing)
+    const patched = catalog.map(withoutIntendedSpacing)
     return route.fulfill({
       status: 200,
       contentType: 'application/json',
       headers,
       body: JSON.stringify({
         data: patched,
-        meta: { limit: patched.length || 1, offset: 0, totalCount: patched.length },
+        meta: {
+          offset: 0,
+          limit: patched.length + 1,
+          numberMatched: patched.length,
+          numberReturned: patched.length,
+        },
         included,
       }),
     })
@@ -105,7 +114,7 @@ async function patchDatastreamFixture(route: Route): Promise<void> {
   const single = path.match(/\/api\/ogc\/collections\/datastreams\/items\/([^/]+)$/)
   if (single) {
     const id = single[1]
-    const ds = datastreams.find((d) => d.id === id) ?? datastreams[0]!
+    const ds = catalog.find((d) => d.id === id) ?? catalog[0]!
     return route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -118,7 +127,7 @@ async function patchDatastreamFixture(route: Route): Promise<void> {
 
 test.describe('plot: datastream without intendedTimeSpacing', () => {
   test.beforeEach(async ({ page }) => {
-    await installMocks(page)
+    await installMocks(page, { qcHistories: true })
     // Routes added with `page.route` are invoked LIFO, so this stack
     // sits on top of the catch-all installed by `installMocks` and
     // wins for both the list and single-get endpoints. The sub-path
@@ -133,7 +142,7 @@ test.describe('plot: datastream without intendedTimeSpacing', () => {
     page,
   }) => {
     await setupEditView(page)
-    await waitForTraceRendered(page, DATASTREAM_ID)
+    await waitForTraceRendered(page, MANAGED_DATASTREAM_ID)
 
     const trace = await page.evaluate((id) => {
       const gd = document.querySelector('[data-testid="main-plot"]') as
@@ -141,23 +150,23 @@ test.describe('plot: datastream without intendedTimeSpacing', () => {
         | null
       const traces = gd?.data ?? []
       const main = traces.find((t) => t.id === id) ?? null
-      const overlay = traces.find((t) => t._gapOverlayFor === id) ?? null
+      const overlay = traces.find((t) => t._partOf === id) ?? null
       return {
         mainMode: main?.mode ?? null,
         mainMarkerOpacity: main?.marker?.opacity ?? null,
         overlayExists: !!overlay,
         // Sanity: there should also be no `mode: 'lines'` trace
         // pointing at this series via the gap-overlay channel. The
-        // app reserves `_gapOverlayFor` exclusively for that role,
+        // app reserves `_partOf` exclusively for that role,
         // so its absence is the precise signal.
-        anyGapOverlay: traces.some((t) => t._gapOverlayFor === id),
+        anyGapOverlay: traces.some((t) => t._partOf === id),
       }
-    }, DATASTREAM_ID)
+    }, MANAGED_DATASTREAM_ID)
 
     expect(trace.mainMode).toBe('markers')
     expect(trace.overlayExists).toBe(false)
     expect(trace.anyGapOverlay).toBe(false)
-    // Initial paint must keep the scatter markers fully opaque —
+    // Initial paint must keep the scatter markers fully opaque;
     // otherwise the series has nothing visible on screen.
     expect(trace.mainMarkerOpacity).toBe(1)
   })
@@ -166,11 +175,11 @@ test.describe('plot: datastream without intendedTimeSpacing', () => {
     page,
   }) => {
     await setupEditView(page)
-    await waitForTraceRendered(page, DATASTREAM_ID)
+    await waitForTraceRendered(page, MANAGED_DATASTREAM_ID)
 
     // The toggle button only renders in manual mode; default is auto,
     // so open the dropdown and pick manual first. Picking manual also
-    // fires `handleRelayout(null)` internally — that pass is the one
+    // fires `handleRelayout(null)` internally, and that pass is the one
     // that would have wiped the markers if the scatter exemption were
     // missing.
     await page.getByTestId('tooltips-mode-btn').click()
@@ -195,7 +204,7 @@ test.describe('plot: datastream without intendedTimeSpacing', () => {
         | null
       const t = gd?.data?.find((tr) => tr.id === id)
       return t ? { opacity: t.marker?.opacity ?? null } : null
-    }, DATASTREAM_ID)
+    }, MANAGED_DATASTREAM_ID)
 
     expect(main).not.toBeNull()
     // Scatter-only series ignore the toggle: markers stay fully opaque.

@@ -147,7 +147,13 @@ before it.
 |-------------|---------|----------|--------------------------------------------------------------------|
 | `method`    | string  | yes      | `EnumEditOperations` or `EnumFilterOperations` value (e.g. `"VALUE_THRESHOLD"`, `"FILL_GAPS"`). |
 | `args`      | any[]   | yes      | Positional args forwarded to the operation handler. Per-method shape rules below. |
+| `comment`   | string  | no       | Operator's note explaining why the operation was applied. Never read by the engine. Serialized trimmed and omitted when blank; a non-string value is rejected on load. |
+| `performedBy` | string | no      | Display name of whoever applied the operation. Provenance assigned by the consumer (from its own backend), never by the engine. Serialized trimmed and omitted when blank; a non-string value is rejected on load. |
 | `execution` | object  | no       | Per-dispatch audit record (timing, mode, dataset shape, status). See below. Omitted in pre-v0.1.x histories and may be absent on hand-written JSON; the loader accepts both shapes. |
+
+Unlike `execution`, which is audit-only and re-stamped per dispatch,
+`comment` and `performedBy` belong to the operation itself, so
+`applyHistory` carries both onto the replayed `HistoryItem`.
 
 The shape mirrors `ObservationRecord.dispatch`'s tuple form:
 `[method, ...args]`. A loaded history is replayed via
@@ -162,7 +168,7 @@ The shape mirrors `ObservationRecord.dispatch`'s tuple form:
 | `durationMs`    | number  | Wall-clock duration of the handler. Useful for retrospective perf review.   |
 | `mode`          | string  | `"worker"` or `"inline"` — the calibration layer's routing decision.        |
 | `datasetSize`   | number  | Observation count at dispatch time. Reflects the pre-edit shape.            |
-| `selectionSize` | number  | Indices the op acted on (filter's produced selection, or preceding SELECTION for selection-consuming edits). |
+| `selectionSize` | number  | Indices the op acted on (filter's produced selection, or the preceding entry's selection for selection-consuming edits). |
 
 Every sub-field is optional; the loader validates the type of any
 present value (finite number / `"success"` \| `"failed"` /
@@ -235,7 +241,7 @@ trailing range tuple.
 | `ASSIGN_DATETIMES_BULK` | `[datetimes[]]`                                                                                     | **Yes** (indices to assign at)           |
 | `DELETE_POINTS`         | `[]`                                                                                                | **Yes** (indices to delete)              |
 | `INTERPOLATE`           | `[]`                                                                                                | **Yes** (indices to interpolate)         |
-| `SHIFT_DATETIMES`       | `[amount, unit]`                                                                                    | **Yes** (indices to shift)               |
+| `SHIFT_DATETIMES`       | `[amount, unit, timeZone]`                                                                          | **Yes** (indices to shift)               |
 | `DRIFT_CORRECTION`      | `[value]`                                                                                           | **Yes** (consecutive groups → ranges, per-group drift = `value`) |
 
 ### Note on the runtime selection-coupling column

@@ -112,6 +112,10 @@ import SiteAccessControl from '@/components/Site/SiteAccessControl.vue'
 import hs, { PermissionAction, PermissionResource } from '@hydroserver/client'
 import type { MonitoringSite, MonitoringSiteMapSummary } from '@hydroserver/client'
 import { useWorkspaceStore } from '@/store/workspaces'
+import {
+  hasBootstrappedWorkspaces,
+  startAppInitialization,
+} from '@/bootstrap/appInitialization'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import { useMonitoringSiteStore } from '@/store/monitoringSite'
 import { useTagStore } from '@/store/tags'
@@ -218,7 +222,14 @@ const loadMonitoringSites = async () => {
 }
 
 const loadAssociatedWorkspaces = async () => {
-  if (!hs.session.isAuthenticated || workspaces.value.length) return
+  // App startup loads them; fetch here only if it couldn't.
+  await startAppInitialization()
+  if (
+    !hs.session.isAuthenticated ||
+    hasBootstrappedWorkspaces.value ||
+    workspaces.value.length
+  )
+    return
 
   try {
     const associatedWorkspaces = await hs.workspaces.listAllItems({

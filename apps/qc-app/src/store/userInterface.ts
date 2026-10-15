@@ -1,6 +1,6 @@
 import { LogicalOperation, Operator, TimeUnit } from '@uwrl/qc-utils'
-import { defineStore, storeToRefs } from 'pinia'
-import { ref, watch } from 'vue'
+import { defineStore } from 'pinia'
+import { computed, ref, watch } from 'vue'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { useOperationParamsStore } from '@/store/operationParams'
 
@@ -42,7 +42,7 @@ export enum DrawerType {
   None = '',
 }
 
-type View = DrawerType.Edit | DrawerType.Select
+export type View = DrawerType.Edit | DrawerType.Select
 
 export const useUIStore = defineStore('userInterface', () => {
   // Navigation Drawer
@@ -52,7 +52,7 @@ export const useUIStore = defineStore('userInterface', () => {
   // View
   const currentView = ref<View>(DrawerType.Select)
 
-  // Operation panel — which operation's details are shown in the right
+  // Operation panel: which operation's details are shown in the right
   // sidebar below the edit history. `null` means no panel is open.
   const selectedOperation = ref<string | null>(null)
 
@@ -60,16 +60,33 @@ export const useUIStore = defineStore('userInterface', () => {
   const cardHeight = ref(40)
   const tableHeight = ref(35)
 
-  const onRailItemClicked = (title: DrawerType) => {
-    if (selectedDrawer.value === title) {
-      isDrawerOpen.value = !isDrawerOpen.value
-    } else {
-      selectedDrawer.value = title
-      if (title === DrawerType.Edit) currentView.value = DrawerType.Edit
-      if (title === DrawerType.Select) currentView.value = DrawerType.Select
-      isDrawerOpen.value = true
-    }
+  /** Switch layouts. Neither view owns the edit session, so this only moves
+   *  the chrome: the target, its session and its working copy stay put. */
+  const showView = (view: View) => {
+    currentView.value = view
+    selectedDrawer.value = view
+    isDrawerOpen.value = true
   }
+
+  const onRailItemClicked = (title: DrawerType) => {
+    if (selectedDrawer.value === title) isDrawerOpen.value = !isDrawerOpen.value
+    else if (title !== DrawerType.None) showView(title)
+  }
+
+  /** True while the plot is the Select view's read-only preview. An edit
+   *  target keeps the full plot in both views, so the user always sees the
+   *  session band, the overview strip and the Context range control.
+   *
+   *  The data-vis store is read lazily: building the plot's first options
+   *  instantiates this store from inside that one's own setup, so
+   *  `storeToRefs` would hand back an empty object there. Nothing is being
+   *  edited that early anyway.
+   */
+  const isPlotPreview = computed(
+    () =>
+      currentView.value === DrawerType.Select &&
+      !useDataVisStore().qcDatastreamId
+  )
 
   // Change Values
   const operators = [...Object.keys(Operator)]
@@ -95,17 +112,17 @@ export const useUIStore = defineStore('userInterface', () => {
   // Seed gap / fill defaults when the QC datastream changes. Preference
   // order:
   //   1. Per-datastream persisted values (user's last commit for this
-  //      series) — so reopening a panel feels continuous.
+  //      series), so reopening a panel feels continuous.
   //   2. Datastream's declared `intendedTimeSpacing` /
-  //      `intendedTimeSpacingUnit` / `noDataValue` — a reasonable
+  //      `intendedTimeSpacingUnit` / `noDataValue`, a reasonable
   //      starting point for first-time use.
-  //   3. Current ref values — keep whatever the user had if the
+  //   3. Current ref values, keeping whatever the user had if the
   //      datastream lacks metadata.
   // A null change (unset) is skipped so closing and reopening the QC
   // drawer without a datastream loaded doesn't clobber form state.
-  const { qcDatastream } = storeToRefs(useDataVisStore())
+  // Read through a getter for the same reason as `isPlotPreview` above.
   watch(
-    qcDatastream,
+    () => useDataVisStore().qcDatastream,
     (ds) => {
       if (!ds) return
       const persisted = useOperationParamsStore().load(ds.id)
@@ -181,10 +198,12 @@ export const useUIStore = defineStore('userInterface', () => {
     selectedDrawer,
     isDrawerOpen,
     currentView,
+    isPlotPreview,
     selectedOperation,
     cardHeight,
     tableHeight,
     onRailItemClicked,
+    showView,
     shiftUnits,
     selectedShiftUnit,
     shiftAmount,
@@ -214,7 +233,7 @@ export const useUIStore = defineStore('userInterface', () => {
 }, {
   // Persist only the user-toggleable preference. The from/to of the
   // active filter window are panel state and reseed from data bounds
-  // on each mount — restoring stale ms across sessions would point at
+  // on each mount; restoring stale ms across sessions would point at
   // a window that no longer overlaps the current datastream's data.
   // `:v1` suffix matches the `qc-utils:calibration:v1` template so we
   // can invalidate the persisted value by bumping the version.

@@ -7,13 +7,16 @@ vi.mock('plotly.js-dist', () => ({
   },
 }))
 
+// Imported up front so building the module graph doesn't count against
+// a test's timeout.
+import * as mod from '@/utils/plotting/interaction'
+
 describe('plotting/interaction exports', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
   })
 
-  it('exports all six interaction symbols as functions', async () => {
-    const mod = await import('@/utils/plotting/interaction')
+  it('exports all six interaction symbols as functions', () => {
     expect(typeof mod.handleMouseMove).toBe('function')
     expect(typeof mod.handleMouseOut).toBe('function')
     expect(typeof mod.handleWheel).toBe('function')
@@ -22,8 +25,8 @@ describe('plotting/interaction exports', () => {
     expect(typeof mod.updateAxisChips).toBe('function')
   })
 
-  it('updateAxisChips(null) does not throw', async () => {
-    const { updateAxisChips } = await import('@/utils/plotting/interaction')
+  it('updateAxisChips(null) does not throw', () => {
+    const { updateAxisChips } = mod
     expect(() => updateAxisChips(null)).not.toThrow()
   })
 })

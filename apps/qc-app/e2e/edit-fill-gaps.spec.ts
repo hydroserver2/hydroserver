@@ -11,8 +11,8 @@ import { expectHistoryContains } from './support/ops'
 import { FIXTURE_OBS_START_MS } from './support/fixtures'
 
 function observationsWithGap() {
-  // See FIXTURE_OBS_START_MS — anchored to "now" so the series sits
-  // inside the QC app's default 1w window.
+  // See FIXTURE_OBS_START_MS: anchored to "now" so the series sits
+  // inside the QC app's default time range.
   const startMs = FIXTURE_OBS_START_MS
   const spacingMs = 15 * 60 * 1000
   const phenomenonTime: string[] = []
@@ -31,7 +31,7 @@ function observationsWithGap() {
 
 test.describe('edit: fill gaps', () => {
   test.beforeEach(async ({ page }) => {
-    await installMocks(page, { observations: observationsWithGap() })
+    await installMocks(page, { observations: observationsWithGap(), qcHistories: true })
     await setupEditView(page)
   })
 

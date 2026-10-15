@@ -11,7 +11,7 @@ import { setupEditView } from './support/app'
 
 test.describe('smoke (mocked backend)', () => {
   test.beforeEach(async ({ page }) => {
-    await installMocks(page)
+    await installMocks(page, { qcHistories: true })
   })
 
   test('boots into edit view without live network', async ({ page }) => {

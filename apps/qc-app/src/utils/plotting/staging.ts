@@ -6,12 +6,8 @@
  * helper tolerates being called when the plot isn't mounted yet so
  * callers can fire-and-forget from setup/unmount hooks.
  *
- * We own the shape state in module-local refs rather than
- * round-tripping through `gd.layout.shapes` between writes: Plotly
- * canonicalises layout reads (e.g. date `x0` values come back as ISO
- * strings, unknown fields like `name` get stripped) which made the
- * older "read, filter by name, write" pattern lose track of its own
- * shapes on the second call.
+ * The stage band is the only shape on the plot, so every flush writes
+ * `layout.shapes` whole.
  *
  * Gap bands used to live here as secondary red rectangles marking
  * detected gaps. They were removed because `edits.shapePosition:
@@ -28,23 +24,23 @@ import type { Layout } from 'plotly.js-dist'
 import { ref } from 'vue'
 import { usePlotlyStore } from '@/store/plotly'
 import { storeToRefs } from 'pinia'
+import { STAGE_SHAPE_NAME, type PlotlyShape } from './shapes'
+import { fromPlot, toPlotDate, toPlotX } from './plotTime'
 
 const GHOST_TRACE_NAME = 'qc-ghost-fills'
 
-type PlotlyShape = Partial<NonNullable<Layout['shapes']>[number]> & {
-  editable?: boolean
-}
-
 let stageShape: PlotlyShape | null = null
+/** The band's span in epoch ms; the shape gets it in the plot's frame. */
+let stageRange: [number, number] | null = null
 /** True when the plot is in pan mode, meaning the editable stage
  *  shape should be rendered. In zoom / select / lasso modes we drop
  *  the shape from the flushed array entirely so it can't swallow
- *  the mouse-down gesture or keep its grab cursor over the band —
- *  setting `editable: false` alone doesn't fully back out Plotly's
- *  shape-edit hit-testing when `edits.shapePosition` is on.
+ *  the mouse-down gesture or keep its grab cursor over the band,
+ *  since setting `editable: false` alone doesn't fully back out
+ *  Plotly's shape-edit hit-testing when `edits.shapePosition` is on.
  *
  *  Reactive so RangeStager can show a hint ("Range hidden in zoom
- *  mode — switch back to pan to resize") when the band goes away.
+ *  mode, switch back to pan to resize") when the band goes away.
  */
 export const stagePanMode = ref(true)
 
@@ -57,13 +53,23 @@ function getRoot(): HTMLElement | null {
 async function flushShapes() {
   const root = getRoot()
   if (!root) return
-  // The stage shape is the only shape we own. Drop it outside pan
-  // mode so zoom / select / lasso gestures aren't captured by the
-  // shape-edit hit-tester.
-  const shapes: PlotlyShape[] =
-    stageShape && stagePanMode.value ? [stageShape] : []
+  // Drop the stage shape outside pan mode so zoom / select / lasso
+  // gestures aren't captured by the shape-edit hit-tester.
+  const shapes =
+    stageShape && stageRange && stagePanMode.value
+      ? [
+          {
+            ...stageShape,
+            x0: toPlotDate(stageRange[0]),
+            x1: toPlotDate(stageRange[1]),
+          },
+        ]
+      : []
   await Plotly.relayout(root, { shapes } as unknown as Partial<Layout>)
 }
+
+/** Redraw the band where it was, after the time zone changes. */
+export const redrawStageShape = (): Promise<void> => flushShapes()
 
 /**
  * Read the plot's current dragmode off the live layout. Used at
@@ -80,7 +86,7 @@ function currentDragmode(): string {
 /**
  * Force the plot back into pan mode. Called by the staging-based
  * operation panels (Find Gaps / Fill Gaps) when they open so the
- * range overlay is immediately interactive — otherwise a user who
+ * range overlay is immediately interactive. Otherwise a user who
  * was last in zoom/select/lasso mode would open the panel to a
  * hidden band (we drop it outside pan mode to keep those tools
  * unobstructed) and have to switch tools themselves to resize it.
@@ -96,18 +102,18 @@ export async function enterPanMode(): Promise<void> {
  * Add (or replace) the single editable range shape that represents
  * the operation's staged date window. The shape spans the full
  * y-axis so the user can grab it anywhere vertically. It only
- * actually renders in pan mode (see `flushShapes`) — zoom /
+ * actually renders in pan mode (see `flushShapes`); zoom /
  * select / lasso modes drop it entirely to keep their box-drag
  * gestures unobstructed.
  */
 export async function setStageShape(fromTs: number, toTs: number) {
   stagePanMode.value = currentDragmode() === 'pan'
+  stageRange = [fromTs, toTs]
   stageShape = {
+    name: STAGE_SHAPE_NAME,
     type: 'rect',
     xref: 'x',
     yref: 'paper',
-    x0: fromTs,
-    x1: toTs,
     y0: 0,
     y1: 1,
     fillcolor: 'rgba(25, 118, 210, 0.14)',
@@ -120,6 +126,7 @@ export async function setStageShape(fromTs: number, toTs: number) {
 
 export async function clearStageShape() {
   stageShape = null
+  stageRange = null
   await flushShapes()
 }
 
@@ -147,7 +154,7 @@ export async function setGhostFills(xs: number[], ys: number[]) {
     name: GHOST_TRACE_NAME,
     type: 'scattergl',
     mode: 'markers',
-    x: xs,
+    x: toPlotX(xs),
     y: ys,
     marker: {
       // Bumped from 0.55/0.9 with a thin X-glyph: barely readable
@@ -193,18 +200,14 @@ export function onStageDrag(
   if (!root?.on) return () => { }
 
   const parseTs = (v: unknown): number | null => {
-    if (typeof v === 'number' && Number.isFinite(v)) return v
-    if (typeof v === 'string') {
-      const t = Date.parse(v)
-      return Number.isFinite(t) ? t : null
-    }
-    if (v instanceof Date) return v.getTime()
-    return null
+    if (typeof v !== 'number' && typeof v !== 'string') return null
+    const t = fromPlot(v)
+    return Number.isFinite(t) ? t : null
   }
 
   const handler = (event: unknown) => {
     const evt = event as Record<string, unknown> | null
-    if (!evt || !stageShape) return
+    if (!evt || !stageShape || !stageRange) return
 
     // Dragmode change: the user picked zoom / select / lasso from
     // the modebar. Drop the stage shape from the flushed array so
@@ -221,13 +224,11 @@ export function onStageDrag(
       return
     }
 
-    // Stage shape is the only shape we flush, so its index is
-    // always 0 in the layout shapes array.
-    const stageIdx = 0
-    const x0Key = `shapes[${stageIdx}].x0`
-    const x1Key = `shapes[${stageIdx}].x1`
-    const y0Key = `shapes[${stageIdx}].y0`
-    const y1Key = `shapes[${stageIdx}].y1`
+    // The stage band is the only shape, so it is always `shapes[0]`.
+    const x0Key = 'shapes[0].x0'
+    const x1Key = 'shapes[0].x1'
+    const y0Key = 'shapes[0].y0'
+    const y1Key = 'shapes[0].y1'
     const touchedX0 = Object.prototype.hasOwnProperty.call(evt, x0Key)
     const touchedX1 = Object.prototype.hasOwnProperty.call(evt, x1Key)
     const touchedY0 = Object.prototype.hasOwnProperty.call(evt, y0Key)
@@ -237,8 +238,8 @@ export function onStageDrag(
     // Horizontal edit: pick the new x from whichever side(s) the
     // event carried, falling back to the stashed value for the
     // untouched side.
-    const nextX0 = touchedX0 ? parseTs(evt[x0Key]) : Number(stageShape.x0)
-    const nextX1 = touchedX1 ? parseTs(evt[x1Key]) : Number(stageShape.x1)
+    const nextX0 = touchedX0 ? parseTs(evt[x0Key]) : stageRange[0]
+    const nextX1 = touchedX1 ? parseTs(evt[x1Key]) : stageRange[1]
     if (!Number.isFinite(nextX0) || !Number.isFinite(nextX1)) return
     const from = Math.min(nextX0 as number, nextX1 as number)
     const to = Math.max(nextX0 as number, nextX1 as number)
@@ -246,11 +247,12 @@ export function onStageDrag(
     // Rebuild the shape with the horizontal update applied and y
     // pinned to the full paper span. Pushing the whole shape (not
     // a dotted-path y0/y1 relayout) overrides Plotly's in-progress
-    // drag state in a single write — the earlier split approach
+    // drag state in a single write. The earlier split approach
     // (x via the parent's watcher, y via a separate relayout) was
     // racing, leaving vertical edits visible and horizontal edits
     // dropped.
-    stageShape = { ...stageShape, x0: from, x1: to, y0: 0, y1: 1 }
+    stageRange = [from, to]
+    stageShape = { ...stageShape, y0: 0, y1: 1 }
     void flushShapes()
 
     // Only notify the parent when the horizontal range actually

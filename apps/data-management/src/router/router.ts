@@ -4,6 +4,10 @@ import {
   createRouter,
   createWebHistory,
 } from 'vue-router'
+import {
+  isHydroServerReady,
+  waitForHydroServerInitialization,
+} from '@/bootstrap/appInitialization'
 import { routes } from '@/router/routes'
 import hs from '@hydroserver/client'
 
@@ -29,6 +33,10 @@ function updateDocumentTitle(matched: RouteRecordNormalized[]): void {
 }
 
 router.beforeEach(async (to: RouteLocationNormalized) => {
+  // The app mounts before the client is ready; the session decides access.
+  await waitForHydroServerInitialization()
+  if (!isHydroServerReady.value) return false
+
   if (!hs.session.isAuthenticated && to.meta.requiresAuth) {
     await hs.session.login(to.fullPath)
     return false

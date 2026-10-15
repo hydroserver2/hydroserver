@@ -5,6 +5,16 @@ from core.iam.models import Organization, UserType, OrganizationType
 User = get_user_model()
 
 
+def type_choices(types, current=None):
+    choices = (
+        [("", "Select a type...")] + [(t, t) for t in types] if types else [("Other", "Other")]
+    )
+    if current and current not in dict(choices):
+        choices.append((current, current))
+
+    return choices
+
+
 class ProfileForm(forms.ModelForm):
     has_organization = forms.BooleanField(required=False, label="Affiliated with an organization")
     org_name = forms.CharField(max_length=255, required=False, label="Organization name")
@@ -26,14 +36,15 @@ class ProfileForm(forms.ModelForm):
 
         user_types = UserType.objects.filter(public=True).values_list("name", flat=True)
         self.fields["user_type"] = forms.ChoiceField(
-            choices=[("", "Select a type...")] + [(t, t) for t in user_types],
+            choices=type_choices(user_types, self.instance.user_type),
             required=True,
             label="User type",
         )
 
         org_types = OrganizationType.objects.filter(public=True).values_list("name", flat=True)
+        organization = self.instance.organization if self.instance else None
         self.fields["org_type"] = forms.ChoiceField(
-            choices=[("", "Select a type...")] + [(t, t) for t in org_types],
+            choices=type_choices(org_types, organization and organization.organization_type),
             required=False,
             label="Organization type",
         )

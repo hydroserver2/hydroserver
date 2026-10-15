@@ -143,6 +143,82 @@ describe('ObservationRecord — worker paths', () => {
     expect(last.execution.mode).toBe('worker')
   })
 
+  it('DRIFT_CORRECTION on workers corrects through the last selected point', async () => {
+    await rec.dispatch([
+      [EnumFilterOperations.SELECTION, [2, 3, 4, 8, 9]],
+      [EnumEditOperations.DRIFT_CORRECTION, 3],
+    ])
+    await flushMicrotasks()
+    expect(rec.history[rec.history.length - 1].execution.mode).toBe('worker')
+    expect([2, 3, 4, 8, 9].map((i) => rec.dataY[i])).toEqual([
+      20, 31.5, 43, 80, 93,
+    ])
+  })
+
+  describe('no-data values on workers', () => {
+    const ND = -9999
+    const hour = 60 * 60 * 1000
+    const make = async (dataValues: number[]) => {
+      const r = new ObservationRecord(
+        { datetimes: dataValues.map((_, i) => i * hour), dataValues },
+        { noDataValue: ND }
+      )
+      await r.reload()
+      return r
+    }
+
+    it('CHANGE_VALUES skips no-data points', async () => {
+      const r = await make([10, ND, 30])
+      await r.dispatch([
+        [EnumFilterOperations.SELECTION, [0, 1, 2]],
+        [EnumEditOperations.CHANGE_VALUES, Operator.ADD, 1],
+      ])
+      await flushMicrotasks()
+      expect(r.history[r.history.length - 1].execution.mode).toBe('worker')
+      expect(Array.from(r.dataY)).toEqual([11, ND, 31])
+    })
+
+    it('DRIFT_CORRECTION skips no-data points', async () => {
+      const r = await make([10, ND, 30, 40, ND, 60])
+      await r.dispatch([
+        [EnumFilterOperations.SELECTION, [0, 1, 2, 3, 4, 5]],
+        [EnumEditOperations.DRIFT_CORRECTION, 5],
+      ])
+      await flushMicrotasks()
+      expect(r.history[r.history.length - 1].execution.mode).toBe('worker')
+      expect(Array.from(r.dataY)).toEqual([10, ND, 32, 43, ND, 65])
+    })
+
+    it('INTERPOLATE anchors past no-data points', async () => {
+      const r = await make([10, ND, 0, 0, ND, 60])
+      await r.dispatch([
+        [EnumFilterOperations.SELECTION, [2, 3]],
+        [EnumEditOperations.INTERPOLATE],
+      ])
+      await flushMicrotasks()
+      expect(r.history[r.history.length - 1].execution.mode).toBe('worker')
+      expect(Array.from(r.dataY)).toEqual([10, ND, 30, 40, ND, 60])
+    })
+
+    it('FILL_GAPS uses the fill value when a gap edge is no-data', async () => {
+      const r = new ObservationRecord(
+        { datetimes: [0, 3 * hour, 4 * hour, 7 * hour], dataValues: [10, ND, 40, 70] },
+        { noDataValue: ND }
+      )
+      await r.reload()
+      await r.dispatch(
+        EnumEditOperations.FILL_GAPS,
+        [90, TimeUnit.MINUTE],
+        [1, TimeUnit.HOUR],
+        true,
+        ND
+      )
+      await flushMicrotasks()
+      expect(r.history[r.history.length - 1].execution.mode).toBe('worker')
+      expect(Array.from(r.dataY)).toEqual([10, ND, ND, ND, 40, 50, 60, 70])
+    })
+  })
+
   it('CHANGE_VALUES stays inline when calibration says useWorker=false', async () => {
     // Flip the calibration mock to the "inline wins" branch — that's
     // the path the uncalibrated default profile produces for any
@@ -176,7 +252,7 @@ describe('ObservationRecord — worker paths', () => {
     const originalLen = rec.dataX.length
     await rec.dispatch([
       [EnumFilterOperations.SELECTION, [5, 6, 7]],
-      [EnumEditOperations.SHIFT_DATETIMES, 1, TimeUnit.HOUR],
+      [EnumEditOperations.SHIFT_DATETIMES, 1, TimeUnit.HOUR, 'UTC'],
     ])
     await flushMicrotasks()
     const last = rec.history[rec.history.length - 1]
@@ -581,18 +657,13 @@ describe('ObservationRecord — internal helpers via dispatch', () => {
     expect(rec.dataY[10]).not.toBe(999)
   })
 
-  it('DRIFT_CORRECTION emits one range per consecutive group in the selection', async () => {
-    // Same idea: with selection [2, 3, 8, 9] the
-    // `_driftCorrectionFromSelection` builder emits two range
-    // tuples, one per group, by walking the grouped output.
+  it('DRIFT_CORRECTION corrects each consecutive group through its last point', async () => {
     await rec.dispatch([
       [EnumFilterOperations.SELECTION, [2, 3, 8, 9]],
       [EnumEditOperations.DRIFT_CORRECTION, 1],
     ])
-    // No assertion on exact values — the relevant invariant is
-    // that the dispatch completed without throwing, which means
-    // both groups were processed.
-    const last = rec.history[rec.history.length - 1]
-    expect(last.execution.status).not.toBe('failed')
+    expect([rec.dataY[2], rec.dataY[3], rec.dataY[8], rec.dataY[9]]).toEqual([
+      20, 31, 80, 91,
+    ])
   })
 })

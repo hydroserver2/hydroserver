@@ -64,6 +64,7 @@ ALLOWED_HOSTS.append(urlparse(PROXY_BASE_URL).hostname)
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = env.bool("CORS_ALLOW_CREDENTIALS", default=not STRICT_SECURITY)
 CORS_URLS_REGEX = r"^/$|^/(api|identity|\.well-known|media|static)/.*$"
+CORS_EXPOSE_HEADERS = ["X-Checksum"]
 
 CSRF_TRUSTED_ORIGINS = [
     origin.strip()

@@ -1,28 +1,13 @@
 /**
- * QC History — Vue-side save / load wrapper.
- *
- * Wraps qc-utils' `serializeHistory` / `parseHistory` / `applyHistory`
- * with the consumer-specific glue:
- *   - reading the active wall-clock window from the data-vis store
- *     for the save side
- *   - file-picker / blob-download plumbing
- *   - fetching the QC history's window into the active datastream's
- *     `ObservationRecord` before replay (qc-utils itself is data-
- *     agnostic; the consumer drives the data fetch)
+ * Download the current QC history as JSON, windowed to the session (or,
+ * with no session, the loaded range).
  */
 
 import { storeToRefs } from 'pinia'
-import {
-  applyHistory,
-  parseHistory,
-  serializeHistory,
-  type ApplyHistoryReport,
-  type ObservationRecord,
-  type QcHistory,
-} from '@uwrl/qc-utils'
+import { serializeHistory, type ObservationRecord } from '@uwrl/qc-utils'
 import { usePlotlyStore } from '@/store/plotly'
 import { useDataVisStore } from '@/store/dataVisualization'
-import { useObservationStore } from '@/store/observations'
+import { useQcSessionStore } from '@/store/qcSession'
 
 /** Filename for downloaded QC histories: `qc-history-<datastream>-<isoTimestamp>.json`. */
 function defaultFilename(datastreamName?: string): string {
@@ -53,7 +38,23 @@ function downloadJson(payload: unknown, filename: string): void {
 export function useQcHistory() {
   const { selectedSeries } = storeToRefs(usePlotlyStore())
   const { qcDatastream, beginDate, endDate } = storeToRefs(useDataVisStore())
-  const { fetchObservationsInRange } = useObservationStore()
+  const { viewedSession, inProgressSession } = storeToRefs(useQcSessionStore())
+
+  // While editing, `beginDate`/`endDate` follow the context range, not the
+  // window the edits were made over.
+  function historyWindow() {
+    const session = viewedSession.value ?? inProgressSession.value
+    if (!session) {
+      return {
+        startDate: beginDate.value.toISOString(),
+        endDate: endDate.value.toISOString(),
+      }
+    }
+    return {
+      startDate: new Date(session.phenomenonTimeStart).toISOString(),
+      endDate: new Date(session.phenomenonTimeEnd).toISOString(),
+    }
+  }
 
   /**
    * Serialize the current QC history to JSON and trigger a browser
@@ -68,55 +69,14 @@ export function useQcHistory() {
     // qc-utils' `ObservationRecord` exposes a deep typed shape; the
     // cast pins the value to that public type so vue-tsc doesn't try
     // to structurally re-derive it from the live worker bindings.
-    const history = serializeHistory(series as ObservationRecord, {
-      startDate: beginDate.value.toISOString(),
-      endDate: endDate.value.toISOString(),
-    })
+    const history = serializeHistory(
+      series as ObservationRecord,
+      historyWindow()
+    )
 
     const datastreamName = qcDatastream.value?.name
     downloadJson(history, defaultFilename(datastreamName))
   }
 
-  /**
-   * Read a JSON file, parse it as a QcHistory, fetch the QC history's
-   * window into the current QC datastream, and replay the
-   * operations. Returns the per-op report so the caller can surface
-   * a Snackbar / toast summary.
-   *
-   * No datastream-id matching is enforced — QC histories are reusable
-   * across datastreams (see qc-utils' QC_HISTORY.md "Stay reusable").
-   */
-  async function importHistory(file: File): Promise<ApplyHistoryReport> {
-    const series = selectedSeries.value?.data
-    const datastream = qcDatastream.value
-    if (!series || !datastream) {
-      throw new Error('Pick a QC datastream before loading a QC history.')
-    }
-
-    const text = await file.text()
-    let json: unknown
-    try {
-      json = JSON.parse(text)
-    } catch (e) {
-      throw new Error(
-        `Couldn't parse ${file.name} as JSON: ${e instanceof Error ? e.message : String(e)}`
-      )
-    }
-
-    const history: QcHistory = parseHistory(json)
-
-    // Fetch the QC history's authored window into the active record
-    // BEFORE replaying. Selection-coupled ops reference indices
-    // against this windowed dataset; loading them against a
-    // differently-sized window would mis-target.
-    await fetchObservationsInRange(
-      datastream,
-      new Date(history.window.startDate),
-      new Date(history.window.endDate)
-    )
-
-    return await applyHistory(series as ObservationRecord, history)
-  }
-
-  return { exportHistory, importHistory }
+  return { exportHistory }
 }

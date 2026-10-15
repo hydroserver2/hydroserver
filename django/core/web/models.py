@@ -136,6 +136,13 @@ class AnalyticsConfiguration(SingletonModel):
     )
     enable_clarity_analytics = models.BooleanField(default=False)
     clarity_project_id = models.CharField(max_length=255, blank=True, null=True)
+    enable_google_analytics = models.BooleanField(default=False)
+    google_analytics_measurement_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="Google Analytics 4 measurement ID (for example, G-XXXXXXXXXX).",
+    )
 
     def __str__(self):
         return "Analytics Configuration"

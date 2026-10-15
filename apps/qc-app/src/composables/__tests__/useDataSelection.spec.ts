@@ -23,6 +23,7 @@ vi.mock('@/store/plotly', () => {
       plotlyRef,
       selectedSeries,
       suppressedEchoSelection,
+      previewIndex: ref(null),
       graphSeriesArray,
       updateOptions: vi.fn(),
       clearChartState: vi.fn(),
@@ -145,10 +146,8 @@ describe('useDataSelection date-range helpers', () => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
 
-    // Seed the plotly ref with a deterministic x-axis so the
-    // computeds can look up dates by index without a real Plotly
-    // runtime. One-hour spacing over four points lets us pick clear
-    // index boundaries for `selectDateRange`.
+    // One-hour spacing over four points gives clear index boundaries for
+    // `selectDateRange`.
     const base = new Date('2025-01-01T00:00:00Z').getTime()
     const hour = 60 * 60 * 1000
     const xs = [
@@ -169,36 +168,6 @@ describe('useDataSelection date-range helpers', () => {
         dataX: xs,
       },
     }
-  })
-
-  it('startDate / endDate fall back to the series bookends with no selection', async () => {
-    const { useDataSelection } = await import('@/composables/useDataSelection')
-    const { startDate, endDate } = useDataSelection()
-
-    expect(startDate.value.toISOString()).toBe('2025-01-01T00:00:00.000Z')
-    expect(endDate.value.toISOString()).toBe('2025-01-01T03:00:00.000Z')
-  })
-
-  it('startDate / endDate reflect the selected range when selectedData is set', async () => {
-    const { useDataSelection } = await import('@/composables/useDataSelection')
-    const { useDataVisStore } = await import('@/store/dataVisualization')
-    const store = useDataVisStore()
-    store.selectedData = [1, 2]
-
-    const { startDate, endDate } = useDataSelection()
-    expect(startDate.value.toISOString()).toBe('2025-01-01T01:00:00.000Z')
-    expect(endDate.value.toISOString()).toBe('2025-01-01T02:00:00.000Z')
-  })
-
-  it('startDateString / endDateString use formatDate on the resolved dates', async () => {
-    const { useDataSelection } = await import('@/composables/useDataSelection')
-    const { startDateString, endDateString } = useDataSelection()
-
-    // formatDate is stubbed to ISO in the module mock above, so the
-    // ternary `startDate.value ? formatDate(...) : ''` should emit an
-    // ISO string — the non-empty branch.
-    expect(startDateString.value).toBe('2025-01-01T00:00:00.000Z')
-    expect(endDateString.value).toBe('2025-01-01T03:00:00.000Z')
   })
 
   it('selectDateRange selects every point in the inclusive window', async () => {
@@ -225,7 +194,7 @@ describe('useDataSelection date-range helpers', () => {
     const { setSelectedPoints } = await import('@/utils/plotting/plotly')
 
     const { selectDateRange } = useDataSelection()
-    // `to` earlier than `from` — startIdx > endIdx, should no-op.
+    // `to` earlier than `from`: startIdx > endIdx, should no-op.
     await selectDateRange(
       new Date('2025-01-01T03:00:00Z'),
       new Date('2025-01-01T00:30:00Z')

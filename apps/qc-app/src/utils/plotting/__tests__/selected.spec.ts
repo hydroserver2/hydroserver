@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { ref } from 'vue'
+import { ref, toRaw } from 'vue'
 
 vi.mock('@uwrl/qc-utils', () => ({
   EnumFilterOperations: { SELECTION: 'SELECTION' },
@@ -12,6 +12,7 @@ const selectedSeries = ref<any>(null)
 const isUpdating = ref(false)
 const suppressedEchoSelection = ref<number[] | null>(null)
 
+const previewIndex = ref<number | null>(null)
 vi.mock('@/store/plotly', () => ({
   usePlotlyStore: () => ({
     plotlyRef,
@@ -19,6 +20,7 @@ vi.mock('@/store/plotly', () => ({
     isUpdating,
     editHistory: ref([]),
     suppressedEchoSelection,
+    previewIndex,
   }),
 }))
 
@@ -126,7 +128,7 @@ describe('handleSelected', () => {
     selectedSeries.value = { data: { dispatchFilter } }
     plotlyRef.value = makePlot('qc', [4, 5])
     // Programmatic write expected [9, 10], user gesture landed [4, 5]
-    // — mismatch should fall through to dispatch.
+    // so the mismatch should fall through to dispatch.
     suppressedEchoSelection.value = [9, 10]
     await handleSelected({} as any, { fromRelayout: true })
     expect(dispatchFilter).toHaveBeenCalledWith('SELECTION', [4, 5])
@@ -149,4 +151,79 @@ describe('handleSelected', () => {
     await handleSelected({ points: [] } as any)
     expect(dispatchFilter).toHaveBeenCalledWith('SELECTION', [102])
   })
+
+  // A Fit or a y-only zoom relayouts with keys the zoom guard doesn't know;
+  // the selection it leaves behind is the stored one, so nothing is rebuilt.
+  it('leaves an unchanged selection alone on a relayout', async () => {
+    qcDatastream.value = { id: 'qc' }
+    selectedSeries.value = { data: { dispatchFilter } }
+    plotlyRef.value = makePlot('qc', [2, 3], 100)
+    const stored = [102, 103]
+    selectedData.value = stored
+    suppressedEchoSelection.value = [102, 103]
+    await handleSelected({ 'yaxis.range': [0, 1] } as any, {
+      fromRelayout: true,
+    })
+    expect(dispatchFilter).not.toHaveBeenCalled()
+    expect(toRaw(selectedData.value)).toBe(stored)
+    expect(suppressedEchoSelection.value).toBeNull()
+  })
+
+  it('takes a new selection of the same size on a relayout', async () => {
+    qcDatastream.value = { id: 'qc' }
+    selectedSeries.value = { data: { dispatchFilter } }
+    plotlyRef.value = makePlot('qc', [4, 5])
+    selectedData.value = [4, 6]
+    await handleSelected({ selections: [] } as any, { fromRelayout: true })
+    expect(selectedData.value).toEqual([4, 5])
+    expect(dispatchFilter).toHaveBeenCalledWith('SELECTION', [4, 5])
+  })
+
+  it('treats a missing and an empty selection as the same on a relayout', async () => {
+    qcDatastream.value = { id: 'qc' }
+    selectedSeries.value = { data: { dispatchFilter } }
+    plotlyRef.value = makePlot('qc', undefined)
+    selectedData.value = []
+    await handleSelected({ 'xaxis.range': [0, 1] } as any, {
+      fromRelayout: true,
+    })
+    expect(dispatchFilter).not.toHaveBeenCalled()
+    expect(selectedData.value).toEqual([])
+  })
+
+describe('handleSelected on a committed session', () => {
+  it('highlights without recording a SELECTION', async () => {
+    const { useQcSessionStore } = await import('@/store/qcSession')
+    useQcSessionStore().applySessions('h', [
+      {
+        id: 'a',
+        status: 'committed',
+        phenomenonTimeStart: '2025-01-01T00:00:00Z',
+        phenomenonTimeEnd: '2025-02-01T00:00:00Z',
+        createdAt: '2025-01-01T00:00:00Z',
+        committedAt: '2025-02-01T00:00:00Z',
+      } as any,
+    ])
+    const { handleSelected } = await import('../selected')
+    const dispatchFilter = vi.fn()
+    selectedSeries.value = { data: { dispatchFilter } } as any
+    await handleSelected({ points: [{ pointIndex: 1, curveNumber: 0 }] } as any)
+    expect(dispatchFilter).not.toHaveBeenCalled()
+  })
+})
+
+describe('handleSelected while previewing a history step', () => {
+  it('highlights without recording a SELECTION', async () => {
+    previewIndex.value = 1
+    try {
+      const { handleSelected } = await import('../selected')
+      const dispatchFilter = vi.fn()
+      selectedSeries.value = { data: { dispatchFilter } } as any
+      await handleSelected({ points: [{ pointIndex: 1, curveNumber: 0 }] } as any)
+      expect(dispatchFilter).not.toHaveBeenCalled()
+    } finally {
+      previewIndex.value = null
+    }
+  })
+})
 })

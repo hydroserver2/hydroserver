@@ -2,7 +2,7 @@
  * Fixture data for the mocked HydroServer backend.
  *
  * These shapes intentionally carry only the fields the QC app reads at
- * render time — enough to light up the workspace picker, datastream
+ * render time: enough to light up the workspace picker, datastream
  * table, plot, and every filter / edit operation. Fields the server
  * would normally include but which the app ignores (audit stamps,
  * embedded documents, etc.) are omitted to keep the fixtures small.
@@ -21,20 +21,21 @@ export const METHOD_ID = 'sensor-adv'
 // Y-axis lights up with its own scale instead of overlaying the
 // primary axis 1:1.
 export const DATASTREAM_ID_B = 'ds-qc-e2e-b'
+// Managed (QC) datastream derived from DATASTREAM_ID, plus the history that
+// links the two. Only served when `installMocks` is given `qcHistories: true`,
+// so specs that don't care keep a catalog with no managed datastreams.
+export const MANAGED_DATASTREAM_ID = 'ds-qc-e2e-managed'
+export const QC_HISTORY_ID = 'qch-e2e'
+export const QC_PROC_LEVEL_ID = 'pl-qc'
 export const UNIT_ID_B = 'unit-celsius'
 export const OBSERVED_PROP_ID_B = 'op-water-temp'
 export const METHOD_ID_B = 'sensor-temp'
 
 /**
- * Synthetic-observation timing constants, anchored to "now" at module
- * load so the generated series always falls inside the QC app's default
- * `1w` time-range window. Hard-coding a literal anchor (e.g.
- * `2024-01-01`) was a footgun: as the calendar moved past the fixture,
- * the main plot — which slices by `[beginDate, endDate]` — silently
- * collapsed to an empty window even though the ContextPlot (which uses
- * all observations un-windowed) kept looking correct. Specs that build
- * custom observation series should import `FIXTURE_OBS_START_MS` and
- * derive their timestamps from it for the same reason.
+ * Synthetic-observation timing constants. The catalog's phenomenon times are
+ * derived from these, and the app's presets anchor to them, so specs that
+ * build custom series should derive timestamps from `FIXTURE_OBS_START_MS`
+ * or override the catalog times to match (`catalogOverrides`).
  */
 export const FIXTURE_OBS_SPACING_MS = 15 * 60 * 1000
 export const FIXTURE_OBS_COUNT = 120
@@ -78,7 +79,20 @@ export const processingLevels = [
     description: 'Unprocessed readings',
     definition: 'https://example.com/processing-levels/raw',
   },
+  {
+    id: QC_PROC_LEVEL_ID,
+    workspaceId: WORKSPACE_ID,
+    code: 'QC',
+    name: 'Quality controlled',
+    description: 'Reviewed readings',
+    definition: null,
+  },
 ]
+
+/** The datastream status vocabulary, as `/datastreams/statuses` serves it. */
+export const datastreamStatuses = ['ongoing', 'complete', 'planned'].map(
+  (name) => ({ id: `status-${name}`, name, description: '' })
+)
 
 export const observedProperties = [
   {
@@ -239,12 +253,104 @@ export const datastreams = [
 ]
 
 /**
+ * Only served when `installMocks` is given `qcHistories: true`. Kept out of
+ * `datastreams` so specs that don't opt in keep a catalog of plain rows.
+ */
+export const managedDatastream = {
+    id: MANAGED_DATASTREAM_ID,
+    workspaceId: WORKSPACE_ID,
+    name: 'Streamflow Datastream (QC)',
+    description: 'Quality-controlled version of the streamflow datastream',
+    observationType: 'OM_Measurement',
+    aggregationStatistic: 'Continuous',
+    timeAggregationInterval: 15,
+    timeAggregationIntervalUnit: 'minutes',
+    intendedTimeSpacing: 15,
+    intendedTimeSpacingUnit: 'minutes',
+    sampledMedium: 'Surface water',
+    resultType: 'Time Series',
+    status: 'ongoing',
+    valueCount: 118,
+    noDataValue: -9999,
+    isPrivate: false,
+    isVisible: true,
+    unitId: UNIT_ID,
+    monitoringSiteId: MONITORING_SITE_ID,
+    processingLevelId: QC_PROC_LEVEL_ID,
+    observedPropertyId: OBSERVED_PROP_ID,
+    methodId: METHOD_ID,
+    phenomenonBeginTime: FIXTURE_OBS_START_ISO,
+    phenomenonEndTime: FIXTURE_OBS_END_ISO,
+    resultBeginTime: FIXTURE_OBS_START_ISO,
+    resultEndTime: FIXTURE_OBS_END_ISO,
+    monitoringSite: {
+      id: MONITORING_SITE_ID,
+      name: 'Test Stream Site',
+      code: 'STRM-E2E',
+      type: 'Stream',
+    },
+    observedProperty: {
+      id: OBSERVED_PROP_ID,
+      name: 'Streamflow',
+      code: 'Q',
+      definition: 'Stream discharge',
+      type: 'Hydrology',
+    },
+    processingLevel: {
+      id: QC_PROC_LEVEL_ID,
+      code: 'QC',
+      name: 'Quality controlled',
+      description: 'Reviewed readings',
+    },
+    unit: {
+      id: UNIT_ID,
+      name: 'cubic meters per second',
+      symbol: 'm³/s',
+      definition: 'SI unit of volumetric flow rate',
+      type: 'Flow',
+    },
+  }
+
+export const qcHistories = [
+  {
+    id: QC_HISTORY_ID,
+    workspaceId: WORKSPACE_ID,
+    sourceDatastreamId: DATASTREAM_ID,
+    managedDatastreamId: MANAGED_DATASTREAM_ID,
+  },
+]
+
+export const QC_SESSION_AUTHOR = {
+  name: 'Test User',
+  email: 'test@example.com',
+}
+export const QC_SOURCE_CHECKSUM = 'e2e-source-checksum'
+
+/** The committed session every QC history fixture starts with. */
+export const COMMITTED_SESSION_ID = 'qcs-e2e-1'
+
+export const qcSessions = [
+  {
+    id: COMMITTED_SESSION_ID,
+    historyId: QC_HISTORY_ID,
+    status: 'committed' as const,
+    description: 'First pass',
+    phenomenonTimeStart: FIXTURE_OBS_START_ISO,
+    phenomenonTimeEnd: FIXTURE_OBS_END_ISO,
+    sourceChecksum: QC_SOURCE_CHECKSUM,
+    createdAt: FIXTURE_OBS_START_ISO,
+    committedAt: FIXTURE_OBS_START_ISO,
+    createdBy: QC_SESSION_AUTHOR,
+    dependencyIds: [] as string[],
+  },
+]
+
+/**
  * Generate a deterministic, well-shaped synthetic observation set:
  * `count` samples at 15-minute spacing starting at `startMs`, with
  * values following `y = 10 + 5 * sin(i / 5)` so every filter op has
  * interesting but predictable points to select. The default anchor is
- * `FIXTURE_OBS_START_MS` (relative to "now") so the series always lies
- * inside the QC app's default `1w` time-range window.
+ * `FIXTURE_OBS_START_MS`, matching the catalog's phenomenon times.
  */
 export function buildObservations(
   count = FIXTURE_OBS_COUNT,

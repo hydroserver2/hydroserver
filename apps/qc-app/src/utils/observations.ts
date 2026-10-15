@@ -13,35 +13,27 @@ export const fetchObservationsSync = async (
     return { datetimes: [], dataValues: [] }
   }
 
-  try {
-    const result = await hs.value.datastreams.getObservations(id, {
-      limit: 50_000,
-      datetime: `${startTime?.toISOString() ?? phenomenonBeginTime}/${
-        endTime?.toISOString() ?? phenomenonEndTime
-      }`,
-      sortby: ['phenomenonTime'],
-      profile: [ObservationProfile.Column],
-      properties: ['phenomenonTime', 'result'],
-    })
+  // getObservations follows pages until a short one, so an out-of-date value
+  // count on the datastream can't cut the series short.
+  const result = await hs.value.datastreams.getObservations(id, {
+    limit: 50_000,
+    datetime: `${startTime?.toISOString() ?? phenomenonBeginTime}/${
+      endTime?.toISOString() ?? phenomenonEndTime
+    }`,
+    sortby: ['phenomenonTime'],
+    profile: [ObservationProfile.Column],
+    properties: ['phenomenonTime', 'result'],
+  })
+  if (!result.ok) throw new Error(result.message || 'Could not load observations.')
 
-    if (!result.ok) {
-      return { datetimes: [], dataValues: [] }
-    }
+  const [group] = result.data as unknown as {
+    columns: { result: number[]; phenomenonTime: string[] }
+  }[]
+  const cols = group?.columns
+  if (!cols?.result?.length) return { datetimes: [], dataValues: [] }
 
-    const [group] = result.data as unknown as {
-      columns: { result: number[]; phenomenonTime: string[] }
-    }[]
-    const cols = group?.columns
-    if (!cols?.result?.length) {
-      return { datetimes: [], dataValues: [] }
-    }
-
-    return {
-      datetimes: cols.phenomenonTime.map((d: any) => new Date(d).getTime()),
-      dataValues: cols.result,
-    }
-  } catch (error) {
-    console.error('Error fetching data:', error)
-    return Promise.reject(error)
+  return {
+    datetimes: cols.phenomenonTime.map((d) => new Date(d).getTime()),
+    dataValues: cols.result,
   }
 }

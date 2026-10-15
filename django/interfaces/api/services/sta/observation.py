@@ -402,7 +402,17 @@ class ObservationAPIService(APIService):
         datastream_id: uuid.UUID,
         mode: Literal["insert", "append", "backfill", "replace"],
         update_datastream_statistics: bool = True,
+        phenomenon_time_start: Optional[datetime] = None,
+        phenomenon_time_end: Optional[datetime] = None,
     ):
+        has_range = phenomenon_time_start is not None or phenomenon_time_end is not None
+        if has_range and mode != "replace":
+            raise BadRequestError("A phenomenon time range only applies to replace mode")
+        if (phenomenon_time_start is None) != (phenomenon_time_end is None):
+            raise BadRequestError(
+                "Give both phenomenonTimeStart and phenomenonTimeEnd, or neither"
+            )
+
         datastream, workspace = self._resolve_datastream_and_workspace(
             principal, datastream_id
         )
@@ -466,14 +476,24 @@ class ObservationAPIService(APIService):
                 )
 
         elif mode == "replace":
-            start_time = min(obs.phenomenon_time for obs in observation_records)
-            end_time = max(obs.phenomenon_time for obs in observation_records)
+            # Without an explicit range, replace the span the upload covers.
+            if phenomenon_time_start is None:
+                if not observation_records:
+                    raise BadRequestError(
+                        "Replace mode needs observations or a phenomenon time range"
+                    )
+                phenomenon_time_start = min(
+                    obs.phenomenon_time for obs in observation_records
+                )
+                phenomenon_time_end = max(
+                    obs.phenomenon_time for obs in observation_records
+                )
             self.bulk_delete(
                 principal=principal,
                 data=ObservationBulkDeleteBody(
                     datastream_id=datastream_id,
-                    phenomenon_time_start=start_time,
-                    phenomenon_time_end=end_time,
+                    phenomenon_time_start=phenomenon_time_start,
+                    phenomenon_time_end=phenomenon_time_end,
                 ),
                 datastream_id=datastream_id,
                 update_datastream_statistics=False,

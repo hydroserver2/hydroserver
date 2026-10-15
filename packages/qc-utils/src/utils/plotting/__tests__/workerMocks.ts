@@ -10,6 +10,8 @@
  * Worker API contract).
  */
 
+import { fillGapsCore } from '../operation-cores';
+
 type MockWorkerInstance = {
   onmessage: ((event: { data: any }) => void) | null;
   postMessage: (data: any) => void;
@@ -46,9 +48,9 @@ export const MockDeleteDataWorker = makeMockWorker((data) => {
     startTarget,
   } = data;
   const arrayX = new Float64Array(bufferX);
-  const arrayY = new Float32Array(bufferY);
+  const arrayY = new Float64Array(bufferY);
   const outputArrayX = new Float64Array(outputBufferX);
-  const outputArrayY = new Float32Array(outputBufferY);
+  const outputArrayY = new Float64Array(outputBufferY);
 
   let deletePtr = 0;
   let writePtr = startTarget;
@@ -77,9 +79,9 @@ export const MockAddDataWorker = makeMockWorker((data) => {
     outStart,
   } = data;
   const arrayX = new Float64Array(bufferX);
-  const arrayY = new Float32Array(bufferY);
+  const arrayY = new Float64Array(bufferY);
   const outputArrayX = new Float64Array(outputBufferX);
-  const outputArrayY = new Float32Array(outputBufferY);
+  const outputArrayY = new Float64Array(outputBufferY);
 
   let origPtr = origStart;
   let insPtr = 0;
@@ -115,7 +117,7 @@ export const MockAddDataWorker = makeMockWorker((data) => {
 
 export const MockChangeValuesWorker = makeMockWorker((data) => {
   const { bufferY, indexes, operator, value } = data;
-  const arrayY = new Float32Array(bufferY);
+  const arrayY = new Float64Array(bufferY);
   const n = indexes.length;
   if (operator === 'ADD') {
     for (let i = 0; i < n; i++) arrayY[indexes[i]] = arrayY[indexes[i]] + value;
@@ -134,7 +136,7 @@ export const MockChangeValuesWorker = makeMockWorker((data) => {
 export const MockInterpolateWorker = makeMockWorker((data) => {
   const { bufferX, bufferY, groups } = data;
   const arrayX = new Float64Array(bufferX);
-  const arrayY = new Float32Array(bufferY);
+  const arrayY = new Float64Array(bufferY);
   for (let gi = 0; gi < groups.length; gi++) {
     const { indexes, lowerIdx, upperIdx } = groups[gi];
     const lowerX = arrayX[lowerIdx];
@@ -156,12 +158,13 @@ export const MockInterpolateWorker = makeMockWorker((data) => {
 });
 
 export const MockDriftCorrectionWorker = makeMockWorker((data) => {
-  const { bufferX, bufferY, jobs } = data;
+  const { bufferX, bufferY, jobs, noDataValue } = data;
   const arrayX = new Float64Array(bufferX);
-  const arrayY = new Float32Array(bufferY);
+  const arrayY = new Float64Array(bufferY);
   for (let j = 0; j < jobs.length; j++) {
     const { chunkStart, chunkEnd, startDatetime, value, extent } = jobs[j];
     for (let i = chunkStart; i < chunkEnd; i++) {
+      if (arrayY[i] === noDataValue) continue;
       arrayY[i] = arrayY[i] + value * ((arrayX[i] - startDatetime) / extent);
     }
   }
@@ -182,9 +185,9 @@ export const MockShiftDatetimesWorker = makeMockWorker((data) => {
     deltaMs,
   } = data;
   const arrayX = new Float64Array(bufferX);
-  const arrayY = new Float32Array(bufferY);
+  const arrayY = new Float64Array(bufferY);
   const outputArrayX = new Float64Array(outputBufferX);
-  const outputArrayY = new Float32Array(outputBufferY);
+  const outputArrayY = new Float64Array(outputBufferY);
   if (isMonth) {
     for (let i = 0; i < indexes.length; i++) {
       const idx = indexes[i];
@@ -224,42 +227,22 @@ export const MockFillGapsWorker = makeMockWorker((data) => {
     fillDelta,
     interpolate,
     fillValue,
+    noDataValue,
   } = data;
-  const arrayX = new Float64Array(bufferX);
-  const arrayY = new Float32Array(bufferY);
-  const outputArrayX = new Float64Array(outputBufferX);
-  const outputArrayY = new Float32Array(outputBufferY);
-
-  let gapPtr = 0;
-  let writePtr = startTarget;
-
-  for (let readPtr = start; readPtr <= end; readPtr++) {
-    outputArrayX[writePtr] = arrayX[readPtr];
-    outputArrayY[writePtr] = arrayY[readPtr];
-    writePtr++;
-
-    if (gapPtr < gapsSegment.length && readPtr === gapsSegment[gapPtr][0]) {
-      const leftIdx = gapsSegment[gapPtr][0];
-      const rightIdx = gapsSegment[gapPtr][1];
-      const leftDatetime = arrayX[leftIdx];
-      const rightDatetime = arrayX[rightIdx];
-      const leftValue = arrayY[leftIdx];
-      const rightValue = arrayY[rightIdx];
-      const span = rightDatetime - leftDatetime;
-      const valueSpan = rightValue - leftValue;
-
-      let nextFillDatetime = leftDatetime + fillDelta;
-      while (nextFillDatetime < rightDatetime) {
-        outputArrayX[writePtr] = nextFillDatetime;
-        outputArrayY[writePtr] = interpolate
-          ? leftValue + ((nextFillDatetime - leftDatetime) * valueSpan) / span
-          : fillValue;
-        writePtr++;
-        nextFillDatetime += fillDelta;
-      }
-      gapPtr++;
-    }
-  }
+  fillGapsCore(
+    new Float64Array(bufferX),
+    new Float64Array(bufferY),
+    gapsSegment,
+    new Float64Array(outputBufferX),
+    new Float64Array(outputBufferY),
+    start,
+    end,
+    startTarget,
+    fillDelta,
+    interpolate,
+    fillValue,
+    noDataValue,
+  );
   return 'Done';
 });
 
@@ -278,7 +261,7 @@ export const MockFindGapsWorker = makeMockWorker((data) => {
 
 export const MockPersistenceWorker = makeMockWorker((data) => {
   const { bufferY, start, end } = data;
-  const arrayY = new Float32Array(bufferY);
+  const arrayY = new Float64Array(bufferY);
   const runs: number[] = [];
   if (start >= end) return runs;
   let runStart = start;
@@ -297,7 +280,7 @@ export const MockPersistenceWorker = makeMockWorker((data) => {
 
 export const MockChangeWorker = makeMockWorker((data) => {
   const { bufferY, start, end, comparator, value } = data;
-  const arrayY = new Float32Array(bufferY);
+  const arrayY = new Float64Array(bufferY);
   const indexes: number[] = [];
   if (comparator === 'Less than') {
     for (let i = start; i < end; i++) if (arrayY[i] - arrayY[i - 1] < value) indexes.push(i);
@@ -315,7 +298,7 @@ export const MockChangeWorker = makeMockWorker((data) => {
 
 export const MockRateOfChangeWorker = makeMockWorker((data) => {
   const { bufferY, start, end, comparator, value } = data;
-  const arrayY = new Float32Array(bufferY);
+  const arrayY = new Float64Array(bufferY);
   const indexes: number[] = [];
   if (comparator === 'Less than') {
     for (let i = start; i < end; i++) {
@@ -348,7 +331,7 @@ export const MockRateOfChangeWorker = makeMockWorker((data) => {
 
 export const MockValueThresholdWorker = makeMockWorker((data) => {
   const { bufferY, start, end, ops, values } = data;
-  const arrayY = new Float32Array(bufferY);
+  const arrayY = new Float64Array(bufferY);
   const indexes: number[] = [];
   const nFilters = ops.length;
   for (let i = start; i < end; i++) {

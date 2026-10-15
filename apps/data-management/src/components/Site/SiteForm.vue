@@ -219,9 +219,9 @@ const countryTitle = (item: { name: string; code: string } | undefined) => {
 }
 
 const { monitoringSite: storedMonitoringSite } = storeToRefs(useMonitoringSiteStore())
-const { updatePhotos } = usePhotosStore()
+const { updatePhotos, resetPendingPhotos } = usePhotosStore()
 const { updateRatingCurves, resetRatingCurves } = useRatingCurveStore()
-const { tags } = storeToRefs(useTagStore())
+const { tags, previewTags } = storeToRefs(useTagStore())
 const { updateTags } = useTagStore()
 const vocabularyStore = useVocabularyStore()
 
@@ -236,6 +236,17 @@ const myForm = ref<VForm>()
 const monitoringSite = reactive<MonitoringSite>(new MonitoringSite())
 const includeDataDisclaimer = ref(monitoringSite.dataDisclaimer !== '')
 
+function cloneMonitoringSite(source?: MonitoringSite) {
+  const clonedMonitoringSite = source ? JSON.parse(JSON.stringify(source)) : {}
+  Object.assign(monitoringSite, new MonitoringSite(), clonedMonitoringSite)
+}
+
+function resetPendingSiteChanges() {
+  resetPendingPhotos()
+  resetRatingCurves()
+  previewTags.value = props.monitoringSiteId ? { ...tags.value } : {}
+}
+
 watch(
   () => includeDataDisclaimer.value,
   (newVal) => {
@@ -247,12 +258,15 @@ watch(
 )
 
 async function populateMonitoringSite() {
-  Object.assign(monitoringSite, JSON.parse(JSON.stringify(storedMonitoringSite.value)))
+  cloneMonitoringSite(storedMonitoringSite.value)
   if (monitoringSite.latitude && monitoringSite.longitude) loaded.value = true
 }
 
 function closeDialog() {
-  resetRatingCurves()
+  if (props.monitoringSiteId) cloneMonitoringSite(storedMonitoringSite.value)
+  else cloneMonitoringSite()
+  includeDataDisclaimer.value = !!monitoringSite.dataDisclaimer
+  resetPendingSiteChanges()
   emit('close')
 }
 
@@ -302,17 +316,18 @@ function onMapLocationClicked(locationData: MonitoringSite) {
 }
 
 onMounted(async () => {
-  resetRatingCurves()
+  resetPendingSiteChanges()
   countries.value = countryList.getData()
   if (props.monitoringSiteId) {
     await populateMonitoringSite()
     includeDataDisclaimer.value = !!monitoringSite.dataDisclaimer
   } else {
+    cloneMonitoringSite()
     loaded.value = true
   }
 })
 
 onUnmounted(() => {
-  resetRatingCurves()
+  resetPendingSiteChanges()
 })
 </script>

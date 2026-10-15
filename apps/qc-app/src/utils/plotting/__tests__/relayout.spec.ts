@@ -10,19 +10,28 @@ const plotlyMock = vi.hoisted(() => ({
 }))
 vi.mock('plotly.js-dist', () => ({ default: plotlyMock }))
 
-vi.mock('@uwrl/qc-utils', () => ({
-  findFirstGreaterOrEqual: (arr: number[], target: number) => {
-    let lo = 0
-    let hi = arr.length
-    while (lo < hi) {
-      const mid = (lo + hi) >>> 1
-      if (arr[mid] < target) lo = mid + 1
-      else hi = mid
-    }
-    return lo
-  },
-  EnumFilterOperations: { SELECTION: 'SELECTION' },
-}))
+vi.mock('@uwrl/qc-utils', async (importOriginal) => {
+  // The real time zone math, which the app's date helpers use.
+  const { offsetMs, toWall, fromWall, toWallArray } =
+    await importOriginal<typeof import('@uwrl/qc-utils')>()
+  return {
+    offsetMs,
+    toWall,
+    fromWall,
+    toWallArray,
+    findFirstGreaterOrEqual: (arr: number[], target: number) => {
+      let lo = 0
+      let hi = arr.length
+      while (lo < hi) {
+        const mid = (lo + hi) >>> 1
+        if (arr[mid] < target) lo = mid + 1
+        else hi = mid
+      }
+      return lo
+    },
+    EnumFilterOperations: { SELECTION: 'SELECTION' },
+  }
+})
 
 const qcDatastream = ref<any>(null)
 const selectedData = ref<any>(null)
@@ -57,6 +66,8 @@ vi.mock('@/store/plotly', () => ({
     selectedSeries: ref(null),
     editHistory: ref([]),
     suppressedEchoSelection: ref<number[] | null>(null),
+    // Read by `useEditLock` when a relayout ends in a selection.
+    previewIndex: ref<number | null>(null),
   }),
 }))
 
@@ -272,7 +283,7 @@ const makeStub = (overrides?: {
       marker: { opacity: number }
       hoverinfo: string
       _isGapOverlay: boolean
-      _gapOverlayFor: string
+      _partOf: string
     }>
   >
 }) => ({
@@ -426,7 +437,7 @@ describe('handleRelayout', () => {
           marker: { opacity: 1 },
           hoverinfo: 'skip',
           _isGapOverlay: true,
-          _gapOverlayFor: 'qc-target',
+          _partOf: 'qc-target',
         },
       ],
     })
@@ -471,7 +482,7 @@ describe('handleRelayout', () => {
 
   it('keeps scatter-only series markers visible past DENSITY_HIDE_MARKERS in auto mode', async () => {
     // Auto-mode + visible >> threshold normally trips the density fade.
-    // The scatter-only exemption has to win here too — otherwise a busy
+    // The scatter-only exemption has to win here too, otherwise a busy
     // view of a no-cadence series wipes itself out as soon as the user
     // pans into a dense zoom level.
     qcDatastream.value = { id: 'qc-target' }

@@ -1,6 +1,6 @@
 import { defineStore, storeToRefs } from 'pinia'
 import { computed, ref } from 'vue'
-import { PermissionAction, PermissionResource, Workspace } from '@hydroserver/client'
+import { Workspace } from '@hydroserver/client'
 import { useHydroServer } from '@/store/hydroserver'
 
 /**
@@ -31,27 +31,6 @@ export const useWorkspaceStore = defineStore('workspaces', () => {
 
   const hasSelection = computed(() => !!selectedWorkspace.value)
   const selectedWorkspaceId = computed(() => selectedWorkspace.value?.id ?? null)
-
-  /**
-   * True when the signed-in user holds a role on the selected workspace
-   * that lets them create or edit Observations. Owners always pass
-   * (their `collaboratorRole` is `null` because ownership supersedes
-   * collaborator roles); collaborators need at least one permission
-   * that covers editing observations.
-   */
-  const canEditSelected = computed(() => {
-    const ws = selectedWorkspace.value
-    if (!ws) return false
-    // Owner: `collaboratorRole` is null on owned workspaces — the role
-    // machinery only applies to invited collaborators.
-    if (!ws.collaboratorRole) return true
-    const perms = ws.collaboratorRole.permissions ?? []
-    return perms.some(
-      (p) =>
-        (p.action === PermissionAction.Edit || p.action === PermissionAction.Create) &&
-        (p.resource === PermissionResource.Observation || p.resource === PermissionResource.Global)
-    )
-  })
 
   async function loadWorkspaces(): Promise<Workspace[]> {
     const { hs } = storeToRefs(useHydroServer())
@@ -102,7 +81,7 @@ export const useWorkspaceStore = defineStore('workspaces', () => {
    * Apply a workspace selection by id, falling back to a placeholder
    * `{ id }` object when the full Workspace isn't in
    * `availableWorkspaces` yet. Used by shared-link hydration in
-   * `main.ts` and the matching router guard — those can fire before
+   * `main.ts` and the matching router guard. Those can fire before
    * `loadWorkspaces` has populated the list (e.g. cross-origin dev
    * setups where the session endpoint 401s silently, or a fresh boot
    * where the list fetch is still in flight). The downstream catalog
@@ -130,7 +109,6 @@ export const useWorkspaceStore = defineStore('workspaces', () => {
     selectedWorkspaceId,
     isLoading,
     hasSelection,
-    canEditSelected,
     loadWorkspaces,
     selectWorkspace,
     applyWorkspaceById,

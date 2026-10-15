@@ -99,13 +99,12 @@ import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { EnumEditOperations } from '@uwrl/qc-utils'
 import { computed } from 'vue'
-import { formatDate } from '@uwrl/qc-utils'
+import { formatDateTime } from '@/utils/time'
 import { usePlotlyStore } from '@/store/plotly'
-import type { PlotData } from 'plotly.js-dist'
 import { useFilterDispatch } from '@/composables/useFilterDispatch'
 import { useUIStore, DriftCorrectionMethods } from '@/store/userInterface'
 const { recordPostActionSelection } = useFilterDispatch()
-const { selectedSeries, plotlyRef, isUpdating } = storeToRefs(usePlotlyStore())
+const { selectedSeries, isUpdating } = storeToRefs(usePlotlyStore())
 const { driftGapWidth, selectedDriftCorrectionMethod } =
   storeToRefs(useUIStore())
 const { redraw } = usePlotlyStore()
@@ -152,12 +151,12 @@ const onDriftCorrection = async () => {
   })
 }
 
+// Group indices are the edit record's, so its own times say where they start.
 const getGroupStart = (group: number[]) => {
-  const trace = plotlyRef.value?.data[0] as Partial<PlotData> | undefined
-  const xData = trace?.x as number[] | undefined
   const firstIdx = group[0]
-  if (!xData || firstIdx === undefined) return ''
-  return formatDate(new Date(xData[firstIdx] as number))
+  const x =
+    firstIdx === undefined ? undefined : selectedSeries.value?.data.dataX[firstIdx]
+  return x === undefined ? '' : formatDateTime(x)
 }
 </script>
 

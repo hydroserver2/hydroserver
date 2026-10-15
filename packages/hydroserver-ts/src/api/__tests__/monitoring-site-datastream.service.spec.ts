@@ -470,3 +470,120 @@ describe('DatastreamService', () => {
     })
   })
 })
+
+describe('DatastreamService create and observation helpers', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  const client = new HydroServer({ host: 'https://hydro.example.com' })
+
+  describe('create', () => {
+    it('reads the new datastream back with the given params', async () => {
+      const fetchMock = vi.fn(async (_input: string, init?: RequestInit) =>
+        init?.method === 'POST'
+          ? jsonResponse({ id: 'ds-1' }, 201)
+          : jsonResponse({
+              data: { id: 'ds-1', unitId: 'unit-1' },
+              included: { units: [{ id: 'unit-1', name: 'Celsius' }] },
+            })
+      )
+      vi.stubGlobal('fetch', fetchMock)
+
+      const res = await client.datastreams.create({ name: 'DS 1' } as any, {
+        expand_related: true,
+      })
+
+      const [postUrl] = fetchMock.mock.calls[0]!
+      expect(new URL(postUrl).search).toBe('')
+      const getUrl = new URL(fetchMock.mock.calls[1]![0])
+      expect(getUrl.pathname).toBe('/api/ogc/collections/datastreams/items/ds-1')
+      expect(getUrl.searchParams.get('include')).toContain('unit')
+      expect(res.ok && (res.data as any).unit).toMatchObject({ name: 'Celsius' })
+    })
+
+    it('reads the new datastream back without include when no params are given', async () => {
+      const fetchMock = vi.fn(async (_input: string, init?: RequestInit) =>
+        init?.method === 'POST'
+          ? jsonResponse({ id: 'ds-1' }, 201)
+          : jsonResponse({ data: { id: 'ds-1' } })
+      )
+      vi.stubGlobal('fetch', fetchMock)
+
+      await client.datastreams.create({ name: 'DS 1' } as any)
+
+      expect(String(fetchMock.mock.calls[1]![0])).toMatch(
+        /\/api\/ogc\/collections\/datastreams\/items\/ds-1$/
+      )
+    })
+  })
+
+  describe('createObservations', () => {
+    it('sends the replace range as query params', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(null, 201)))
+
+      await client.datastreams.createObservations(
+        'ds-1',
+        { fields: ['phenomenonTime', 'result'], data: [] },
+        {
+          mode: 'replace',
+          phenomenonTimeStart: '2025-01-01T00:00:00Z',
+          phenomenonTimeEnd: '2025-02-01T00:00:00Z',
+        }
+      )
+
+      const [url, init] = (fetch as any).mock.calls[0]
+      const parsed = new URL(url)
+      expect(parsed.pathname).toBe('/api/ogc/collections/observations/bulk-create')
+      expect(parsed.searchParams.get('mode')).toBe('replace')
+      expect(parsed.searchParams.get('phenomenonTimeStart')).toBe('2025-01-01T00:00:00Z')
+      expect(parsed.searchParams.get('phenomenonTimeEnd')).toBe('2025-02-01T00:00:00Z')
+      expect(JSON.parse(init.body)).toMatchObject({ datastreamId: 'ds-1' })
+    })
+  })
+
+  describe('getObservationsChecksum', () => {
+    const start = new Date('2025-01-01T00:00:00Z')
+    const end = new Date('2025-02-01T00:00:00Z')
+
+    it('reads the X-Checksum header for the window', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(
+          new Response(JSON.stringify({ data: [] }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json', 'X-Checksum': 'abc123' },
+          })
+        )
+      )
+
+      const res = await client.datastreams.getObservationsChecksum('ds-1', start, end)
+
+      expect(res).toMatchObject({ ok: true, data: 'abc123' })
+      const [url] = (fetch as any).mock.calls[0]
+      const parsed = new URL(url)
+      expect(parsed.pathname).toBe('/api/ogc/collections/observations/items')
+      expect(parsed.searchParams.get('datastreamId')).toBe('ds-1')
+      expect(parsed.searchParams.get('datetime')).toBe(
+        `${start.toISOString()}/${end.toISOString()}`
+      )
+      expect(parsed.searchParams.get('limit')).toBe('1')
+    })
+
+    it('fails when the response has no checksum', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ data: [] })))
+
+      const res = await client.datastreams.getObservationsChecksum('ds-1', start, end)
+
+      expect(res.ok).toBe(false)
+    })
+
+    it('returns ok:false on a failed request', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ detail: 'nope' }, 404)))
+
+      const res = await client.datastreams.getObservationsChecksum('ds-1', start, end)
+
+      expect(res.ok).toBe(false)
+    })
+  })
+})

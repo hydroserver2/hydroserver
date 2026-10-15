@@ -48,11 +48,12 @@ vi.mock('@/store/workspaces', () => {
   return { useWorkspaceStore }
 })
 
+const plotStore = vi.hoisted(() => ({
+  plotlyRef: null as unknown,
+  updateOptions: (() => {}) as (...args: unknown[]) => void,
+}))
 vi.mock('@/store/plotly', () => ({
-  usePlotlyStore: () => ({
-    plotlyRef: null,
-    updateOptions: vi.fn(),
-  }),
+  usePlotlyStore: () => plotStore,
 }))
 
 vi.mock('@/utils/plotting/plotly', () => ({
@@ -237,6 +238,18 @@ describe('useQualifierStore.loadQualifiers', () => {
       'q-1',
       'q-2',
     ])
+  })
+
+  it('leaves the live plot alone while the qualifier tool is hidden', async () => {
+    selectedWorkspaceId.value = 'ws-1'
+    plotStore.plotlyRef = {}
+    plotStore.updateOptions = vi.fn()
+    const { useQualifierStore } = await import('@/store/qualifiers')
+    const { handleNewPlot } = await import('@/utils/plotting/plotly')
+    await useQualifierStore().loadQualifiers()
+    expect(plotStore.updateOptions).not.toHaveBeenCalled()
+    expect(handleNewPlot).not.toHaveBeenCalled()
+    plotStore.plotlyRef = null
   })
 
   it('handles thrown errors gracefully and resets isLoading', async () => {
