@@ -842,6 +842,118 @@ def test_run_derivation_stops_at_first_misaligned_timestamp(run_context):
     np.testing.assert_allclose(out_obs[0].result, 3.0)
 
 
+def _run_offset_derivation(ctx, obs_a, obs_b):
+    """
+    Create inputs ds_a/ds_b from {hour: value} dicts (2025-02-10 UTC), derive
+    "a + b" into an empty output, run once, and return (loaded, transformation,
+    ds_a, ds_b, ds_out).
+    """
+    kwargs = {k: ctx[k] for k in ("thing", "sensor", "observed_property", "processing_level", "unit")}
+    ds_a   = _make_datastream(**kwargs)
+    ds_b   = _make_datastream(**kwargs)
+    ds_out = _make_datastream(**kwargs)
+
+    for ds, obs in [(ds_a, obs_a), (ds_b, obs_b)]:
+        for hour, value in obs.items():
+            _add_obs(ds, datetime(2025, 2, 10, hour, 0, tzinfo=dt_timezone.utc), value)
+        _set_end_time(ds, datetime(2025, 2, 10, max(obs), 0, tzinfo=dt_timezone.utc))
+
+    t = transformation_service.create(
+        task=uuid.UUID(TASK1),
+        principal=ctx["owner"],
+        transformation_type="derivation",
+        output_datastream=ds_out.pk,
+        formula="a + b",
+        input_datastreams=[
+            TransformationInput(datastream=ds_a.pk, variable_name="a"),
+            TransformationInput(datastream=ds_b.pk, variable_name="b"),
+        ],
+    )
+    loaded = transformation_service.run(t)
+    return loaded, t, ds_a, ds_b, ds_out
+
+
+def _output_results(ds_out):
+    from core.sta.models.observation import Observation
+    return list(
+        Observation.objects.filter(datastream=ds_out)
+        .order_by("phenomenon_time")
+        .values_list("phenomenon_time__hour", "result")
+    )
+
+
+def test_run_derivation_initial_load_starts_at_latest_input_start(run_context):
+    """
+    ds_a starts at 08:00, ds_b at 10:00, aligned from there. The initial load
+    should start at 10:00 rather than stopping at ds_a's leading readings.
+    """
+    loaded, _, _, _, ds_out = _run_offset_derivation(
+        run_context,
+        obs_a={8: 1.0, 9: 2.0, 10: 3.0, 11: 4.0},
+        obs_b={10: 10.0, 11: 20.0},
+    )
+    assert loaded == 2
+    assert _output_results(ds_out) == [(10, 13.0), (11, 24.0)]
+
+
+def test_run_derivation_offset_start_then_incremental_run(run_context):
+    """After an offset-start initial load, the next run appends normally."""
+    ctx = run_context
+    loaded, t, ds_a, ds_b, ds_out = _run_offset_derivation(
+        ctx,
+        obs_a={8: 1.0, 9: 2.0, 10: 3.0},
+        obs_b={9: 10.0, 10: 20.0},
+    )
+    assert loaded == 2
+
+    t12 = datetime(2025, 2, 10, 12, 0, tzinfo=dt_timezone.utc)
+    for ds, value in [(ds_a, 5.0), (ds_b, 50.0)]:
+        _add_obs(ds, datetime(2025, 2, 10, 11, 0, tzinfo=dt_timezone.utc), value - 1)
+        _add_obs(ds, t12, value)
+        _set_end_time(ds, t12)
+
+    t = _load(str(t.pk))   # reload to pick up updated phenomenon_end_time
+    loaded = transformation_service.run(t)
+    assert loaded == 2
+    assert _output_results(ds_out) == [(9, 12.0), (10, 23.0), (11, 53.0), (12, 55.0)]
+
+
+def test_run_derivation_offset_start_stops_at_divergence(run_context):
+    """Trimming to the latest start doesn't bypass divergence after that point."""
+    loaded, _, _, _, ds_out = _run_offset_derivation(
+        run_context,
+        obs_a={8: 1.0, 10: 3.0, 11: 4.0, 12: 5.0},
+        obs_b={10: 10.0, 12: 30.0},
+    )
+    assert loaded == 1
+    assert _output_results(ds_out) == [(10, 13.0)]
+
+
+def test_run_derivation_latest_start_not_shared_loads_nothing(run_context):
+    """
+    ds_a starts at 02:00 and ds_b at 01:00, but ds_b has no 02:00 reading; the
+    first shared timestamp is 03:00. The latest start doesn't align, so nothing loads.
+    """
+    loaded, _, _, _, ds_out = _run_offset_derivation(
+        run_context,
+        obs_a={2: 1.0, 3: 2.0},
+        obs_b={1: 10.0, 3: 20.0},
+    )
+    assert loaded == 0
+    assert _output_results(ds_out) == []
+
+
+def test_run_derivation_non_overlapping_inputs_load_nothing(run_context):
+    """ds_b starts after ds_a's last reading, so there's nothing to derive yet."""
+    loaded, _, _, _, ds_out = _run_offset_derivation(
+        run_context,
+        obs_a={8: 1.0, 9: 2.0},
+        obs_b={10: 10.0, 11: 20.0},
+    )
+    assert loaded == 0
+    assert _output_results(ds_out) == []
+
+
 def test_run_aggregation_local_timezone_watermark(run_context):
     """
     Regression test for bug_014: watermark must advance to local-midnight boundaries,
