@@ -29,18 +29,37 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      # Legacy v1.x docs live on the docs-v1 branch and are served at /v1/
+      # while users migrate. Remove this checkout and the v1 steps below to
+      # retire them.
+      - name: Checkout v1.x docs
+        uses: actions/checkout@v4
+        with:
+          ref: docs-v1
+          path: v1-src
+          sparse-checkout: apps/docs
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: apps/docs/package-lock.json
+          cache-dependency-path: |
+            apps/docs/package-lock.json
+            v1-src/apps/docs/package-lock.json
       - name: Install dependencies
         working-directory: apps/docs
         run: npm ci
       - name: Build
         working-directory: apps/docs
         run: npm run docs:build
+      - name: Install v1.x dependencies
+        working-directory: v1-src/apps/docs
+        run: npm ci
+      - name: Build v1.x into /v1
+        working-directory: v1-src/apps/docs
+        run: |
+          npx vitepress build docs --base /v1/
+          cp -r docs/.vitepress/dist "$GITHUB_WORKSPACE/apps/docs/docs/.vitepress/dist/v1"
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
