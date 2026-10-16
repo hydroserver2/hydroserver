@@ -2,7 +2,7 @@
 
 Now that your site is created, we'll next define a new datastream to specify what kind of data we'll be loading in the next step. If you're not already on the site details page of your new site, open **Browse monitoring sites**, select your site in the panel, and click **View details**.
 
-Near the bottom of the site details page, there will be an empty datastreams table which will work the same as the sites table you saw before. Click 'Add new datastream' to open the datastream creation modal.
+Near the bottom of the site details page, there will be an empty datastreams table. Click 'Add new datastream' to open the datastream creation modal.
 
 <img src="/hydroserver-101/datastream-table.png" alt="datastream table" class="img-white-bg">
 
@@ -39,11 +39,11 @@ If you'd like to follow along exactly, we'll be creating a datastream that repre
 - type: Hydrology
 - code: temp
 
-<img src="/hydroserver-101/sensor-form.png" alt="sensor form" class="img-white-bg">
+<img src="/hydroserver-101/observed-property-form.png" alt="sensor form" class="img-white-bg">
 
 ## Specify datastream metadata
 
-Next, for 'Unit' and 'Processing Level', we'll use variables that were defined at the system level by an admin of playground.hydroserver.org. These values are available for all workspaces within the Playground instance because they were defined by an administrator as system-level metadata. For unit, type in 'degree celsius' and find it in the list. For processing level, select level-0, Raw Data.
+Next, for 'Unit' and 'Processing Level', we'll use variables that were defined at the system level by an admin of playground.hydroserver.org. These values are available for all workspaces within the Playground instance because they were defined by an administrator as system-level metadata. For unit, type in 'Degree Celsius' and find it in the list. For processing level, select 'Raw Data'.
 
 For the rest of the fields, we'll do the following:
 
@@ -54,7 +54,7 @@ For the rest of the fields, we'll do the following:
 - Time Aggregation Interval: 1 day
 - Intended Time Spacing: 1 day
 
-Enter `Air Temperature - Daily Max, RAW` as the datastream name. See [Naming Datastreams](/user-guides/how-to/managing-datastream-metadata#naming-datastreams) for more guidance. After filling out the other fields, click 'Auto-Fill from Form' below the description to generate a description. You can edit this text before clicking 'Create Datastream'.
+Enter `Air Temperature - Daily Max, RAW` as the datastream name. See [Naming Datastreams](/user-guides/how-to/managing-datastream-metadata#naming-datastreams) for more guidance. After filling out the other fields, click 'Auto-Fill from Form' below the description to generate a description. You can edit this text before clicking 'Create datastream'.
 
 <img src="/hydroserver-101/new-datastream.png" alt="new datastream" class="img-white-bg">
 
