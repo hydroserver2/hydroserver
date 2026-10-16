@@ -2432,7 +2432,7 @@ export interface components {
             /** Payload */
             payload?: components["schemas"]["PayloadPatchBody"];
             /** Placeholdervariables */
-            placeholderVariables?: components["schemas"]["PlaceholderVariablePatchBody"][];
+            placeholderVariables?: components["schemas"]["PlaceholderVariablePostBody"][];
             /** Sourceurl */
             sourceUrl?: string;
             /** Timezone */
@@ -5500,7 +5500,7 @@ export interface components {
             /** Recipientemails */
             recipientEmails?: string[];
             /** Schedule */
-            schedule?: components["schemas"]["SchedulePatchBody"];
+            schedule?: components["schemas"]["SchedulePatchBody"] | null;
         };
         /** NotificationPostBody */
         NotificationPostBody: {
@@ -6483,18 +6483,6 @@ export interface components {
              * @enum {string}
              */
             resource: "*" | "Workspace" | "Role" | "ServiceAccount" | "Collaborator" | "MonitoringSite" | "MonitoringSiteType" | "LinkedResourceType" | "ObservedProperty" | "ObservedPropertyType" | "ProcessingLevel" | "ResultQualifier" | "Method" | "MethodType" | "Unit" | "UnitType" | "SampledMedium" | "AggregationStatistic" | "DatastreamStatus" | "Datastream" | "Observation" | "DataConnection" | "EtlTask" | "EtlMapping" | "RatingCurve" | "DataProductTask" | "DataProductTransformation" | "MonitoringTask" | "MonitoringRule";
-        };
-        /** PlaceholderVariablePatchBody */
-        PlaceholderVariablePatchBody: {
-            /** Name */
-            name?: string;
-            /** Timestampformat */
-            timestampFormat?: string | null;
-            /**
-             * Type
-             * @enum {string}
-             */
-            type?: "run_time" | "latest_observation_timestamp" | "per_task" | "window_start" | "window_end";
         };
         /** PlaceholderVariablePostBody */
         PlaceholderVariablePostBody: {
@@ -8273,7 +8261,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AggregationStatisticPatchBody"];
+                "application/merge-patch+json": components["schemas"]["AggregationStatisticPatchBody"];
             };
         };
         responses: {
@@ -8530,7 +8518,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RatingCurvePatchBody"];
+                "application/merge-patch+json": components["schemas"]["RatingCurvePatchBody"];
             };
         };
         responses: {
@@ -8815,7 +8803,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DataProductTaskPatchBody"];
+                "application/merge-patch+json": components["schemas"]["DataProductTaskPatchBody"];
             };
         };
         responses: {
@@ -9281,7 +9269,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DataProductTransformationPatchBody"];
+                "application/merge-patch+json": components["schemas"]["DataProductTransformationPatchBody"];
             };
         };
         responses: {
@@ -9532,7 +9520,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DatastreamStatusPatchBody"];
+                "application/merge-patch+json": components["schemas"]["DatastreamStatusPatchBody"];
             };
         };
         responses: {
@@ -9790,7 +9778,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DatastreamPatchBody"];
+                "application/merge-patch+json": components["schemas"]["DatastreamPatchBody"];
             };
         };
         responses: {
@@ -10461,7 +10449,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DataConnectionPatchBody"];
+                "application/merge-patch+json": components["schemas"]["DataConnectionPatchBody"];
             };
         };
         responses: {
@@ -10747,7 +10735,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["EtlMappingPatchBody"];
+                "application/merge-patch+json": components["schemas"]["EtlMappingPatchBody"];
             };
         };
         responses: {
@@ -11034,7 +11022,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["EtlTaskPatchBody"];
+                "application/merge-patch+json": components["schemas"]["EtlTaskPatchBody"];
             };
         };
         responses: {
@@ -11454,7 +11442,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["LinkedResourceTypePatchBody"];
+                "application/merge-patch+json": components["schemas"]["LinkedResourceTypePatchBody"];
             };
         };
         responses: {
@@ -11687,7 +11675,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["MethodTypePatchBody"];
+                "application/merge-patch+json": components["schemas"]["MethodTypePatchBody"];
             };
         };
         responses: {
@@ -11952,7 +11940,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["MethodPatchBody"];
+                "application/merge-patch+json": components["schemas"]["MethodPatchBody"];
             };
         };
         responses: {
@@ -12238,7 +12226,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["MonitoringRulePatchBody"];
+                "application/merge-patch+json": components["schemas"]["MonitoringRulePatchBody"];
             };
         };
         responses: {
@@ -12489,7 +12477,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["MonitoringSiteTypePatchBody"];
+                "application/merge-patch+json": components["schemas"]["MonitoringSiteTypePatchBody"];
             };
         };
         responses: {
@@ -12722,7 +12710,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["MonitoringSitePatchBody"];
+                "application/merge-patch+json": components["schemas"]["MonitoringSitePatchBody"];
             };
         };
         responses: {
@@ -13453,7 +13441,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["MonitoringTaskPatchBody"];
+                "application/merge-patch+json": components["schemas"]["MonitoringTaskPatchBody"];
             };
         };
         responses: {
@@ -14214,7 +14202,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ObservedPropertyPatchBody"];
+                "application/merge-patch+json": components["schemas"]["ObservedPropertyPatchBody"];
             };
         };
         responses: {
@@ -14456,7 +14444,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ObservedPropertyTypePatchBody"];
+                "application/merge-patch+json": components["schemas"]["ObservedPropertyTypePatchBody"];
             };
         };
         responses: {
@@ -14715,7 +14703,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ProcessingLevelPatchBody"];
+                "application/merge-patch+json": components["schemas"]["ProcessingLevelPatchBody"];
             };
         };
         responses: {
@@ -15230,7 +15218,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["QualityControlSessionPatchBody"];
+                "application/merge-patch+json": components["schemas"]["QualityControlSessionPatchBody"];
             };
         };
         responses: {
@@ -15576,7 +15564,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["QualityControlOperationPatchBody"];
+                "application/merge-patch+json": components["schemas"]["QualityControlOperationPatchBody"];
             };
         };
         responses: {
@@ -15831,7 +15819,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ResultQualifierPatchBody"];
+                "application/merge-patch+json": components["schemas"]["ResultQualifierPatchBody"];
             };
         };
         responses: {
@@ -16157,7 +16145,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SampledMediumPatchBody"];
+                "application/merge-patch+json": components["schemas"]["SampledMediumPatchBody"];
             };
         };
         responses: {
@@ -16390,7 +16378,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UnitTypePatchBody"];
+                "application/merge-patch+json": components["schemas"]["UnitTypePatchBody"];
             };
         };
         responses: {
@@ -16642,7 +16630,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UnitPatchBody"];
+                "application/merge-patch+json": components["schemas"]["UnitPatchBody"];
             };
         };
         responses: {
@@ -16892,7 +16880,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["WorkspacePatchBody"];
+                "application/merge-patch+json": components["schemas"]["WorkspacePatchBody"];
             };
         };
         responses: {
@@ -17314,7 +17302,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ServiceAccountPatchBody"];
+                "application/merge-patch+json": components["schemas"]["ServiceAccountPatchBody"];
             };
         };
         responses: {

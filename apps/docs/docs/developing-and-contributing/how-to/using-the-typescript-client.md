@@ -23,7 +23,7 @@ The TypeScript client exposes these services:
 | Authentication and account | `session`, `user` |
 | Data management | `workspaces`, `monitoringSites`, `datastreams`, `methods`, `units`, `processingLevels`, `observedProperties`, `resultQualifiers` |
 | Ingestion and orchestration | `dataConnections`, `tasks`, `monitoringTasks`, `dataProductTasks`, `ratingCurves` |
-| Rating curves and quality control | `ratingCurvePreview`, `qualityControlHistories`, `qualityControlSessions`, `qualityControlOperations` |
+| Quality control | `qualityControlHistories`, `qualityControlSessions`, `qualityControlOperations` |
 
 Services are created lazily, so reading a service property does not make a request.
 
@@ -860,21 +860,6 @@ const curve = await hs.ratingCurves.createItem(
 ```
 
 Use `listItemsForMonitoringSite(monitoringSiteId)` to retrieve all curves for one MonitoringSite.
-
-## Rating Curve Link Preview
-
-`hs.monitoringSites`/`hs.datastreams` handle general linked resource management (see the examples above). `hs.ratingCurvePreview`
-provides a helper for previewing the first rows of a CSV-formatted link — for example, to show a quick preview of a
-rating curve file before it's fully processed.
-
-```ts
-const linkUrl = created.data!.link;
-
-const previewRes = await hs.ratingCurvePreview.fetchRatingCurvePreview(linkUrl);
-if (previewRes.ok) {
-  // previewRes.data is an array of { inputValue, outputValue } rows
-}
-```
 
 ## Quality Control Histories
 

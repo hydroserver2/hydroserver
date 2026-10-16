@@ -4,6 +4,7 @@ from requests import Response
 from dataclasses import dataclass, field
 from pydantic import BaseModel, ConfigDict, PrivateAttr, Field
 from pydantic.alias_generators import to_camel
+from hydroserverpy.api.utils import create_merge_patch
 
 if TYPE_CHECKING:
     from hydroserverpy import HydroServer
@@ -55,7 +56,7 @@ class HydroServerBaseModel(BaseModel):
 
         if self.unsaved_changes:
             saved_resource = self.service.update(
-                self.uid, **self.unsaved_changes
+                self.uid, **create_merge_patch(self._server_data, self.unsaved_changes)
             )
             self._server_data = saved_resource.dict(by_alias=False).copy()
             self.__dict__.update(saved_resource.__dict__)

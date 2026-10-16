@@ -8,12 +8,13 @@ from django.contrib.auth import get_user_model
 from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.core.exceptions import EmptyResultSet
 from django.db import connection
-from django.db.models import QuerySet, Model, Q, F, Exists, OuterRef
+from django.db.models import QuerySet, Model, JSONField, Q, F, Exists, OuterRef
 
 from core.iam.models import Workspace, ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.sta.models import Datastream
 from interfaces.api.http.errors import BadRequestError, NotFoundError
+from interfaces.api.merge_patch import merge_patch
 from interfaces.api.schemas.base import PaginationMeta, clamp_limit
 from interfaces.api.schemas.extent import BoundingBox, TimeInterval
 
@@ -22,6 +23,22 @@ User = get_user_model()
 
 class APIService:
     SEARCH_CONFIG = "english"
+
+    @staticmethod
+    def apply_merge_patch(instance: Model, changes: dict) -> None:
+        """Apply validated model fields, merging JSON values using RFC 7396.
+
+        Model metadata identifies JSON properties; ordinary scalar fields retain
+        their existing nullable-field clearing behavior. Call inside a transaction
+        with a row lock when modifying an existing JSON value.
+        """
+        for name, value in changes.items():
+            field = instance._meta.get_field(name)
+            if isinstance(field, JSONField):
+                value = merge_patch(getattr(instance, name), value)
+                if value is None and not field.null:
+                    raise BadRequestError(f"{field.name} cannot be removed.")
+            setattr(instance, name, value)
 
     @staticmethod
     def get_workspace(

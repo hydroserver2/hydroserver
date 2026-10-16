@@ -22,7 +22,6 @@ import { MonitoringRuleService } from './services/monitoring-rule.service'
 import { DataProductTaskService } from './services/data-product-task.service'
 import { DataProductTransformationService } from './services/data-product-transformation.service'
 import { RatingCurveService } from './services/rating-curve.service'
-import { RatingCurvePreviewService } from './services/rating-curve-preview.service'
 import {
   QualityControlHistoryService,
   QualityControlOperationService,
@@ -76,7 +75,6 @@ export class HydroServer {
   private _dataProductTasks?: DataProductTaskService
   private _dataProductTransformations?: DataProductTransformationService
   private _ratingCurves?: RatingCurveService
-  private _ratingCurvePreview?: RatingCurvePreviewService
   private _qualityControlHistories?: QualityControlHistoryService
   private _qualityControlSessions?: QualityControlSessionService
   private _qualityControlOperations?: QualityControlOperationService
@@ -197,9 +195,6 @@ export class HydroServer {
   }
   get ratingCurves(): RatingCurveService {
     return (this._ratingCurves ??= new RatingCurveService(this))
-  }
-  get ratingCurvePreview(): RatingCurvePreviewService {
-    return (this._ratingCurvePreview ??= new RatingCurvePreviewService(this))
   }
   get qualityControlHistories(): QualityControlHistoryService {
     return (this._qualityControlHistories ??= new QualityControlHistoryService(

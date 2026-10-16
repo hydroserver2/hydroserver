@@ -112,7 +112,7 @@ class DataConnectionService(HydroServerBaseService):
         data_start_row: Optional[int] = None,
         delimiter: Optional[str] = None,
         jmespath: Optional[str] = None,
-        placeholder_variables: Optional[List[dict]] = None,
+        placeholder_variables: Optional[List[dict]] = ...,
         notification: Optional[dict] = ...,
     ) -> DataConnection:
         """Update an ETL data connection."""
@@ -142,11 +142,10 @@ class DataConnectionService(HydroServerBaseService):
             "authHeaderName": auth_header_name,
             "authHeaderValue": auth_header_value,
             "payload": payload,
-            "placeholderVariables": self._serialize_placeholder_variables(
-                placeholder_variables or []
-            ),
         }
 
+        if placeholder_variables is not ...:
+            body["placeholderVariables"] = self._serialize_placeholder_variables(placeholder_variables or [])
         if notification is not ...:
             body["notification"] = notification
 

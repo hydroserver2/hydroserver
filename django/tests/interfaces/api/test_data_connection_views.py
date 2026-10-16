@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 import pytest
 
@@ -66,7 +67,107 @@ def _data_connection_body(workspace_id, payload=None, **overrides):
     return body
 
 
+def _ingestion_window():
+    return {
+        "start": {
+            "anchor": "latest_observation_timestamp",
+            "lookback": 2,
+            "lookbackUnits": "hours",
+            "timestamp": None,
+        },
+        "end": {
+            "anchor": "fixed_timestamp",
+            "lookback": None,
+            "lookbackUnits": None,
+            "timestamp": "2026-01-01T00:00:00+00:00",
+        },
+    }
+
+
+@pytest.fixture(params=[False, True], ids=["CSV", "JSON"])
+def windowed_data_connection(client, request):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    data_connection = DataConnectionFactory(workspace=workspace)
+    PayloadFactory(
+        data_connection=data_connection,
+        json=request.param,
+        data_ingestion_window_start_anchor="latest_observation_timestamp",
+        data_ingestion_window_start_lookback=2,
+        data_ingestion_window_start_lookback_unit="hours",
+        data_ingestion_window_end_anchor="fixed_timestamp",
+        data_ingestion_window_end_timestamp=datetime.fromisoformat("2026-01-01T00:00:00+00:00"),
+    )
+    client.force_login(owner)
+    return data_connection
+
+
 # --- get_data_connections ----------------------------------------------------------
+
+
+@pytest.mark.parametrize("notification_patch", [
+    {"schedule": {"enabled": False}},
+    {"schedule": {"intervalPeriod": "hours"}},
+    {"recipientEmails": ["updated@example.com"]},
+    {},
+    None,
+])
+def test_update_notification_preserves_omitted_members(client, notification_patch):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    client.force_login(owner)
+    response = client.post(
+        DATA_CONNECTIONS_URL,
+        data=_data_connection_body(workspace.id, notification={
+            "schedule": {"interval": 5, "intervalPeriod": "minutes"},
+            "recipientEmails": ["owner@example.com"],
+        }),
+        content_type="application/json",
+    )
+    assert response.status_code == 201
+    url = _detail_url(response.json()["id"])
+
+    response = client.patch(
+        url, data={"notification": notification_patch}, content_type="application/merge-patch+json"
+    )
+
+    assert response.status_code == 204
+    detail = client.get(url)
+    assert detail.status_code == 200, detail.content
+    notification = detail.json()["data"]["notification"]
+    if notification_patch is None:
+        assert notification is None
+    else:
+        assert notification["recipientEmails"] == notification_patch.get("recipientEmails", ["owner@example.com"])
+        assert notification["schedule"]["interval"] == 5
+        schedule_patch = notification_patch.get("schedule", {})
+        assert notification["schedule"]["intervalPeriod"] == schedule_patch.get("intervalPeriod", "minutes")
+        assert notification["schedule"]["enabled"] is schedule_patch.get("enabled", True)
+
+
+@pytest.mark.parametrize("variables, status", [([], 204), ([{"name": "station"}], 400)])
+def test_placeholder_arrays_replace_in_full_and_validate_each_item(client, variables, status):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    client.force_login(owner)
+    response = client.post(
+        DATA_CONNECTIONS_URL,
+        data=_data_connection_body(workspace.id, placeholderVariables=[{"name": "station", "type": "per_task"}]),
+        content_type="application/json",
+    )
+    assert response.status_code == 201
+    url = _detail_url(response.json()["id"])
+
+    response = client.patch(
+        url, data={"placeholderVariables": variables}, content_type="application/merge-patch+json"
+    )
+
+    assert response.status_code == status
+    placeholders = client.get(url).json()["data"]["placeholderVariables"]
+    if status == 204:
+        assert placeholders == []
+    else:
+        assert [pv["name"] for pv in placeholders] == ["station"]
 
 
 def test_get_data_connections_includes_connection_for_workspace_owner(client):
@@ -381,6 +482,28 @@ def test_create_data_connection_returns_400_for_timestamp_format_on_disallowed_v
     assert response.status_code == 400
 
 
+@pytest.mark.parametrize(
+    "payload_body", [_csv_payload_body, _json_payload_body], ids=["CSV", "JSON"]
+)
+@pytest.mark.parametrize("window", [None, _ingestion_window()], ids=["null", "configured"])
+def test_create_data_connection_persists_ingestion_window(client, payload_body, window):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    client.force_login(owner)
+
+    response = client.post(
+        DATA_CONNECTIONS_URL,
+        data=_data_connection_body(
+            workspace.id, payload=payload_body(dataIngestionWindow=window)
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
+    detail = client.get(_detail_url(response.json()["id"]))
+    assert detail.json()["data"]["payload"]["dataIngestionWindow"] == window
+
+
 # --- get_data_connection ----------------------------------------------------------------
 
 
@@ -461,6 +584,199 @@ def test_update_data_connection_returns_403_for_viewer_collaborator(client):
     assert response.status_code == 403
 
 
+@pytest.mark.parametrize("is_json", [False, True], ids=["CSV", "JSON"])
+def test_update_data_connection_accepts_fetched_connection_with_null_window(client, is_json):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    data_connection = _make_data_connection(workspace, json=is_json)
+    client.force_login(owner)
+    url = _detail_url(data_connection.id)
+    body = client.get(url).json()["data"]
+    assert body["payload"]["dataIngestionWindow"] is None
+    body.update(
+        name="Updated Name",
+        sourceUrl="https://example.com/updated",
+        authHeaderName="Authorization",
+        authHeaderValue="Bearer updated",
+    )
+    body["payload"]["timestampKey"] = "updated_timestamp"
+
+    response = client.patch(url, data=body, content_type="application/json")
+
+    assert response.status_code == 204
+    detail = client.get(url).json()["data"]
+    for field in ("name", "sourceUrl", "authHeaderName", "authHeaderValue", "payload"):
+        assert detail[field] == body[field]
+
+
+def test_update_data_connection_accepts_fetched_connection_with_window(client, windowed_data_connection):
+    url = _detail_url(windowed_data_connection.id)
+    body = client.get(url).json()["data"]
+    assert body["payload"]["dataIngestionWindow"] == _ingestion_window()
+    body["name"] = "Renamed connection"
+
+    response = client.patch(url, data=body, content_type="application/json")
+
+    assert response.status_code == 204
+    detail = client.get(url).json()["data"]
+    assert detail["name"] == "Renamed connection"
+    assert detail["payload"]["dataIngestionWindow"] == _ingestion_window()
+
+
+def test_update_data_connection_can_reenable_window(client, windowed_data_connection):
+    url = _detail_url(windowed_data_connection.id)
+    for window in (None, _ingestion_window()):
+        response = client.patch(
+            url,
+            data={"payload": {"dataIngestionWindow": window}},
+            content_type="application/json",
+        )
+
+        assert response.status_code == 204
+        assert client.get(url).json()["data"]["payload"]["dataIngestionWindow"] == window
+
+
+@pytest.mark.parametrize("patch", [{"name": "Renamed"}, {"payload": {"timestampKey": "updated"}}])
+def test_update_data_connection_preserves_omitted_window(client, windowed_data_connection, patch):
+    url = _detail_url(windowed_data_connection.id)
+
+    response = client.patch(url, data=patch, content_type="application/json")
+
+    assert response.status_code == 204
+    assert client.get(url).json()["data"]["payload"]["dataIngestionWindow"] == _ingestion_window()
+
+
+@pytest.mark.parametrize(
+    ("window_patch", "expected"),
+    [
+        (None, None),
+        ({}, _ingestion_window()),
+        ({"start": None}, {**_ingestion_window(), "start": None}),
+        ({"end": None}, {**_ingestion_window(), "end": None}),
+        ({"start": {}}, _ingestion_window()),
+        (
+            {"start": {"lookback": 3}},
+            {**_ingestion_window(), "start": {**_ingestion_window()["start"], "lookback": 3}},
+        ),
+        (
+            {"start": {"lookback": 0, "lookbackUnits": "days"}},
+            {
+                **_ingestion_window(),
+                "start": {**_ingestion_window()["start"], "lookback": 0, "lookbackUnits": "days"},
+            },
+        ),
+        (
+            {"start": {"lookback": None, "lookbackUnits": None}},
+            {
+                **_ingestion_window(),
+                "start": {**_ingestion_window()["start"], "lookback": None, "lookbackUnits": None},
+            },
+        ),
+        (
+            {"end": {"anchor": "run_time", "timestamp": None}},
+            {**_ingestion_window(), "end": {**_ingestion_window()["end"], "anchor": "run_time", "timestamp": None}},
+        ),
+    ],
+    ids=[
+        "clear-window", "empty-window", "clear-start", "clear-end", "empty-start",
+        "lookback-only", "zero-lookback", "clear-lookback", "change-anchor",
+    ],
+)
+def test_update_data_connection_patches_ingestion_window(
+    client, windowed_data_connection, window_patch, expected
+):
+    url = _detail_url(windowed_data_connection.id)
+
+    response = client.patch(
+        url,
+        data={"payload": {"dataIngestionWindow": window_patch}},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 204
+    assert client.get(url).json()["data"]["payload"]["dataIngestionWindow"] == expected
+    if expected is None:
+        payload = windowed_data_connection.payload
+        payload.refresh_from_db()
+        for side in ("start", "end"):
+            for suffix in ("anchor", "lookback", "lookback_unit", "timestamp"):
+                assert getattr(payload, f"data_ingestion_window_{side}_{suffix}") is None
+
+
+def test_update_data_connection_preserves_window_when_switching_payload_type(client, windowed_data_connection):
+    url = _detail_url(windowed_data_connection.id)
+    payload = (
+        _json_payload_body() if windowed_data_connection.payload.payload_type == "CSV"
+        else _csv_payload_body()
+    )
+
+    response = client.patch(url, data={"payload": payload}, content_type="application/json")
+
+    assert response.status_code == 204
+    detail = client.get(url).json()["data"]["payload"]
+    assert detail["type"] == payload["type"]
+    assert detail["dataIngestionWindow"] == _ingestion_window()
+
+
+@pytest.mark.parametrize(
+    "window_patch",
+    [{"end": {"timestamp": None}}, {"start": {"lookbackUnits": None}}, {"start": {"anchor": None}}],
+)
+def test_update_data_connection_validates_merged_window(client, windowed_data_connection, window_patch):
+    url = _detail_url(windowed_data_connection.id)
+    original = client.get(url).json()["data"]
+
+    response = client.patch(
+        url,
+        data={"name": "Rejected Name", "payload": {"dataIngestionWindow": window_patch}},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+    detail = client.get(url).json()["data"]
+    assert detail["name"] == original["name"]
+    assert detail["payload"]["dataIngestionWindow"] == original["payload"]["dataIngestionWindow"]
+
+
+@pytest.mark.parametrize(
+    "boundary",
+    [
+        {"anchor": "invalid"},
+        {"anchor": "fixed_timestamp"},
+        {"anchor": "fixed_timestamp", "timestamp": "invalid"},
+        {"anchor": "run_time", "lookback": -1, "lookbackUnits": "hours"},
+        {"anchor": "run_time", "lookback": 1, "lookbackUnits": "weeks"},
+        {"anchor": "run_time", "lookback": 1},
+        {"anchor": "run_time", "lookbackUnits": "hours"},
+        {"lookback": 1, "lookbackUnits": "hours"},
+    ],
+)
+@pytest.mark.parametrize("method", ["post", "patch"])
+def test_data_connection_rejects_invalid_ingestion_window(client, boundary, method):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    client.force_login(owner)
+    payload = _csv_payload_body(dataIngestionWindow={"start": boundary})
+    if method == "post":
+        url = DATA_CONNECTIONS_URL
+        body = _data_connection_body(workspace.id, payload=payload)
+    else:
+        data_connection = _make_data_connection(workspace, name="Original Name")
+        url = _detail_url(data_connection.id)
+        body = {"name": "Rejected Name", "payload": payload}
+
+    response = getattr(client, method)(url, data=body, content_type="application/json")
+
+    assert response.status_code == 400
+    if method == "post":
+        assert not workspace.data_connections.exists()
+    else:
+        data_connection.refresh_from_db()
+        data_connection.payload.refresh_from_db()
+        assert data_connection.name == "Original Name"
+        assert data_connection.payload.data_ingestion_window_start_anchor is None
+
+
 # --- delete_data_connection ----------------------------------------------------------------
 
 
@@ -485,3 +801,29 @@ def test_delete_data_connection_returns_403_for_viewer_collaborator(client):
     response = client.delete(_detail_url(data_connection.id))
 
     assert response.status_code == 403
+
+
+def test_update_notification_null_schedule_is_rejected_not_ignored(client):
+    # A notification with recipients requires a schedule; clear the whole notification instead.
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    client.force_login(owner)
+    response = client.post(
+        DATA_CONNECTIONS_URL,
+        data=_data_connection_body(workspace.id, notification={
+            "schedule": {"interval": 5, "intervalPeriod": "minutes"},
+            "recipientEmails": ["owner@example.com"],
+        }),
+        content_type="application/json",
+    )
+    assert response.status_code == 201
+    url = _detail_url(response.json()["id"])
+
+    response = client.patch(
+        url, data={"notification": {"schedule": None}}, content_type="application/merge-patch+json"
+    )
+
+    assert response.status_code == 400
+    assert "schedule is required" in response.json()["message"]
+    notification = client.get(url).json()["data"]["notification"]
+    assert notification["schedule"]["interval"] == 5

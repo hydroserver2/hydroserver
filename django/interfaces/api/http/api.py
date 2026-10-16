@@ -11,6 +11,7 @@ from interfaces.api.formats import EncodeContext, collection_formats
 from interfaces.api.formats.profiles import collection_profiles, has_profiles
 from interfaces.api.http.links import link_header
 from interfaces.api.http.content_negotiation import FORMAT_PARAM, PROFILE_PARAM, items_route
+from interfaces.api.merge_patch import MERGE_PATCH_MEDIA_TYPE
 
 PARAMETER_SERIALIZATION_KEYS = ("style", "explode")
 
@@ -39,7 +40,8 @@ class HydroServerNinjaAPI(NinjaAPI):
         response_format = getattr(request, "response_format", None)
 
         if response_format is None:
-            return super().create_response(request, data, status=status, temporal_response=temporal_response)
+            response = super().create_response(request, data, status=status, temporal_response=temporal_response)
+            return self.advertise_patch(request, response)
 
         if temporal_response:
             status = temporal_response.status_code
@@ -64,7 +66,17 @@ class HydroServerNinjaAPI(NinjaAPI):
 
         patch_vary_headers(response, ["Accept"])
 
+        return self.advertise_patch(request, response)
+
+    @staticmethod
+    def advertise_patch(request: HttpRequest, response: HttpResponse) -> HttpResponse:
+        if request.method == "PATCH" and request.content_type in {"application/json", MERGE_PATCH_MEDIA_TYPE}:
+            response["Accept-Patch"] = MERGE_PATCH_MEDIA_TYPE
         return response
+
+    def create_temporal_response(self, request: HttpRequest) -> HttpResponse:
+        # Ninja returns this response directly for 204, without create_response.
+        return self.advertise_patch(request, super().create_temporal_response(request))
 
     def get_openapi_schema(
         self,
@@ -75,7 +87,11 @@ class HydroServerNinjaAPI(NinjaAPI):
         schema = super().get_openapi_schema(path_prefix=path_prefix, path_params=path_params)
 
         for path, path_item in schema.get("paths", {}).items():
-            for operation in path_item.values():
+            for method, operation in path_item.items():
+                if method == "patch":
+                    content = operation.get("requestBody", {}).get("content", {})
+                    if "application/json" in content:
+                        content[MERGE_PATCH_MEDIA_TYPE] = content.pop("application/json")
                 for parameter in operation.get("parameters", []):
                     parameter_schema = parameter.get("schema", {})
                     for key in PARAMETER_SERIALIZATION_KEYS:
