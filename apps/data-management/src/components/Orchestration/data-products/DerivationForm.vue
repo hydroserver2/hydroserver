@@ -38,8 +38,8 @@
         >
           Apply a mathematical formula to one or more input datastreams to
           produce a new output datastream. With more than one input, they're
-          matched by exact timestamp; if inputs stop lining up, the run stops
-          there until they're back in sync.
+          matched by exact timestamp; timestamps not shared by every input
+          stop the run or are skipped, depending on "Stop on input gaps".
         </v-alert>
 
         <v-text-field
@@ -197,15 +197,19 @@
         </div>
 
         <div class="d-flex align-center mb-1">
-          <div class="text-body-2">Stop on no-data value</div>
+          <div class="text-body-2">Stop on input gaps</div>
           <v-tooltip location="end" max-width="280">
             <template #activator="{ props: tp }">
               <v-icon v-bind="tp" size="16" color="grey-darken-1" class="ml-1">
                 {{ mdiInformationOutline }}
               </v-icon>
             </template>
-            If an input is set to a no-data value, stop the run there
-            instead of writing the output's no-data value and continuing.
+            If an input has no value at a timestamp where the others do, stop
+            the run there and wait until the missing value arrives. When off,
+            those timestamps are skipped and the run continues. Runs never go
+            past the most recent value of the input that is furthest behind.
+            Inputs holding their no-data value always produce the output's
+            no-data value.
           </v-tooltip>
           <v-spacer />
           <v-switch

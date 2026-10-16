@@ -109,10 +109,18 @@ class TestApplyDerivation:
         with pytest.raises(ValueError, match="At least one"):
             apply_derivation({}, formula="x", stop_on_no_data=True, stop_on_error=True)
 
-    def test_stop_on_no_data_false_requires_output_no_data_value(self):
+    def test_input_no_data_values_require_output_no_data_value(self):
         df = _make_df(_hourly(3), [1.0, 2.0, 3.0])
         with pytest.raises(ValueError, match="output_no_data_value"):
-            apply_derivation({"x": df}, formula="x", stop_on_no_data=False, stop_on_error=True)
+            apply_derivation(
+                {"x": df}, formula="x", stop_on_no_data=True, stop_on_error=True,
+                input_no_data_values={"x": -9999.0},
+            )
+
+    def test_stop_on_no_data_false_does_not_require_output_no_data_value(self):
+        df = _make_df(_hourly(3), [1.0, 2.0, 3.0])
+        result = apply_derivation({"x": df}, formula="x", stop_on_no_data=False, stop_on_error=True)
+        assert result[RESULT_COL].tolist() == pytest.approx([1.0, 2.0, 3.0])
 
     def test_stop_on_error_false_requires_output_no_data_value(self):
         df = _make_df(_hourly(3), [1.0, 2.0, 3.0])
@@ -218,6 +226,69 @@ class TestApplyDerivation:
         assert result[RESULT_COL].tolist() == pytest.approx([11.0])
         assert "not aligned" in caplog.text
 
+    def test_misalignment_skipped_when_stop_on_no_data_false(self, caplog):
+        # Same inputs as above, but hour 1 is skipped and hour 2 still matches.
+        ts_x = [_utc(2024, 1, 1, 0), _utc(2024, 1, 1, 1), _utc(2024, 1, 1, 2)]
+        ts_y = [_utc(2024, 1, 1, 0), _utc(2024, 1, 1, 2)]
+        df_x = _make_df(ts_x, [1.0, 2.0, 3.0])
+        df_y = _make_df(ts_y, [10.0, 30.0])
+        with caplog.at_level(logging.INFO):
+            result = apply_derivation(
+                {"x": df_x, "y": df_y}, formula="x + y", stop_on_no_data=False, stop_on_error=True
+            )
+        assert result[TIMESTAMP_COL].tolist() == [_utc(2024, 1, 1, 0), _utc(2024, 1, 1, 2)]
+        assert result[RESULT_COL].tolist() == pytest.approx([11.0, 33.0])
+        assert "skipped 1 timestamp" in caplog.text
+        assert "stopped" not in caplog.text
+
+    def test_misalignment_skipped_in_both_directions(self):
+        # x is missing hour 1 and y is missing hour 3; both are skipped.
+        ts_x = [_utc(2024, 1, 1, h) for h in (0, 2, 3, 4)]
+        ts_y = [_utc(2024, 1, 1, h) for h in (0, 1, 2, 4)]
+        df_x = _make_df(ts_x, [1.0, 3.0, 4.0, 5.0])
+        df_y = _make_df(ts_y, [10.0, 20.0, 30.0, 50.0])
+        result = apply_derivation(
+            {"x": df_x, "y": df_y}, formula="x + y", stop_on_no_data=False, stop_on_error=True
+        )
+        assert result[TIMESTAMP_COL].tolist() == [_utc(2024, 1, 1, h) for h in (0, 2, 4)]
+        assert result[RESULT_COL].tolist() == pytest.approx([11.0, 33.0, 55.0])
+
+    def test_skipped_gap_and_no_data_value_handled_independently(self):
+        # Hour 1 is a gap (skipped); hour 2 has x at its no-data value (filled).
+        ts_x = [_utc(2024, 1, 1, h) for h in (0, 1, 2, 3)]
+        ts_y = [_utc(2024, 1, 1, h) for h in (0, 2, 3)]
+        df_x = _make_df(ts_x, [1.0, 2.0, -9999.0, 4.0])
+        df_y = _make_df(ts_y, [10.0, 30.0, 40.0])
+        result = apply_derivation(
+            {"x": df_x, "y": df_y}, formula="x + y",
+            stop_on_no_data=False, stop_on_error=True,
+            input_no_data_values={"x": -9999.0, "y": -9999.0}, output_no_data_value=-1.0,
+        )
+        assert result[TIMESTAMP_COL].tolist() == [_utc(2024, 1, 1, h) for h in (0, 2, 3)]
+        assert result[RESULT_COL].tolist() == pytest.approx([11.0, -1.0, 44.0])
+
+    def test_stop_on_error_still_applies_after_skipped_gap(self, caplog):
+        ts_x = [_utc(2024, 1, 1, h) for h in (0, 1, 2, 3)]
+        ts_y = [_utc(2024, 1, 1, h) for h in (0, 2, 3)]
+        df_x = _make_df(ts_x, [1.0, 2.0, 3.0, 4.0])
+        df_y = _make_df(ts_y, [1.0, 0.0, 4.0])
+        with caplog.at_level(logging.WARNING):
+            result = apply_derivation(
+                {"x": df_x, "y": df_y}, formula="x / y", stop_on_no_data=False, stop_on_error=True
+            )
+        assert result[TIMESTAMP_COL].tolist() == [_utc(2024, 1, 1, 0)]
+        assert "non-finite" in caplog.text
+
+    def test_completely_disjoint_timestamps_return_empty_when_skipping(self, caplog):
+        df_x = _make_df([_utc(2024, 1, 1, 0)], [1.0])
+        df_y = _make_df([_utc(2024, 1, 1, 1)], [2.0])
+        with caplog.at_level(logging.WARNING):
+            result = apply_derivation(
+                {"x": df_x, "y": df_y}, formula="x + y", stop_on_no_data=False, stop_on_error=True
+            )
+        assert len(result) == 0
+        assert caplog.text == ""
+
     def test_fully_aligned_inputs_produce_no_warning(self, caplog):
         ts = _hourly(3)
         df_x = _make_df(ts, [1.0, 2.0, 3.0])
@@ -236,34 +307,24 @@ class TestApplyDerivation:
         )
         assert len(result) == 0
 
-    # -- stop_on_no_data (no-data values in aligned inputs) -----------------
+    # -- No-data values in aligned inputs -----------------------------------
 
-    def test_stop_on_no_data_false_fills_and_continues(self):
-        ts = _hourly(3)
-        df_x = _make_df(ts, [1.0, -9999.0, 3.0])
-        df_y = _make_df(ts, [10.0, 20.0, 30.0])
-        result = apply_derivation(
-            {"x": df_x, "y": df_y}, formula="x + y",
-            stop_on_no_data=False, stop_on_error=True,
-            input_no_data_values={"x": -9999.0, "y": -9999.0}, output_no_data_value=-9999.0,
-        )
-        assert len(result) == 3
-        assert result[RESULT_COL].tolist() == pytest.approx([11.0, -9999.0, 33.0])
-
-    def test_stop_on_no_data_true_truncates_at_first_no_data_value(self, caplog):
+    @pytest.mark.parametrize("stop_on_no_data", [True, False])
+    def test_no_data_value_always_fills_and_continues(self, stop_on_no_data, caplog):
         ts = _hourly(3)
         df_x = _make_df(ts, [1.0, -9999.0, 3.0])
         df_y = _make_df(ts, [10.0, 20.0, 30.0])
         with caplog.at_level(logging.WARNING):
             result = apply_derivation(
                 {"x": df_x, "y": df_y}, formula="x + y",
-                stop_on_no_data=True, stop_on_error=True,
-                input_no_data_values={"x": -9999.0, "y": -9999.0},
+                stop_on_no_data=stop_on_no_data, stop_on_error=True,
+                input_no_data_values={"x": -9999.0, "y": -9999.0}, output_no_data_value=-9999.0,
             )
-        assert result[RESULT_COL].tolist() == pytest.approx([11.0])
-        assert "no-data value" in caplog.text
+        assert len(result) == 3
+        assert result[RESULT_COL].tolist() == pytest.approx([11.0, -9999.0, 33.0])
+        assert caplog.text == ""
 
-    def test_stop_on_no_data_only_checks_that_inputs_own_sentinel(self):
+    def test_no_data_value_only_checks_that_inputs_own_sentinel(self):
         # x's sentinel (-9999) never appears in y, and y's sentinel (-777)
         # never appears in x, so neither input's real values are misdetected
         # as no-data, and both real no-data rows are still caught.
@@ -303,8 +364,8 @@ class TestApplyDerivation:
 
     def test_no_data_value_rows_are_not_also_flagged_as_errors(self):
         # A no-data sentinel fed into the formula could itself produce a
-        # non-finite result (e.g. via log); stop_on_no_data must claim that
-        # row, not stop_on_error, even when stop_on_error is True.
+        # non-finite result (e.g. via log); it must be filled as no-data, not
+        # flagged by stop_on_error, even when stop_on_error is True.
         ts = _hourly(2)
         df_x = _make_df(ts, [-9999.0, 4.0])
         result = apply_derivation(
