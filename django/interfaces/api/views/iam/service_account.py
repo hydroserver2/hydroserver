@@ -57,6 +57,7 @@ def get_service_accounts(
     response={
         201: ServiceAccountCreatedResponse,
         401: str,
+        409: str,
     },
     by_alias=True,
 )

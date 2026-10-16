@@ -55,6 +55,7 @@ def get_observed_property_types(
         201: CreatedResponse,
         401: str,
         403: str,
+        409: str,
     },
     by_alias=True,
 )
@@ -107,6 +108,7 @@ def get_observed_property_type(
         204: None,
         401: str,
         403: str,
+        409: str,
     },
     by_alias=True,
 )

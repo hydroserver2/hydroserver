@@ -45,6 +45,7 @@ class EtlMapping(models.Model, ResourcePermissionMixin):
                 fields=["target_datastream"],
                 name="unique_etl_mapping_target_datastream",
                 violation_error_message="This datastream is already mapped to by another task.",
+                violation_error_code="unique",
             )
         ]
 
