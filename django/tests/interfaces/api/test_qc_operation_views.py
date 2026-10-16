@@ -212,6 +212,27 @@ def test_update_qc_operation_succeeds_for_workspace_owner(client):
     assert operation.comment == "Updated comment"
 
 
+@pytest.mark.parametrize("arguments, expected", [
+    ({"start": 5}, {"start": 5, "end": 10}),
+    ({"start": None}, {"end": 10}),
+    ({}, {"start": 0, "end": 10}),
+    ([1, None, 3], [1, None, 3]),
+])
+def test_update_qc_operation_merges_objects_and_replaces_arrays(client, arguments, expected):
+    owner = UserFactory()
+    session = _make_session(WorkspaceFactory(owner=owner))
+    operation = QCOperationFactory(session=session, arguments={"start": 0, "end": 10})
+    client.force_login(owner)
+    url = _detail_url(session.history_id, session.id, operation.id)
+
+    response = client.patch(url, data={"arguments": arguments}, content_type="application/merge-patch+json")
+
+    assert response.status_code == 204
+    operation.refresh_from_db()
+    assert operation.arguments == expected
+    assert client.get(url).json()["data"]["arguments"] == expected
+
+
 def test_update_qc_operation_returns_403_for_viewer_collaborator(client):
     workspace = WorkspaceFactory()
     session = _make_session(workspace)

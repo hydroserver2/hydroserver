@@ -384,7 +384,7 @@ async function onSubmit() {
   try {
     const payload = taskToPayload()
     const res = isEdit
-      ? await hs.tasks.update(payload)
+      ? await hs.tasks.update(payload, props.oldTask)
       : await hs.tasks.create(payload)
     if (!res.ok) {
       Snackbar.error(res.message)

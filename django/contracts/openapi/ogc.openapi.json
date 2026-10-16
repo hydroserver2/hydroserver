@@ -599,7 +599,7 @@
           },
           "placeholderVariables": {
             "items": {
-              "$ref": "#/components/schemas/PlaceholderVariablePatchBody"
+              "$ref": "#/components/schemas/PlaceholderVariablePostBody"
             },
             "title": "Placeholdervariables",
             "type": "array"
@@ -1057,6 +1057,7 @@
           "lookback": {
             "anyOf": [
               {
+                "minimum": 0,
                 "type": "integer"
               },
               {
@@ -9350,9 +9351,12 @@
             "type": "array"
           },
           "schedule": {
-            "allOf": [
+            "anyOf": [
               {
                 "$ref": "#/components/schemas/SchedulePatchBody"
+              },
+              {
+                "type": "null"
               }
             ],
             "title": "Schedule"
@@ -12205,38 +12209,6 @@
           "action"
         ],
         "title": "PermissionResponse",
-        "type": "object"
-      },
-      "PlaceholderVariablePatchBody": {
-        "properties": {
-          "name": {
-            "title": "Name",
-            "type": "string"
-          },
-          "timestampFormat": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Timestampformat"
-          },
-          "type": {
-            "enum": [
-              "run_time",
-              "latest_observation_timestamp",
-              "per_task",
-              "window_start",
-              "window_end"
-            ],
-            "title": "Type",
-            "type": "string"
-          }
-        },
-        "title": "PlaceholderVariablePatchBody",
         "type": "object"
       },
       "PlaceholderVariablePostBody": {
@@ -17078,7 +17050,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/AggregationStatisticPatchBody"
               }
@@ -17713,7 +17685,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/RatingCurvePatchBody"
               }
@@ -18474,7 +18446,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/DataProductTaskPatchBody"
               }
@@ -19659,7 +19631,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/DataProductTransformationPatchBody"
               }
@@ -20218,7 +20190,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/DatastreamStatusPatchBody"
               }
@@ -21127,7 +21099,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/DatastreamPatchBody"
               }
@@ -22643,7 +22615,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/DataConnectionPatchBody"
               }
@@ -23308,7 +23280,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/EtlMappingPatchBody"
               }
@@ -24104,7 +24076,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/EtlTaskPatchBody"
               }
@@ -25132,7 +25104,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/LinkedResourceTypePatchBody"
               }
@@ -25669,7 +25641,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/MethodTypePatchBody"
               }
@@ -26415,7 +26387,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/MethodPatchBody"
               }
@@ -27093,7 +27065,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/MonitoringRulePatchBody"
               }
@@ -27652,7 +27624,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/MonitoringSiteTypePatchBody"
               }
@@ -28392,7 +28364,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/MonitoringSitePatchBody"
               }
@@ -30132,7 +30104,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/MonitoringTaskPatchBody"
               }
@@ -32092,7 +32064,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/ObservedPropertyPatchBody"
               }
@@ -32640,7 +32612,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/ObservedPropertyTypePatchBody"
               }
@@ -33300,7 +33272,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/ProcessingLevelPatchBody"
               }
@@ -34563,7 +34535,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/QualityControlSessionPatchBody"
               }
@@ -35306,7 +35278,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/QualityControlOperationPatchBody"
               }
@@ -35911,7 +35883,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/ResultQualifierPatchBody"
               }
@@ -36774,7 +36746,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/SampledMediumPatchBody"
               }
@@ -37311,7 +37283,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/UnitTypePatchBody"
               }
@@ -37980,7 +37952,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/UnitPatchBody"
               }
@@ -38606,7 +38578,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/WorkspacePatchBody"
               }
@@ -39551,7 +39523,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/ServiceAccountPatchBody"
               }

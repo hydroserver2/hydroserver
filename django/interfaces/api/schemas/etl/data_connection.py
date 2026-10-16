@@ -241,10 +241,6 @@ class PlaceholderVariablePostBody(BasePostBody, PlaceholderVariableResponse):
     ...
 
 
-class PlaceholderVariablePatchBody(BasePatchBody, PlaceholderVariableResponse):
-    ...
-
-
 class NotificationResponse(BaseGetResponse):
     schedule: ScheduleResponse | None = None
     recipient_emails: list[EmailStr]
@@ -255,6 +251,8 @@ class NotificationResponse(BaseGetResponse):
 
     @staticmethod
     def resolve_recipient_emails(obj):
+        if isinstance(obj, NotificationResponse):
+            return obj.recipient_emails
         return obj.recipients.values_list("email", flat=True)
 
 
@@ -265,7 +263,7 @@ class NotificationPostBody(BasePostBody):
 
 class NotificationPatchBody(BasePatchBody):
     recipient_emails: list[EmailStr]
-    schedule: SchedulePatchBody | Unset = Unset
+    schedule: SchedulePatchBody | None | Unset = Unset
 
 
 class DataConnectionResponse(BaseGetResponse, ItemId):
@@ -330,5 +328,5 @@ class DataConnectionPatchBody(BasePatchBody):
     timezone_type: Optional[Literal["offset", "iana"]] = None
     timezone: Optional[str] = None
     payload: PayloadPatchBody
-    placeholder_variables: list[PlaceholderVariablePatchBody]
+    placeholder_variables: list[PlaceholderVariablePostBody]
     notification: NotificationPatchBody | None | Unset = Unset

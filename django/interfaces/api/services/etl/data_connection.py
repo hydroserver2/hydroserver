@@ -328,7 +328,17 @@ class DataConnectionAPIService(SchedulingService, APIService):
                 placeholder_variables=placeholder_variables,
             )
 
-        if notification_recipient_emails is not Unset:
+        if any(value is not Unset for value in (
+            notification_recipient_emails, notification_crontab, notification_interval,
+            notification_interval_period, notification_start_time, notification_enabled,
+        )):
+            if notification_recipient_emails is Unset:
+                try:
+                    notification_recipient_emails = list(
+                        data_connection.notification.recipients.values_list("email", flat=True)
+                    )
+                except DataConnectionNotification.DoesNotExist:
+                    notification_recipient_emails = []
             self.apply_notification(
                 data_connection=data_connection,
                 recipient_emails=notification_recipient_emails,

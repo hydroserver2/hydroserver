@@ -538,7 +538,7 @@ def test_update_datastream_tags_locks_row_for_update(client):
     assert any("FOR UPDATE" in query["sql"] for query in queries.captured_queries)
 
 
-def test_update_datastream_without_tags_does_not_lock_row(client):
+def test_update_datastream_without_tags_locks_row_for_update(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     datastream = _make_datastream(workspace)
@@ -551,7 +551,7 @@ def test_update_datastream_without_tags_does_not_lock_row(client):
             content_type="application/json",
         )
 
-    assert not any("FOR UPDATE" in query["sql"] for query in queries.captured_queries)
+    assert any("FOR UPDATE" in query["sql"] for query in queries.captured_queries)
 
 
 def test_update_datastream_tags_returns_403_for_viewer_collaborator(client):

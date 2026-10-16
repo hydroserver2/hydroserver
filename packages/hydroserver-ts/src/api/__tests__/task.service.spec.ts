@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { HydroServer } from '../HydroServer'
+import cases from '../../../../../django/contracts/merge-patch-cases.json'
 
 const jsonResponse = (data: unknown, headers: Record<string, string> = {}) =>
   new Response(JSON.stringify(data), {
@@ -13,6 +14,63 @@ const jsonResponse = (data: unknown, headers: Record<string, string> = {}) =>
 describe('TaskService', () => {
   afterEach(() => {
     vi.restoreAllMocks()
+  })
+
+  it.each(cases.filter(({ patch }) => Object.keys(patch).length > 0))(
+    'sends a merge patch: $name',
+    async ({ original: fields, updated: changes, patch }) => {
+      const original = { id: 'task-1', ...fields }
+      const updated = { id: 'task-1', ...changes }
+      const fetchMock = vi.fn().mockImplementation(async () => jsonResponse({ data: updated }))
+      vi.stubGlobal('fetch', fetchMock)
+
+      const client = new HydroServer({ host: 'https://hydro.example.com' })
+      const response = await client.tasks.update(updated, original)
+
+      expect(fetchMock.mock.calls[0][0]).toBe(
+        'https://hydro.example.com/api/ogc/collections/etl-tasks/items/task-1'
+      )
+      expect(fetchMock.mock.calls[0][1].method).toBe('PATCH')
+      expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual(patch)
+      expect(fetchMock.mock.calls[0][1].headers.get('Content-Type')).toBe(
+        'application/merge-patch+json'
+      )
+      expect(response.ok).toBe(true)
+    }
+  )
+
+  it.each([
+    { taskVariables: { station: 'A', parameter: 'temperature' } },
+    {},
+  ])('omits unchanged or unsupplied taskVariables: %j', async (variables) => {
+    const original = {
+      id: 'task-1',
+      name: 'Original task',
+      taskVariables: { station: 'A', parameter: 'temperature' },
+    }
+    const updated = { id: original.id, name: 'Updated task', ...variables }
+    const fetchMock = vi.fn().mockImplementation(async () => jsonResponse({ data: updated }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const client = new HydroServer({ host: 'https://hydro.example.com' })
+    await client.tasks.update(updated, original)
+
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ name: 'Updated task' })
+  })
+
+  it('skips the PATCH request when taskVariables are unchanged', async () => {
+    const original = {
+      id: 'task-1',
+      taskVariables: { station: 'A', parameter: 'temperature' },
+    }
+    const fetchMock = vi.fn().mockImplementation(async () => jsonResponse({ data: original }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const client = new HydroServer({ host: 'https://hydro.example.com' })
+    await client.tasks.update({ ...original, taskVariables: { ...original.taskVariables } }, original)
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(fetchMock.mock.calls[0][1].method).toBe('GET')
   })
 
   it('unwraps the item envelope from triggered and fetched runs', async () => {

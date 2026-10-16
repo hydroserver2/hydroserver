@@ -1,6 +1,6 @@
 import { requestInterceptor, RequestOptions } from './requestInterceptor'
 import { ApiResponse, responseInterceptor } from './responseInterceptor'
-import { createPatchObject } from './createPatchObject'
+import { createMergePatch } from './createMergePatch'
 import pLimit from 'p-limit'
 
 const limit = pLimit(10)
@@ -36,19 +36,26 @@ export const apiMethods = {
     options.body = isFormData
       ? body
       : originalBody
-      ? createPatchObject(
+      ? createMergePatch(
           originalBody as Record<string, unknown>,
           body as Record<string, unknown>
         )
       : body
 
+    if (!isFormData) {
+      const headers = new Headers(options.headers)
+      headers.set('Content-Type', 'application/merge-patch+json')
+      options.headers = headers
+    }
+
     const bodyIsEmpty =
       !isFormData &&
       typeof options.body === 'object' &&
       options.body !== null &&
+      !Array.isArray(options.body) &&
       Object.keys(options.body).length === 0
 
-    if (!options.body || bodyIsEmpty) {
+    if (options.body === undefined || bodyIsEmpty) {
       return {
         ok: true,
         data: (originalBody ?? null) as T,

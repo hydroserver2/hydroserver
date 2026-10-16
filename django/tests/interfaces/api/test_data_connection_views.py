@@ -105,6 +105,71 @@ def windowed_data_connection(client, request):
 # --- get_data_connections ----------------------------------------------------------
 
 
+@pytest.mark.parametrize("notification_patch", [
+    {"schedule": {"enabled": False}},
+    {"schedule": {"intervalPeriod": "hours"}},
+    {"recipientEmails": ["updated@example.com"]},
+    {},
+    None,
+])
+def test_update_notification_preserves_omitted_members(client, notification_patch):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    client.force_login(owner)
+    response = client.post(
+        DATA_CONNECTIONS_URL,
+        data=_data_connection_body(workspace.id, notification={
+            "schedule": {"interval": 5, "intervalPeriod": "minutes"},
+            "recipientEmails": ["owner@example.com"],
+        }),
+        content_type="application/json",
+    )
+    assert response.status_code == 201
+    url = _detail_url(response.json()["id"])
+
+    response = client.patch(
+        url, data={"notification": notification_patch}, content_type="application/merge-patch+json"
+    )
+
+    assert response.status_code == 204
+    detail = client.get(url)
+    assert detail.status_code == 200, detail.content
+    notification = detail.json()["data"]["notification"]
+    if notification_patch is None:
+        assert notification is None
+    else:
+        assert notification["recipientEmails"] == notification_patch.get("recipientEmails", ["owner@example.com"])
+        assert notification["schedule"]["interval"] == 5
+        schedule_patch = notification_patch.get("schedule", {})
+        assert notification["schedule"]["intervalPeriod"] == schedule_patch.get("intervalPeriod", "minutes")
+        assert notification["schedule"]["enabled"] is schedule_patch.get("enabled", True)
+
+
+@pytest.mark.parametrize("variables, status", [([], 204), ([{"name": "station"}], 400)])
+def test_placeholder_arrays_replace_in_full_and_validate_each_item(client, variables, status):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    client.force_login(owner)
+    response = client.post(
+        DATA_CONNECTIONS_URL,
+        data=_data_connection_body(workspace.id, placeholderVariables=[{"name": "station", "type": "per_task"}]),
+        content_type="application/json",
+    )
+    assert response.status_code == 201
+    url = _detail_url(response.json()["id"])
+
+    response = client.patch(
+        url, data={"placeholderVariables": variables}, content_type="application/merge-patch+json"
+    )
+
+    assert response.status_code == status
+    placeholders = client.get(url).json()["data"]["placeholderVariables"]
+    if status == 204:
+        assert placeholders == []
+    else:
+        assert [pv["name"] for pv in placeholders] == ["station"]
+
+
 def test_get_data_connections_includes_connection_for_workspace_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
@@ -736,3 +801,29 @@ def test_delete_data_connection_returns_403_for_viewer_collaborator(client):
     response = client.delete(_detail_url(data_connection.id))
 
     assert response.status_code == 403
+
+
+def test_update_notification_null_schedule_is_rejected_not_ignored(client):
+    # A notification with recipients requires a schedule; clear the whole notification instead.
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    client.force_login(owner)
+    response = client.post(
+        DATA_CONNECTIONS_URL,
+        data=_data_connection_body(workspace.id, notification={
+            "schedule": {"interval": 5, "intervalPeriod": "minutes"},
+            "recipientEmails": ["owner@example.com"],
+        }),
+        content_type="application/json",
+    )
+    assert response.status_code == 201
+    url = _detail_url(response.json()["id"])
+
+    response = client.patch(
+        url, data={"notification": {"schedule": None}}, content_type="application/merge-patch+json"
+    )
+
+    assert response.status_code == 400
+    assert "schedule is required" in response.json()["message"]
+    notification = client.get(url).json()["data"]["notification"]
+    assert notification["schedule"]["interval"] == 5
