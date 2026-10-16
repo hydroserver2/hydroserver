@@ -842,7 +842,7 @@ def test_run_derivation_stops_at_first_misaligned_timestamp(run_context):
     np.testing.assert_allclose(out_obs[0].result, 3.0)
 
 
-def _run_offset_derivation(ctx, obs_a, obs_b):
+def _run_offset_derivation(ctx, obs_a, obs_b, stop_on_no_data=Unset):
     """
     Create inputs ds_a/ds_b from {hour: value} dicts (2025-02-10 UTC), derive
     "a + b" into an empty output, run once, and return (loaded, transformation,
@@ -864,6 +864,7 @@ def _run_offset_derivation(ctx, obs_a, obs_b):
         transformation_type="derivation",
         output_datastream=ds_out.pk,
         formula="a + b",
+        stop_on_no_data=stop_on_no_data,
         input_datastreams=[
             TransformationInput(datastream=ds_a.pk, variable_name="a"),
             TransformationInput(datastream=ds_b.pk, variable_name="b"),
@@ -871,6 +872,14 @@ def _run_offset_derivation(ctx, obs_a, obs_b):
     )
     loaded = transformation_service.run(t)
     return loaded, t, ds_a, ds_b, ds_out
+
+
+def _append_obs(t, ds, obs):
+    """Add {hour: value} readings to ds, advance its end time, and reload t."""
+    for hour, value in obs.items():
+        _add_obs(ds, datetime(2025, 2, 10, hour, 0, tzinfo=dt_timezone.utc), value)
+    _set_end_time(ds, datetime(2025, 2, 10, max(obs), 0, tzinfo=dt_timezone.utc))
+    return _load(str(t.pk))
 
 
 def _output_results(ds_out):
@@ -927,6 +936,99 @@ def test_run_derivation_offset_start_stops_at_divergence(run_context):
     )
     assert loaded == 1
     assert _output_results(ds_out) == [(10, 13.0)]
+
+
+def test_run_derivation_stop_on_no_data_true_waits_at_gap(run_context):
+    """With the toggle on, a gap holds the output back on every run until it's filled."""
+    loaded, t, ds_a, ds_b, ds_out = _run_offset_derivation(
+        run_context,
+        obs_a={8: 1.0, 9: 2.0, 10: 3.0},
+        obs_b={8: 10.0, 10: 30.0},
+    )
+    assert loaded == 1
+
+    t = _append_obs(t, ds_a, {11: 4.0})
+    t = _append_obs(t, ds_b, {11: 40.0})
+    assert transformation_service.run(t) == 0
+
+    _add_obs(ds_b, datetime(2025, 2, 10, 9, 0, tzinfo=dt_timezone.utc), 20.0)
+    assert transformation_service.run(t) == 3
+    assert _output_results(ds_out) == [(8, 11.0), (9, 22.0), (10, 33.0), (11, 44.0)]
+
+
+def test_run_derivation_skips_gaps_when_stop_on_no_data_false(run_context):
+    """With the toggle off, timestamps not shared by both inputs are skipped."""
+    loaded, t, ds_a, ds_b, ds_out = _run_offset_derivation(
+        run_context,
+        obs_a={8: 1.0, 9: 2.0, 10: 3.0, 11: 4.0},
+        obs_b={8: 10.0, 10: 30.0, 11: 40.0},
+        stop_on_no_data=False,
+    )
+    assert loaded == 3
+    assert _output_results(ds_out) == [(8, 11.0), (10, 33.0), (11, 44.0)]
+
+    # The incremental run picks up after the last output and skips new gaps too.
+    t = _append_obs(t, ds_a, {13: 6.0, 14: 7.0})
+    t = _append_obs(t, ds_b, {12: 50.0, 14: 70.0})
+    assert transformation_service.run(t) == 1
+    assert _output_results(ds_out) == [(8, 11.0), (10, 33.0), (11, 44.0), (14, 77.0)]
+
+
+def test_run_derivation_lagging_input_holds_output_back(run_context):
+    """
+    ds_a falls behind ds_b. Output stops at ds_a's last reading rather than
+    skipping ds_b's newer readings, then catches up once ds_a reports again,
+    skipping the hour ds_a never reported.
+    """
+    loaded, t, ds_a, ds_b, ds_out = _run_offset_derivation(
+        run_context,
+        obs_a={8: 1.0, 9: 2.0},
+        obs_b={8: 10.0, 9: 20.0, 10: 30.0, 11: 40.0},
+        stop_on_no_data=False,
+    )
+    assert loaded == 2
+    assert _output_results(ds_out) == [(8, 11.0), (9, 22.0)]
+
+    t = _append_obs(t, ds_a, {11: 4.0})
+    assert transformation_service.run(t) == 1
+    assert _output_results(ds_out) == [(8, 11.0), (9, 22.0), (11, 44.0)]
+
+
+def test_run_derivation_no_data_values_fill_output_and_continue(run_context):
+    """
+    Each input is checked against its own no-data value, and those rows get the
+    output's no-data value. The run continues even with the toggle at its default (on).
+    """
+    ctx = run_context
+    kwargs = {k: ctx[k] for k in ("thing", "sensor", "observed_property", "processing_level", "unit")}
+    ds_a   = _make_datastream(**kwargs)
+    ds_b   = _make_datastream(**kwargs)
+    ds_out = _make_datastream(**kwargs)
+    for ds, ndv in [(ds_a, -9999), (ds_b, -1), (ds_out, -555)]:
+        ds.no_data_value = ndv
+        ds.save(update_fields=["no_data_value"])
+
+    # 09:00: ds_a at its no-data value. 10:00: ds_b at its no-data value.
+    # 11:00: each holds the *other's* no-data value, which is real data.
+    for ds, values in [(ds_a, (1.0, -9999.0, 3.0, -1.0)), (ds_b, (10.0, 20.0, -1.0, -9999.0))]:
+        for hour, value in zip((8, 9, 10, 11), values):
+            _add_obs(ds, datetime(2025, 2, 10, hour, 0, tzinfo=dt_timezone.utc), value)
+        _set_end_time(ds, datetime(2025, 2, 10, 11, 0, tzinfo=dt_timezone.utc))
+
+    t = transformation_service.create(
+        task=uuid.UUID(TASK1),
+        principal=ctx["owner"],
+        transformation_type="derivation",
+        output_datastream=ds_out.pk,
+        formula="a + b",
+        input_datastreams=[
+            TransformationInput(datastream=ds_a.pk, variable_name="a"),
+            TransformationInput(datastream=ds_b.pk, variable_name="b"),
+        ],
+    )
+    assert t.stop_on_no_data is True
+    assert transformation_service.run(t) == 4
+    assert _output_results(ds_out) == [(8, 11.0), (9, -555.0), (10, -555.0), (11, -10000.0)]
 
 
 def test_run_derivation_latest_start_not_shared_loads_nothing(run_context):
