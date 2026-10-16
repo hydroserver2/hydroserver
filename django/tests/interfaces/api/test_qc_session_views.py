@@ -155,7 +155,7 @@ def test_create_qc_session_returns_400_when_end_before_start(client):
     assert response.status_code == 400
 
 
-def test_create_qc_session_returns_400_when_in_progress_session_already_exists(client):
+def test_create_qc_session_returns_409_when_in_progress_session_already_exists(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     history = _make_history(workspace)
@@ -168,7 +168,7 @@ def test_create_qc_session_returns_400_when_in_progress_session_already_exists(c
         content_type="application/json",
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 409
 
 
 # --- get_qc_session --------------------------------------------------------------------

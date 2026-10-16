@@ -54,6 +54,7 @@ def get_etl_mappings(
         401: str,
         403: str,
         404: str,
+        409: str,
     },
     by_alias=True,
 )
@@ -103,6 +104,7 @@ def get_etl_mapping(
         401: str,
         403: str,
         404: str,
+        409: str,
     },
     by_alias=True,
 )

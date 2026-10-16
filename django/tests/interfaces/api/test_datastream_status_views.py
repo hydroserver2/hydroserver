@@ -138,7 +138,7 @@ def test_create_datastream_status_returns_403_for_non_superuser(client):
     assert response.status_code == 403
 
 
-def test_create_datastream_status_returns_400_for_duplicate_name(client):
+def test_create_datastream_status_returns_409_for_duplicate_name(client):
     DatastreamStatusFactory(name="Duplicate")
     superuser = UserFactory(is_superuser=True)
     client.force_login(superuser)
@@ -149,7 +149,7 @@ def test_create_datastream_status_returns_400_for_duplicate_name(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 409
 
 
 # --- get_datastream_status ----------------------------------------------------------------

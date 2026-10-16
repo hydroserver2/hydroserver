@@ -141,6 +141,7 @@ def get_monitoring_site_task_summaries(
         201: CreatedResponse,
         400: str,
         401: str,
+        409: str,
     },
     by_alias=True,
 )
@@ -302,6 +303,7 @@ def get_monitoring_site_linked_resources(
         400: str,
         401: str,
         403: str,
+        409: str,
         413: str,
     },
     by_alias=True,
@@ -370,6 +372,7 @@ def get_monitoring_site_linked_resource(
         401: str,
         403: str,
         404: str,
+        409: str,
         413: str,
     },
     by_alias=True,

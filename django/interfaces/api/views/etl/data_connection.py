@@ -121,6 +121,7 @@ def get_data_connection(
         400: str,
         401: str,
         403: str,
+        409: str,
     },
     by_alias=True,
 )

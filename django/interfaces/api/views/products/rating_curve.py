@@ -54,6 +54,7 @@ def get_rating_curves(
         401: str,
         403: str,
         404: str,
+        409: str,
     },
     by_alias=True,
 )
@@ -107,6 +108,7 @@ def get_rating_curve(
         401: str,
         403: str,
         404: str,
+        409: str,
     },
     by_alias=True,
 )

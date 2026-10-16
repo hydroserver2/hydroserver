@@ -247,7 +247,7 @@ def test_add_collaborator_succeeds_for_service_account_on_external_workspace(cli
     assert service_account.email in [c["serviceAccountEmail"] for c in collaborators]
 
 
-def test_add_collaborator_returns_400_when_service_account_already_collaborates(client):
+def test_add_collaborator_returns_409_when_service_account_already_collaborates(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     role = RoleFactory(workspace=workspace)
@@ -262,7 +262,7 @@ def test_add_collaborator_returns_400_when_service_account_already_collaborates(
         content_type="application/json",
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 409
 
 
 # --- edit_collaborator_role ---------------------------------------------------

@@ -313,6 +313,7 @@ class DataProductTransformationInput(models.Model):
                 fields=["transformation", "variable_name"],
                 condition=models.Q(variable_name__isnull=False),
                 name="unique_data_product_transformation_input_variable",
+                violation_error_code="unique",
             ),
         ]
 
