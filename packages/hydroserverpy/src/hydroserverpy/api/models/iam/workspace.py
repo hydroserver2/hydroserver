@@ -17,7 +17,6 @@ if TYPE_CHECKING:
         ProcessingLevel,
         ResultQualifier,
         Datastream,
-        OrchestrationSystem,
         Task,
         DataConnection,
     )
@@ -48,7 +47,6 @@ class Workspace(HydroServerBaseModel):
         self._units = None
         self._methods = None
         self._datastreams = None
-        self._orchestrationsystems = None
         self._dataconnections = None
         self._tasks = None
 
@@ -58,10 +56,10 @@ class Workspace(HydroServerBaseModel):
 
     @property
     def roles(self) -> List["Role"]:
-        """The roles that can be assigned for this workspace."""
+        """The roles that can be assigned for this workspace, including system roles."""
 
         if self._roles is None:
-            self._roles = self.client.roles.list(workspace=self.uid, fetch_all=True).items
+            self._roles = self.client.roles.list(workspace=[self.uid, None], fetch_all=True).items
 
         return self._roles
 
@@ -154,15 +152,6 @@ class Workspace(HydroServerBaseModel):
             self._datastreams = self.client.datastreams.list(workspace=self.uid, fetch_all=True).items
 
         return self._datastreams
-
-    @property
-    def orchestrationsystems(self) -> List["OrchestrationSystem"]:
-        """The orchestration systems associated with this workspace."""
-
-        if self._orchestrationsystems is None:
-            self._orchestrationsystems = self.client.orchestrationsystems.list(workspace=self.uid, fetch_all=True).items
-
-        return self._orchestrationsystems
 
     @property
     def dataconnections(self) -> List["DataConnection"]:

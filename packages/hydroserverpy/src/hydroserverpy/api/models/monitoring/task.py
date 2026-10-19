@@ -36,7 +36,6 @@ class MonitoringTask(HydroServerBaseModel):
         "interval",
         "interval_period",
         "start_time",
-        "next_run_at",
     }
 
     def __init__(self, client: "HydroServer", **data):

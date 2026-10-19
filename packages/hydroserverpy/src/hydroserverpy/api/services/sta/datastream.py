@@ -6,6 +6,7 @@ from datetime import datetime
 from pydantic.alias_generators import to_camel
 from hydroserverpy.api.models import Datastream, ObservationCollection
 from hydroserverpy.api.utils import normalize_uuid, build_datetime_interval, sortby_to_camel
+from hydroserverpy.api.models.base import HydroServerCollection
 from ..base import HydroServerBaseService
 
 if TYPE_CHECKING:
@@ -51,7 +52,7 @@ class DatastreamService(HydroServerBaseService):
         phenomenon_time_max: datetime = ...,
         phenomenon_time_min: datetime = ...,
         fetch_all: bool = False,
-    ) -> List["Workspace"]:
+    ) -> HydroServerCollection:
         """
         Fetch a collection of HydroServer datastreams.
         """

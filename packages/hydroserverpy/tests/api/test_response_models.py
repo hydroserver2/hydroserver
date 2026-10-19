@@ -1,3 +1,4 @@
+import json
 import uuid
 from unittest.mock import MagicMock
 
@@ -282,3 +283,33 @@ def test_role_maps_permissions():
     role = RoleService(client).get(role_id)
 
     assert [(p.resource, p.action) for p in role.permissions] == [("Datastream", "edit")]
+
+
+def test_data_product_task_save_sends_schedule_changes():
+    client = make_client()
+    item_id = str(uuid.uuid4())
+    client.request.side_effect = [
+        FakeResponse({"data": data_product_task_payload(item_id)}),
+        FakeResponse(status_code=204),
+        FakeResponse({"data": {**data_product_task_payload(item_id), "schedule": {**SCHEDULE, "interval": 30}}}),
+    ]
+    client.dataproducttasks = DataProductTaskService(client)
+    task = client.dataproducttasks.get(item_id)
+
+    task.interval = 30
+    task.save()
+
+    patch_body = json.loads(client.request.call_args_list[1].kwargs["data"])
+    assert patch_body == {"schedule": {"interval": 30}}
+    assert task.interval == 30
+
+
+def test_monitoring_task_does_not_send_server_computed_next_run_at():
+    client = make_client()
+    item_id = str(uuid.uuid4())
+    client.request.return_value = FakeResponse({"data": monitoring_task_payload(item_id)})
+    task = MonitoringTaskService(client).get(item_id)
+
+    task.next_run_at = None
+
+    assert task.unsaved_changes == {}

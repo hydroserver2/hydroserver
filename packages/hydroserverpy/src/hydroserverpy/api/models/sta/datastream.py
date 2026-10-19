@@ -16,6 +16,7 @@ if TYPE_CHECKING:
         ObservedProperty,
         Unit,
         ProcessingLevel,
+        ObservationCollection,
     )
 
 
@@ -174,7 +175,7 @@ class Datastream(HydroServerBaseModel):
         phenomenon_time_min: datetime = ...,
         result_qualifiers: str = ...,
         fetch_all: bool = False,
-    ) -> pd.DataFrame:
+    ) -> "ObservationCollection":
         """Retrieve the observations for this datastream."""
 
         return self.client.datastreams.get_observations(

@@ -202,6 +202,28 @@ def test_list_sends_camel_case_params_and_keeps_public_filter_names(fake_session
     assert collection.filters["tag"] == ("river", "green")
 
 
+
+def test_workspace_roles_include_system_roles(fake_session_factory):
+    hs = client_module.HydroServer(host="https://example.com", apikey="hs_test_api_key")
+    workspace_id = "00000000-0000-0000-0000-000000000001"
+    fake_session_factory[0].queue(
+        "get",
+        FakeResponse(content=json.dumps({"data": {
+            "id": workspace_id, "name": "My Workspace", "isPrivate": False, "ownerEmail": "owner@example.com",
+        }}).encode()),
+        FakeResponse(content=json.dumps({"data": [
+            {"id": "00000000-0000-0000-0000-000000000002", "name": "Editor", "workspaceId": None, "permissions": []},
+            {"id": "00000000-0000-0000-0000-000000000003", "name": "Custom", "workspaceId": workspace_id,
+             "permissions": []},
+        ]}).encode()),
+    )
+
+    roles = hs.workspaces.get(workspace_id).roles
+
+    params = fake_session_factory[0].last_kwargs["params"]
+    assert params["workspaceId"] == [workspace_id, "null"]
+    assert [role.name for role in roles] == ["Editor", "Custom"]
+
 @pytest.mark.parametrize(
     "content, expected",
     [

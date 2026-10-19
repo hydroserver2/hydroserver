@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from functools import cached_property
-from typing import ClassVar, List, Optional, Union, TYPE_CHECKING
+from typing import ClassVar, List, Literal, Optional, Union, TYPE_CHECKING
 from pydantic import Field, AliasPath
 from ..base import HydroServerBaseModel
 from ..orchestration.run import TaskRun
@@ -9,7 +9,6 @@ from .transformation import (
     RatingCurveTransformation,
     DerivationTransformation,
     AggregationTransformation,
-    Period,
 )
 
 if TYPE_CHECKING:
@@ -25,14 +24,22 @@ class DataProductTask(HydroServerBaseModel):
     start_time: Optional[datetime] = Field(None, validation_alias=AliasPath("schedule", "startTime"))
     crontab: Optional[str] = Field(None, validation_alias=AliasPath("schedule", "crontab"))
     interval: Optional[int] = Field(None, validation_alias=AliasPath("schedule", "interval"))
-    interval_period: Optional[Period] = Field(
+    interval_period: Optional[Literal["minutes", "hours", "days"]] = Field(
         None, validation_alias=AliasPath("schedule", "intervalPeriod")
     )
     next_run_at: Optional[datetime] = Field(None, validation_alias=AliasPath("schedule", "nextRunAt"))
     latest_run: Optional[TaskRun] = None
     transformation_types: List[str] = []
 
-    _editable_fields: ClassVar[set[str]] = {"name", "description"}
+    _editable_fields: ClassVar[set[str]] = {
+        "name",
+        "description",
+        "enabled",
+        "crontab",
+        "interval",
+        "interval_period",
+        "start_time",
+    }
 
     def __init__(self, client: "HydroServer", **data):
         super().__init__(client=client, service=client.dataproducttasks, **data)
