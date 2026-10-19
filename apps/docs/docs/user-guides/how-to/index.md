@@ -26,7 +26,7 @@ In this section, we provide detailed documentation for all HydroServer functiona
 
 * **[Archiving Data to HydroShare](/user-guides/how-to/archiving-data-to-hydroshare.md)**: Learn how to archive data from HydroServer into HydroShare.
 
-* **[Using the Python Client](/user-guides/how-to/using-the-python-client.md)**: Learn how to use the HydroServer Python client package – hydroserverpy – to load and retrieve metadata and data.
+* **[Using the Python Client](/user-guides/how-to/using-the-python-client.md)**: Reference for hydroserverpy, HydroServer's Python client package, covering the classes and methods for managing workspaces, metadata, observations, ETL, data products, and monitoring from Python.
 
 * **[Configuring Python ETL Pipelines](/user-guides/how-to/configuring-python-etl-pipelines.md)**: Learn how to configure Python ETL pipelines to load data into HydroServer.
 
