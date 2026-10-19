@@ -94,7 +94,7 @@ Select `ISO 8601` if the timestamps use the standard ISO 8601 date/time format. 
 
 ### Advanced Features
 
-If you toggle the "Use Advanced features" option, you can add a description to your data connection. You can also add an authentication header if you are connecting to an API that requires authentication. Finally, you can specify a list of email addresses for people who should be notified if tasks associated with the data connection fail to execute. You can add any number of email addresses for notification recipients.
+If you toggle the "Use Advanced features" option, you can add a description to your data connection. You can also add an authentication header if you are connecting to an API that requires authentication. Finally, you can specify a list of email addresses for people who should receive a summary of the data connection's task runs, including any failures, on a notification schedule. Each summary covers the task runs since the previous scheduled summary. You can add any number of email addresses for notification recipients.
 
 After all settings are filled in, click the **Save** button at the bottom of the form. The data connection you just created will appear in the left-side **Connections** list. 
 
