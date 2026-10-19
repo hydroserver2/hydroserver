@@ -3,6 +3,7 @@ import pytest
 from django.test.utils import CaptureQueriesContext
 from django.db import connection
 
+from core.iam.permissions.mixins import ResourcePermissionMixin
 from tests.core.iam.factories import (
     CollaboratorFactory,
     PermissionFactory,
@@ -465,14 +466,15 @@ def test_get_workspaces_include_all_three_does_not_scale_queries_with_workspace_
 # --- update_workspace ---------------------------------------------------------------
 
 
-def test_update_workspace_succeeds_for_owner(client):
+@pytest.mark.parametrize("as_superuser", [False, True])
+def test_update_workspace_succeeds_for_owner_or_superuser(client, as_superuser):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner, name="Original Name")
-    client.force_login(owner)
+    client.force_login(UserFactory(is_superuser=True) if as_superuser else owner)
 
     response = client.patch(
         _detail_url(workspace.id),
-        data={"name": "Updated Name"},
+        data={"name": "Updated Name", "isPrivate": True},
         content_type="application/json",
     )
 
@@ -481,6 +483,7 @@ def test_update_workspace_succeeds_for_owner(client):
 
     detail = client.get(_detail_url(workspace.id))
     assert detail.json()["data"]["name"] == "Updated Name"
+    assert detail.json()["data"]["isPrivate"] is True
 
 
 def test_update_workspace_returns_403_for_viewer_collaborator(client):
@@ -495,6 +498,36 @@ def test_update_workspace_returns_403_for_viewer_collaborator(client):
     )
 
     assert response.status_code == 403
+
+
+@pytest.mark.parametrize("operation", ["rename", "publish", "delete", "transfer"])
+def test_editor_cannot_manage_workspace(client, default_editor_role, operation):
+    workspace = WorkspaceFactory(is_private=True)
+    original_name, original_owner = workspace.name, workspace.owner
+    collaborator = CollaboratorFactory(workspace=workspace, role=default_editor_role)
+    client.force_login(collaborator.user)
+
+    if operation == "delete":
+        response = client.delete(_detail_url(workspace.id))
+    elif operation == "transfer":
+        response = client.post(
+            _transfer_url(workspace.id),
+            data={"newOwner": collaborator.user.email},
+            content_type="application/json",
+        )
+    else:
+        response = client.patch(
+            _detail_url(workspace.id),
+            data={"name": "Renamed"} if operation == "rename" else {"isPrivate": False},
+            content_type="application/json",
+        )
+
+    assert response.status_code == 403
+    workspace.refresh_from_db()
+    assert workspace.name == original_name
+    assert workspace.is_private is True
+    assert workspace.owner == original_owner
+    assert workspace.transfer is None
 
 
 def test_update_workspace_returns_400_for_blank_name(client):
@@ -514,10 +547,11 @@ def test_update_workspace_returns_400_for_blank_name(client):
 # --- delete_workspace ---------------------------------------------------------------
 
 
-def test_delete_workspace_succeeds_for_owner(client):
+@pytest.mark.parametrize("as_superuser", [False, True])
+def test_delete_workspace_succeeds_for_owner_or_superuser(client, as_superuser):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
-    client.force_login(owner)
+    client.force_login(UserFactory(is_superuser=True) if as_superuser else owner)
 
     response = client.delete(_detail_url(workspace.id))
 
@@ -538,11 +572,12 @@ def test_delete_workspace_returns_403_for_viewer_collaborator(client):
 # --- transfer_workspace ---------------------------------------------------------------
 
 
-def test_transfer_workspace_succeeds_for_owner(client):
+@pytest.mark.parametrize("as_superuser", [False, True])
+def test_transfer_workspace_succeeds_for_owner_or_superuser(client, as_superuser):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     new_owner = UserFactory()
-    client.force_login(owner)
+    client.force_login(UserFactory(is_superuser=True) if as_superuser else owner)
 
     response = client.post(
         _transfer_url(workspace.id),
@@ -581,6 +616,26 @@ def test_transfer_workspace_returns_403_for_viewer_collaborator(client):
     )
 
     assert response.status_code == 403
+
+
+def test_transfer_requires_ownership_even_with_edit_permission(
+    client, default_editor_role, monkeypatch
+):
+    workspace = WorkspaceFactory(is_private=True)
+    collaborator = CollaboratorFactory(workspace=workspace, role=default_editor_role)
+    client.force_login(collaborator.user)
+    # Keep transfer owner-only even if workspace edits become delegable.
+    monkeypatch.setattr(ResourcePermissionMixin, "can_edit", lambda self, resource: True)
+
+    response = client.post(
+        _transfer_url(workspace.id),
+        data={"newOwner": collaborator.user.email},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 403
+    workspace.refresh_from_db()
+    assert workspace.transfer is None
 
 
 # --- accept_workspace_transfer ---------------------------------------------------------

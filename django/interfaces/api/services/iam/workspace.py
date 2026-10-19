@@ -264,7 +264,10 @@ class WorkspaceAPIService(APIService):
     ):
         workspace, _ = self.get_workspace(principal=principal, workspace_id=uid)
 
-        if not principal.can_edit(workspace):
+        if not (
+            principal.is_superuser_principal()
+            or (isinstance(principal, User) and workspace.owner_id == principal.id)
+        ):
             raise PermissionDeniedError(
                 "You do not have permission to transfer this workspace"
             )
