@@ -201,6 +201,25 @@ class TestHydroServerLoaderChunking:
         assert client.datastreams.load_observations.call_count == 2
         assert result.target_results["target-1"].values_loaded == 3
 
+    def test_records_loaded_timestamp_range_across_chunks(self):
+        loader, client = _make_loader(
+            {"target-1": _make_datastream(), "target-2": _make_datastream(uid="target-2")}, chunk_size=2
+        )
+        payload = pd.concat([
+            _make_payload(),
+            _make_payload(target_id="target-2", timestamps=["2026-01-05T00:00:00Z"], values=[5.0]),
+        ])
+
+        result = loader.load(payload)
+
+        target = result.target_results["target-1"]
+        assert (target.earliest_timestamp, target.latest_timestamp) == (
+            _dt("2026-01-01T00:00:00"), _dt("2026-01-03T00:00:00")
+        )
+        assert (result.earliest_timestamp, result.latest_timestamp) == (
+            _dt("2026-01-01T00:00:00"), _dt("2026-01-05T00:00:00")
+        )
+
 
 # ---------------------------------------------------------------------------
 # target_loaded_through

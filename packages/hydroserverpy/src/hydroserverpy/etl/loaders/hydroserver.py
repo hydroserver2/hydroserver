@@ -143,7 +143,17 @@ class HydroServerLoader(Loader):
                         uid=datastream.uid, observations=chunk,
                         mode="insert" if data_ingestion_window_start is not None else "append",
                     )
-                    etl_results.target_results[target_id].values_loaded += len(chunk)
+                    target_result = etl_results.target_results[target_id]
+                    target_result.values_loaded += len(chunk)
+                    chunk_start, chunk_end = chunk["phenomenon_time"].min(), chunk["phenomenon_time"].max()
+                    target_result.earliest_timestamp = (
+                        chunk_start if target_result.earliest_timestamp is None
+                        else min(target_result.earliest_timestamp, chunk_start)
+                    )
+                    target_result.latest_timestamp = (
+                        chunk_end if target_result.latest_timestamp is None
+                        else max(target_result.latest_timestamp, chunk_end)
+                    )
                 except Exception as e:
                     etl_results.target_results[target_id].status = "failed"
                     etl_results.target_results[target_id].error = str(e)
