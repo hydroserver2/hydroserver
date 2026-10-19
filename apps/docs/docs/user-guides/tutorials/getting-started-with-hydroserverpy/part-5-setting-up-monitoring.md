@@ -79,11 +79,11 @@ print(f"Status:  {latest.status}")
 print(f"Message: {latest.message}")
 ```
 
-A `SUCCESS` status means the task ran and evaluated your rules — not necessarily that everything is fine with the data. If a rule was violated, the recipients will have received an email. You can verify which rules are attached to the task with:
+A `SUCCESS` status means the task ran and evaluated your rules — not necessarily that everything is fine with the data. (A status that stays `PENDING` means no orchestration worker has picked up the run yet.) If a rule was violated, the recipients will have received an email. You can verify which rules are attached to the task with:
 
 ```python
 for rule in stage_monitor.rules:
-    print(rule.rule_type, rule.datastream_name)
+    print(rule.rule_type, rule.datastream_id)
 ```
 
 ## What we've built
