@@ -70,7 +70,7 @@ class DerivationTransformationSummaryResponse(BaseGetResponse):
     output_datastream_id: uuid.UUID
     input_datastream_ids: list[uuid.UUID]
     formula: str
-    stop_on_no_data: bool
+    stop_on_gaps: bool
     stop_on_error: bool
 
     @staticmethod
@@ -120,7 +120,7 @@ class DerivationTransformationResponse(BaseGetResponse):
     output_datastream: DatastreamSummaryResponse
     input_datastreams: list[TransformationInputResponse]
     formula: str
-    stop_on_no_data: bool
+    stop_on_gaps: bool
     stop_on_error: bool
 
     @staticmethod
@@ -164,7 +164,7 @@ class RatingCurveTransformationPostBody(_TransformationPostBodyBase):
 class DerivationTransformationPostBody(_TransformationPostBodyBase):
     input_datastreams: list[TransformationInputPostBody]
     formula: str
-    stop_on_no_data: bool = True
+    stop_on_gaps: bool = False
     stop_on_error: bool = True
 
 
@@ -190,7 +190,7 @@ class DerivationTransformationPatchBody(BasePatchBody):
     output_datastream: uuid.UUID = Field(alias="outputDatastreamId")
     input_datastreams: list[TransformationInputPostBody]
     formula: str
-    stop_on_no_data: bool
+    stop_on_gaps: bool
     stop_on_error: bool
 
 

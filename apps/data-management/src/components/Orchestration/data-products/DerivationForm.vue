@@ -213,7 +213,7 @@
           </v-tooltip>
           <v-spacer />
           <v-switch
-            v-model="stopOnNoData"
+            v-model="stopOnGaps"
             :color="DATA_PRODUCT_ACCENT"
             density="compact"
             hide-details
@@ -354,7 +354,7 @@ const schedule = ref<TaskSchedule | null>(null)
 const outputDatastreamId = ref<string | null>(null)
 const inputs = ref<InputRow[]>([makeRow('x')])
 const formula = ref('')
-const stopOnNoData = ref(true)
+const stopOnGaps = ref(false)
 const stopOnError = ref(true)
 
 const selectedThingId = computed(() => props.initialThingId ?? null)
@@ -551,7 +551,7 @@ async function loadExistingTask() {
     existingTransformationId.value = t.id
     outputDatastreamId.value = (t.outputDatastream as any)?.id ?? null
     formula.value = t.formula
-    stopOnNoData.value = t.stopOnNoData ?? true
+    stopOnGaps.value = t.stopOnGaps ?? false
     stopOnError.value = t.stopOnError ?? true
 
     if (t.inputDatastreams?.length) {
@@ -621,7 +621,7 @@ async function onCreate(
       outputDatastreamId: outputDatastreamId.value!,
       inputDatastreams,
       formula: formula.value.trim(),
-      stopOnNoData: stopOnNoData.value,
+      stopOnGaps: stopOnGaps.value,
       stopOnError: stopOnError.value,
     }
   )
@@ -662,7 +662,7 @@ async function onUpdate(
           outputDatastreamId: outputDatastreamId.value!,
           inputDatastreams,
           formula: formula.value.trim(),
-          stopOnNoData: stopOnNoData.value,
+          stopOnGaps: stopOnGaps.value,
           stopOnError: stopOnError.value,
         }
       )

@@ -3739,8 +3739,8 @@
             "title": "Stoponerror",
             "type": "boolean"
           },
-          "stopOnNoData": {
-            "title": "Stoponnodata",
+          "stopOnGaps": {
+            "title": "Stopongaps",
             "type": "boolean"
           }
         },
@@ -3775,9 +3775,9 @@
             "title": "Stoponerror",
             "type": "boolean"
           },
-          "stopOnNoData": {
-            "default": true,
-            "title": "Stoponnodata",
+          "stopOnGaps": {
+            "default": false,
+            "title": "Stopongaps",
             "type": "boolean"
           }
         },
@@ -3814,8 +3814,8 @@
             "title": "Stoponerror",
             "type": "boolean"
           },
-          "stopOnNoData": {
-            "title": "Stoponnodata",
+          "stopOnGaps": {
+            "title": "Stopongaps",
             "type": "boolean"
           }
         },
@@ -3824,7 +3824,7 @@
           "outputDatastream",
           "inputDatastreams",
           "formula",
-          "stopOnNoData",
+          "stopOnGaps",
           "stopOnError"
         ],
         "title": "DerivationTransformationResponse",
@@ -3858,8 +3858,8 @@
             "title": "Stoponerror",
             "type": "boolean"
           },
-          "stopOnNoData": {
-            "title": "Stoponnodata",
+          "stopOnGaps": {
+            "title": "Stopongaps",
             "type": "boolean"
           }
         },
@@ -3868,7 +3868,7 @@
           "outputDatastreamId",
           "inputDatastreamIds",
           "formula",
-          "stopOnNoData",
+          "stopOnGaps",
           "stopOnError"
         ],
         "title": "DerivationTransformationSummaryResponse",

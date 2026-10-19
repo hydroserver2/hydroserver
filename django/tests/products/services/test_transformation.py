@@ -842,7 +842,7 @@ def test_run_derivation_stops_at_first_misaligned_timestamp(run_context):
     np.testing.assert_allclose(out_obs[0].result, 3.0)
 
 
-def _run_offset_derivation(ctx, obs_a, obs_b, stop_on_no_data=Unset):
+def _run_offset_derivation(ctx, obs_a, obs_b, stop_on_gaps=Unset):
     """
     Create inputs ds_a/ds_b from {hour: value} dicts (2025-02-10 UTC), derive
     "a + b" into an empty output, run once, and return (loaded, transformation,
@@ -864,7 +864,7 @@ def _run_offset_derivation(ctx, obs_a, obs_b, stop_on_no_data=Unset):
         transformation_type="derivation",
         output_datastream=ds_out.pk,
         formula="a + b",
-        stop_on_no_data=stop_on_no_data,
+        stop_on_gaps=stop_on_gaps,
         input_datastreams=[
             TransformationInput(datastream=ds_a.pk, variable_name="a"),
             TransformationInput(datastream=ds_b.pk, variable_name="b"),
@@ -933,17 +933,19 @@ def test_run_derivation_offset_start_stops_at_divergence(run_context):
         run_context,
         obs_a={8: 1.0, 10: 3.0, 11: 4.0, 12: 5.0},
         obs_b={10: 10.0, 12: 30.0},
+        stop_on_gaps=True,
     )
     assert loaded == 1
     assert _output_results(ds_out) == [(10, 13.0)]
 
 
-def test_run_derivation_stop_on_no_data_true_waits_at_gap(run_context):
+def test_run_derivation_stop_on_gaps_true_waits_at_gap(run_context):
     """With the toggle on, a gap holds the output back on every run until it's filled."""
     loaded, t, ds_a, ds_b, ds_out = _run_offset_derivation(
         run_context,
         obs_a={8: 1.0, 9: 2.0, 10: 3.0},
         obs_b={8: 10.0, 10: 30.0},
+        stop_on_gaps=True,
     )
     assert loaded == 1
 
@@ -956,13 +958,13 @@ def test_run_derivation_stop_on_no_data_true_waits_at_gap(run_context):
     assert _output_results(ds_out) == [(8, 11.0), (9, 22.0), (10, 33.0), (11, 44.0)]
 
 
-def test_run_derivation_skips_gaps_when_stop_on_no_data_false(run_context):
+def test_run_derivation_skips_gaps_when_stop_on_gaps_false(run_context):
     """With the toggle off, timestamps not shared by both inputs are skipped."""
     loaded, t, ds_a, ds_b, ds_out = _run_offset_derivation(
         run_context,
         obs_a={8: 1.0, 9: 2.0, 10: 3.0, 11: 4.0},
         obs_b={8: 10.0, 10: 30.0, 11: 40.0},
-        stop_on_no_data=False,
+        stop_on_gaps=False,
     )
     assert loaded == 3
     assert _output_results(ds_out) == [(8, 11.0), (10, 33.0), (11, 44.0)]
@@ -984,7 +986,7 @@ def test_run_derivation_lagging_input_holds_output_back(run_context):
         run_context,
         obs_a={8: 1.0, 9: 2.0},
         obs_b={8: 10.0, 9: 20.0, 10: 30.0, 11: 40.0},
-        stop_on_no_data=False,
+        stop_on_gaps=False,
     )
     assert loaded == 2
     assert _output_results(ds_out) == [(8, 11.0), (9, 22.0)]
@@ -997,7 +999,7 @@ def test_run_derivation_lagging_input_holds_output_back(run_context):
 def test_run_derivation_no_data_values_fill_output_and_continue(run_context):
     """
     Each input is checked against its own no-data value, and those rows get the
-    output's no-data value. The run continues even with the toggle at its default (on).
+    output's no-data value. The run continues with the toggle at its default (off).
     """
     ctx = run_context
     kwargs = {k: ctx[k] for k in ("thing", "sensor", "observed_property", "processing_level", "unit")}
@@ -1026,7 +1028,7 @@ def test_run_derivation_no_data_values_fill_output_and_continue(run_context):
             TransformationInput(datastream=ds_b.pk, variable_name="b"),
         ],
     )
-    assert t.stop_on_no_data is True
+    assert t.stop_on_gaps is False
     assert transformation_service.run(t) == 4
     assert _output_results(ds_out) == [(8, 11.0), (9, -555.0), (10, -555.0), (11, -10000.0)]
 
@@ -1040,6 +1042,7 @@ def test_run_derivation_latest_start_not_shared_loads_nothing(run_context):
         run_context,
         obs_a={2: 1.0, 3: 2.0},
         obs_b={1: 10.0, 3: 20.0},
+        stop_on_gaps=True,
     )
     assert loaded == 0
     assert _output_results(ds_out) == []

@@ -68,7 +68,7 @@ class DataProductTransformation(models.Model):
         blank=True,
     )
     min_values = models.PositiveIntegerField(null=True, blank=True)
-    stop_on_no_data = models.BooleanField(default=True, blank=True)
+    stop_on_gaps = models.BooleanField(default=False, blank=True)
     stop_on_error = models.BooleanField(default=True, blank=True)
 
     class Meta:

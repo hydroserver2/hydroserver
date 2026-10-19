@@ -106,7 +106,7 @@ def apply_derivation(
     inputs: dict[str, pd.DataFrame],
     formula: str,
     *,
-    stop_on_no_data: bool,
+    stop_on_gaps: bool,
     stop_on_error: bool,
     input_no_data_values: dict[str, float] | None = None,
     output_no_data_value: float | None = None,
@@ -115,7 +115,7 @@ def apply_derivation(
     Apply a mathematical formula to one or more input timeseries DataFrames.
 
     Inputs are matched on exact timestamp (sorted defensively first).
-    stop_on_no_data controls gaps, where one input has a timestamp the others
+    stop_on_gaps controls gaps, where one input has a timestamp the others
     don't: True stops output before the first gap and logs it, so nothing
     after is evaluated even if the inputs realign later; False skips every
     timestamp not shared by all inputs and continues.
@@ -144,9 +144,9 @@ def apply_derivation(
     }
 
     logger.debug(
-        "Evaluating derivation (formula=%r, variables=%r, stopOnNoData=%r, stopOnError=%r, "
+        "Evaluating derivation (formula=%r, variables=%r, stopOnGaps=%r, stopOnError=%r, "
         "inputNoDataValues=%r, outputNoDataValue=%r, rows=%r).",
-        formula, variables, stop_on_no_data, stop_on_error, input_no_data_values, output_no_data_value,
+        formula, variables, stop_on_gaps, stop_on_error, input_no_data_values, output_no_data_value,
         {var: len(df) for var, df in validated.items()},
     )
 
@@ -161,7 +161,7 @@ def apply_derivation(
         combined_df = combined_df.merge(other, on=TIMESTAMP_COL, how="inner")
     combined_df = combined_df.sort_values(TIMESTAMP_COL).reset_index(drop=True)
 
-    if divergence_timestamp is not None and not stop_on_no_data:
+    if divergence_timestamp is not None and not stop_on_gaps:
         logger.info(
             "Derivation skipped %d timestamp(s) not shared by all inputs, starting at %s.",
             len(divergent_timestamps), divergence_timestamp,

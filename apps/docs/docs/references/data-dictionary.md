@@ -490,7 +490,7 @@ A DataProductTransformation describes how a single derived (output) Datastream i
 | M        | transformation_type    | The type of transformation: `rating_curve`, `derivation`, or `aggregation`.                                                          | String    |
 | O        | rating_curve_id        | A foreign key identifier for the RatingCurve used when `transformation_type` is `rating_curve`.                                     | UUID      |
 | O        | formula                | A formula (expression) string used when `transformation_type` is `derivation`, referencing one or more input variable names.        | Text      |
-| O        | stop_on_no_data        | For `derivation` transformations, whether a run stops at timestamps not shared by all inputs (vs. skipping them). Inputs holding their no-data value always produce the output's no-data value. | Boolean   |
+| O        | stop_on_gaps        | For `derivation` transformations, whether a run stops at timestamps not shared by all inputs (vs. skipping them). Inputs holding their no-data value always produce the output's no-data value. | Boolean   |
 | O        | stop_on_error          | For `derivation` transformations, whether a run stops when the formula produces a non-finite result (vs. filling and continuing).    | Boolean   |
 | O        | output_interval_units  | The interval unit for `aggregation` outputs: `minutes`, `hours`, `days`, `weeks`, or `months`.                                      | String    |
 | O        | output_interval        | The positive interval count corresponding to `output_interval_units`.                                                               | Integer   |

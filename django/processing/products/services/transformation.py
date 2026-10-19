@@ -174,7 +174,7 @@ class DataProductTransformationService(ServiceUtils):
         timezone_type: str | None | Unset = Unset,
         timezone: str | None | Unset = Unset,
         min_values: int | None | Unset = Unset,
-        stop_on_no_data: bool | Unset = Unset,
+        stop_on_gaps: bool | Unset = Unset,
         stop_on_error: bool | Unset = Unset,
     ) -> DataProductTransformation:
         """Create a transformation for a task."""
@@ -208,7 +208,7 @@ class DataProductTransformationService(ServiceUtils):
             timezone_type=timezone_type,
             timezone=timezone,
             min_values=min_values,
-            stop_on_no_data=stop_on_no_data,
+            stop_on_gaps=stop_on_gaps,
             stop_on_error=stop_on_error,
         )
 
@@ -225,7 +225,7 @@ class DataProductTransformationService(ServiceUtils):
             timezone_type=timezone_type if timezone_type is not Unset else None,
             timezone=timezone if timezone is not Unset else None,
             min_values=min_values if min_values is not Unset else None,
-            stop_on_no_data=stop_on_no_data if stop_on_no_data is not Unset else True,
+            stop_on_gaps=stop_on_gaps if stop_on_gaps is not Unset else False,
             stop_on_error=stop_on_error if stop_on_error is not Unset else True,
         )
 
@@ -250,7 +250,7 @@ class DataProductTransformationService(ServiceUtils):
         timezone_type: str | None | Unset = Unset,
         timezone: str | None | Unset = Unset,
         min_values: int | None | Unset = Unset,
-        stop_on_no_data: bool | Unset = Unset,
+        stop_on_gaps: bool | Unset = Unset,
         stop_on_error: bool | Unset = Unset,
     ) -> DataProductTransformation:
         """Update a transformation's parameters and inputs."""
@@ -300,9 +300,9 @@ class DataProductTransformationService(ServiceUtils):
                 min_values if min_values is not Unset
                 else (transformation.min_values if transformation_type == "aggregation" else Unset)
             ),
-            stop_on_no_data=(
-                stop_on_no_data if stop_on_no_data is not Unset
-                else (transformation.stop_on_no_data if transformation_type == "derivation" else Unset)
+            stop_on_gaps=(
+                stop_on_gaps if stop_on_gaps is not Unset
+                else (transformation.stop_on_gaps if transformation_type == "derivation" else Unset)
             ),
             stop_on_error=(
                 stop_on_error if stop_on_error is not Unset
@@ -320,7 +320,7 @@ class DataProductTransformationService(ServiceUtils):
             "timezone_type": timezone_type,
             "timezone": timezone,
             "min_values": min_values,
-            "stop_on_no_data": stop_on_no_data,
+            "stop_on_gaps": stop_on_gaps,
             "stop_on_error": stop_on_error,
         }
         for field, value in editable_fields.items():
@@ -380,7 +380,7 @@ class DataProductTransformationService(ServiceUtils):
         timezone_type: str | None | Unset = Unset,
         timezone: str | None | Unset = Unset,
         min_values: int | None | Unset = Unset,
-        stop_on_no_data: bool | Unset = Unset,
+        stop_on_gaps: bool | Unset = Unset,
         stop_on_error: bool | Unset = Unset,
     ) -> None:
         """Validate transformation parameters and raise ValueError if invalid."""
@@ -443,11 +443,11 @@ class DataProductTransformationService(ServiceUtils):
                 raise ValueError("rating_curve is required for transformation_type 'rating_curve'.")
             if any(v is not Unset for v in (
                 formula, output_interval_units, output_interval, aggregation_method, min_values,
-                stop_on_no_data, stop_on_error,
+                stop_on_gaps, stop_on_error,
             )):
                 raise ValueError(
                     "formula, output_interval_units, output_interval, aggregation_method, min_values, "
-                    "stop_on_no_data, and stop_on_error must not be set for transformation_type 'rating_curve'."
+                    "stop_on_gaps, and stop_on_error must not be set for transformation_type 'rating_curve'."
                 )
             try:
                 RatingCurve.objects.get(
@@ -485,10 +485,10 @@ class DataProductTransformationService(ServiceUtils):
                     "transformation_type 'aggregation'."
                 )
             if any(v is not Unset for v in (
-                rating_curve, formula, stop_on_no_data, stop_on_error,
+                rating_curve, formula, stop_on_gaps, stop_on_error,
             )):
                 raise ValueError(
-                    "rating_curve, formula, stop_on_no_data, and stop_on_error must not be set "
+                    "rating_curve, formula, stop_on_gaps, and stop_on_error must not be set "
                     "for transformation_type 'aggregation'."
                 )
 
@@ -623,7 +623,7 @@ class DataProductTransformationService(ServiceUtils):
         result_df = apply_derivation(
             inputs=inputs,
             formula=transformation.formula,
-            stop_on_no_data=transformation.stop_on_no_data,
+            stop_on_gaps=transformation.stop_on_gaps,
             stop_on_error=transformation.stop_on_error,
             input_no_data_values=input_no_data_values,
             output_no_data_value=output_ds.no_data_value,
