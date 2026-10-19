@@ -10,6 +10,7 @@ class FakeResponse:
     def __init__(self, status_code=200, content=b"{}"):
         self.status_code = status_code
         self.content = content
+        self.text = content.decode()
 
     def json(self):
         return json.loads(self.content)
@@ -199,3 +200,19 @@ def test_list_sends_camel_case_params_and_keeps_public_filter_names(fake_session
     assert not any("_" in key for key in params)
     assert collection.filters["workspace"] == "00000000-0000-0000-0000-000000000001"
     assert collection.filters["tag"] == ("river", "green")
+
+
+@pytest.mark.parametrize(
+    "content, expected",
+    [
+        (b'{"message": "Duplicate phenomenonTime found on this datastream."}',
+         "409 Client Error: Duplicate phenomenonTime found on this datastream."),
+        (b'{"detail": "Unauthorized"}', "409 Client Error: Unauthorized"),
+        (b'{"other": "value"}', '409 Client Error: {"other": "value"}'),
+    ],
+)
+def test_client_errors_surface_the_server_error_message(content, expected):
+    with pytest.raises(requests.HTTPError) as exc_info:
+        client_module.HydroServer._raise_for_hs_status(FakeResponse(409, content))
+
+    assert str(exc_info.value) == expected

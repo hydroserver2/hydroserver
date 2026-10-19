@@ -39845,9 +39845,6 @@
             "OIDCAuth": []
           },
           {
-            "APIKeyAuth": []
-          },
-          {
             "BasicAuth": []
           }
         ],
@@ -39916,6 +39913,9 @@
           },
           {
             "OIDCAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Delete Service Account",
@@ -40034,6 +40034,12 @@
           },
           {
             "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Get Service Account",
@@ -40109,6 +40115,9 @@
           },
           {
             "OIDCAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Update Service Account",
@@ -40194,6 +40203,9 @@
           },
           {
             "OIDCAuth": []
+          },
+          {
+            "BasicAuth": []
           }
         ],
         "summary": "Regenerate Service Account Key",

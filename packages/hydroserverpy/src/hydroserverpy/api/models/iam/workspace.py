@@ -1,7 +1,7 @@
 from typing import List, Union, Optional, ClassVar, TYPE_CHECKING
 from uuid import UUID
 from datetime import datetime
-from pydantic import Field, EmailStr, AliasPath
+from pydantic import Field, EmailStr, AliasPath, AliasChoices
 from ..base import HydroServerBaseModel
 
 if TYPE_CHECKING:
@@ -10,7 +10,6 @@ if TYPE_CHECKING:
         Role,
         Collaborator,
         ServiceAccount,
-        Account,
         MonitoringSite,
         ObservedProperty,
         Method,
@@ -27,11 +26,11 @@ if TYPE_CHECKING:
 class Workspace(HydroServerBaseModel):
     name: str = Field(..., max_length=255)
     is_private: bool
-    owner: "Account"
+    owner_email: EmailStr
     collaborator_role_id: Optional[Union[UUID, str]] = Field(
-        None, validation_alias=AliasPath("collaboratorRole", "id")
+        None, validation_alias=AliasChoices("collaboratorRoleId", AliasPath("collaboratorRole", "id"))
     )
-    pending_transfer_to: Optional["Account"] = None
+    pending_transfer_to_email: Optional[EmailStr] = None
 
     _editable_fields: ClassVar[set[str]] = {"name", "is_private"}
 

@@ -53,7 +53,7 @@ def get_service_accounts(
 
 @service_account_router.post(
     "",
-    auth=[session_auth, oidc_iam_write_auth, apikey_auth, basic_auth],
+    auth=[session_auth, oidc_iam_write_auth, basic_auth],
     response={
         201: ServiceAccountCreatedResponse,
         401: str,
@@ -80,7 +80,7 @@ def create_service_account(
 
 @service_account_router.get(
     "/{service_account_id}",
-    auth=[session_auth, oidc_iam_read_auth],
+    auth=[session_auth, oidc_iam_read_auth, apikey_auth, basic_auth],
     response={
         200: ItemResponse[ServiceAccountResponse],
         401: str,
@@ -108,7 +108,7 @@ def get_service_account(
 
 @service_account_router.patch(
     "/{service_account_id}",
-    auth=[session_auth, oidc_iam_write_auth],
+    auth=[session_auth, oidc_iam_write_auth, basic_auth],
     response={
         204: None,
         401: str,
@@ -139,7 +139,7 @@ def update_service_account(
 
 @service_account_router.delete(
     "/{service_account_id}",
-    auth=[session_auth, oidc_iam_write_auth],
+    auth=[session_auth, oidc_iam_write_auth, basic_auth],
     response={
         204: None,
         401: str,
@@ -164,7 +164,7 @@ def delete_service_account(
 
 @service_account_router.put(
     "/{service_account_id}/regenerate",
-    auth=[session_auth, oidc_iam_write_auth],
+    auth=[session_auth, oidc_iam_write_auth, basic_auth],
     response={
         201: ServiceAccountKeyResponse,
         400: str,
