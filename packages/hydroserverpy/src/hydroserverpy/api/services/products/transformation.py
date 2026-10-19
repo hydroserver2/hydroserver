@@ -157,7 +157,7 @@ class DataProductTransformationService:
         output_datastream: Union[UUID, str],
         input_datastreams: List[dict],
         formula: str,
-        stop_on_no_data: bool = True,
+        stop_on_gaps: bool = False,
         stop_on_error: bool = True,
         uid: Optional[UUID] = None,
     ) -> DerivationTransformation:
@@ -177,7 +177,7 @@ class DataProductTransformationService:
                 for inp in input_datastreams
             ],
             "formula": formula,
-            "stopOnNoData": stop_on_no_data,
+            "stopOnGaps": stop_on_gaps,
             "stopOnError": stop_on_error,
         }
         if uid is not None:
@@ -191,7 +191,7 @@ class DataProductTransformationService:
         uid: Union[UUID, str],
         input_datastreams: List[dict] = ...,
         formula: str = ...,
-        stop_on_no_data: bool = ...,
+        stop_on_gaps: bool = ...,
         stop_on_error: bool = ...,
     ) -> DerivationTransformation:
         """
@@ -209,7 +209,7 @@ class DataProductTransformationService:
                 for inp in input_datastreams
             ] if input_datastreams is not ... else ...,
             "formula": formula,
-            "stopOnNoData": stop_on_no_data,
+            "stopOnGaps": stop_on_gaps,
             "stopOnError": stop_on_error,
         }
         body = {k: v for k, v in body.items() if v is not ...}

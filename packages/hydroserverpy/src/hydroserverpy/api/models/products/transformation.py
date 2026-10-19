@@ -21,7 +21,7 @@ class DerivationTransformation(BaseModel):
     output_datastream_id: uuid.UUID
     input_datastream_ids: List[uuid.UUID]
     formula: str
-    stop_on_no_data: bool
+    stop_on_gaps: bool
     stop_on_error: bool
 
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
