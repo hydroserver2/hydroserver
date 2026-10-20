@@ -360,6 +360,8 @@ context = pipeline.run(
 )
 ```
 
+The loader uploads the window in chunks of `chunk_size` observations, and each chunk replaces its own slice of the window in a single transaction. If a chunk fails, the run is `INCOMPLETE`: slices before it hold the new data, and the failed slice and everything after it keep their existing observations. Nothing is deleted without being replaced, so you can rerun the same window to finish the reload.
+
 Scheduled data connections configure their data ingestion window in the web app.
 
 ## Viewing Results

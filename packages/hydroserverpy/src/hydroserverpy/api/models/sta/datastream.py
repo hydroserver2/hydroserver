@@ -192,14 +192,18 @@ class Datastream(HydroServerBaseModel):
     def load_observations(
         self,
         observations: pd.DataFrame,
-        mode: str = "insert"
+        mode: str = "insert",
+        phenomenon_time_start: Optional[datetime] = None,
+        phenomenon_time_end: Optional[datetime] = None,
     ) -> None:
         """Load a DataFrame of observations to the datastream."""
 
         return self.client.datastreams.load_observations(
             uid=self.uid,
             observations=observations,
-            mode=mode
+            mode=mode,
+            phenomenon_time_start=phenomenon_time_start,
+            phenomenon_time_end=phenomenon_time_end,
         )
 
     def delete_observations(

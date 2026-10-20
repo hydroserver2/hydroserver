@@ -585,7 +585,7 @@ datastream.get_observations(
 Returns an `ObservationCollection`. Its `dataframe` property is a pandas DataFrame with `phenomenon_time` (timezone-aware datetime), `result` (float), and `result_qualifiers` (list of qualifier names) columns. Like `HydroServerCollection`, it has `offset`, `limit`, and `total_count` properties and `next_page()`, `previous_page()`, and `fetch_all()` methods. Pass `result_qualifiers="PF"` to return only observations with that qualifier.
 
 ```python
-datastream.load_observations(observations, mode='insert') -> None
+datastream.load_observations(observations, mode='insert', phenomenon_time_start=None, phenomenon_time_end=None) -> None
 ```
 
 `observations` must be a pandas DataFrame with `phenomenon_time` and `result` columns; `phenomenon_time` must be timezone-aware.
@@ -593,7 +593,11 @@ datastream.load_observations(observations, mode='insert') -> None
 | `mode` | Behavior |
 |---|---|
 | `"insert"` (default) | Adds the observations. If any timestamp already exists in the datastream, the whole request is rejected with a `409` and nothing is loaded. |
+| `"append"` | Adds the observations only if all of them are after the datastream's latest observation; otherwise the request is rejected with a `400`. |
+| `"backfill"` | Adds the observations only if all of them are before the datastream's earliest observation; otherwise the request is rejected with a `400`. |
 | `"replace"` | Replaces the datastream's observations between the earliest and latest timestamp in your DataFrame with the ones you provide. Observations outside that range are untouched. |
+
+In `replace` mode, pass both `phenomenon_time_start` and `phenomenon_time_end` (timezone-aware, inclusive) to replace that range instead of the DataFrame's span — for example, to also clear observations in the range that your DataFrame no longer contains. The delete and insert happen in a single transaction: if the load fails, the existing observations are kept.
 
 To load observations with result qualifiers, include a `result_qualifiers` column containing a list of qualifier names per row. The names must match result qualifiers that exist in the datastream's workspace:
 
