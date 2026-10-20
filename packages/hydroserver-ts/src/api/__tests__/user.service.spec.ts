@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { HydroServer } from '../HydroServer'
+import { registerAccessTokenProvider } from '../requestInterceptor'
 import { User, Workspace } from '../../types'
 
 function makeClientWithCachedUser(user: User): HydroServer {
@@ -107,5 +108,35 @@ describe('UserService.can', () => {
     await expect(
       client.user.can('view', 'Datastream', workspace)
     ).resolves.toBe(false)
+  })
+})
+
+describe('UserService with an access token provider', () => {
+  afterEach(() => {
+    registerAccessTokenProvider(null)
+    vi.unstubAllGlobals()
+  })
+
+  it('fetches the user from the OIDC UserInfo endpoint', async () => {
+    const client = await HydroServer.initialize({
+      host: 'https://hydro.example.com',
+      accessTokenProvider: async () => 'token-123',
+    })
+    registerAccessTokenProvider(() => client.session.getAccessToken())
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ email: 'user@example.com' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const response = await client.user.get()
+
+    expect(response.ok).toBe(true)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe('https://hydro.example.com/identity/o/api/userinfo')
+    expect(new Headers(init.headers).get('Authorization')).toBe('Bearer token-123')
   })
 })

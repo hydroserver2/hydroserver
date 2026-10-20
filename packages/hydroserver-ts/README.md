@@ -29,6 +29,23 @@ if (response.ok) {
 
 Use `host: ""` for same-origin requests. Applications that prefer dependency injection can instead call `HydroServer.initialize({ host })` and pass the returned instance explicitly.
 
+### Tokens managed by your app
+
+If your app already holds HydroServer access tokens, for example from a backend that signs users in through HydroServer, pass an `accessTokenProvider`. It's called before each request, so it should cache the token until shortly before it expires:
+
+```ts
+await createHydroServer({
+  host: "https://playground.hydroserver.org",
+  accessTokenProvider: async () => {
+    const res = await fetch("/my-app/hydroserver-token/");
+    return res.ok ? (await res.json()).access_token : null;
+  },
+  onUnauthorized: () => window.location.assign("/login/"),
+});
+```
+
+A request rejected with a `401` is retried once with a token fetched again from the provider; if it's still rejected, the client calls `onUnauthorized` and emits `session:expired`. Your app handles sign-in and sign-out in this mode, and the option can't be combined with `oidc`. See the [TypeScript client how-to guide](https://github.com/hydroserver2/hydroserver/blob/main/apps/docs/docs/developing-and-contributing/how-to/using-the-typescript-client.md#tokens-managed-by-your-app) for the scopes the token needs and how to serve it safely.
+
 ### Account return destinations
 
 When taking a user to a server-rendered account page, provide the in-app path

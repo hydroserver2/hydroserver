@@ -31,6 +31,7 @@ export class SessionService {
   private readonly _client: HydroServer
   private _manager: UserManager | null = null
   private _user: OidcUser | null = null
+  private _externalToken: string | null = null
   private _eventsBound = false
 
   constructor(client: HydroServer) {
@@ -66,17 +67,25 @@ export class SessionService {
   }
 
   get isAuthenticated(): boolean {
-    if (!this._client.oidc) {
+    if (this._client.authMode === 'session') {
       return this._client.user.isAuthenticated
+    }
+    if (this._client.authMode === 'token') {
+      return this._externalToken !== null
     }
     return Boolean(this._user?.access_token && !this._user.expired)
   }
 
   get accessToken(): string | null {
+    if (this._client.authMode === 'token') return this._externalToken
     return this.isAuthenticated ? this._user!.access_token : null
   }
 
   async initialize(): Promise<void> {
+    if (this._client.authMode === 'token') {
+      await this.getAccessToken()
+      return
+    }
     if (!this._client.oidc || !isBrowser()) return
 
     const manager = this.getManager()
@@ -93,6 +102,7 @@ export class SessionService {
   }
 
   async login(returnTo = this.getCurrentPath()): Promise<void> {
+    this.assertNotTokenMode()
     if (!this._client.oidc) {
       if (!isBrowser()) return
       window.location.assign(this.getAccountUrl('/accounts/login/', returnTo))
@@ -117,6 +127,7 @@ export class SessionService {
   }
 
   async logout(returnTo = '/'): Promise<void> {
+    this.assertNotTokenMode()
     if (!this._client.oidc) {
       if (!isBrowser()) return
       removeHydroServerStorage()
@@ -147,6 +158,12 @@ export class SessionService {
   }
 
   async getAccessToken(): Promise<string | null> {
+    if (this._client.authMode === 'token') {
+      this._externalToken =
+        (await this._client.accessTokenProvider!().catch(() => null)) ?? null
+      return this._externalToken
+    }
+
     if (!this._client.oidc || !isBrowser()) return null
 
     const manager = this.getManager()
@@ -169,6 +186,14 @@ export class SessionService {
     if (!this._client.oidc || !this._user) return
     if (!this.isExpiredOrExpiring(this._user)) return
     void this.getAccessToken()
+  }
+
+  private assertNotTokenMode(): void {
+    if (this._client.authMode === 'token') {
+      throw new Error(
+        'Sign-in and sign-out are managed by the host app when `accessTokenProvider` is set.'
+      )
+    }
   }
 
   private getManager(): UserManager {

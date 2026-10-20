@@ -45,6 +45,13 @@ from hydroserverpy import HydroServer
 hs_api = HydroServer(host, access_token=get_access_token)
 ```
 
+In TypeScript, pass `@hydroserver/client` an `accessTokenProvider` that returns a current token. See
+[Tokens managed by your app](/developing-and-contributing/how-to/using-the-typescript-client#tokens-managed-by-your-app).
+
+```ts
+await createHydroServer({ host, accessTokenProvider: getAccessToken });
+```
+
 ## Warnings on the consent screen
 
 `iam:write` is shown with a warning. A token with this scope can create service accounts and add collaborators, and
