@@ -1,7 +1,13 @@
+let csrfCookieName = 'csrftoken'
+
+export function registerCSRFCookieName(name: string) {
+  csrfCookieName = name
+}
+
 export function getCSRFToken(): string | null {
   if (typeof document === 'undefined') return null
 
-  const name = 'csrftoken='
+  const name = `${csrfCookieName}=`
   const decodedCookies = decodeURIComponent(document.cookie || '')
   const parts = decodedCookies.split(';')
   for (const part of parts) {

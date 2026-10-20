@@ -1,4 +1,5 @@
 import { useVocabularyStore } from '@/composables/useVocabulary'
+import { settings } from '@/config/settings'
 import { useUserStore } from '@/store/user'
 import { useWorkspaceStore } from '@/store/workspaces'
 import hs, { createHydroServer, User } from '@hydroserver/client'
@@ -71,6 +72,7 @@ export function startAppInitialization() {
 
   hydroServerInitializationPromise = createHydroServer({
     host: hydroServerHost,
+    csrfCookieName: settings.authenticationConfiguration.csrfCookieName,
   })
     .then(() => {
       isHydroServerReady.value = true

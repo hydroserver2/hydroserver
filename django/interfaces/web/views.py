@@ -14,6 +14,7 @@ def get_app_settings_context():
     return {
         "authenticationConfiguration": {
             "hydroserverSignupEnabled": settings.ACCOUNT_SIGNUP_ENABLED,
+            "csrfCookieName": settings.CSRF_COOKIE_NAME,
             "providers": [
                 {
                     "id": social_app.provider_id,

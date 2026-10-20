@@ -44,6 +44,7 @@ export interface HydroServerOptions {
   oidc?: HydroServerOIDCOptions
   accessTokenProvider?: AccessTokenProvider
   onUnauthorized?: () => void
+  csrfCookieName?: string
 }
 
 export type AuthMode = 'session' | 'oidc' | 'token'
