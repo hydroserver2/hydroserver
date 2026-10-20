@@ -26,6 +26,25 @@ Scopes don't imply each other. A token with `data:write` can't read, and a token
 it starts, so request each scope your app uses. Scopes only decide which endpoints a token can call. The user's
 workspace roles still decide which records it can see and change.
 
+## Sending the token
+
+Send the access token in the `Authorization` header of each request:
+
+```http
+GET /api/ogc/collections/workspaces/items
+Authorization: Bearer <access token>
+```
+
+In Python, pass the token to `hydroserverpy` as `access_token`. To keep long-running code working after the token
+expires, pass a function that returns a current token instead. It's called before each request. See the
+[Python Client Reference](/user-guides/how-to/using-the-python-client#connection).
+
+```python
+from hydroserverpy import HydroServer
+
+hs_api = HydroServer(host, access_token=get_access_token)
+```
+
 ## Warnings on the consent screen
 
 `iam:write` is shown with a warning. A token with this scope can create service accounts and add collaborators, and

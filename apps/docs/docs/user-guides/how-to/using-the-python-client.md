@@ -14,6 +14,12 @@ hs_api = HydroServer(host, email, password)
 
 # API key authentication
 hs_api = HydroServer(host, apikey=apikey)
+
+# OIDC access token authentication
+hs_api = HydroServer(host, access_token=access_token)
+
+# OIDC access token from a function, called before each request
+hs_api = HydroServer(host, access_token=get_access_token)
 ```
 
 | Parameter | Type | Default | Description |
@@ -22,6 +28,7 @@ hs_api = HydroServer(host, apikey=apikey)
 | `email` | `str` | `None` | Account email |
 | `password` | `str` | `None` | Account password |
 | `apikey` | `str` | `None` | API key (alternative to email/password) |
+| `access_token` | `str \| Callable[[], str \| None]` | `None` | OIDC access token, or a function that returns a current one before each request so it can refresh expired tokens. |
 
 **Methods**
 
