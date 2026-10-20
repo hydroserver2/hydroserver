@@ -283,6 +283,26 @@ class TestParseSeriesHourOnlyOffset:
 
 
 # ---------------------------------------------------------------------------
+# parse_series_to_utc – date-only ISO strings
+# ---------------------------------------------------------------------------
+
+class TestParseSeriesDateOnly:
+
+    @pytest.mark.parametrize("value", ["2024-01-01", "2024-01"])
+    @pytest.mark.parametrize("timestamp_fixture", ["iana_timestamp", "offset_timestamp"])
+    def test_date_only_strings_are_localized_to_configured_timezone(self, value, timestamp_fixture, request):
+        ts = request.getfixturevalue(timestamp_fixture)
+        expected_hour = 5 if timestamp_fixture == "iana_timestamp" else 7
+        result = ts.parse_series_to_utc(pd.Series([value]))
+        assert result.iloc[0] == pd.Timestamp(f"2024-01-01 {expected_hour:02d}:00:00", tz="UTC")
+
+    @pytest.mark.parametrize("value", ["2024-01-01T00-07", "2024-01-01 00:00:00-07:00", "2024-01-01T000000-0700"])
+    def test_offsets_after_time_component_are_preserved(self, value, iana_timestamp):
+        result = iana_timestamp.parse_series_to_utc(pd.Series([value]))
+        assert result.iloc[0] == pd.Timestamp("2024-01-01 07:00:00", tz="UTC")
+
+
+# ---------------------------------------------------------------------------
 # parse_series_to_utc – IANA timezone type
 # ---------------------------------------------------------------------------
 
