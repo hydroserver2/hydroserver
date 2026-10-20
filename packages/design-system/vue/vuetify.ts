@@ -94,7 +94,7 @@ const vuetify = createVuetify({
       // action that best advances the page's main task; dialogs keep blue
       // primary actions so their submit action remains predictable.
       color: 'secondary',
-      rounded: 'sm',
+      rounded: 'var(--hs-radius-sm)',
       variant: 'flat',
     },
   },

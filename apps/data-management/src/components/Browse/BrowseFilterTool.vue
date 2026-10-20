@@ -23,7 +23,7 @@
         <h1>Monitoring sites</h1>
 
         <div class="filter-header-actions">
-          <v-btn-primary
+          <v-btn-page-action
             v-if="showRegisterSite"
             class="register-site-button"
             data-testid="register-site-button"
@@ -37,7 +37,7 @@
             @click="$emit('register-site')"
           >
             Create Site
-          </v-btn-primary>
+          </v-btn-page-action>
 
           <v-btn
             icon
@@ -167,7 +167,7 @@
                 density="compact"
                 color="primary"
                 :prepend-inner-icon="mdiTagOutline"
-                @update:model-value="selectedTagValues = []"
+                @update:model-value="onMetadataKeySelected"
               />
 
               <v-autocomplete
@@ -217,6 +217,7 @@
               size="small"
               :variant="markerColorMode === 'workspace' ? 'tonal' : 'outlined'"
               :aria-pressed="markerColorMode === 'workspace'"
+              :disabled="!hasAppliedInitialRouteState"
               @click="toggleMarkerColorMode('workspace')"
             >
               Workspace
@@ -227,6 +228,7 @@
               size="small"
               :variant="markerColorMode === 'type' ? 'tonal' : 'outlined'"
               :aria-pressed="markerColorMode === 'type'"
+              :disabled="!hasAppliedInitialRouteState"
               @click="toggleMarkerColorMode('type')"
             >
               Site type
@@ -237,7 +239,7 @@
               size="small"
               :variant="markerColorMode === 'metadata' ? 'tonal' : 'outlined'"
               :aria-pressed="markerColorMode === 'metadata'"
-              :disabled="!availableTagKeys.length"
+              :disabled="!hasAppliedInitialRouteState || !availableTagKeys.length"
               @click="toggleMarkerColorMode('metadata')"
             >
               Metadata
@@ -535,20 +537,9 @@ const availableSites = computed(() =>
   )
 )
 
-const availableWorkspaces = computed(() => {
-  const workspaceIds = new Set(
-    filterMonitoringSiteMarkers(
-      monitoringSitesMatchingMySites.value,
-      [],
-      selectedSiteTypes.value,
-      undefined,
-      selectedTagKey.value,
-      selectedTagValues.value
-    ).map((monitoringSite) => monitoringSite.workspaceId)
-  )
-
-  return workspaces.value.filter((workspace) => workspaceIds.has(workspace.id))
-})
+// Keep every visible workspace available, including empty workspaces and those
+// whose sites are excluded by the current filters.
+const availableWorkspaces = computed(() => workspaces.value)
 
 const availableSiteTypes = computed(() => {
   const siteTypes = new Set(
@@ -579,6 +570,9 @@ const availableTagKeys = computed(() => {
       Object.keys(monitoringSite.tags)
     )
   )
+  // Preserve selected keys when other filters leave only untagged sites.
+  if (selectedTagKey.value) keys.add(selectedTagKey.value)
+  if (colorTagKey.value) keys.add(colorTagKey.value)
   return [...keys].filter(Boolean).sort((a, b) => a.localeCompare(b))
 })
 
@@ -635,6 +629,14 @@ const setExpanded = (value: boolean) => {
 
 const toggleMarkerColorMode = (mode: Exclude<MarkerColorMode, 'none'>) => {
   markerColorMode.value = markerColorMode.value === mode ? 'none' : mode
+}
+
+const onMetadataKeySelected = (key: string | null) => {
+  selectedTagValues.value = []
+  if (key) {
+    markerColorMode.value = 'metadata'
+    colorTagKey.value = key
+  }
 }
 
 // Let the user quickly jump to a site: typing a query and pressing Enter
@@ -840,12 +842,6 @@ pruneSelectionToAvailable(
 )
 
 watch(availableTagKeys, (keys) => {
-  if (selectedTagKey.value && !keys.includes(selectedTagKey.value)) {
-    selectedTagKey.value = ''
-  }
-  if (colorTagKey.value && !keys.includes(colorTagKey.value)) {
-    colorTagKey.value = ''
-  }
   if (
     markerColorMode.value === 'metadata' &&
     !colorTagKey.value &&
@@ -857,16 +853,9 @@ watch(availableTagKeys, (keys) => {
 
 watch(markerColorMode, (mode) => {
   if (mode === 'metadata' && !colorTagKey.value) {
-    colorTagKey.value = availableTagKeys.value[0] ?? ''
+    colorTagKey.value = selectedTagKey.value || availableTagKeys.value[0] || ''
   }
 })
-
-pruneSelectionToAvailable(
-  selectedTagValues,
-  availableTagValues,
-  (value) => value,
-  (value) => value
-)
 </script>
 
 <style scoped>
@@ -962,12 +951,26 @@ pruneSelectionToAvailable(
 .color-tag-filter :deep(.v-field) {
   border-radius: var(--hs-radius-md);
   font-size: var(--hs-font-sm);
+  color: var(--hs-text-primary);
 }
 
 .site-search :deep(.v-field__input),
 .workspace-filter :deep(.v-field__input),
 .metadata-filter :deep(.v-field__input),
 .color-tag-filter :deep(.v-field__input) {
+  font-size: var(--hs-font-sm);
+}
+
+.filter-controls :deep(.v-label),
+.filter-controls :deep(input::placeholder) {
+  color: var(--hs-text-secondary);
+  font-size: var(--hs-font-sm);
+  opacity: 1;
+}
+
+.filter-controls :deep(.v-autocomplete__selection),
+.filter-controls :deep(.v-chip__content) {
+  color: var(--hs-text-primary);
   font-size: var(--hs-font-sm);
 }
 
@@ -1023,7 +1026,7 @@ pruneSelectionToAvailable(
 
 .filter-section-title {
   color: var(--hs-text-secondary);
-  font-size: var(--hs-font-2xs);
+  font-size: var(--hs-font-sm);
   font-weight: var(--hs-font-weight-bold);
   letter-spacing: 0.7px;
   text-transform: uppercase;

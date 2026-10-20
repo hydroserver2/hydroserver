@@ -1,190 +1,193 @@
 <template>
-  <v-card>
-    <v-card-title class="hs-text-md"
-      >{{ monitoringSiteId ? 'Edit' : 'Register a' }} Site</v-card-title
-    >
-    <slot name="workspace" />
-    <div class="flex-shrink-0" style="height: 20rem">
-      <OpenLayersMap
-        v-if="loaded"
-        singleMarkerMode
-        :startInSatellite="!!monitoringSiteId"
-        @location-clicked="onMapLocationClicked"
-        :monitoringSites="monitoringSiteId ? [monitoringSite] : []"
-      />
-    </div>
-    <v-divider />
-
-    <v-card-text class="text-medium-emphasis d-flex align-center">
-      <v-icon :icon="mdiInformation" class="mr-1" />
-      <small>
-        Click on the map to
-        {{ monitoringSiteId ? 'edit' : 'populate' }}
-        site location data.
-      </small>
-    </v-card-text>
-
+  <v-card class="site-form-card">
+    <v-card-title class="hs-subheading">
+      {{ monitoringSiteId ? 'Edit Site' : 'Create Site' }}
+    </v-card-title>
     <v-form
+      class="site-form"
       ref="myForm"
       v-model="valid"
       validate-on="blur"
       @submit.prevent="uploadMonitoringSite"
       enctype="multipart/form-data"
     >
-      <v-card-text>
-        <v-row>
-          <v-col cols="12" md="6">
-            <h6 class="hs-text-md my-4">Site Information</h6>
-            <v-row>
-              <v-col cols="12"
-                ><v-text-field
-                  label="Site Code *"
-                  v-model="monitoringSite.code"
-                  :rules="rules.requiredCode"
-              /></v-col>
-              <v-col cols="12"
-                ><v-text-field
-                  label="Site Name *"
-                  v-model="monitoringSite.name"
-                  :rules="rules.requiredAndMaxLength200"
-              /></v-col>
-              <v-col cols="12"
-                ><v-textarea
-                  label="Site Description *"
-                  v-model="monitoringSite.description"
-                  :rules="rules.requiredDescription"
-              /></v-col>
-              <v-col cols="12">
-                <v-combobox
-                  label="Select Site Type *"
-                  :items="vocabularyStore.monitoringSiteTypes"
-                  v-model="monitoringSite.type"
-                  :rules="rules.required"
-                />
-              </v-col>
-            </v-row>
-            <v-row no-gutters class="pt-2">
-              <v-col>
-                <v-switch
-                  v-model="includeDataDisclaimer"
-                  color="primary"
-                  hide-details
-                  label="Include a data disclaimer for this site"
-                ></v-switch>
-              </v-col>
-            </v-row>
-            <v-row v-if="includeDataDisclaimer" no-gutters>
-              <v-col>
-                <v-textarea
-                  v-model="monitoringSite.dataDisclaimer"
-                  color="primary"
-                ></v-textarea>
-              </v-col>
-            </v-row>
+      <div class="site-form-content">
+        <slot name="workspace" />
+        <div class="flex-shrink-0" style="height: 20rem">
+          <OpenLayersMap
+            v-if="loaded"
+            singleMarkerMode
+            :start-in-satellite="!!monitoringSiteId"
+            @location-clicked="onMapLocationClicked"
+            :monitoringSites="monitoringSiteId ? [monitoringSite] : []"
+          />
+        </div>
+        <v-divider />
 
-            <v-row class="mt-2">
-              <v-col>
-                <RatingCurveTable
-                  :monitoring-site-id="monitoringSiteId"
-                  :workspace-id="workspaceId"
-                  :can-edit="true"
-                  :defer-persist="true"
-                />
-              </v-col>
-            </v-row>
-          </v-col>
-          <v-col cols="12" md="6">
-            <h6 class="hs-text-md my-4">Site Location</h6>
-            <v-row>
-              <v-col cols="12" sm="6">
-                <v-text-field
-                  label="Latitude *"
-                  v-model="monitoringSite.latitude"
-                  type="number"
-                  :rules="[
-                    ...rules.requiredNumber,
-                    ...rules.maxLength(22),
-                    ...rules.greaterThanOrEqualTo(-90),
-                    ...rules.lessThanOrEqualTo(90),
-                  ]"
-                  validate-on="input"
-              /></v-col>
-              <v-col cols="12" sm="6"
-                ><v-text-field
-                  label="Longitude *"
-                  v-model="monitoringSite.longitude"
-                  type="number"
-                  :rules="[
-                    ...rules.requiredNumber,
-                    ...rules.maxLength(22),
-                    ...rules.greaterThanOrEqualTo(-180),
-                    ...rules.lessThanOrEqualTo(180),
-                  ]"
-                  validate-on="input"
-              /></v-col>
-              <v-col cols="12" sm="6"
-                ><v-text-field
-                  label="Elevation (m)"
-                  v-model="monitoringSite.elevationM"
-                  type="number"
-                  :rules="
-                    monitoringSite.elevationM === '' ||
-                    monitoringSite.elevationM == null
-                      ? []
-                      : [
-                          ...rules.requiredNumber,
-                          ...rules.maxLength(22),
-                          ...rules.lessThan(1000000),
-                          ...rules.greaterThan(-1000000),
-                        ]
-                  "
-                  validate-on="input"
-              /></v-col>
-              <v-col cols="12" sm="6">
-                <v-text-field
-                  label="State/Province/Region"
-                  v-model="monitoringSite.adminArea1"
-                  :rules="monitoringSite.adminArea1 ? rules.name : []"
-                />
-              </v-col>
-              <v-col cols="12" sm="6">
-                <v-text-field
-                  label="County/District"
-                  v-model="monitoringSite.adminArea2"
-                  :rules="monitoringSite.adminArea2 ? rules.name : []"
-                />
-              </v-col>
-              <v-col cols="12" sm="6">
-                <v-autocomplete
-                  label="Country"
-                  :items="countries"
-                  :item-title="countryTitle"
-                  item-value="code"
-                  clearable
-                  v-model="monitoringSite.country"
-                >
-                  <template v-slot:selection="{ item, index }">
-                    <span>{{ monitoringSite.country }}</span>
-                  </template></v-autocomplete
-                >
-              </v-col>
-            </v-row>
+        <v-card-text class="text-medium-emphasis d-flex align-center">
+          <v-icon :icon="mdiInformation" class="mr-1" />
+          <small>
+            Click on the map to
+            {{ monitoringSiteId ? 'edit' : 'populate' }}
+            site location data.
+          </small>
+        </v-card-text>
 
-            <v-row>
-              <v-col>
-                <SiteTagManager :monitoring-site-id="monitoringSiteId" />
-              </v-col>
-            </v-row>
+        <v-card-text>
+          <v-row>
+            <v-col cols="12" md="6">
+              <h6 class="hs-text-md my-4">Site Information</h6>
+              <v-row>
+                <v-col cols="12"
+                  ><v-text-field
+                    label="Site Code *"
+                    v-model="monitoringSite.code"
+                    :rules="rules.requiredCode"
+                /></v-col>
+                <v-col cols="12"
+                  ><v-text-field
+                    label="Site Name *"
+                    v-model="monitoringSite.name"
+                    :rules="rules.requiredAndMaxLength200"
+                /></v-col>
+                <v-col cols="12"
+                  ><v-textarea
+                    label="Site Description *"
+                    v-model="monitoringSite.description"
+                    :rules="rules.requiredDescription"
+                /></v-col>
+                <v-col cols="12">
+                  <v-combobox
+                    label="Select Site Type *"
+                    :items="vocabularyStore.monitoringSiteTypes"
+                    v-model="monitoringSite.type"
+                    :rules="rules.required"
+                  />
+                </v-col>
+              </v-row>
+              <v-row no-gutters class="pt-2">
+                <v-col>
+                  <v-switch
+                    v-model="includeDataDisclaimer"
+                    color="primary"
+                    hide-details
+                    label="Include a data disclaimer for this site"
+                  ></v-switch>
+                </v-col>
+              </v-row>
+              <v-row v-if="includeDataDisclaimer" no-gutters>
+                <v-col>
+                  <v-textarea
+                    v-model="monitoringSite.dataDisclaimer"
+                    color="primary"
+                  ></v-textarea>
+                </v-col>
+              </v-row>
 
-            <v-row>
-              <v-col>
-                <SitePhotoManager :monitoring-site-id="monitoringSiteId" />
-              </v-col>
-            </v-row>
-          </v-col>
-        </v-row>
-      </v-card-text>
-      <v-card-actions>
+              <v-row class="mt-2">
+                <v-col>
+                  <RatingCurveTable
+                    :monitoring-site-id="monitoringSiteId"
+                    :workspace-id="workspaceId"
+                    :can-edit="true"
+                    :defer-persist="true"
+                  />
+                </v-col>
+              </v-row>
+            </v-col>
+            <v-col cols="12" md="6">
+              <h6 class="hs-text-md my-4">Site Location</h6>
+              <v-row>
+                <v-col cols="12" sm="6">
+                  <v-text-field
+                    label="Latitude *"
+                    v-model="monitoringSite.latitude"
+                    type="number"
+                    :rules="[
+                      ...rules.requiredNumber,
+                      ...rules.maxLength(22),
+                      ...rules.greaterThanOrEqualTo(-90),
+                      ...rules.lessThanOrEqualTo(90),
+                    ]"
+                    validate-on="input"
+                /></v-col>
+                <v-col cols="12" sm="6"
+                  ><v-text-field
+                    label="Longitude *"
+                    v-model="monitoringSite.longitude"
+                    type="number"
+                    :rules="[
+                      ...rules.requiredNumber,
+                      ...rules.maxLength(22),
+                      ...rules.greaterThanOrEqualTo(-180),
+                      ...rules.lessThanOrEqualTo(180),
+                    ]"
+                    validate-on="input"
+                /></v-col>
+                <v-col cols="12" sm="6"
+                  ><v-text-field
+                    label="Elevation (m)"
+                    v-model="monitoringSite.elevationM"
+                    type="number"
+                    :rules="
+                      monitoringSite.elevationM === '' ||
+                      monitoringSite.elevationM == null
+                        ? []
+                        : [
+                            ...rules.requiredNumber,
+                            ...rules.maxLength(22),
+                            ...rules.lessThan(1000000),
+                            ...rules.greaterThan(-1000000),
+                          ]
+                    "
+                    validate-on="input"
+                /></v-col>
+                <v-col cols="12" sm="6">
+                  <v-text-field
+                    label="State/Province/Region"
+                    v-model="monitoringSite.adminArea1"
+                    :rules="monitoringSite.adminArea1 ? rules.name : []"
+                  />
+                </v-col>
+                <v-col cols="12" sm="6">
+                  <v-text-field
+                    label="County/District"
+                    v-model="monitoringSite.adminArea2"
+                    :rules="monitoringSite.adminArea2 ? rules.name : []"
+                  />
+                </v-col>
+                <v-col cols="12" sm="6">
+                  <v-autocomplete
+                    label="Country"
+                    :items="countries"
+                    :item-title="countryTitle"
+                    item-value="code"
+                    clearable
+                    v-model="monitoringSite.country"
+                  >
+                    <template v-slot:selection="{ item, index }">
+                      <span>{{ monitoringSite.country }}</span>
+                    </template></v-autocomplete
+                  >
+                </v-col>
+              </v-row>
+
+              <v-row>
+                <v-col>
+                  <SiteTagManager :monitoring-site-id="monitoringSiteId" />
+                </v-col>
+              </v-row>
+
+              <v-row>
+                <v-col>
+                  <SitePhotoManager :monitoring-site-id="monitoringSiteId" />
+                </v-col>
+              </v-row>
+            </v-col>
+          </v-row>
+        </v-card-text>
+      </div>
+      <v-card-actions class="site-form-actions">
         <v-spacer></v-spacer>
         <v-btn-cancel @click="closeDialog">Cancel</v-btn-cancel>
         <v-btn-dialog-action @click="uploadMonitoringSite">Save</v-btn-dialog-action>
@@ -331,3 +334,33 @@ onUnmounted(() => {
   resetPendingSiteChanges()
 })
 </script>
+
+<style scoped>
+.site-form-card {
+  max-height: 100%;
+  overflow: hidden !important;
+}
+
+.site-form-card > .v-card-title,
+.site-form-actions {
+  flex-shrink: 0;
+}
+
+.site-form {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.site-form-content {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.site-form-actions {
+  border-top: 1px solid var(--hs-border);
+  background: var(--hs-surface);
+  padding: var(--hs-space-12) var(--hs-space-16);
+}
+</style>

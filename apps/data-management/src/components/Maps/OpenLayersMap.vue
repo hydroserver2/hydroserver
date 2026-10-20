@@ -37,7 +37,10 @@
     >
       <h3>{{ legendTitle }}</h3>
       <ul>
-        <li v-for="monitoringSite in uniqueColoredMonitoringSites" :key="monitoringSite.tagValue">
+        <li
+          v-for="monitoringSite in uniqueColoredMonitoringSites"
+          :key="monitoringSite.tagValue ?? ''"
+        >
           <v-icon
             :icon="mdiMapMarker"
             :style="{ color: monitoringSite.color?.background }"
@@ -106,6 +109,7 @@ import {
   type PropType,
 } from 'vue'
 import { storeToRefs } from 'pinia'
+import { useTheme } from 'vuetify'
 import hs, { MonitoringSite } from '@hydroserver/client'
 import { MapMonitoringSite, MapMonitoringSiteWithColor } from '@/types'
 import { useVocabularyStore } from '@/composables/useVocabulary'
@@ -169,6 +173,7 @@ const props = defineProps({
   selectable: Boolean,
 })
 const emit = defineEmits(['location-clicked', 'select'])
+const theme = useTheme()
 const { siteTypeIcons } = storeToRefs(useVocabularyStore())
 
 interface ConfigTileSource {
@@ -278,14 +283,14 @@ const detailCoordinates = computed(() => {
 })
 
 const uniqueColoredMonitoringSites = computed(() => {
-  const firstOccurrenceMap = new Map()
+  const firstOccurrenceMap = new Map<string | undefined, MapMonitoringSiteWithColor>()
   coloredMonitoringSites.value.forEach((monitoringSite) => {
-    if (monitoringSite.tagValue && !firstOccurrenceMap.has(monitoringSite.tagValue)) {
+    if (monitoringSite.color && !firstOccurrenceMap.has(monitoringSite.tagValue)) {
       firstOccurrenceMap.set(monitoringSite.tagValue, monitoringSite)
     }
   })
   return Array.from(firstOccurrenceMap.values()).sort((a, b) => {
-    return a.tagValue.localeCompare(b.tagValue)
+    return (a.tagValue ?? '').localeCompare(b.tagValue ?? '')
   })
 })
 
@@ -298,7 +303,7 @@ const legendTitle = computed(() =>
 )
 
 const getLegendLabel = (value?: string) =>
-  value ? (props.colorLabels[value] ?? value) : ''
+  value ? (props.colorLabels[value] ?? value) : 'Untagged'
 
 const getMonitoringSiteCoordinates = (
   monitoringSite: MapMonitoringSiteWithColor
@@ -607,7 +612,11 @@ async function updateFeatures() {
     props.colorKey &&
     props.monitoringSites.every(hasMonitoringSiteTags)
   ) {
-    coloredMonitoringSites.value = addColorToMarkers(props.monitoringSites, props.colorKey)
+    coloredMonitoringSites.value = addColorToMarkers(
+      props.monitoringSites,
+      props.colorKey,
+      theme.current.value.colors.default as string
+    )
   } else {
     coloredMonitoringSites.value = props.monitoringSites
   }
