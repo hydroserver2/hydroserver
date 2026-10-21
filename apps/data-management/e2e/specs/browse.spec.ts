@@ -183,6 +183,128 @@ test('Browse shows untagged sites for a key and filters them out when values are
   await expect(legend.locator('h3')).toHaveText('Network')
 })
 
+test('Browse clears automatic metadata coloring with the key and Reset', async ({
+  page,
+}) => {
+  await authenticateSession(page, users.owner.email, users.owner.password)
+  await page.goto('/browse?tagKey=E2E')
+  const legend = page.getByTestId('map-marker-legend')
+  await expect(legend.locator('h3')).toHaveText('E2E')
+
+  await page
+    .locator('.metadata-filter-row .metadata-filter')
+    .first()
+    .locator('.v-field__clearable')
+    .click()
+  await expect(legend).toHaveCount(0)
+  await expect(page).not.toHaveURL(/tagKey=|colorTagKey=|colorBy=metadata/)
+  await page.reload()
+  await expect(legend).toHaveCount(0)
+
+  // Choosing a key deliberately replaces another marker coloring mode.
+  await page.getByRole('button', { name: 'Workspace', exact: true }).click()
+  await chooseAutocompleteOption(page, 'Key', 'E2E')
+  await expect(legend.locator('h3')).toHaveText('E2E')
+  await page.getByRole('button', { name: 'Reset', exact: true }).click()
+  await expect(legend).toHaveCount(0)
+  await expect(page).not.toHaveURL(/tagKey=|colorTagKey=|colorBy=/)
+  await page.reload()
+  await expect(legend).toHaveCount(0)
+})
+
+for (const { siteType, values } of [
+  { siteType: 'Stream', values: ['Shared', 'Public only'] },
+  { siteType: 'Spring', values: ['Shared', 'Public only'] },
+  { siteType: 'Stream', values: ['Public only'] },
+]) {
+  test(`Browse retains valid filters when switching workspaces with ${siteType} and ${values.join(', ')}`, async ({
+    page,
+  }) => {
+    const keepsShared = values.includes('Shared')
+    await page.route(
+      '**/api/ogc/collections/monitoring-sites/site-summaries*',
+      async (route) => {
+        const response = await route.fetch()
+        const summaries = await response.json()
+        for (const site of summaries) {
+          delete site.tags.Basin
+          if (site.id === fixtures.monitoringSites.public.id) {
+            site.type = siteType
+            site.tags.Basin = 'Shared'
+          }
+          if (site.id === fixtures.monitoringSites.mutablePublic.id) {
+            site.type = siteType
+            site.tags.Basin = 'Public only'
+          }
+          if (site.id === fixtures.monitoringSites.privateWorkspacePublic.id) {
+            site.type = 'Stream'
+            site.tags.Basin = 'Shared'
+          }
+          if (site.id === fixtures.monitoringSites.private.id)
+            site.type = 'Stream'
+        }
+        await route.fulfill({ response, json: summaries })
+      }
+    )
+    await authenticateSession(page, users.owner.email, users.owner.password)
+    const query = new URLSearchParams({
+      workspaces: fixtures.workspaces.public.id,
+      siteTypes: siteType,
+      tagKey: 'Basin',
+    })
+    for (const value of values) query.append('tagValues', value)
+    await page.goto(`/browse?${query}`)
+    await expect(page.getByRole('button', { name: siteType, exact: true })).toHaveClass(/selected/)
+    await expect(page).toHaveURL(/tagValues=Public\+only/)
+    await expect(page).toHaveURL(new RegExp(`siteTypes=${siteType}`))
+
+    await page.locator('.workspace-filter .v-field__clearable').click()
+    await chooseAutocompleteOption(
+      page,
+      'Workspaces',
+      fixtures.workspaces.private.name
+    )
+    await page
+      .getByRole('combobox', { name: 'Workspaces', exact: true })
+      .press('Escape')
+    await expect(page).toHaveURL(
+      new RegExp(`workspaces=${fixtures.workspaces.private.id}`)
+    )
+    if (keepsShared) await expect(page).toHaveURL(/tagValues=Shared/)
+    else await expect(page).not.toHaveURL(/tagValues=/)
+    await expect(page).not.toHaveURL(/Public\+only/)
+    if (siteType === 'Stream') await expect(page).toHaveURL(/siteTypes=Stream/)
+    else await expect(page).not.toHaveURL(/siteTypes=/)
+
+    const sharedSite = page.locator(
+      `[data-site-id="${fixtures.monitoringSites.privateWorkspacePublic.id}"]`
+    )
+    await expect(sharedSite).toBeVisible()
+    const legend = page.getByTestId('map-marker-legend')
+    await expect(legend.locator('h3')).toHaveText('Basin')
+    await expect(legend.locator('li')).toHaveCount(keepsShared ? 1 : 2)
+    await expect(legend).toContainText('Shared')
+    if (!keepsShared) await expect(legend).toContainText('Untagged')
+    const valueFilter = page.getByRole('combobox', {
+      name: 'Value',
+      exact: true,
+    })
+    await valueFilter.click()
+    await expect(
+      page.getByRole('option', { name: 'Shared', exact: true })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('option', { name: 'Public only', exact: true })
+    ).toHaveCount(0)
+    await valueFilter.press('Escape')
+    await page.reload()
+    await expect(sharedSite).toBeVisible()
+    if (keepsShared) await expect(page).toHaveURL(/tagValues=Shared/)
+    else await expect(page).not.toHaveURL(/tagValues=/)
+    await expect(page).not.toHaveURL(/Public\+only/)
+  })
+}
+
 for (const viewport of [
   { width: 1280, height: 720 },
   { width: 500, height: 640 },

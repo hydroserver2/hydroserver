@@ -541,16 +541,21 @@ const availableSites = computed(() =>
 // whose sites are excluded by the current filters.
 const availableWorkspaces = computed(() => workspaces.value)
 
+// Filter choices depend on the workspace scope, not the current search or
+// metadata values. A temporary empty result must not erase valid selections.
+const monitoringSitesInSelectedWorkspaces = computed(() => {
+  const myWorkspaceIds = new Set(props.myWorkspaceIds)
+  const sites = showOnlyMySites.value
+    ? sortedMonitoringSites.value.filter((site) =>
+        myWorkspaceIds.has(site.workspaceId)
+      )
+    : sortedMonitoringSites.value
+  return filterMonitoringSiteMarkers(sites, selectedWorkspaces.value, [])
+})
+
 const availableSiteTypes = computed(() => {
   const siteTypes = new Set(
-    filterMonitoringSiteMarkers(
-      monitoringSitesMatchingMySites.value,
-      selectedWorkspaces.value,
-      [],
-      undefined,
-      selectedTagKey.value,
-      selectedTagValues.value
-    ).map((monitoringSite) => monitoringSite.type)
+    monitoringSitesInSelectedWorkspaces.value.map((site) => site.type)
   )
 
   return [...siteTypes].filter(Boolean).sort((a, b) => a.localeCompare(b))
@@ -558,9 +563,13 @@ const availableSiteTypes = computed(() => {
 
 const monitoringSitesMatchingPrimaryFilters = computed(() =>
   filterMonitoringSiteMarkers(
-    monitoringSitesMatchingMySites.value,
-    selectedWorkspaces.value,
-    selectedSiteTypes.value
+    monitoringSitesInSelectedWorkspaces.value,
+    [],
+    // Ignore types that are about to be pruned after a workspace change, so
+    // they cannot transiently empty the tag choices and discard valid values.
+    selectedSiteTypes.value.filter((type) =>
+      availableSiteTypes.value.includes(type)
+    )
   )
 )
 
@@ -632,10 +641,13 @@ const toggleMarkerColorMode = (mode: Exclude<MarkerColorMode, 'none'>) => {
 }
 
 const onMetadataKeySelected = (key: string | null) => {
+  selectedTagKey.value = key || ''
   selectedTagValues.value = []
+  colorTagKey.value = key || ''
   if (key) {
     markerColorMode.value = 'metadata'
-    colorTagKey.value = key
+  } else if (markerColorMode.value === 'metadata') {
+    markerColorMode.value = 'none'
   }
 }
 
@@ -728,6 +740,8 @@ const onClearFilters = () => {
   selectedWorkspaces.value = []
   selectedTagKey.value = ''
   selectedTagValues.value = []
+  markerColorMode.value = 'none'
+  colorTagKey.value = ''
   showOnlyMySites.value = false
   siteSearch.value = ''
 }
@@ -839,6 +853,13 @@ pruneSelectionToAvailable(
   availableSiteTypes,
   (type) => type,
   (type) => type
+)
+
+pruneSelectionToAvailable(
+  selectedTagValues,
+  availableTagValues,
+  (value) => value,
+  (value) => value
 )
 
 watch(availableTagKeys, (keys) => {
