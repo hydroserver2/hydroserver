@@ -67,6 +67,43 @@ describe('useWorkspacePermissions', () => {
     ).toBe(true)
   })
 
+  it.each([PermissionResource.Global, PermissionResource.Workspace])(
+    'reserves workspace management for owners and admins despite %s grants',
+    (resource) => {
+      const workspace = workspaceWithPermissions(
+        Object.values(PermissionAction).map((action) => ({ resource, action }))
+      )
+      const { hasPermission } = useWorkspacePermissions()
+
+      expect(
+        hasPermission(
+          PermissionResource.Workspace,
+          PermissionAction.View,
+          workspace
+        )
+      ).toBe(true)
+      for (const action of [PermissionAction.Edit, PermissionAction.Delete]) {
+        expect(
+          hasPermission(PermissionResource.Workspace, action, workspace)
+        ).toBe(false)
+
+        useUserStore().user.email = 'owner@example.com'
+        expect(
+          hasPermission(PermissionResource.Workspace, action, workspace)
+        ).toBe(true)
+
+        useUserStore().user.email = 'admin@example.com'
+        useUserStore().user.isSuperuser = true
+        expect(
+          hasPermission(PermissionResource.Workspace, action, workspace)
+        ).toBe(true)
+
+        useUserStore().user.isSuperuser = false
+        useUserStore().user.email = 'viewer@example.com'
+      }
+    }
+  )
+
   it('applies a resource wildcard only to the explicitly granted action', () => {
     const workspace = workspaceWithPermissions([
       {

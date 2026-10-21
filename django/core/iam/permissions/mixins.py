@@ -87,7 +87,8 @@ class ResourcePermissionMixin:
 
         Superusers are granted access without a workspace lookup. For all others,
         the resource's registered workspace_field is used to resolve the workspace
-        before checking collaborator permissions.
+        before checking permissions. Editing the workspace itself requires ownership;
+        collaborator permissions only grant edits to its contents.
         """
 
         if "can_edit" in resource.__dict__:
@@ -114,7 +115,8 @@ class ResourcePermissionMixin:
 
         Superusers are granted access without a workspace lookup. For all others,
         the resource's registered workspace_field is used to resolve the workspace
-        before checking collaborator permissions.
+        before checking permissions. Deleting the workspace itself requires ownership;
+        collaborator permissions only grant deletion of its contents.
         """
 
         if "can_delete" in resource.__dict__:
@@ -152,6 +154,10 @@ class ResourcePermissionMixin:
 
         if workspace_field is None:
             return Q(pk__isnull=False) if permission_field == "can_view" else Q(pk__in=[])
+
+        # Workspace management cannot be delegated through collaborator roles.
+        if workspace_field is ... and permission_field in ("can_edit", "can_delete"):
+            return self._owner_q()
 
         accessible_ids = self._accessible_workspace_ids(
             model.resource_type, permission_field  # noqa
@@ -228,7 +234,8 @@ class ResourcePermissionMixin:
         Return True if this principal has a specific permission on a workspace.
 
         Checks in order: superuser status, workspace ownership, then collaborator
-        role permissions. The workspace may be None for resources that support
+        role permissions. Workspace edits and deletion are never granted by roles.
+        The workspace may be None for resources that support
         being created outside any workspace (e.g., global vocabulary) — only
         superusers are granted permission in that case.
         """
@@ -243,6 +250,10 @@ class ResourcePermissionMixin:
 
         if isinstance(self, User) and workspace.owner_id == self.id:
             return True
+
+        # Workspace management cannot be delegated through collaborator roles.
+        if resource_type == "Workspace" and permission_field in ("can_edit", "can_delete"):
+            return False
 
         collaborators = Collaborator.objects.filter(
             workspace=workspace,
