@@ -2,10 +2,11 @@ import {
   registerAccessTokenProvider,
   requestInterceptor,
 } from '../requestInterceptor'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 afterEach(() => {
   registerAccessTokenProvider(null)
+  vi.unstubAllGlobals()
 })
 
 describe('requestInterceptor', () => {
@@ -29,6 +30,25 @@ describe('requestInterceptor', () => {
     expect(new Headers(result.headers).get('Authorization')).toBe(
       'Bearer token-123'
     )
+  })
+
+  it('adds a CSRF header from the cookie when no token is available', async () => {
+    vi.stubGlobal('document', { cookie: 'csrftoken=csrf-123' })
+
+    const result = await requestInterceptor({})
+
+    expect(new Headers(result.headers).get('X-CSRFToken')).toBe('csrf-123')
+    expect(result.credentials).toBe('include')
+  })
+
+  it('omits the CSRF header and cookies when sending a token', async () => {
+    vi.stubGlobal('document', { cookie: 'csrftoken=csrf-123' })
+    registerAccessTokenProvider(async () => 'token-123')
+
+    const result = await requestInterceptor({})
+
+    expect(new Headers(result.headers).get('X-CSRFToken')).toBeNull()
+    expect(result.credentials).toBe('omit')
   })
 
   it('Preserves unmodified options while updating header and body', async () => {

@@ -72,6 +72,7 @@ CSRF_TRUSTED_ORIGINS = [
     if origin.strip()
 ]
 
+CSRF_COOKIE_NAME = env.str("CSRF_COOKIE_NAME", default="csrftoken")
 CSRF_COOKIE_SECURE = urlparse(PROXY_BASE_URL).scheme == "https"
 SESSION_COOKIE_SECURE = urlparse(PROXY_BASE_URL).scheme == "https"
 

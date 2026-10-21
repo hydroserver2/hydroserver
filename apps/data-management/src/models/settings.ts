@@ -8,6 +8,7 @@ export interface Provider {
 
 interface AuthenticationConfiguration {
   hydroserverSignupEnabled: boolean
+  csrfCookieName: string
   providers: Provider[]
 }
 

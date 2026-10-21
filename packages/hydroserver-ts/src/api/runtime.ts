@@ -1,5 +1,9 @@
 import { HydroServer, HydroServerOptions } from './HydroServer'
-import { registerAccessTokenProvider } from './requestInterceptor'
+import { registerCSRFCookieName } from './getCSRFToken'
+import {
+  registerAccessTokenProvider,
+  registerUnauthorizedHandler,
+} from './requestInterceptor'
 
 let _hs: HydroServer | null = null
 let _creating: Promise<HydroServer> | null = null
@@ -61,7 +65,16 @@ export async function createHydroServer(
     // Rebind the proxy target to the actual instance
     Object.setPrototypeOf(hs, _hs)
 
+    registerCSRFCookieName(opts.csrfCookieName ?? 'csrftoken')
     registerAccessTokenProvider(() => client.session.getAccessToken())
+    registerUnauthorizedHandler(
+      client.authMode === 'token'
+        ? () => {
+            opts.onUnauthorized?.()
+            client.emit('session:expired')
+          }
+        : null
+    )
     attachGlobalSessionGuards()
     _creating = null
     return client

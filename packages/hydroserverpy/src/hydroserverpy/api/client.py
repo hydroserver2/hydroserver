@@ -1,6 +1,6 @@
 import requests
 import json
-from typing import Optional, Tuple
+from typing import Callable, Optional, Tuple, Union
 from hydroserverpy.api.services import (
     WorkspaceService,
     RoleService,
@@ -30,16 +30,23 @@ class HydroServer:
         email: Optional[str] = None,
         password: Optional[str] = None,
         apikey: Optional[str] = None,
+        access_token: Optional[Union[str, Callable[[], Optional[str]]]] = None,
     ):
         self.host = host.strip("/")
         self.base_route = base_route
         if (email is None) ^ (password is None):
             raise ValueError("Both email and password must be provided together.")
+        if access_token is not None and (apikey is not None or email is not None):
+            raise ValueError(
+                "Provide only one of access_token, apikey, or email and password."
+            )
 
         self.auth: Optional[Tuple[str, str]] = None
         self.apikey = apikey
         if email and password:
             self.auth = (email, password)
+
+        self._access_token = access_token
 
         self._session = None
         self._timeout = 60
@@ -68,11 +75,21 @@ class HydroServer:
                 key: self._encode_query_value(value) for key, value in kwargs["params"].items()
             }
 
+        caller_headers = kwargs.pop("headers", None) or {}
+
         for attempt in range(2):
+            headers = dict(caller_headers)
+            access_token = self._resolve_access_token()
+            if access_token and not any(
+                key.lower() == "authorization" for key in headers
+            ):
+                headers["Authorization"] = f"Bearer {access_token}"
+
             try:
                 response = getattr(self._session, method)(
                     f"{self.host}/{path.strip('/')}",
                     timeout=self._timeout,
+                    headers=headers,
                     *args,
                     **kwargs,
                 )
@@ -92,6 +109,11 @@ class HydroServer:
                 raise e
 
             return response
+
+    def _resolve_access_token(self) -> Optional[str]:
+        if callable(self._access_token):
+            return self._access_token()
+        return self._access_token
 
     def _init_session(self, auth: Optional[Tuple[str, str]] = None) -> None:
         if self._session is not None:

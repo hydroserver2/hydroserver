@@ -550,6 +550,34 @@ def test_id_token_never_gets_custom_claims(oidc_client):
     assert "organization" not in claims
 
 
+@pytest.mark.parametrize("purpose", ["id_token", "userinfo"])
+def test_preferred_username_is_email_with_profile_and_email_scopes(
+    oidc_client, purpose
+):
+    adapter = HydroServerOIDCAdapter()
+    user = UserFactory()
+
+    claims = adapter.get_claims(
+        purpose, user, oidc_client, ["openid", "profile", "email"]
+    )
+
+    assert claims["preferred_username"] == user.email
+
+
+@pytest.mark.parametrize(
+    "scopes", [["openid"], ["openid", "profile"], ["openid", "email"]]
+)
+def test_preferred_username_omitted_without_profile_and_email_scopes(
+    oidc_client, scopes
+):
+    adapter = HydroServerOIDCAdapter()
+    user = UserFactory()
+
+    for purpose in ("id_token", "userinfo"):
+        claims = adapter.get_claims(purpose, user, oidc_client, scopes)
+        assert "preferred_username" not in claims
+
+
 # --- /identity/o/api/userinfo end-to-end --------------------------------------------
 
 
@@ -564,6 +592,7 @@ def test_userinfo_endpoint_returns_custom_claims(client, oidc_client):
     assert response.status_code == 200
     body = response.json()
     assert body["firstName"] == "Jane"
+    assert body["preferred_username"] == user.email
     assert body["isStaff"] is False
     assert body["isSuperuser"] is False
     assert body["ownedWorkspaceLimit"] == 1

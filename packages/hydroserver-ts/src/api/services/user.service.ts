@@ -77,13 +77,13 @@ export class UserService {
 
   /**
    * Synchronous authentication check. Session mode reads the `current-user`
-   * payload embedded in the SPA shell; OIDC mode defers to SessionService's
-   * own token-based check, since resolveCachedUser()'s script-tag lookup
-   * doesn't apply there (and would otherwise permanently cache a false
-   * "not authenticated" the first time this getter is called in OIDC mode).
+   * payload embedded in the SPA shell; OIDC and token modes defer to
+   * SessionService's own token-based check, since resolveCachedUser()'s
+   * script-tag lookup doesn't apply there (and would otherwise permanently
+   * cache a false "not authenticated" the first time this getter is called).
    */
   get isAuthenticated(): boolean {
-    if (this._client.oidc) {
+    if (this._client.authMode !== 'session') {
       return this._client.session.isAuthenticated
     }
     return this.resolveCachedUser() !== null
@@ -110,7 +110,8 @@ export class UserService {
    * always go through a full navigation (login/logout redirects), so it
    * stays accurate for the SPA's lifetime.
    *
-   * OIDC mode: fetched once from the OIDC UserInfo endpoint and cached.
+   * OIDC and token modes: fetched once from the OIDC UserInfo endpoint and
+   * cached, so the token needs the `openid profile email` scopes.
    * HydroServer's OIDC provider adds HydroServer-specific claims
    * (organization, isSuperuser, etc.) to that response for clients
    * requesting the `profile` scope (see core/iam/auth/oidc_adapter.py).
@@ -118,7 +119,7 @@ export class UserService {
    * the accessTokenProvider registered in runtime.ts.
    */
   get = async (): Promise<ApiResponse<User>> => {
-    if (this._client.oidc) {
+    if (this._client.authMode !== 'session') {
       if (this._cachedUser) {
         return { ok: true, data: this._cachedUser, status: 200, message: 'OK' }
       }

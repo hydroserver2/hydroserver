@@ -1,13 +1,22 @@
 import { getCSRFToken } from './getCSRFToken'
 
-type AccessTokenProvider = () => Promise<string | null>
+export type AccessTokenProvider = () => Promise<string | null>
 
 let accessTokenProvider: AccessTokenProvider | null = null
+let unauthorizedHandler: (() => void) | null = null
 
 export function registerAccessTokenProvider(
   provider: AccessTokenProvider | null
 ) {
   accessTokenProvider = provider
+}
+
+export function registerUnauthorizedHandler(handler: (() => void) | null) {
+  unauthorizedHandler = handler
+}
+
+export function notifyUnauthorized() {
+  unauthorizedHandler?.()
 }
 
 export interface RequestOptions extends Omit<RequestInit, 'body'> {
@@ -34,8 +43,8 @@ function isBodyInit(value: unknown): value is BodyInit {
 /**
  * Intercepts and enhances a request options object.
  *
- * - Adds a CSRF header when a CSRF cookie is present (session auth)
- * - Adds a bearer token when an access token provider is registered (OIDC auth)
+ * - Adds a bearer token when an access token provider returns one (OIDC or token auth)
+ * - Otherwise adds a CSRF header when a CSRF cookie is present (session auth)
  * - If a body is present and it's an object, the body is stringified.
  */
 export async function requestInterceptor(
@@ -50,17 +59,17 @@ export async function requestInterceptor(
       : JSON.stringify(options.body)
   }
 
-  const csrfToken = getCSRFToken()
-  if (csrfToken) {
-    headers.set('X-CSRFToken', csrfToken)
-  }
-
   const accessToken = accessTokenProvider
     ? await accessTokenProvider().catch(() => null)
     : null
 
   if (accessToken) {
     headers.set('Authorization', `Bearer ${accessToken}`)
+  } else {
+    const csrfToken = getCSRFToken()
+    if (csrfToken) {
+      headers.set('X-CSRFToken', csrfToken)
+    }
   }
 
   return {

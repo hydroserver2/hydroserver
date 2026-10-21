@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { HydroServer } from '../HydroServer'
 
 describe('SessionService account URLs', () => {
@@ -63,5 +63,82 @@ describe('SessionService account URLs', () => {
         Reflect.deleteProperty(globalThis, 'window')
       }
     }
+  })
+})
+
+describe('SessionService with an access token provider', () => {
+  it('cannot be combined with OIDC options', () => {
+    expect(
+      () =>
+        new HydroServer({
+          host: 'https://api.example.test',
+          oidc: { clientId: 'client' },
+          accessTokenProvider: async () => 'token-123',
+        })
+    ).toThrow('cannot be used together')
+  })
+
+  it('reports token mode', () => {
+    const client = new HydroServer({
+      host: 'https://api.example.test',
+      accessTokenProvider: async () => 'token-123',
+    })
+
+    expect(client.authMode).toBe('token')
+  })
+
+  it('authenticates from the token the provider returns', async () => {
+    const provider = vi.fn().mockResolvedValue('token-123')
+    const client = await HydroServer.initialize({
+      host: 'https://api.example.test',
+      accessTokenProvider: provider,
+    })
+
+    expect(provider).toHaveBeenCalledTimes(1)
+    expect(client.session.isAuthenticated).toBe(true)
+    expect(client.session.accessToken).toBe('token-123')
+    expect(client.user.isAuthenticated).toBe(true)
+  })
+
+  it('is signed out when the provider has no token', async () => {
+    const client = await HydroServer.initialize({
+      host: 'https://api.example.test',
+      accessTokenProvider: async () => null,
+    })
+
+    expect(client.session.isAuthenticated).toBe(false)
+    expect(client.session.accessToken).toBeNull()
+  })
+
+  it('is signed out when the provider fails', async () => {
+    const client = await HydroServer.initialize({
+      host: 'https://api.example.test',
+      accessTokenProvider: async () => {
+        throw new Error('token endpoint unavailable')
+      },
+    })
+
+    expect(client.session.isAuthenticated).toBe(false)
+  })
+
+  it('tracks the latest token returned by getAccessToken()', async () => {
+    const tokens = ['token-1', 'token-2']
+    const client = await HydroServer.initialize({
+      host: 'https://api.example.test',
+      accessTokenProvider: async () => tokens.shift() ?? null,
+    })
+
+    expect(await client.session.getAccessToken()).toBe('token-2')
+    expect(client.session.accessToken).toBe('token-2')
+  })
+
+  it('leaves sign-in and sign-out to the host app', async () => {
+    const client = new HydroServer({
+      host: 'https://api.example.test',
+      accessTokenProvider: async () => 'token-123',
+    })
+
+    await expect(client.session.login('/')).rejects.toThrow('managed by the host app')
+    await expect(client.session.logout('/')).rejects.toThrow('managed by the host app')
   })
 })
