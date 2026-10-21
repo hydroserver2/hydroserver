@@ -82,11 +82,11 @@ def test_connection_update_preserves_unsupplied_placeholder_list():
     assert "placeholderVariables" not in json.loads(client.request.call_args.kwargs["data"])
 
 
-def test_task_update_treats_none_variables_as_unsupplied():
+def test_task_update_sends_explicit_none_variables_for_server_validation():
     client = MagicMock()
     service = TaskService(client)
     service.get = MagicMock()
 
     service.update(uuid4(), name="Renamed", task_variables=None)
 
-    assert json.loads(client.request.call_args.kwargs["data"]) == {"name": "Renamed"}
+    assert json.loads(client.request.call_args.kwargs["data"]) == {"name": "Renamed", "taskVariables": None}

@@ -117,7 +117,11 @@ def test_rfc_7396_examples(target, patch, expected):
 def test_openapi_documents_json_patches_without_changing_multipart_requests():
     paths = api.get_openapi_schema(path_prefix="/api/ogc/")["paths"]
     task = paths["/api/ogc/collections/etl-tasks/items/{task_id}"]["patch"]
-    assert set(task["requestBody"]["content"]) == {MERGE_PATCH_MEDIA_TYPE}
+    assert set(task["requestBody"]["content"]) == {"application/json", MERGE_PATCH_MEDIA_TYPE}
+    for path_item in paths.values():
+        content = path_item.get("patch", {}).get("requestBody", {}).get("content", {})
+        if "application/json" in content:
+            assert content[MERGE_PATCH_MEDIA_TYPE] == content["application/json"]
     attachment = paths[
         "/api/ogc/collections/datastreams/items/{datastream_id}/linked-resources/{linked_resource_id}"
     ]["patch"]

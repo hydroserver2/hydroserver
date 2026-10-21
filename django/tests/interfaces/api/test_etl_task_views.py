@@ -283,17 +283,18 @@ def test_get_etl_task_returns_404_for_nonexistent_task(client):
 
 
 @pytest.mark.parametrize("case", CASES, ids=lambda case: case["name"])
-def test_update_etl_task_merges_variables_and_persists_deletions(client, case):
+@pytest.mark.parametrize("content_type", ["application/json", "application/merge-patch+json"])
+def test_update_etl_task_merges_variables_and_persists_deletions(client, case, content_type):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     task = _make_etl_task(workspace, task_variables=case["original"]["taskVariables"])
     client.force_login(owner)
     url = _detail_url(task.id)
 
-    response = client.patch(url, data=case["patch"], content_type="application/merge-patch+json")
+    response = client.patch(url, data=case["patch"], content_type=content_type)
 
     assert response.status_code == 204
-    assert response["Accept-Patch"] == "application/merge-patch+json"
+    assert "Accept-Patch" not in response
     task.refresh_from_db()
     assert task.task_variables == case["updated"]["taskVariables"]
     assert client.get(url).json()["data"]["taskVariables"] == task.task_variables
@@ -315,17 +316,19 @@ def test_update_etl_task_empty_object_or_missing_key_deletion_preserves_variable
 
 
 @pytest.mark.parametrize("invalid", [{"taskVariables": None}, {"name": None}, {"taskVariables": []}])
-def test_update_etl_task_rejects_invalid_resource_without_saving_other_fields(client, invalid):
+@pytest.mark.parametrize("content_type", ["application/json", "application/merge-patch+json"])
+def test_update_etl_task_rejects_invalid_resource_without_saving_other_fields(client, invalid, content_type):
     owner = UserFactory()
     task = _make_etl_task(WorkspaceFactory(owner=owner), name="Original", task_variables={"station": "A"})
     client.force_login(owner)
 
     response = client.patch(
         _detail_url(task.id), data={"description": "Must not save", **invalid},
-        content_type="application/merge-patch+json",
+        content_type=content_type,
     )
 
     assert response.status_code == 400
+    assert "Accept-Patch" not in response
     task.refresh_from_db()
     assert task.description != "Must not save"
     assert task.name == "Original"

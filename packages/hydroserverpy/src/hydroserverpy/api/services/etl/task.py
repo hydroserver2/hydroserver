@@ -95,13 +95,14 @@ class TaskService(HydroServerBaseService):
     ) -> EtlTask:
         """Merge supplied fields into an ETL task; None deletes a variable key.
 
-        Passing task_variables=None leaves the variables unchanged.
+        Omit task_variables to leave variables unchanged. Passing None is sent
+        to the server, which rejects it because task variables must be an object.
         """
 
         body: Dict[str, Any] = {
             "name": name,
             "description": description,
-            "taskVariables": ... if task_variables is None else task_variables,
+            "taskVariables": task_variables,
         }
 
         if crontab is None and interval is None:
