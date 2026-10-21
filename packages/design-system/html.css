@@ -267,7 +267,9 @@
 }
 
 .hs-button--outline,
-.hs-button--secondary {
+.hs-button--outline:visited,
+.hs-button--secondary,
+.hs-button--secondary:visited {
   color: var(--hs-text-secondary);
   background: var(--hs-surface);
   border-color: var(--hs-border);
