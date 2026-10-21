@@ -8,6 +8,11 @@ export async function login(page: Page, email: string, password: string) {
   loginUrl.searchParams.set('next', `${APP_BASE_URL}/browse`)
 
   await page.goto(loginUrl.toString())
+  const emailOption = page.getByRole('link', {
+    name: 'Continue with email',
+    exact: true,
+  })
+  if (await emailOption.isVisible()) await emailOption.click()
   await page.getByLabel('Email').fill(email)
   await page.getByLabel('Password').fill(password)
   await page.getByRole('button', { name: 'Sign In' }).click()

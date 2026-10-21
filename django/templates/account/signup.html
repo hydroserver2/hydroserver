@@ -1,13 +1,16 @@
 {% extends "account/base_entrance.html" %}
-{% load allauth i18n %}
+{% load allauth i18n socialaccount %}
 {% block head_title %}
     {% trans "Sign up" %}
 {% endblock head_title %}
 {% block content %}
+    {% get_providers as socialaccount_providers %}
     {% element h1 %}
         {% trans "Sign up" %}
     {% endelement %}
-    {% if not SOCIALACCOUNT_ONLY %}
+    {% if socialaccount_providers and request.GET.method != "email" and not form.is_bound or SOCIALACCOUNT_ONLY %}
+        {% include "account/snippets/auth_options.html" %}
+    {% elif not SOCIALACCOUNT_ONLY %}
         {% url 'account_signup' as action_url %}
         {% element form form=form method="post" action=action_url tags="entrance,signup" %}
             {% slot body %}
@@ -21,6 +24,11 @@
                 {% endelement %}
             {% endslot %}
         {% endelement %}
+        {% if socialaccount_providers %}
+            <p class="hs-copy auth-alternate-form">
+                <a href="{{ signup_url }}">{% trans "Other sign-up options" %}</a>
+            </p>
+        {% endif %}
     {% endif %}
     {% if PASSKEY_SIGNUP_ENABLED %}
         {% element hr %}
@@ -28,9 +36,6 @@
         {% element button href=signup_by_passkey_url tags="prominent,signup,outline,primary" %}
             {% trans "Sign up using a passkey" %}
         {% endelement %}
-    {% endif %}
-    {% if SOCIALACCOUNT_ENABLED %}
-        {% include "socialaccount/snippets/login.html" with page_layout="entrance" %}
     {% endif %}
     {% setvar link %}
         <a href="{{ login_url }}">
