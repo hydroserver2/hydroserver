@@ -56,7 +56,12 @@ def test_notification_schedule_runs_on_worker_and_emails_each_recipient(mailoutb
     assert "Loaded 10 observations." in html
     assert "Source returned 500." in html
     assert "Old failure." not in html
-    assert f"/orchestration/ingestion?task_id={task.id}" in html
+    data_connection = task.data_connection
+    link = (
+        f"/orchestration/ingestion?workspace_id={data_connection.workspace_id}"
+        f"&amp;data_connection_id={data_connection.id}"
+    )
+    assert html.count(link) == 1
 
 
 def test_notification_retries_only_failed_recipients(mailoutbox):

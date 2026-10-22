@@ -35,6 +35,10 @@
 
     <p>Here is a summary of ETL task runs since the last notification for the {{ data_connection_name }} data connection:</p>
 
+    <p>
+      <a href="{{ data_connection_link }}" class="button" target="_blank">View in HydroServer</a>
+    </p>
+
     <table>
       <thead>
         <tr>
@@ -44,7 +48,6 @@
           <th>Failure Count</th>
           <th>Last Run Message</th>
           <th>Last Failure Message</th>
-          <th>HydroServer Link</th>
         </tr>
       </thead>
       <tbody>
@@ -56,9 +59,6 @@
           <td>{{ task.failure_count }}</td>
           <td>{{ task.last_run_message }}</td>
           <td>{{ task.last_failure_message }}</td>
-          <td>
-            <a href="{{ task.link }}" class="button" target="_blank">View</a>
-          </td>
         </tr>
         {% endfor %}
       </tbody>

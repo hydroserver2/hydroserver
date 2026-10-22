@@ -241,7 +241,6 @@ def send_etl_notification_email(self, data_connection_id: str, recipients: list[
             "failure_count": len(failed_runs),
             "last_run_message": (task.period_runs[0].message or "") if task.period_runs else "",
             "last_failure_message": (failed_runs[0].message or "") if failed_runs else "",
-            "link": f"{settings.WEB_CLIENT_URL.rstrip('/')}/orchestration/ingestion?task_id={task.id}",
         })
 
     if not task_summaries:
@@ -254,6 +253,10 @@ def send_etl_notification_email(self, data_connection_id: str, recipients: list[
 
     context = {
         "data_connection_name": data_connection.name,
+        "data_connection_link": (
+            f"{settings.WEB_CLIENT_URL.rstrip('/')}/orchestration/ingestion"
+            f"?workspace_id={data_connection.workspace_id}&data_connection_id={data_connection.id}"
+        ),
         "tasks": task_summaries,
     }
 
