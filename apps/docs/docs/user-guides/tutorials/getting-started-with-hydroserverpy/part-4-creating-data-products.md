@@ -42,7 +42,7 @@ daily_stage_datastream = hs_api.datastreams.create(
     unit=feet_unit,
     observation_type='Field Observation',
     result_type='Timeseries',
-    sampled_medium='Surface Water',
+    sampled_medium='Surface water',
     no_data_value=-9999.0,
     aggregation_statistic='Mean',
     time_aggregation_interval=1,
@@ -62,7 +62,7 @@ stage_meters_datastream = hs_api.datastreams.create(
     unit=meters_unit,
     observation_type='Field Observation',
     result_type='Timeseries',
-    sampled_medium='Surface Water',
+    sampled_medium='Surface water',
     no_data_value=-9999.0,
     aggregation_statistic='Instantaneous',
     time_aggregation_interval=1,
@@ -121,7 +121,7 @@ print(f"Status:  {latest.status}")
 print(f"Message: {latest.message}")
 ```
 
-If it succeeds, the `daily_stage_datastream` will have one observation per calendar day.
+If it succeeds, the `daily_stage_datastream` will have one observation per calendar day. As in Part 3, a status that stays `PENDING` means no orchestration worker has picked up the run yet.
 
 ## Derivation transformation task
 
@@ -138,15 +138,14 @@ meters_conversion_task = hs_api.dataproducttasks.create(
 )
 ```
 
-Attach a derivation transformation. The formula is evaluated for each input observation, where `x` is the raw value. One foot equals 0.3048 meters.
+Attach a derivation transformation. Each input datastream is given a variable name to use in the formula — here `x` — and the formula is evaluated for each input observation. One foot equals 0.3048 meters.
 
 ```python
 hs_api.dataproducttransformations.create_derivation(
     task_id=meters_conversion_task.uid,
     output_datastream=stage_meters_datastream,
-    input_datastream=stage_datastream,
+    input_datastreams=[{'datastream_id': stage_datastream.uid, 'variable_name': 'x'}],
     formula='x * 0.3048',
-    variable_name='x',
 )
 ```
 

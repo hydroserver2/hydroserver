@@ -66,7 +66,7 @@ class Workspace(models.Model):
         if Workspace.objects.filter(name=self.name, owner=self.owner).exclude(
             pk=self.pk
         ).exists():
-            raise ValidationError("Workspace name conflicts with an owned workspace")
+            raise ValidationError("Workspace name conflicts with an owned workspace", code="unique")
 
         if not self._state.adding:
             original_workspace = Workspace.objects.get(pk=self.pk)

@@ -29,11 +29,11 @@ The following table is a comparison of permissions for the owners, editors, and 
 
 Remote systems or applications may need to authenticate with HydroServer in data-loading, retrieval, or analysis workflows. Giving these systems your username and password is risky because they receive all of your permissions. Instead, create a service account, assign it the minimum workspace role required for its job, and authenticate it with the generated API key. Service accounts can use roles such as Data Loader, Editor, or Viewer just like user collaborators.
 
-## Data Visibility
+## Data Privacy and Visibility
 
-It's assumed in a HydroServer setup that you want your data to be publicly viewable. By default, when you load data to a datastream, any guest of your site will be able to view that data and all related metadata. These visibility setting can be changed at the workspace, site, and datastream levels.
+It's assumed in a HydroServer setup that you want your data to be publicly viewable. By default, when you load data to a datastream, any guest of your site will be able to view that data and all related metadata. These privacy settings can be changed at the workspace, site, and datastream levels.
 
-1. **Workspace Privacy**: This setting determines whether a workspace is private or public. If your workspace is private, all sites, datastreams, and associated metadata will only be accesible to the workspace owner and collaborators.
+1. **Workspace Privacy**: This setting determines whether a workspace is private or public. If your workspace is private, all sites, datastreams, and associated metadata will only be accessible to the workspace owner and collaborators.
 
 2. **Site Privacy**: This setting determines whether your site is private or public. If you set your site to private, it means that only the workspace owners and collaborators can view the site and all associated datastreams through the website or API. This is like having a closed folder that only selected people can open. This allows users to set some sites as public and others as private within a public workspace.
 
@@ -43,4 +43,4 @@ It's assumed in a HydroServer setup that you want your data to be publicly viewa
 
 These privacy settings work in a hierarchical, conditional manner:
 
-If you set the **Site Privacy** to private (`monitoring_site.is_private`), then both **Datastream Visibility** (`datastream.is_visible`) and **Datastream Data Visibility** (`datastream.is_data_visible`) will automatically be set to private as well. However, if the site is public, you can still control the visibility of each datastream and its data individually.
+If you set the **Site Privacy** to private (`monitoringSite.isPrivate`), then both **Datastream Provacy** (`datastream.isPrivate`) and **Datastream Data Visibility** (`datastream.isVisible`) will automatically be set to private as well. However, if the site is public, you can still control the visibility of each datastream and its data individually.

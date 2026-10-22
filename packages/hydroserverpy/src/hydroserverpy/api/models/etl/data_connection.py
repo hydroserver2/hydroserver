@@ -1,12 +1,13 @@
 import uuid
 from datetime import datetime
 from typing import ClassVar, List, Literal, Optional, Union, TYPE_CHECKING
-from pydantic import BaseModel, ConfigDict, Field, AliasPath
+from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 from ..base import HydroServerBaseModel
 
 if TYPE_CHECKING:
     from hydroserverpy import HydroServer
+    from hydroserverpy.api.models import Workspace
 
 
 class CSVPayload(BaseModel):
@@ -61,8 +62,7 @@ class DataConnection(HydroServerBaseModel):
     name: str
     description: Optional[str] = None
     source_url: str
-    workspace_id: uuid.UUID = Field(..., validation_alias=AliasPath("workspace", "id"))
-    workspace_name: str = Field(..., validation_alias=AliasPath("workspace", "name"))
+    workspace_id: uuid.UUID
     timezone_type: Optional[Literal["offset", "iana"]] = None
     timezone: Optional[str] = None
     auth_header_name: Optional[str] = None
@@ -77,6 +77,17 @@ class DataConnection(HydroServerBaseModel):
 
     def __init__(self, client: "HydroServer", **data):
         super().__init__(client=client, service=client.dataconnections, **data)
+
+        self._workspace = None
+
+    @property
+    def workspace(self) -> "Workspace":
+        """The workspace this data connection belongs to."""
+
+        if self._workspace is None:
+            self._workspace = self.client.workspaces.get(uid=self.workspace_id)
+
+        return self._workspace
 
     def save(self):
         """Saves changes to this resource to HydroServer."""

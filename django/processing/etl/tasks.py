@@ -1,13 +1,23 @@
+import logging
+
 from uuid import UUID
 from datetime import datetime, timedelta, timezone
 
 from celery import shared_task
+from django.conf import settings
+from django.core.mail import EmailMultiAlternatives
+from django.db.models import Prefetch
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
 from pydantic import ValidationError
 from pydantic.alias_generators import to_camel
 
 from interfaces.api.services.sta.datastream import DatastreamAPIService
-from processing.etl.models import EtlTask
+from processing.etl.models import EtlTask, DataConnectionNotification
 from processing.etl.loader import HydroServerInternalLoader
+from processing.orchestration.models import TaskRun
+from processing.orchestration.models.run import TaskRunStatus
+from processing.orchestration.services.scheduling import SchedulingService
 
 from hydroserverpy.etl import ETLPipeline
 from hydroserverpy.etl.extractors import HTTPExtractor
@@ -16,6 +26,8 @@ from hydroserverpy.etl.models import Timestamp
 from hydroserverpy.etl.exceptions import ETLError
 from hydroserverpy.etl.user_facing_errors import coerce_known_etl_error
 
+
+logger = logging.getLogger(__name__)
 
 datastream_service = DatastreamAPIService()
 
@@ -182,3 +194,97 @@ def run_etl_task(self, task_id: str, run_id: str | None = None):
         raise Exception("Encountered an unexpected ETL error.") from e
 
     return result
+
+
+@shared_task(bind=True, name="processing.etl.tasks.send_etl_notification_email", max_retries=3)
+def send_etl_notification_email(self, data_connection_id: str, recipients: list[str] | None = None):
+    """
+    Emails a summary of a data connection's ETL task runs since the previous scheduled notification.
+    Only the given recipients are emailed when retrying failed sends.
+    """
+
+    try:
+        notification = (
+            DataConnectionNotification.objects
+            .select_related("data_connection", "periodic_task__crontab", "periodic_task__interval")
+            .get(pk=UUID(data_connection_id))
+        )
+    except DataConnectionNotification.DoesNotExist:
+        logger.info("Skipping email for DataConnection %s because it has no notification.", data_connection_id)
+        return {"message": "Data connection has no notification."}
+
+    data_connection = notification.data_connection
+    window_start = (
+        SchedulingService.compute_previous_run_at(notification.periodic_task)
+        or datetime.now(timezone.utc) - timedelta(days=1)
+    )
+
+    tasks = data_connection.etl_tasks.prefetch_related(
+        Prefetch(
+            "runs",
+            queryset=TaskRun.objects.filter(started_at__gte=window_start).order_by("-started_at"),
+            to_attr="period_runs",
+        )
+    ).order_by("name")
+
+    if recipients is None:
+        recipients = list(notification.recipients.values_list("email", flat=True))
+
+    task_summaries = []
+
+    for task in tasks:
+        failed_runs = [run for run in task.period_runs if run.status == TaskRunStatus.FAILURE]
+        task_summaries.append({
+            "id": task.id,
+            "name": task.name,
+            "run_count": len(task.period_runs),
+            "failure_count": len(failed_runs),
+            "last_run_message": (task.period_runs[0].message or "") if task.period_runs else "",
+            "last_failure_message": (failed_runs[0].message or "") if failed_runs else "",
+        })
+
+    if not task_summaries:
+        logger.info("Skipping email for DataConnection %s because it has no tasks.", data_connection.name)
+        return {"message": "Data connection has no tasks."}
+
+    if not recipients:
+        logger.info("Skipping email for DataConnection %s because it has no recipients.", data_connection.name)
+        return {"message": "Data connection has no notification recipients."}
+
+    context = {
+        "data_connection_name": data_connection.name,
+        "data_connection_link": (
+            f"{settings.WEB_CLIENT_URL.rstrip('/')}/orchestration/ingestion"
+            f"?workspace_id={data_connection.workspace_id}&data_connection_id={data_connection.id}"
+        ),
+        "tasks": task_summaries,
+    }
+
+    html_content = render_to_string("orchestration/email/notification_email.html", context)
+    text_content = strip_tags(html_content)
+
+    failed_recipients = []
+
+    for recipient in recipients:
+        try:
+            msg = EmailMultiAlternatives(
+                subject=f"Job Orchestration Status: {data_connection.name}",
+                body=text_content,
+                from_email=None,
+                to=[recipient],
+            )
+            msg.attach_alternative(html_content, "text/html")
+            msg.send(fail_silently=False)
+        except Exception:
+            logger.error(
+                "Failed to send email for DataConnection %s to %s.", data_connection.name, recipient, exc_info=True
+            )
+            failed_recipients.append(recipient)
+
+    if failed_recipients:
+        raise self.retry(
+            kwargs={"data_connection_id": data_connection_id, "recipients": failed_recipients},
+            countdown=60 * 2 ** self.request.retries,
+        )
+
+    return {"message": f"Sent ETL task summary to {len(recipients)} recipient(s)."}

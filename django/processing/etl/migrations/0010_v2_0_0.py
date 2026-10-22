@@ -84,6 +84,7 @@ class Migration(migrations.Migration):
                 fields=("target_datastream",),
                 name="unique_etl_mapping_target_datastream",
                 violation_error_message="This datastream is already mapped to by another task.",
+                violation_error_code="unique",
             ),
         ),
         migrations.AddConstraint(
@@ -92,6 +93,7 @@ class Migration(migrations.Migration):
                 fields=("data_connection", "name", "variable_type"),
                 name="unique_placeholder_variable_name_and_type_per_data_connection",
                 violation_error_message="A placeholder variable with this name and type already exists on this data connection.",
+                violation_error_code="unique",
             ),
         ),
         migrations.AddField(

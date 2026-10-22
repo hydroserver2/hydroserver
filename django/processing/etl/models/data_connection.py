@@ -139,6 +139,7 @@ class PlaceholderVariable(models.Model):
                 violation_error_message=(
                     "A placeholder variable with this name and type already exists on this data connection."
                 ),
+                violation_error_code="unique",
             )
         ]
 

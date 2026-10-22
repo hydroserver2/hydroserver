@@ -36,6 +36,7 @@ class QCSession(models.Model):
                 fields=["history"],
                 condition=Q(status=SessionStatus.IN_PROGRESS),
                 name="unique_in_progress_session_per_history",
+                violation_error_code="unique",
             )
         ]
 

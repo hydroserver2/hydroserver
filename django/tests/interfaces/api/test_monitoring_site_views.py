@@ -1071,7 +1071,7 @@ def test_add_monitoring_site_linked_resource_succeeds_with_link(client):
     assert linked_resources[0]["name"] == "Site Report"
 
 
-def test_add_monitoring_site_linked_resource_returns_400_for_duplicate_name(client):
+def test_add_monitoring_site_linked_resource_returns_409_for_duplicate_name(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     monitoring_site = MonitoringSiteFactory(workspace=workspace)
@@ -1086,7 +1086,7 @@ def test_add_monitoring_site_linked_resource_returns_400_for_duplicate_name(clie
         data={"name": "Site Report", "type": "Report", "link": "https://example.com/b.pdf"},
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 409
 
 
 def test_add_monitoring_site_linked_resource_returns_400_without_file_or_link(client):

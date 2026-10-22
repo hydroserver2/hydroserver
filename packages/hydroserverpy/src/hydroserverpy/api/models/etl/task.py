@@ -16,6 +16,7 @@ class EtlTask(HydroServerBaseModel):
     name: str
     description: Optional[str] = None
     task_variables: Dict[str, Any] = Field(default_factory=dict)
+    workspace_id: uuid.UUID
     data_connection_id: uuid.UUID = Field(
         validation_alias=AliasChoices(
             "dataConnectionId", AliasPath("dataConnection", "id")

@@ -410,7 +410,7 @@ A Payload describes how the response body returned by the extractor should be pa
 
 ## DataConnectionNotification
 
-A DataConnectionNotification records the configuration for the periodic data freshness notification associated with a DataConnection.
+A DataConnectionNotification records the configuration for the periodic task run summary email associated with a DataConnection.
 
 | Required | Attribute          | Definition                                                                                                                                              | Data Type  |
 | -------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |

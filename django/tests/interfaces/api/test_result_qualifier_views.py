@@ -220,7 +220,7 @@ def test_create_result_qualifier_returns_403_without_create_permission(client):
     assert response.status_code == 403
 
 
-def test_create_result_qualifier_returns_400_for_duplicate_name_in_workspace(client):
+def test_create_result_qualifier_returns_409_for_duplicate_name_in_workspace(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     ResultQualifierFactory(workspace=workspace, name="Duplicate")
@@ -232,7 +232,7 @@ def test_create_result_qualifier_returns_400_for_duplicate_name_in_workspace(cli
         content_type="application/json",
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 409
 
 
 # --- get_result_qualifier ----------------------------------------------------------------

@@ -24,6 +24,8 @@ from interfaces.api.schemas.etl.task import (
 
 User = get_user_model()
 
+CELERY_TASK_NAME = "processing.etl.tasks.run_etl_task"
+
 
 class EtlTaskAPIService(TaskService[EtlTask], APIService):
 
@@ -236,7 +238,7 @@ class EtlTaskAPIService(TaskService[EtlTask], APIService):
             interval_period=schedule.interval_period if schedule else None,
             start_time=schedule.start_time if schedule else None,
             enabled=schedule.enabled if schedule else True,
-            celery_task_name="processing.etl.tasks.run_etl_task",
+            celery_task_name=CELERY_TASK_NAME,
         )
 
         return {"id": task.pk}
@@ -268,5 +270,5 @@ class EtlTaskAPIService(TaskService[EtlTask], APIService):
                 interval_period=schedule.interval_period if schedule else None,
                 start_time=schedule.start_time if schedule else None,
                 enabled=schedule.enabled if schedule else True,
-                celery_task_name="processing.etl.tasks.run_etl_task",
+                celery_task_name=CELERY_TASK_NAME,
             )

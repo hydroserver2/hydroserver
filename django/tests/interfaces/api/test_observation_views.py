@@ -532,7 +532,7 @@ def test_create_observation_succeeds_with_datastream_view_only_and_observation_c
     assert response.status_code == 201
 
 
-def test_create_observation_returns_400_for_duplicate_phenomenon_time(client):
+def test_create_observation_returns_409_for_duplicate_phenomenon_time(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     datastream = _make_datastream(workspace)
@@ -548,7 +548,7 @@ def test_create_observation_returns_400_for_duplicate_phenomenon_time(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 409
 
 
 def test_create_observation_returns_400_for_invalid_result_qualifier_code(client):
