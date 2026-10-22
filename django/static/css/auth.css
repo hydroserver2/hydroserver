@@ -168,6 +168,11 @@ body.auth-page {
   margin: 0;
 }
 
+.auth-page-header,
+.auth-page-heading {
+  margin-bottom: var(--hs-space-24);
+}
+
 .auth-definition-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -193,6 +198,10 @@ body.auth-page {
   padding-top: var(--hs-space-24);
   margin-top: var(--hs-space-24);
   border-top: 1px solid var(--hs-border);
+}
+
+.auth-section .hs-subheading {
+  margin: 0 0 var(--hs-space-16);
 }
 
 .auth-layout--entrance .hs-panel {

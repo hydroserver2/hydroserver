@@ -28,8 +28,12 @@ class ProfileForm(forms.ModelForm):
     class Meta:
         model = User
         fields = [
-            "first_name", "last_name", "user_type",
+            "first_name", "middle_name", "last_name", "phone", "address", "link",
+            "user_type",
         ]
+        widgets = {
+            "phone": forms.TextInput(attrs={"type": "tel"}),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

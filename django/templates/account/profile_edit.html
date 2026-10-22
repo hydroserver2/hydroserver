@@ -15,10 +15,9 @@
     {% endif %}
 
     <section class="auth-section">
-        <h2 class="hs-subheading">{% trans "Personal information" %}</h2>
         <div class="auth-definition-list">
             {% for field in form %}
-                {% if field.name in "first_name,last_name,user_type" %}
+                {% if field.name in "first_name,middle_name,last_name,phone,address,link,user_type" %}
                     <div class="hs-field">
                         <fieldset class="hs-field__control">
                             <legend id="{{ field.id_for_label }}-label" class="hs-field__legend">
@@ -31,7 +30,7 @@
                                 {% endfor %}
                             </select>
                         {% else %}
-                            <input type="{{ field.field.widget.input_type|default:'text' }}" name="{{ field.html_name }}" id="{{ field.id_for_label }}" aria-labelledby="{{ field.id_for_label }}-label" value="{{ field.value|default:'' }}" {% if field.field.required %}required{% endif %} class="hs-field__input">
+                            <input type="{{ field.field.widget.input_type|default:'text' }}" name="{{ field.html_name }}" id="{{ field.id_for_label }}" aria-labelledby="{{ field.id_for_label }}-label" value="{{ field.value|default:'' }}" {% if field.field.max_length %}maxlength="{{ field.field.max_length }}"{% endif %} {% if field.field.required %}required{% endif %} class="hs-field__input">
                         {% endif %}
                         </fieldset>
                         {% if field.errors %}<p class="hs-field__error">{{ field.errors.0 }}</p>{% endif %}
