@@ -2,18 +2,14 @@ from django import forms
 from django.conf import settings
 
 from core.iam.models import Organization, OrganizationType, UserType
+from .fields import PhoneNumberField
 
 
 class UserSignupForm(forms.Form):
     first_name = forms.CharField(max_length=30, required=False, label="First name")
     middle_name = forms.CharField(max_length=30, required=False, label="Middle name")
     last_name = forms.CharField(max_length=100, required=False, label="Last name")
-    phone = forms.CharField(
-        max_length=15,
-        required=False,
-        label="Phone",
-        widget=forms.TextInput(attrs={"type": "tel"}),
-    )
+    phone = PhoneNumberField(max_length=15, required=False, label="Phone")
     address = forms.CharField(max_length=255, required=False, label="Address")
     link = forms.URLField(max_length=2000, required=False, label="Link")
     user_type = forms.ChoiceField(choices=[], required=True, label="Account type")

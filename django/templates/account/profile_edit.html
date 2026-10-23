@@ -21,7 +21,7 @@
                     <div class="hs-field">
                         <fieldset class="hs-field__control">
                             <legend id="{{ field.id_for_label }}-label" class="hs-field__legend">
-                                {{ field.label }}{% if field.field.required %}<span class="hs-field__required" aria-hidden="true"> *</span>{% endif %}
+                                <label for="{{ field.id_for_label }}">{{ field.label }}</label>{% if field.field.required %}<span class="hs-field__required" aria-hidden="true"> *</span>{% endif %}
                             </legend>
                         {% if field.name == "user_type" %}
                             <select name="{{ field.html_name }}" id="{{ field.id_for_label }}" aria-labelledby="{{ field.id_for_label }}-label" class="hs-field__select" {% if field.field.required %}required{% endif %}>
@@ -29,6 +29,8 @@
                                     <option value="{{ value }}" {% if field.value == value %}selected{% endif %}>{{ label }}</option>
                                 {% endfor %}
                             </select>
+                        {% elif field.name == "phone" %}
+                            {{ field }}
                         {% else %}
                             <input type="{{ field.field.widget.input_type|default:'text' }}" name="{{ field.html_name }}" id="{{ field.id_for_label }}" aria-labelledby="{{ field.id_for_label }}-label" value="{{ field.value|default:'' }}" {% if field.field.max_length %}maxlength="{{ field.field.max_length }}"{% endif %} {% if field.field.required %}required{% endif %} class="hs-field__input">
                         {% endif %}
@@ -77,4 +79,8 @@
         <button type="submit" class="hs-button hs-button--dialog-action">{% trans "Save changes" %}</button>
     </div>
 </form>
+{% endblock %}
+{% block extra_body %}
+    {{ block.super }}
+    {{ form.media }}
 {% endblock %}
