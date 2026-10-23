@@ -51,7 +51,7 @@
               :items="creatableWorkspaces"
               item-title="name"
               item-value="id"
-              label="Register site in workspace"
+              label="Create site in workspace"
               hide-details
             />
           </v-card-text>

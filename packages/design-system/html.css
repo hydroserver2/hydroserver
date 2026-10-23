@@ -73,7 +73,8 @@
 
 .hs-field__control {
   min-inline-size: 0;
-  padding: 0 var(--hs-space-12);
+  /* Balance the legend's space inside the outline and inset textarea handles. */
+  padding: 0 var(--hs-space-12) var(--hs-space-8);
   margin: 0;
   background: var(--hs-surface);
   border: 1px solid var(--hs-input-border);
@@ -267,7 +268,9 @@
 }
 
 .hs-button--outline,
-.hs-button--secondary {
+.hs-button--outline:visited,
+.hs-button--secondary,
+.hs-button--secondary:visited {
   color: var(--hs-text-secondary);
   background: var(--hs-surface);
   border-color: var(--hs-border);

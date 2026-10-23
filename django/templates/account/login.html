@@ -1,16 +1,20 @@
 {% extends "account/base_entrance.html" %}
 {% load i18n %}
 {% load allauth account %}
+{% load socialaccount %}
 {% block head_title %}
     {% trans "Log in" %}
 {% endblock head_title %}
 {% block content %}
+    {% get_providers as socialaccount_providers %}
     {% element h1 %}
         {% trans "Sign in to HydroServer" %}
     {% endelement %}
-    {% if not SOCIALACCOUNT_ONLY %}
-        {% url 'account_login' as login_url %}
-        {% element form form=form method="post" action=login_url tags="entrance,login" %}
+    {% if socialaccount_providers and request.GET.method != "email" and not form.is_bound or SOCIALACCOUNT_ONLY %}
+        {% include "account/snippets/auth_options.html" %}
+    {% elif not SOCIALACCOUNT_ONLY %}
+        {% url 'account_login' as email_login_action_url %}
+        {% element form form=form method="post" action=email_login_action_url tags="entrance,login" %}
             {% slot body %}
                 {% csrf_token %}
                 {% if form.non_field_errors %}
@@ -28,6 +32,11 @@
                 {% endelement %}
             {% endslot %}
         {% endelement %}
+        {% if socialaccount_providers %}
+            <p class="hs-copy auth-alternate-form">
+                <a href="{{ login_url }}">{% trans "Other sign-in options" %}</a>
+            </p>
+        {% endif %}
     {% endif %}
     {% if LOGIN_BY_CODE_ENABLED or PASSKEY_LOGIN_ENABLED %}
         {% element hr %}
@@ -44,9 +53,6 @@
                 {% endelement %}
             {% endif %}
         {% endelement %}
-    {% endif %}
-    {% if SOCIALACCOUNT_ENABLED %}
-        {% include "socialaccount/snippets/login.html" with page_layout="entrance" %}
     {% endif %}
     {% if not SOCIALACCOUNT_ONLY %}
         {% setvar link %}

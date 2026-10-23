@@ -62,6 +62,62 @@ test.describe('sites and workspaces', () => {
     ).toBeVisible()
   })
 
+  test('owner can delete a datastream using the copied confirmation prompt', async ({
+    page,
+    context,
+  }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+    const name = 'Air Temperature - Daily Max, RAW'
+    const id = fixtures.datastreams.public.id
+    await authenticateSession(page, users.owner.email, users.owner.password)
+    await page.goto(`/sites/${fixtures.monitoringSites.public.id}`)
+
+    const row = page.locator(`[data-datastream-id="${id}"]`)
+    await row.locator('[data-testid^="datastream-actions-"]').click()
+    await page.getByText('Edit datastream metadata', { exact: true }).click()
+    await page.getByLabel('Datastream name').fill(name)
+    await page.getByRole('button', { name: 'Update datastream' }).click()
+    await expect(row).toContainText(name)
+
+    await row.locator('[data-testid^="datastream-actions-"]').click()
+    await page.getByText('Delete datastream', { exact: true }).click()
+    const dialog = page.getByRole('dialog')
+    const confirmation = dialog.getByRole('textbox')
+    await confirmation.fill(name)
+    await dialog.getByRole('button', { name: 'Confirm', exact: true }).click()
+    await expect(
+      dialog.getByText('Type Delete to confirm deletion.', { exact: true })
+    ).toBeVisible()
+    await expect(dialog).toBeVisible()
+    await expect(row).toBeVisible()
+
+    // Copy the word from the actual prompt, as a user would. Its original
+    // surrounding whitespace made the confirmation look valid but fail.
+    const word = dialog.locator('strong').filter({ hasText: /^Delete$/ })
+    await word.click()
+    await word.evaluate((element) => {
+      const range = document.createRange()
+      range.selectNodeContents(element)
+      const selection = window.getSelection()!
+      selection.removeAllRanges()
+      selection.addRange(range)
+    })
+    await page.keyboard.press('ControlOrMeta+c')
+    await confirmation.clear()
+    await page.keyboard.press('ControlOrMeta+v')
+    await expect(confirmation).toHaveValue('Delete')
+
+    const deleted = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'DELETE' &&
+        response.url().includes(`/datastreams/items/${id}`)
+    )
+    await dialog.getByRole('button', { name: 'Confirm', exact: true }).click()
+    expect((await deleted).ok()).toBeTruthy()
+    await expect(row).toHaveCount(0)
+    await expect(dialog).toBeHidden()
+  })
+
   test('viewer can access a private-workspace site in read-only mode', async ({
     page,
   }) => {
