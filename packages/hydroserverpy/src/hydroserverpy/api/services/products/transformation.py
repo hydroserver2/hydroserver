@@ -78,7 +78,7 @@ class DataProductTransformationService:
         self.client.request(
             "patch",
             f"{self._route()}/{str(uid)}",
-            headers={"Content-type": "application/json"},
+            headers={"Content-type": "application/merge-patch+json"},
             data=json.dumps(body, default=self.default_serializer),
         )
 

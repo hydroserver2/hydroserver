@@ -3,7 +3,7 @@ import uuid
 from collections import defaultdict
 from typing import Optional, Literal, get_args
 from django.contrib.auth import get_user_model
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.db.models import Count, QuerySet, FloatField, Subquery, OuterRef, IntegerField
 from django.db.models.functions import Cast, Coalesce
 from django.utils import timezone
@@ -463,6 +463,7 @@ class MonitoringSiteAPIService(APIService):
 
         return {"id": monitoring_site.id}
 
+    @transaction.atomic
     def update(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
@@ -474,13 +475,10 @@ class MonitoringSiteAPIService(APIService):
             include=set(MonitoringSitePatchBody.model_fields.keys()), exclude_unset=True
         )
 
-        if (tags_payload := monitoring_site_data.pop("tags", None)) is not None:
-            monitoring_site = MonitoringSite.objects.select_for_update().get(pk=monitoring_site.pk)
-            merged_tags = {**(monitoring_site.tags or {}), **tags_payload}
-            monitoring_site.tags = {k: v for k, v in merged_tags.items() if v is not None}
+        # Scalar-only edits must not save stale tags over another update.
+        monitoring_site = MonitoringSite.objects.select_for_update().get(pk=monitoring_site.pk)
 
-        for field, value in monitoring_site_data.items():
-            setattr(monitoring_site, field, value)
+        self.apply_merge_patch(monitoring_site, monitoring_site_data)
 
         monitoring_site.full_clean()
         monitoring_site.save()

@@ -1,6 +1,11 @@
 export type RatingCurveFittingMethod = 'linear' | 'power_law'
 export type RatingCurvePoint = [number, number]
 
+export interface RatingCurvePreviewRow {
+  inputValue: string
+  outputValue: string
+}
+
 export class RatingCurve {
   id = ''
   name = ''

@@ -84,7 +84,7 @@ class HydroServerBaseService:
         **kwargs
     ):
         path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}"
-        headers = {"Content-type": "application/json"}
+        headers = {"Content-type": "application/merge-patch+json"}
         body = self.prune_unset(kwargs) or {}
         self.client.request(
             "patch", path, headers=headers, data=json.dumps(body, default=self.default_serializer)

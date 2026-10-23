@@ -1,7 +1,37 @@
+import json
 from uuid import UUID
 from datetime import datetime, timezone
 from typing import Union, Optional, Any
 from pydantic.alias_generators import to_camel
+
+
+def _json_equal(a: Any, b: Any) -> bool:
+    """Compare as JSON values, so 1 and True (or [1] and [True]) differ."""
+    if a is ... or b is ...:
+        return a is b
+    return json.dumps(a, sort_keys=True, default=str) == json.dumps(b, sort_keys=True, default=str)
+
+
+def create_merge_patch(original: dict, updated: dict, *, remove_missing: bool = False) -> dict:
+    """Diff supplied resource fields; removed keys inside objects become null.
+
+    Top-level omissions are partial updates. Lists are replaced in full and
+    ellipsis denotes an omitted argument, as in the service update methods.
+    """
+    patch = {}
+    for key, value in updated.items():
+        if value is ...:
+            continue
+        previous = original.get(key, ...)
+        if isinstance(value, dict):
+            nested = create_merge_patch(previous if isinstance(previous, dict) else {}, value, remove_missing=True)
+            if not isinstance(previous, dict) or nested:
+                patch[key] = nested
+        elif not _json_equal(previous, value):
+            patch[key] = value
+    if remove_missing:
+        patch.update({key: None for key in original if key not in updated})
+    return patch
 
 
 def normalize_uuid(

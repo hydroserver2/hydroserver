@@ -5,6 +5,7 @@ from pydantic import validate_call, ConfigDict
 from croniter import croniter
 
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 from django_celery_beat.models import CrontabSchedule, IntervalSchedule, PeriodicTask
 
 from core.types import Unset
@@ -44,6 +45,22 @@ class SchedulingService:
             periodic_task.interval.period  # noqa
             if periodic_task and periodic_task.interval else None
         )
+
+        # Crontab and interval are alternatives: supplying one replaces the other
+        # unless the patch also names it.
+        if crontab is Unset and interval not in (None, Unset):
+            crontab = None
+        if interval is Unset and crontab not in (None, Unset):
+            interval = None
+            interval_period = None if interval_period is Unset else interval_period
+
+        # A schedule is a nested resource: omitted members retain their values.
+        crontab = current_crontab if crontab is Unset else crontab
+        interval = current_interval if interval is Unset else interval
+        interval_period = current_interval_period if interval_period is Unset else interval_period
+
+        if crontab is not None and interval is not None:
+            raise ValidationError("A schedule cannot have both a crontab and an interval.")
 
         crontab_schedule = None
         interval_schedule = None

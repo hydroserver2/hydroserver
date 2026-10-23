@@ -2,6 +2,7 @@ from datetime import timedelta
 from unittest.mock import patch
 
 import pytest
+from tests.interfaces.api.helpers import MERGE_PATCH_CASES as CASES
 from django.conf import settings
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
@@ -281,6 +282,59 @@ def test_get_etl_task_returns_404_for_nonexistent_task(client):
 # --- update_etl_task ----------------------------------------------------------------------
 
 
+@pytest.mark.parametrize("case", CASES, ids=lambda case: case["name"])
+@pytest.mark.parametrize("content_type", ["application/json", "application/merge-patch+json"])
+def test_update_etl_task_merges_variables_and_persists_deletions(client, case, content_type):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task = _make_etl_task(workspace, task_variables=case["original"]["taskVariables"])
+    client.force_login(owner)
+    url = _detail_url(task.id)
+
+    response = client.patch(url, data=case["patch"], content_type=content_type)
+
+    assert response.status_code == 204
+    assert "Accept-Patch" not in response
+    task.refresh_from_db()
+    assert task.task_variables == case["updated"]["taskVariables"]
+    assert client.get(url).json()["data"]["taskVariables"] == task.task_variables
+
+
+@pytest.mark.parametrize("variables", [{}, {"missing": None}])
+def test_update_etl_task_empty_object_or_missing_key_deletion_preserves_variables(client, variables):
+    owner = UserFactory()
+    task = _make_etl_task(WorkspaceFactory(owner=owner), task_variables={"station": "A"})
+    client.force_login(owner)
+
+    response = client.patch(
+        _detail_url(task.id), data={"taskVariables": variables}, content_type="application/merge-patch+json"
+    )
+
+    assert response.status_code == 204
+    task.refresh_from_db()
+    assert task.task_variables == {"station": "A"}
+
+
+@pytest.mark.parametrize("invalid", [{"taskVariables": None}, {"name": None}, {"taskVariables": []}])
+@pytest.mark.parametrize("content_type", ["application/json", "application/merge-patch+json"])
+def test_update_etl_task_rejects_invalid_resource_without_saving_other_fields(client, invalid, content_type):
+    owner = UserFactory()
+    task = _make_etl_task(WorkspaceFactory(owner=owner), name="Original", task_variables={"station": "A"})
+    client.force_login(owner)
+
+    response = client.patch(
+        _detail_url(task.id), data={"description": "Must not save", **invalid},
+        content_type=content_type,
+    )
+
+    assert response.status_code == 400
+    assert "Accept-Patch" not in response
+    task.refresh_from_db()
+    assert task.description != "Must not save"
+    assert task.name == "Original"
+    assert task.task_variables == {"station": "A"}
+
+
 def test_update_etl_task_succeeds_for_workspace_owner(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
@@ -297,6 +351,25 @@ def test_update_etl_task_succeeds_for_workspace_owner(client):
     assert not response.content
     detail = client.get(_detail_url(task.id))
     assert detail.json()["data"]["name"] == "Updated Name"
+
+
+def test_update_etl_task_clears_nullable_fields_without_changing_response_shape(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task = _make_etl_task(workspace, description="Clear me", task_variables={"station": "A"})
+    client.force_login(owner)
+    url = _detail_url(task.id)
+    assert client.patch(url, data={"schedule": {"interval": 5, "intervalPeriod": "minutes"}},
+                        content_type="application/merge-patch+json").status_code == 204
+
+    response = client.patch(url, data={"description": None, "schedule": None},
+                            content_type="application/merge-patch+json")
+
+    assert response.status_code == 204
+    detail = client.get(url).json()["data"]
+    assert detail["description"] is None
+    assert detail["schedule"] is None
+    assert detail["taskVariables"] == {"station": "A"}
 
 
 def test_update_etl_task_returns_403_for_viewer_collaborator(client):

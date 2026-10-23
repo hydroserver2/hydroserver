@@ -191,7 +191,7 @@ class WorkspaceService(HydroServerBaseService):
         """Update an existing service account."""
 
         path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/service-accounts/{service_account_id}"
-        headers = {"Content-type": "application/json"}
+        headers = {"Content-type": "application/merge-patch+json"}
         body = {
             "name": name,
             "description": description,
