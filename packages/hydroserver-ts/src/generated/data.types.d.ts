@@ -3255,8 +3255,8 @@ export interface components {
             outputDatastreamId?: string;
             /** Stoponerror */
             stopOnError?: boolean;
-            /** Stoponnodata */
-            stopOnNoData?: boolean;
+            /** Stopongaps */
+            stopOnGaps?: boolean;
         };
         /** DerivationTransformationPostBody */
         DerivationTransformationPostBody: {
@@ -3280,10 +3280,10 @@ export interface components {
              */
             stopOnError: boolean;
             /**
-             * Stoponnodata
-             * @default true
+             * Stopongaps
+             * @default false
              */
-            stopOnNoData: boolean;
+            stopOnGaps: boolean;
         };
         /** DerivationTransformationResponse */
         DerivationTransformationResponse: {
@@ -3299,8 +3299,8 @@ export interface components {
             outputDatastream: components["schemas"]["DatastreamSummaryResponse"];
             /** Stoponerror */
             stopOnError: boolean;
-            /** Stoponnodata */
-            stopOnNoData: boolean;
+            /** Stopongaps */
+            stopOnGaps: boolean;
         };
         /** DerivationTransformationSummaryResponse */
         DerivationTransformationSummaryResponse: {
@@ -3320,8 +3320,8 @@ export interface components {
             outputDatastreamId: string;
             /** Stoponerror */
             stopOnError: boolean;
-            /** Stoponnodata */
-            stopOnNoData: boolean;
+            /** Stopongaps */
+            stopOnGaps: boolean;
         };
         /** EtlDataMappingPatchBody */
         EtlDataMappingPatchBody: {
