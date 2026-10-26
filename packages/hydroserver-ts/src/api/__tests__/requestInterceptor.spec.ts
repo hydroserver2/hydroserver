@@ -32,7 +32,7 @@ describe('requestInterceptor', () => {
     )
   })
 
-  it('adds a CSRF header from the cookie when no token is available', async () => {
+  it('adds a CSRF header from the cookie when no token provider is registered', async () => {
     vi.stubGlobal('document', { cookie: 'csrftoken=csrf-123' })
 
     const result = await requestInterceptor({})
@@ -48,6 +48,26 @@ describe('requestInterceptor', () => {
     const result = await requestInterceptor({})
 
     expect(new Headers(result.headers).get('X-CSRFToken')).toBeNull()
+    expect(result.credentials).toBe('omit')
+  })
+
+  it.each([
+    ['returns no token', async () => null],
+    [
+      'fails',
+      async () => {
+        throw new Error('token endpoint unavailable')
+      },
+    ],
+  ])('does not fall back to cookies when the provider %s', async (_, provider) => {
+    vi.stubGlobal('document', { cookie: 'csrftoken=csrf-123' })
+    registerAccessTokenProvider(provider)
+
+    const result = await requestInterceptor({})
+
+    const headers = new Headers(result.headers)
+    expect(headers.get('Authorization')).toBeNull()
+    expect(headers.get('X-CSRFToken')).toBeNull()
     expect(result.credentials).toBe('omit')
   })
 

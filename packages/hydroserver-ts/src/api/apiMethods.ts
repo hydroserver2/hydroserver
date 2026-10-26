@@ -21,8 +21,7 @@ async function send(
 ): Promise<Response> {
   const opts = await requestInterceptor(options)
   let response = await fetch(endpoint, opts)
-  // requestInterceptor omits credentials exactly when it attaches a token.
-  const usedToken = opts.credentials === 'omit'
+  const usedToken = new Headers(opts.headers).has('Authorization')
   if (response.status !== 401 || !usedToken) return response
 
   if (canResend(opts.body)) {

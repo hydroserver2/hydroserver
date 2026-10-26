@@ -43,8 +43,11 @@ function isBodyInit(value: unknown): value is BodyInit {
 /**
  * Intercepts and enhances a request options object.
  *
- * - Adds a bearer token when an access token provider returns one (OIDC or token auth)
- * - Otherwise adds a CSRF header when a CSRF cookie is present (session auth)
+ * - With an access token provider (OIDC or token auth), adds a bearer token
+ *   when the provider returns one and never sends cookies, so a failed token
+ *   refresh can't fall back to a browser session
+ * - Without one (session auth), sends cookies and adds a CSRF header when a
+ *   CSRF cookie is present
  * - If a body is present and it's an object, the body is stringified.
  */
 export async function requestInterceptor(
@@ -65,7 +68,7 @@ export async function requestInterceptor(
 
   if (accessToken) {
     headers.set('Authorization', `Bearer ${accessToken}`)
-  } else {
+  } else if (!accessTokenProvider) {
     const csrfToken = getCSRFToken()
     if (csrfToken) {
       headers.set('X-CSRFToken', csrfToken)
@@ -76,6 +79,6 @@ export async function requestInterceptor(
     ...options,
     headers,
     body,
-    credentials: accessToken ? 'omit' : 'include',
+    credentials: accessTokenProvider ? 'omit' : 'include',
   }
 }
