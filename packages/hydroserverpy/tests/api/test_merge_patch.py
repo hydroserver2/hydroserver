@@ -33,7 +33,12 @@ def test_task_save_generates_merge_patch_from_server_snapshot(case):
     client = MagicMock()
     client.base_route = "api/ogc"
     client.etltasks = TaskService(client)
-    fields = {"id": str(uuid4()), "name": "Task", "dataConnectionId": str(uuid4())}
+    fields = {
+        "id": str(uuid4()),
+        "name": "Task",
+        "workspaceId": str(uuid4()),
+        "dataConnectionId": str(uuid4()),
+    }
     task = EtlTask(client=client, **fields, **case["original"])
     task.task_variables = case["updated"]["taskVariables"]
     client.request.return_value.json.return_value = {"data": {**fields, **case["updated"]}}

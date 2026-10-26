@@ -224,7 +224,7 @@ def test_create_workspace_returns_401_when_unauthenticated(client):
     assert response.status_code == 401
 
 
-def test_create_workspace_returns_400_for_duplicate_name_owned_by_user(client):
+def test_create_workspace_returns_409_for_duplicate_name_owned_by_user(client):
     owner = UserFactory()
     WorkspaceFactory(owner=owner, name="Existing Workspace")
     client.force_login(owner)
@@ -235,7 +235,7 @@ def test_create_workspace_returns_400_for_duplicate_name_owned_by_user(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 409
 
 
 def test_create_workspace_returns_400_when_owner_at_workspace_limit(client):

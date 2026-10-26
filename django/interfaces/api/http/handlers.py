@@ -8,6 +8,8 @@ from django.db.models.deletion import ProtectedError
 
 logger = logging.getLogger(__name__)
 
+UNIQUE_ERROR_CODES = {"unique", "unique_together"}
+
 
 def http_error_handler(request, exc, api):
     return api.create_response(
@@ -18,10 +20,14 @@ def http_error_handler(request, exc, api):
 
 
 def validation_error_handler(request, exc, api):
+    errors = (
+        [e for errs in exc.error_dict.values() for e in errs]
+        if hasattr(exc, "error_dict") else exc.error_list
+    )
     return api.create_response(
         request,
         {"message": "; ".join(exc.messages)},
-        status=400,
+        status=409 if all(e.code in UNIQUE_ERROR_CODES for e in errors) else 400,
     )
 
 

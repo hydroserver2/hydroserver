@@ -155,7 +155,7 @@ def test_create_qc_history_returns_400_when_processing_levels_match(client):
     assert response.status_code == 400
 
 
-def test_create_qc_history_returns_400_when_managed_datastream_already_has_history(client):
+def test_create_qc_history_returns_409_when_managed_datastream_already_has_history(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     history = _make_history(workspace)
@@ -171,7 +171,7 @@ def test_create_qc_history_returns_400_when_managed_datastream_already_has_histo
         content_type="application/json",
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 409
 
 
 # --- get_qc_history --------------------------------------------------------------------

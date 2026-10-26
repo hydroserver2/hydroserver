@@ -114,6 +114,16 @@ class Migration(migrations.Migration):
                 violation_error_message="A point with this input_value already exists on this rating curve.",
             ),
         ),
+        migrations.AlterConstraint(
+            model_name="dataproducttransformationinput",
+            name="unique_data_product_transformation_input_variable",
+            constraint=models.UniqueConstraint(
+                condition=models.Q(("variable_name__isnull", False)),
+                fields=("transformation", "variable_name"),
+                name="unique_data_product_transformation_input_variable",
+                violation_error_code="unique",
+            ),
+        ),
         migrations.AddField(
             model_name="ratingcurve",
             name="search_vector",

@@ -57,6 +57,7 @@ def get_collaborators(
         401: str,
         403: str,
         400: str,
+        409: str,
     },
     by_alias=True,
 )

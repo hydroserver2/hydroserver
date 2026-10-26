@@ -563,6 +563,7 @@ class Migration(migrations.Migration):
                 fields=("workspace", "user"),
                 name="unique_workspace_user_collaborator",
                 violation_error_message="This account already collaborates on the workspace",
+                violation_error_code="unique",
             ),
         ),
         migrations.AddConstraint(
@@ -572,6 +573,7 @@ class Migration(migrations.Migration):
                 fields=("workspace", "service_account"),
                 name="unique_workspace_service_account_collaborator",
                 violation_error_message="This account already collaborates on the workspace",
+                violation_error_code="unique",
             ),
         ),
 

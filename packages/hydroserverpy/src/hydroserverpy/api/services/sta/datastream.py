@@ -6,6 +6,7 @@ from datetime import datetime
 from pydantic.alias_generators import to_camel
 from hydroserverpy.api.models import Datastream, ObservationCollection
 from hydroserverpy.api.utils import normalize_uuid, build_datetime_interval, sortby_to_camel
+from hydroserverpy.api.models.base import HydroServerCollection
 from ..base import HydroServerBaseService
 
 if TYPE_CHECKING:
@@ -51,7 +52,7 @@ class DatastreamService(HydroServerBaseService):
         phenomenon_time_max: datetime = ...,
         phenomenon_time_min: datetime = ...,
         fetch_all: bool = False,
-    ) -> List["Workspace"]:
+    ) -> HydroServerCollection:
         """
         Fetch a collection of HydroServer datastreams.
         """
@@ -277,9 +278,14 @@ class DatastreamService(HydroServerBaseService):
         self,
         uid: Union[UUID, str],
         observations: pd.DataFrame,
-        mode: str = "insert"
+        mode: str = "insert",
+        phenomenon_time_start: Optional[datetime] = None,
+        phenomenon_time_end: Optional[datetime] = None,
     ) -> None:
-        """Load observations to a datastream."""
+        """
+        Load observations to a datastream. In replace mode, the optional phenomenon time range sets
+        what the server deletes in the same transaction as the insert.
+        """
 
         observations = observations.drop(
             columns=[col for col in observations.columns if to_camel(col) in READ_ONLY_OBSERVATION_PROPERTIES]
@@ -288,6 +294,10 @@ class DatastreamService(HydroServerBaseService):
         path = f"/{self.client.base_route}/collections/observations/bulk-create"
         headers = {"Content-type": "application/json"}
         params = {"mode": mode}
+        if phenomenon_time_start is not None:
+            params["phenomenonTimeStart"] = phenomenon_time_start.isoformat()
+        if phenomenon_time_end is not None:
+            params["phenomenonTimeEnd"] = phenomenon_time_end.isoformat()
         body = {
             "datastreamId": str(uid),
             "fields": [to_camel(col) for col in observations.columns.tolist()],

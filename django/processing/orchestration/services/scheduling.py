@@ -258,3 +258,25 @@ class SchedulingService:
             return now + delta
 
         return None
+
+    @staticmethod
+    def compute_previous_run_at(periodic_task: Optional[PeriodicTask]) -> Optional[datetime]:
+        """
+        Return the scheduled run time preceding the current run of a PeriodicTask, or None if unscheduled.
+        """
+
+        if not periodic_task:
+            return None
+
+        now = timezone.now()
+
+        if periodic_task.crontab:
+            cron_string = SchedulingService.get_crontab_string(periodic_task)
+            cron = croniter(cron_string, timezone.make_naive(now, dt_timezone.utc))
+            cron.get_prev(datetime)  # The run currently executing
+            return timezone.make_aware(cron.get_prev(datetime), dt_timezone.utc)
+
+        if periodic_task.interval:
+            return now - timedelta(**{periodic_task.interval.period: periodic_task.interval.every})
+
+        return None

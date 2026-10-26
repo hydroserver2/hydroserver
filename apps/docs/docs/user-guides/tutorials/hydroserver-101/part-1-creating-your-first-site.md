@@ -18,7 +18,7 @@ Click 'Add workspace' and give your workspace a name. Make it unique since every
 
 ## Create your site
 
-After the workspace is successfully created, open **Browse monitoring sites** from the main navigation. Expand the monitoring-sites panel if it is collapsed, then click the **Register a monitoring site** (+) button. Choose the workspace where the site should be registered.
+After the workspace is successfully created, open **Browse monitoring sites** from the main navigation. Expand the monitoring sites panel if it is collapsed, then click the **Create Site** button. Choose the workspace where the site should be registered.
 
 The button opens the Register/Edit a site modal window. Click anywhere on the map and it will create a new map marker and automatically populate the location form fields. You can also type values into the 'Site Location' fields if you know them already. Fill out the rest of the form with the metadata for your site and click save.
 

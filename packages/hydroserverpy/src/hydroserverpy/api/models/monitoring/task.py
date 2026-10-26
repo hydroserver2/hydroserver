@@ -1,9 +1,8 @@
 import uuid
 from datetime import datetime
 from functools import cached_property
-from typing import ClassVar, List, Literal, Optional, TYPE_CHECKING
-from pydantic import BaseModel, ConfigDict, Field, AliasPath
-from pydantic.alias_generators import to_camel
+from typing import ClassVar, Dict, List, Literal, Optional, TYPE_CHECKING
+from pydantic import Field, AliasPath
 from ..base import HydroServerBaseModel
 from ..orchestration.run import TaskRun
 
@@ -11,28 +10,10 @@ if TYPE_CHECKING:
     from hydroserverpy import HydroServer
 
 
-class MonitoringRuleInline(BaseModel):
-    id: uuid.UUID
-    rule_type: str
-    last_checked_at: Optional[datetime] = None
-    min_value: Optional[float] = None
-    max_value: Optional[float] = None
-    window_interval: Optional[int] = None
-    window_interval_units: Optional[Literal["minutes", "hours", "days"]] = None
-
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
-
-
-class MonitoredDatastream(BaseModel):
-    datastream_id: uuid.UUID
-    rules: List[MonitoringRuleInline] = []
-
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
-
-
 class MonitoringTask(HydroServerBaseModel):
     name: str
     description: Optional[str] = None
+    workspace_id: uuid.UUID
     monitoring_site_id: uuid.UUID
     enabled: Optional[bool] = Field(None, validation_alias=AliasPath("schedule", "enabled"))
     start_time: Optional[datetime] = Field(None, validation_alias=AliasPath("schedule", "startTime"))
@@ -43,7 +24,7 @@ class MonitoringTask(HydroServerBaseModel):
     )
     next_run_at: Optional[datetime] = Field(None, validation_alias=AliasPath("schedule", "nextRunAt"))
     latest_run: Optional[TaskRun] = None
-    monitored_datastreams: List[MonitoredDatastream] = []
+    rule_type_counts: Dict[str, int] = {}
     recipients: List[str] = []
 
     _editable_fields: ClassVar[set[str]] = {
@@ -55,7 +36,6 @@ class MonitoringTask(HydroServerBaseModel):
         "interval",
         "interval_period",
         "start_time",
-        "next_run_at",
     }
 
     def __init__(self, client: "HydroServer", **data):

@@ -58,6 +58,7 @@ def get_result_qualifiers(
         201: CreatedResponse,
         401: str,
         403: str,
+        409: str,
     },
     by_alias=True,
 )
@@ -111,6 +112,7 @@ def get_result_qualifier(
         204: None,
         401: str,
         403: str,
+        409: str,
     },
     by_alias=True,
 )
