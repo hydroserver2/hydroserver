@@ -28,7 +28,12 @@ import {
   QualityControlOperationService,
   QualityControlSessionService,
 } from './services/quality-control.service'
-import type { AccessTokenProvider } from './requestInterceptor'
+import { registerCSRFCookieName } from './getCSRFToken'
+import {
+  registerAccessTokenProvider,
+  registerUnauthorizedHandler,
+  type AccessTokenProvider,
+} from './requestInterceptor'
 
 export type AuthTuple = [string, string]
 
@@ -115,8 +120,27 @@ export class HydroServer {
     return 'session'
   }
 
+  /**
+   * Creates a client and registers its auth settings with the request
+   * interceptor. Those settings are module-wide, so the most recently
+   * initialized client's settings apply to every request.
+   */
   static async initialize(options: HydroServerOptions): Promise<HydroServer> {
     const client = new HydroServer(options)
+    registerCSRFCookieName(options.csrfCookieName ?? 'csrftoken')
+    registerAccessTokenProvider(
+      client.authMode === 'session'
+        ? null
+        : () => client.session.getAccessToken()
+    )
+    registerUnauthorizedHandler(
+      client.authMode === 'token'
+        ? () => {
+            options.onUnauthorized?.()
+            client.emit('session:expired')
+          }
+        : null
+    )
     await client.session.initialize()
     return client
   }

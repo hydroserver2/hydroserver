@@ -1,5 +1,19 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { HydroServer } from '../HydroServer'
+import { apiMethods } from '../apiMethods'
+import { registerCSRFCookieName } from '../getCSRFToken'
+import {
+  registerAccessTokenProvider,
+  registerUnauthorizedHandler,
+  requestInterceptor,
+} from '../requestInterceptor'
+
+afterEach(() => {
+  registerAccessTokenProvider(null)
+  registerUnauthorizedHandler(null)
+  registerCSRFCookieName('csrftoken')
+  vi.unstubAllGlobals()
+})
 
 describe('SessionService account URLs', () => {
   it('includes the app developer’s return destination', () => {
@@ -140,5 +154,54 @@ describe('SessionService with an access token provider', () => {
 
     await expect(client.session.login('/')).rejects.toThrow('managed by the host app')
     await expect(client.session.logout('/')).rejects.toThrow('managed by the host app')
+  })
+})
+
+describe('HydroServer.initialize() request setup', () => {
+  const endpoint = 'https://api.example.test/api/ogc/collections/workspaces/items/1'
+
+  it('sends the bearer token from accessTokenProvider', async () => {
+    await HydroServer.initialize({
+      host: 'https://api.example.test',
+      accessTokenProvider: async () => 'token-123',
+    })
+    const fetchMock = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await apiMethods.fetch(endpoint)
+
+    const [, init] = fetchMock.mock.calls[0]
+    expect(new Headers(init.headers).get('Authorization')).toBe('Bearer token-123')
+  })
+
+  it('calls onUnauthorized when a token is rejected after a retry', async () => {
+    const onUnauthorized = vi.fn()
+    await HydroServer.initialize({
+      host: 'https://api.example.test',
+      accessTokenProvider: async () => 'revoked-token',
+      onUnauthorized,
+    })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation(async () => new Response(null, { status: 401 }))
+    )
+
+    await apiMethods.fetch(endpoint)
+
+    expect(onUnauthorized).toHaveBeenCalledTimes(1)
+  })
+
+  it('reads the configured CSRF cookie name', async () => {
+    vi.stubGlobal('document', {
+      cookie: 'csrftoken=other-app; hs_csrftoken=csrf-123',
+    })
+    await HydroServer.initialize({
+      host: 'https://api.example.test',
+      csrfCookieName: 'hs_csrftoken',
+    })
+
+    const result = await requestInterceptor({})
+
+    expect(new Headers(result.headers).get('X-CSRFToken')).toBe('csrf-123')
   })
 })

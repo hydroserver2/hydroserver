@@ -122,7 +122,6 @@ describe('UserService with an access token provider', () => {
       host: 'https://hydro.example.com',
       accessTokenProvider: async () => 'token-123',
     })
-    registerAccessTokenProvider(() => client.session.getAccessToken())
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ email: 'user@example.com' }), {
         status: 200,
