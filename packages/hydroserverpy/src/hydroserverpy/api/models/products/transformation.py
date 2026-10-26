@@ -37,7 +37,7 @@ class DerivationTransformation(BaseModel):
     output_datastream_id: uuid.UUID
     input_datastreams: List[TransformationInput]
     formula: str
-    stop_on_no_data: bool
+    stop_on_gaps: bool
     stop_on_error: bool
     transformation_type: Literal["derivation"] = "derivation"
 

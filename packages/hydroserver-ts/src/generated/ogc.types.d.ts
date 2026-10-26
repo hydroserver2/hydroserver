@@ -2762,7 +2762,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "taskId" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
+            properties?: ("id" | "taskId" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnGaps" | "stopOnError")[];
         };
         /** DataProductTransformationPatchBody */
         DataProductTransformationPatchBody: {
@@ -2787,8 +2787,8 @@ export interface components {
             ratingCurveId?: string | null;
             /** Stoponerror */
             stopOnError?: boolean;
-            /** Stoponnodata */
-            stopOnNoData?: boolean;
+            /** Stopongaps */
+            stopOnGaps?: boolean;
             /** Timezone */
             timezone?: string | null;
             /** Timezonetype */
@@ -2829,10 +2829,10 @@ export interface components {
              */
             stopOnError: boolean;
             /**
-             * Stoponnodata
-             * @default true
+             * Stopongaps
+             * @default false
              */
-            stopOnNoData: boolean;
+            stopOnGaps: boolean;
             /**
              * Taskid
              * Format: uuid
@@ -2887,7 +2887,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "taskId" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
+            properties?: ("id" | "taskId" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnGaps" | "stopOnError")[];
             /**
              * Sortby
              * @description Select one or more fields to sort the response by.
@@ -2949,10 +2949,10 @@ export interface components {
              */
             stopOnError: boolean;
             /**
-             * Stoponnodata
-             * @default true
+             * Stopongaps
+             * @default false
              */
-            stopOnNoData: boolean;
+            stopOnGaps: boolean;
             /**
              * Taskid
              * Format: uuid
@@ -9068,7 +9068,7 @@ export interface operations {
                 /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
                 datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "taskId" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
+                properties?: ("id" | "taskId" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnGaps" | "stopOnError")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("outputDatastream" | "ratingCurve")[];
                 /** @description Number of items to skip. */
@@ -9207,7 +9207,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "taskId" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
+                properties?: ("id" | "taskId" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnGaps" | "stopOnError")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("outputDatastream" | "ratingCurve")[];
                 /** @description Response format. Overrides the Accept header. */

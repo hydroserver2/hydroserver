@@ -39,8 +39,8 @@
           >
             Apply a mathematical formula to one or more input datastreams to
             produce a new output datastream. With more than one input, they're
-            matched by exact timestamp; if inputs stop lining up, the run stops
-            there until they're back in sync.
+            matched by exact timestamp; timestamps not shared by every input
+            stop the run or are skipped, depending on "Stop on input gaps".
           </v-alert>
 
           <TaskFormSection>
@@ -179,13 +179,13 @@
           <TaskFormSection title="Error handling">
             <div class="toggle-row">
               <v-checkbox
-                v-model="stopOnNoData"
+                v-model="stopOnGaps"
                 color="primary"
                 hide-details
                 :disabled="loadingExisting"
               >
                 <template #label>
-                  <span class="hs-text-sm">Stop on no-data value</span>
+                  <span class="hs-text-sm">Stop on input gaps</span>
                 </template>
               </v-checkbox>
               <v-tooltip location="end" max-width="280">
@@ -194,8 +194,12 @@
                     {{ mdiInformationOutline }}
                   </v-icon>
                 </template>
-                If an input is set to a no-data value, stop the run there
-                instead of writing the output's no-data value and continuing.
+                If an input has no value at a timestamp where the others do,
+                stop the run there and wait until the missing value arrives.
+                When off, those timestamps are skipped and the run continues.
+                Runs never go past the most recent value of the input that is
+                furthest behind. Inputs holding their no-data value always
+                produce the output's no-data value.
               </v-tooltip>
             </div>
 
@@ -335,7 +339,7 @@ const schedule = ref<TaskSchedule | null>(null)
 const outputDatastreamId = ref<string | null>(null)
 const inputs = ref<InputRow[]>([makeRow('x')])
 const formula = ref('')
-const stopOnNoData = ref(true)
+const stopOnGaps = ref(false)
 const stopOnError = ref(true)
 
 const selectedMonitoringSiteId = computed(
@@ -538,7 +542,7 @@ async function loadExistingTask() {
     existingTransformationId.value = t.id
     outputDatastreamId.value = t.outputDatastreamId ?? null
     formula.value = t.formula ?? ''
-    stopOnNoData.value = t.stopOnNoData ?? true
+    stopOnGaps.value = t.stopOnGaps ?? false
     stopOnError.value = t.stopOnError ?? true
 
     if (t.inputDatastreams?.length) {
@@ -610,7 +614,7 @@ async function onCreate(
     outputDatastreamId: outputDatastreamId.value!,
     inputDatastreams,
     formula: formula.value.trim(),
-    stopOnNoData: stopOnNoData.value,
+    stopOnGaps: stopOnGaps.value,
     stopOnError: stopOnError.value,
   } as any)
 
@@ -647,7 +651,7 @@ async function onUpdate(
       outputDatastreamId: outputDatastreamId.value!,
       inputDatastreams,
       formula: formula.value.trim(),
-      stopOnNoData: stopOnNoData.value,
+      stopOnGaps: stopOnGaps.value,
       stopOnError: stopOnError.value,
     })
 

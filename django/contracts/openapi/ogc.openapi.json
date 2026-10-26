@@ -1637,7 +1637,7 @@
                 "timezoneType",
                 "timezone",
                 "minValues",
-                "stopOnNoData",
+                "stopOnGaps",
                 "stopOnError"
               ],
               "type": "string"
@@ -1750,8 +1750,8 @@
             "title": "Stoponerror",
             "type": "boolean"
           },
-          "stopOnNoData": {
-            "title": "Stoponnodata",
+          "stopOnGaps": {
+            "title": "Stopongaps",
             "type": "boolean"
           },
           "timezone": {
@@ -1900,9 +1900,9 @@
             "title": "Stoponerror",
             "type": "boolean"
           },
-          "stopOnNoData": {
-            "default": true,
-            "title": "Stoponnodata",
+          "stopOnGaps": {
+            "default": false,
+            "title": "Stopongaps",
             "type": "boolean"
           },
           "taskId": {
@@ -2048,7 +2048,7 @@
                 "timezoneType",
                 "timezone",
                 "minValues",
-                "stopOnNoData",
+                "stopOnGaps",
                 "stopOnError"
               ],
               "type": "string"
@@ -2218,9 +2218,9 @@
             "title": "Stoponerror",
             "type": "boolean"
           },
-          "stopOnNoData": {
-            "default": true,
-            "title": "Stoponnodata",
+          "stopOnGaps": {
+            "default": false,
+            "title": "Stopongaps",
             "type": "boolean"
           },
           "taskId": {
@@ -16518,7 +16518,7 @@
   "info": {
     "description": "Provides access to hydrologic monitoring sites, datastreams, and observations managed in HydroServer.",
     "title": "HydroServer Data Management API",
-    "version": "2.0.0b6"
+    "version": "2.0.0b7"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -19116,7 +19116,7 @@
                   "timezoneType",
                   "timezone",
                   "minValues",
-                  "stopOnNoData",
+                  "stopOnGaps",
                   "stopOnError"
                 ],
                 "type": "string"
@@ -19576,7 +19576,7 @@
                   "timezoneType",
                   "timezone",
                   "minValues",
-                  "stopOnNoData",
+                  "stopOnGaps",
                   "stopOnError"
                 ],
                 "type": "string"

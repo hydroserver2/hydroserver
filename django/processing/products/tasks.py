@@ -116,10 +116,27 @@ def run_derivation(transformation: DataProductTransformation) -> int:
     if start is not None and end <= start:
         return 0
 
+    since = None
+    if start is None:
+        input_starts = [
+            Observation.objects.filter(datastream=entry.datastream)
+            .order_by("phenomenon_time")
+            .values_list("phenomenon_time", flat=True)
+            .first()
+            for entry in input_entries
+        ]
+        if any(s is None for s in input_starts):
+            return 0
+        since = max(input_starts)
+        if since > end:
+            return 0
+
     inputs = {}
     input_no_data_values = {}
     for entry in input_entries:
-        df = _fetch_observations(entry.datastream, after=start, through=end)
+        df = _fetch_observations(
+            entry.datastream, after=start, through=end, at_or_after=since
+        )
         if len(df) == 0:
             return 0
         inputs[entry.variable_name] = df
@@ -128,7 +145,7 @@ def run_derivation(transformation: DataProductTransformation) -> int:
     result_df = apply_derivation(
         inputs=inputs,
         formula=transformation.formula,
-        stop_on_no_data=transformation.stop_on_no_data,
+        stop_on_gaps=transformation.stop_on_gaps,
         stop_on_error=transformation.stop_on_error,
         input_no_data_values=input_no_data_values,
         output_no_data_value=output_ds.no_data_value,

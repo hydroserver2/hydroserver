@@ -547,7 +547,6 @@ async function onCreate() {
     outputDatastreamId: outputDatastreamId.value!,
     inputDatastreams: [{ datastreamId: inputDatastreamId.value! }],
     ratingCurveId,
-    stopOnNoData: true,
     stopOnError: true,
   } as any)
 

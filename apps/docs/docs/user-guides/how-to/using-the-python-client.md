@@ -907,12 +907,12 @@ hs_api.dataproducttransformations.delete_rating_curve(uid)
 
 #### Derivation Transformations
 
-Combines one or more input datastreams using a formula. Each input datastream is assigned a variable name used in the formula; with a single input, this is equivalent to applying the formula to each observation independently. Multiple inputs are matched by exact timestamp — if they stop lining up, a run stops there until the inputs are back in sync.
+Combines one or more input datastreams using a formula. Each input datastream is assigned a variable name used in the formula; with a single input, this is equivalent to applying the formula to each observation independently. Multiple inputs are matched by exact timestamp. Timestamps not shared by every input either stop the run there until the gap is filled or are skipped, depending on `stop_on_gaps`. Runs never go past the most recent value of the input that is furthest behind. If any input holds its no-data value at a timestamp, the output gets its own no-data value there.
 
 | Field | Type | Description |
 |---|---|---|
 | `formula` | `str` | Python expression referencing the input variable name(s) |
-| `stop_on_no_data` | `bool` | If `True`, stop the run when an input holds its no-data value; if `False`, fill the output with its no-data value and continue |
+| `stop_on_gaps` | `bool` | If `True`, stop the run at the first timestamp not shared by all inputs; if `False`, skip those timestamps and continue. Inputs holding their no-data value always produce the output's no-data value |
 | `stop_on_error` | `bool` | If `True`, stop the run when the formula produces a non-finite result; if `False`, fill the output with its no-data value and continue |
 
 ```python
@@ -920,10 +920,10 @@ hs_api.dataproducttransformations.list_derivation(task_id=None, workspace_id=Non
 hs_api.dataproducttransformations.get_derivation(uid)
 hs_api.dataproducttransformations.create_derivation(
     task_id, output_datastream, input_datastreams, formula,
-    stop_on_no_data=True, stop_on_error=True, uid=None
+    stop_on_gaps=False, stop_on_error=True, uid=None
 )
 hs_api.dataproducttransformations.update_derivation(
-    uid, input_datastreams=..., formula=..., stop_on_no_data=..., stop_on_error=...
+    uid, input_datastreams=..., formula=..., stop_on_gaps=..., stop_on_error=...
 )
 hs_api.dataproducttransformations.delete_derivation(uid)
 ```

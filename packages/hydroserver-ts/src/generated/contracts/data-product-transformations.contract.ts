@@ -10,7 +10,7 @@ export namespace DataProductTransformationContract {
   export type PostBody        = Data.components['schemas']['DataProductTransformationPostBody']
   export type PatchBody       = Data.components['schemas']['DataProductTransformationPatchBody']
   export type DeleteBody      = never
-  export const writableKeys = ["aggregationMethod","formula","inputDatastreams","minValues","outputDatastreamId","outputInterval","outputIntervalUnits","ratingCurveId","stopOnError","stopOnNoData","timezone","timezoneType"] as const
+  export const writableKeys = ["aggregationMethod","formula","inputDatastreams","minValues","outputDatastreamId","outputInterval","outputIntervalUnits","ratingCurveId","stopOnError","stopOnGaps","timezone","timezoneType"] as const
   export declare const __types: {
     SummaryResponse: SummaryResponse
     DetailResponse: DetailResponse

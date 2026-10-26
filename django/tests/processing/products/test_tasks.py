@@ -221,3 +221,190 @@ def test_load_to_datastream_writes_observations_tagged_with_the_output_datastrea
         [pd.Timestamp("2026-01-01T00:00:00", tz="UTC"), 1.0],
         [pd.Timestamp("2026-01-01T01:00:00", tz="UTC"), 2.0],
     ]
+
+
+def _hour(hour):
+    return pd.Timestamp(f"2026-01-01T{hour:02d}:00:00Z")
+
+
+def _append_obs(datastream, obs):
+    """Add {hour: value} readings to a datastream and advance its end time."""
+    for hour, value in obs.items():
+        ObservationFactory(datastream=datastream, phenomenon_time=_hour(hour), result=value)
+    datastream.phenomenon_end_time = _hour(max(obs))
+    datastream.save(update_fields=["phenomenon_end_time"])
+
+
+def _make_offset_derivation(obs_a, obs_b, **transformation_kwargs):
+    """
+    Create inputs ds_a/ds_b from {hour: value} dicts and an "a + b" derivation
+    into an empty output. Returns (transformation, ds_a, ds_b, ds_out).
+    """
+    ds_out = DatastreamFactory()
+    ds_a = DatastreamFactory(monitoring_site=ds_out.monitoring_site)
+    ds_b = DatastreamFactory(monitoring_site=ds_out.monitoring_site)
+    _append_obs(ds_a, obs_a)
+    _append_obs(ds_b, obs_b)
+    transformation = DataProductTransformationFactory(
+        task__monitoring_site=ds_out.monitoring_site,
+        output_datastream=ds_out,
+        transformation_type="derivation",
+        formula="a + b",
+        **transformation_kwargs,
+    )
+    for ds, name in [(ds_a, "a"), (ds_b, "b")]:
+        DataProductTransformationInputFactory(
+            transformation=transformation, datastream=ds, variable_name=name
+        )
+    return transformation, ds_a, ds_b, ds_out
+
+
+def _run(transformation):
+    result = run_data_product_task(str(transformation.task_id))
+    assert result["errors"] == {}
+    return result["loaded_total"]
+
+
+def _output_results(ds_out):
+    return [
+        (t.hour, r) for t, r in Observation.objects.filter(datastream=ds_out)
+        .order_by("phenomenon_time")
+        .values_list("phenomenon_time", "result")
+    ]
+
+
+def test_derivation_initial_load_starts_at_latest_input_start():
+    """
+    ds_a starts at 08:00, ds_b at 10:00, aligned from there. The initial load
+    should start at 10:00 rather than stopping at ds_a's leading readings.
+    """
+    t, _, _, ds_out = _make_offset_derivation(
+        obs_a={8: 1.0, 9: 2.0, 10: 3.0, 11: 4.0},
+        obs_b={10: 10.0, 11: 20.0},
+        stop_on_gaps=True,
+    )
+    assert _run(t) == 2
+    assert _output_results(ds_out) == [(10, 13.0), (11, 24.0)]
+
+
+def test_derivation_offset_start_then_incremental_run():
+    """After an offset-start initial load, the next run appends normally."""
+    t, ds_a, ds_b, ds_out = _make_offset_derivation(
+        obs_a={8: 1.0, 9: 2.0, 10: 3.0},
+        obs_b={9: 10.0, 10: 20.0},
+    )
+    assert _run(t) == 2
+
+    _append_obs(ds_a, {11: 4.0, 12: 5.0})
+    _append_obs(ds_b, {11: 49.0, 12: 50.0})
+    assert _run(t) == 2
+    assert _output_results(ds_out) == [(9, 12.0), (10, 23.0), (11, 53.0), (12, 55.0)]
+
+
+def test_derivation_offset_start_stops_at_divergence():
+    """Trimming to the latest start doesn't bypass divergence after that point."""
+    t, _, _, ds_out = _make_offset_derivation(
+        obs_a={8: 1.0, 10: 3.0, 11: 4.0, 12: 5.0},
+        obs_b={10: 10.0, 12: 30.0},
+        stop_on_gaps=True,
+    )
+    assert _run(t) == 1
+    assert _output_results(ds_out) == [(10, 13.0)]
+
+
+def test_derivation_stop_on_gaps_true_waits_at_gap():
+    """With the toggle on, a gap holds the output back on every run until it's filled."""
+    t, ds_a, ds_b, ds_out = _make_offset_derivation(
+        obs_a={8: 1.0, 9: 2.0, 10: 3.0},
+        obs_b={8: 10.0, 10: 30.0},
+        stop_on_gaps=True,
+    )
+    assert _run(t) == 1
+
+    _append_obs(ds_a, {11: 4.0})
+    _append_obs(ds_b, {11: 40.0})
+    assert _run(t) == 0
+
+    ObservationFactory(datastream=ds_b, phenomenon_time=_hour(9), result=20.0)
+    assert _run(t) == 3
+    assert _output_results(ds_out) == [(8, 11.0), (9, 22.0), (10, 33.0), (11, 44.0)]
+
+
+def test_derivation_skips_gaps_when_stop_on_gaps_false():
+    """With the toggle off, timestamps not shared by both inputs are skipped."""
+    t, ds_a, ds_b, ds_out = _make_offset_derivation(
+        obs_a={8: 1.0, 9: 2.0, 10: 3.0, 11: 4.0},
+        obs_b={8: 10.0, 10: 30.0, 11: 40.0},
+        stop_on_gaps=False,
+    )
+    assert _run(t) == 3
+    assert _output_results(ds_out) == [(8, 11.0), (10, 33.0), (11, 44.0)]
+
+    # The incremental run picks up after the last output and skips new gaps too.
+    _append_obs(ds_a, {13: 6.0, 14: 7.0})
+    _append_obs(ds_b, {12: 50.0, 14: 70.0})
+    assert _run(t) == 1
+    assert _output_results(ds_out) == [(8, 11.0), (10, 33.0), (11, 44.0), (14, 77.0)]
+
+
+def test_derivation_lagging_input_holds_output_back():
+    """
+    ds_a falls behind ds_b. Output stops at ds_a's last reading rather than
+    skipping ds_b's newer readings, then catches up once ds_a reports again,
+    skipping the hour ds_a never reported.
+    """
+    t, ds_a, _, ds_out = _make_offset_derivation(
+        obs_a={8: 1.0, 9: 2.0},
+        obs_b={8: 10.0, 9: 20.0, 10: 30.0, 11: 40.0},
+        stop_on_gaps=False,
+    )
+    assert _run(t) == 2
+    assert _output_results(ds_out) == [(8, 11.0), (9, 22.0)]
+
+    _append_obs(ds_a, {11: 4.0})
+    assert _run(t) == 1
+    assert _output_results(ds_out) == [(8, 11.0), (9, 22.0), (11, 44.0)]
+
+
+def test_derivation_no_data_values_fill_output_and_continue():
+    """
+    Each input is checked against its own no-data value, and those rows get the
+    output's no-data value. The run continues with the toggle at its default (off).
+    """
+    # 09:00: ds_a at its no-data value. 10:00: ds_b at its no-data value.
+    # 11:00: each holds the *other's* no-data value, which is real data.
+    t, ds_a, ds_b, ds_out = _make_offset_derivation(
+        obs_a=dict(zip((8, 9, 10, 11), (1.0, -9999.0, 3.0, -1.0))),
+        obs_b=dict(zip((8, 9, 10, 11), (10.0, 20.0, -1.0, -9999.0))),
+    )
+    for ds, ndv in [(ds_a, -9999), (ds_b, -1), (ds_out, -555)]:
+        ds.no_data_value = ndv
+        ds.save(update_fields=["no_data_value"])
+
+    assert t.stop_on_gaps is False
+    assert _run(t) == 4
+    assert _output_results(ds_out) == [(8, 11.0), (9, -555.0), (10, -555.0), (11, -10000.0)]
+
+
+def test_derivation_latest_start_not_shared_loads_nothing():
+    """
+    ds_a starts at 02:00 and ds_b at 01:00, but ds_b has no 02:00 reading; the
+    first shared timestamp is 03:00. The latest start doesn't align, so nothing loads.
+    """
+    t, _, _, ds_out = _make_offset_derivation(
+        obs_a={2: 1.0, 3: 2.0},
+        obs_b={1: 10.0, 3: 20.0},
+        stop_on_gaps=True,
+    )
+    assert _run(t) == 0
+    assert _output_results(ds_out) == []
+
+
+def test_derivation_non_overlapping_inputs_load_nothing():
+    """ds_b starts after ds_a's last reading, so there's nothing to derive yet."""
+    t, _, _, ds_out = _make_offset_derivation(
+        obs_a={8: 1.0, 9: 2.0},
+        obs_b={10: 10.0, 11: 20.0},
+    )
+    assert _run(t) == 0
+    assert _output_results(ds_out) == []

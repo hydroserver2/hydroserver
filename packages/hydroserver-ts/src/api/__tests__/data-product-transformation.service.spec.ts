@@ -27,7 +27,7 @@ describe('DataProductTransformationService', () => {
             aggregationMethod: 'mean',
             outputInterval: 15,
             outputIntervalUnits: 'minutes',
-            stopOnNoData: true,
+            stopOnGaps: false,
             stopOnError: true,
           },
           included: {},
@@ -45,7 +45,7 @@ describe('DataProductTransformationService', () => {
       aggregationMethod: 'mean',
       outputInterval: 15,
       outputIntervalUnits: 'minutes',
-      stopOnNoData: true,
+      stopOnGaps: false,
       stopOnError: true,
     })
 
@@ -80,7 +80,7 @@ describe('DataProductTransformationService', () => {
             aggregationMethod: 'mean',
             outputInterval: 30,
             outputIntervalUnits: 'minutes',
-            stopOnNoData: true,
+            stopOnGaps: false,
             stopOnError: true,
           },
           included: {},

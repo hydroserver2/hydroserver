@@ -73,7 +73,7 @@ def _search_vector_trigger_sql(
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("products", "0003_remove_dataproducttransformation_max_gap_interval_and_more"),
+        ("products", "0004_rename_stop_on_no_data_dataproducttransformation_stop_on_gaps"),
         ("sta", "0009_v2_0_0"),
     ]
 
