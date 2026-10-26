@@ -23,7 +23,7 @@
         <h1>Monitoring sites</h1>
 
         <div class="filter-header-actions">
-          <v-btn-primary
+          <v-btn-page-action
             v-if="showRegisterSite"
             class="register-site-button"
             data-testid="register-site-button"
@@ -37,7 +37,7 @@
             @click="$emit('register-site')"
           >
             Create Site
-          </v-btn-primary>
+          </v-btn-page-action>
 
           <v-btn
             icon
@@ -167,7 +167,7 @@
                 density="compact"
                 color="primary"
                 :prepend-inner-icon="mdiTagOutline"
-                @update:model-value="selectedTagValues = []"
+                @update:model-value="onMetadataKeySelected"
               />
 
               <v-autocomplete
@@ -217,6 +217,7 @@
               size="small"
               :variant="markerColorMode === 'workspace' ? 'tonal' : 'outlined'"
               :aria-pressed="markerColorMode === 'workspace'"
+              :disabled="!hasAppliedInitialRouteState"
               @click="toggleMarkerColorMode('workspace')"
             >
               Workspace
@@ -227,6 +228,7 @@
               size="small"
               :variant="markerColorMode === 'type' ? 'tonal' : 'outlined'"
               :aria-pressed="markerColorMode === 'type'"
+              :disabled="!hasAppliedInitialRouteState"
               @click="toggleMarkerColorMode('type')"
             >
               Site type
@@ -237,7 +239,7 @@
               size="small"
               :variant="markerColorMode === 'metadata' ? 'tonal' : 'outlined'"
               :aria-pressed="markerColorMode === 'metadata'"
-              :disabled="!availableTagKeys.length"
+              :disabled="!hasAppliedInitialRouteState || !availableTagKeys.length"
               @click="toggleMarkerColorMode('metadata')"
             >
               Metadata
@@ -535,31 +537,25 @@ const availableSites = computed(() =>
   )
 )
 
-const availableWorkspaces = computed(() => {
-  const workspaceIds = new Set(
-    filterMonitoringSiteMarkers(
-      monitoringSitesMatchingMySites.value,
-      [],
-      selectedSiteTypes.value,
-      undefined,
-      selectedTagKey.value,
-      selectedTagValues.value
-    ).map((monitoringSite) => monitoringSite.workspaceId)
-  )
+// Keep every visible workspace available, including empty workspaces and those
+// whose sites are excluded by the current filters.
+const availableWorkspaces = computed(() => workspaces.value)
 
-  return workspaces.value.filter((workspace) => workspaceIds.has(workspace.id))
+// Filter choices depend on the workspace scope, not the current search or
+// metadata values. A temporary empty result must not erase valid selections.
+const monitoringSitesInSelectedWorkspaces = computed(() => {
+  const myWorkspaceIds = new Set(props.myWorkspaceIds)
+  const sites = showOnlyMySites.value
+    ? sortedMonitoringSites.value.filter((site) =>
+        myWorkspaceIds.has(site.workspaceId)
+      )
+    : sortedMonitoringSites.value
+  return filterMonitoringSiteMarkers(sites, selectedWorkspaces.value, [])
 })
 
 const availableSiteTypes = computed(() => {
   const siteTypes = new Set(
-    filterMonitoringSiteMarkers(
-      monitoringSitesMatchingMySites.value,
-      selectedWorkspaces.value,
-      [],
-      undefined,
-      selectedTagKey.value,
-      selectedTagValues.value
-    ).map((monitoringSite) => monitoringSite.type)
+    monitoringSitesInSelectedWorkspaces.value.map((site) => site.type)
   )
 
   return [...siteTypes].filter(Boolean).sort((a, b) => a.localeCompare(b))
@@ -567,9 +563,13 @@ const availableSiteTypes = computed(() => {
 
 const monitoringSitesMatchingPrimaryFilters = computed(() =>
   filterMonitoringSiteMarkers(
-    monitoringSitesMatchingMySites.value,
-    selectedWorkspaces.value,
-    selectedSiteTypes.value
+    monitoringSitesInSelectedWorkspaces.value,
+    [],
+    // Ignore types that are about to be pruned after a workspace change, so
+    // they cannot transiently empty the tag choices and discard valid values.
+    selectedSiteTypes.value.filter((type) =>
+      availableSiteTypes.value.includes(type)
+    )
   )
 )
 
@@ -579,6 +579,9 @@ const availableTagKeys = computed(() => {
       Object.keys(monitoringSite.tags)
     )
   )
+  // Preserve selected keys when other filters leave only untagged sites.
+  if (selectedTagKey.value) keys.add(selectedTagKey.value)
+  if (colorTagKey.value) keys.add(colorTagKey.value)
   return [...keys].filter(Boolean).sort((a, b) => a.localeCompare(b))
 })
 
@@ -635,6 +638,17 @@ const setExpanded = (value: boolean) => {
 
 const toggleMarkerColorMode = (mode: Exclude<MarkerColorMode, 'none'>) => {
   markerColorMode.value = markerColorMode.value === mode ? 'none' : mode
+}
+
+const onMetadataKeySelected = (key: string | null) => {
+  selectedTagKey.value = key || ''
+  selectedTagValues.value = []
+  colorTagKey.value = key || ''
+  if (key) {
+    markerColorMode.value = 'metadata'
+  } else if (markerColorMode.value === 'metadata') {
+    markerColorMode.value = 'none'
+  }
 }
 
 // Let the user quickly jump to a site: typing a query and pressing Enter
@@ -726,6 +740,8 @@ const onClearFilters = () => {
   selectedWorkspaces.value = []
   selectedTagKey.value = ''
   selectedTagValues.value = []
+  markerColorMode.value = 'none'
+  colorTagKey.value = ''
   showOnlyMySites.value = false
   siteSearch.value = ''
 }
@@ -839,13 +855,14 @@ pruneSelectionToAvailable(
   (type) => type
 )
 
+pruneSelectionToAvailable(
+  selectedTagValues,
+  availableTagValues,
+  (value) => value,
+  (value) => value
+)
+
 watch(availableTagKeys, (keys) => {
-  if (selectedTagKey.value && !keys.includes(selectedTagKey.value)) {
-    selectedTagKey.value = ''
-  }
-  if (colorTagKey.value && !keys.includes(colorTagKey.value)) {
-    colorTagKey.value = ''
-  }
   if (
     markerColorMode.value === 'metadata' &&
     !colorTagKey.value &&
@@ -857,16 +874,9 @@ watch(availableTagKeys, (keys) => {
 
 watch(markerColorMode, (mode) => {
   if (mode === 'metadata' && !colorTagKey.value) {
-    colorTagKey.value = availableTagKeys.value[0] ?? ''
+    colorTagKey.value = selectedTagKey.value || availableTagKeys.value[0] || ''
   }
 })
-
-pruneSelectionToAvailable(
-  selectedTagValues,
-  availableTagValues,
-  (value) => value,
-  (value) => value
-)
 </script>
 
 <style scoped>
@@ -962,12 +972,26 @@ pruneSelectionToAvailable(
 .color-tag-filter :deep(.v-field) {
   border-radius: var(--hs-radius-md);
   font-size: var(--hs-font-sm);
+  color: var(--hs-text-primary);
 }
 
 .site-search :deep(.v-field__input),
 .workspace-filter :deep(.v-field__input),
 .metadata-filter :deep(.v-field__input),
 .color-tag-filter :deep(.v-field__input) {
+  font-size: var(--hs-font-sm);
+}
+
+.filter-controls :deep(.v-label),
+.filter-controls :deep(input::placeholder) {
+  color: var(--hs-text-secondary);
+  font-size: var(--hs-font-sm);
+  opacity: 1;
+}
+
+.filter-controls :deep(.v-autocomplete__selection),
+.filter-controls :deep(.v-chip__content) {
+  color: var(--hs-text-primary);
   font-size: var(--hs-font-sm);
 }
 
@@ -1023,7 +1047,7 @@ pruneSelectionToAvailable(
 
 .filter-section-title {
   color: var(--hs-text-secondary);
-  font-size: var(--hs-font-2xs);
+  font-size: var(--hs-font-sm);
   font-weight: var(--hs-font-weight-bold);
   letter-spacing: 0.7px;
   text-transform: uppercase;

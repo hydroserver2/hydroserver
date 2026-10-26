@@ -16,16 +16,33 @@
 
 <div>
     <section class="auth-section">
-        <h2 class="hs-subheading">{% trans "Personal information" %}</h2>
         <dl class="auth-definition-list">
             <div>
                 <dt class="hs-label auth-definition-term">{% trans "Name" %}</dt>
-                <dd class="auth-definition-value">{{ user.first_name }} {{ user.last_name }}</dd>
+                <dd class="auth-definition-value">{{ user.first_name }} {% if user.middle_name %}{{ user.middle_name }} {% endif %}{{ user.last_name }}</dd>
             </div>
             <div>
                 <dt class="hs-label auth-definition-term">{% trans "Email" %}</dt>
                 <dd class="auth-definition-value">{{ user.email }}</dd>
             </div>
+            {% if user.phone %}
+            <div>
+                <dt class="hs-label auth-definition-term">{% trans "Phone" %}</dt>
+                <dd class="auth-definition-value">{{ user.phone }}</dd>
+            </div>
+            {% endif %}
+            {% if user.address %}
+            <div>
+                <dt class="hs-label auth-definition-term">{% trans "Address" %}</dt>
+                <dd class="auth-definition-value">{{ user.address }}</dd>
+            </div>
+            {% endif %}
+            {% if user.link %}
+            <div>
+                <dt class="hs-label auth-definition-term">{% trans "Link" %}</dt>
+                <dd class="auth-definition-value"><a href="{{ user.link }}" class="hs-link" target="_blank" rel="noopener">{{ user.link }}</a></dd>
+            </div>
+            {% endif %}
             <div>
                 <dt class="hs-label auth-definition-term">{% trans "User type" %}</dt>
                 <dd class="auth-definition-value">{{ user.user_type }}</dd>

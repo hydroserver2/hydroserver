@@ -8,6 +8,8 @@
         organizationFields.disabled = !hasOrganization;
     }
 
-    organizationCheckbox.addEventListener('change', toggleOrganizationFields);
-    toggleOrganizationFields();
+    if (organizationCheckbox && organizationFields) {
+        organizationCheckbox.addEventListener('change', toggleOrganizationFields);
+        toggleOrganizationFields();
+    }
 </script>

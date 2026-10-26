@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth import get_user_model
 from core.iam.models import Organization, UserType, OrganizationType
+from core.iam.auth.fields import PhoneNumberField
 
 User = get_user_model()
 
@@ -16,6 +17,7 @@ def type_choices(types, current=None):
 
 
 class ProfileForm(forms.ModelForm):
+    phone = PhoneNumberField(max_length=15, required=False, label="Phone")
     has_organization = forms.BooleanField(required=False, label="Affiliated with an organization")
     org_name = forms.CharField(max_length=255, required=False, label="Organization name")
     org_code = forms.CharField(max_length=255, required=False, label="Organization code")
@@ -28,7 +30,8 @@ class ProfileForm(forms.ModelForm):
     class Meta:
         model = User
         fields = [
-            "first_name", "last_name", "user_type",
+            "first_name", "middle_name", "last_name", "phone", "address", "link",
+            "user_type",
         ]
 
     def __init__(self, *args, **kwargs):

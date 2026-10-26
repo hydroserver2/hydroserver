@@ -485,6 +485,68 @@ def test_filter_by_permission_returns_every_monitoring_site_for_superuser():
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize("grant", ["Editor", "*", "Workspace"])
+@pytest.mark.parametrize(
+    "principal_kind", ["collaborator", "service_account", "owner", "superuser", "anonymous"]
+)
+def test_workspace_management_requires_owner_or_superuser(
+    default_editor_role, grant, principal_kind
+):
+    workspace = WorkspaceFactory(is_private=True)
+    if grant == "Editor":
+        role = default_editor_role
+    else:
+        role = RoleFactory(workspace=workspace)
+        PermissionFactory(role=role, resource_type=grant, full_access=True)
+    collaborator = CollaboratorFactory(
+        workspace=workspace,
+        role=role,
+        service_account_collaborator=principal_kind == "service_account",
+    )
+    if principal_kind == "superuser":
+        principal = UserFactory(is_superuser=True)
+    else:
+        principal = {
+            "collaborator": collaborator.user,
+            "service_account": collaborator.service_account,
+            "owner": workspace.owner,
+            "anonymous": AnonymousPrincipal(),
+        }[principal_kind]
+    can_manage = principal_kind in ("owner", "superuser")
+    can_view = principal_kind != "anonymous"
+    annotated = principal.annotate_permissions(Workspace.objects.all()).get(pk=workspace.pk)
+
+    for field, expected in [
+        ("can_view", can_view), ("can_edit", can_manage), ("can_delete", can_manage)
+    ]:
+        assert principal.has_permission(
+            workspace, resource_type="Workspace", permission_field=field
+        ) is expected
+        assert getattr(principal, field)(workspace) is expected
+        assert getattr(annotated, field) is expected
+        assert getattr(principal, field)(annotated) is expected
+        assert principal.filter_by_permission(
+            Workspace.objects.filter(pk=workspace.pk), field
+        ).exists() is expected
+
+
+@pytest.mark.django_db
+def test_editor_retains_write_access_to_workspace_contents(default_editor_role):
+    workspace = WorkspaceFactory(is_private=True)
+    editor = CollaboratorFactory(workspace=workspace, role=default_editor_role).user
+    site = MonitoringSiteFactory(workspace=workspace, is_private=True)
+    annotated = editor.annotate_permissions(MonitoringSite.objects.all()).get(pk=site.pk)
+
+    assert editor.can_create(MonitoringSite, workspace) is True
+    for field in ("can_view", "can_edit", "can_delete"):
+        assert getattr(editor, field)(site) is True
+        assert getattr(annotated, field) is True
+        assert editor.filter_by_permission(
+            MonitoringSite.objects.filter(pk=site.pk), field
+        ).exists() is True
+
+
+@pytest.mark.django_db
 def test_annotate_permissions_matches_per_object_checks_for_owner():
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner, is_private=True)

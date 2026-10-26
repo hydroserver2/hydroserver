@@ -147,7 +147,10 @@ def update_data_connection(
            } if "placeholder_variables" in data.model_fields_set else {}),
         **({"notification_recipient_emails": getattr(data.notification, "recipient_emails", []),
             **({f"notification_{k}": v
-                for k, v in data.notification.schedule.model_dump(exclude_unset=True).items()}
+                for k, v in (
+                    data.notification.schedule.model_dump(exclude_unset=True)
+                    if data.notification.schedule is not None else {"crontab": None, "interval": None}
+                ).items()}
                if getattr(data.notification, "schedule", Unset) is not Unset else {})}
            if "notification" in data.model_fields_set else {}),
     )

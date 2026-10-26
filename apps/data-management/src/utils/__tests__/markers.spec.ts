@@ -37,12 +37,29 @@ describe('map marker colors', () => {
   })
 
   it('assigns colors by metadata tag value independently of workspace', () => {
-    const colored = addColorToMarkers(sites, 'Network')
+    const colored = addColorToMarkers(sites, 'Network', 'gray')
 
     expect(colored[0].tagValue).toBe('Primary')
     expect(colored[0].color).toEqual(colored[2].color)
     expect(colored[1].tagValue).toBe('Secondary')
     expect(colored[1].color).not.toEqual(colored[0].color)
+  })
+
+  it('gives sites without the chosen tag a neutral color and no tag value', () => {
+    const untagged = { ...sites[0], id: 'untagged', tags: { Other: 'Primary' } }
+    const empty = { ...sites[0], id: 'empty', tags: {} }
+    const colored = addColorToMarkers(
+      [...sites, untagged, empty],
+      'Network',
+      'gray'
+    )
+
+    expect(colored[3].color?.background).toBe('gray')
+    expect(colored[4].color).toEqual(colored[3].color)
+    expect(colored[3].tagValue).toBeUndefined()
+    expect(colored[4].tagValue).toBeUndefined()
+    expect(colored[0].color).not.toEqual(colored[3].color)
+    expect(untagged).not.toHaveProperty('color')
   })
 
   it('assigns colors by site type independently of workspace', () => {

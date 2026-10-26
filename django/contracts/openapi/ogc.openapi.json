@@ -599,7 +599,7 @@
           },
           "placeholderVariables": {
             "items": {
-              "$ref": "#/components/schemas/PlaceholderVariablePatchBody"
+              "$ref": "#/components/schemas/PlaceholderVariablePostBody"
             },
             "title": "Placeholdervariables",
             "type": "array"
@@ -1057,6 +1057,7 @@
           "lookback": {
             "anyOf": [
               {
+                "minimum": 0,
                 "type": "integer"
               },
               {
@@ -9350,9 +9351,12 @@
             "type": "array"
           },
           "schedule": {
-            "allOf": [
+            "anyOf": [
               {
                 "$ref": "#/components/schemas/SchedulePatchBody"
+              },
+              {
+                "type": "null"
               }
             ],
             "title": "Schedule"
@@ -12205,38 +12209,6 @@
           "action"
         ],
         "title": "PermissionResponse",
-        "type": "object"
-      },
-      "PlaceholderVariablePatchBody": {
-        "properties": {
-          "name": {
-            "title": "Name",
-            "type": "string"
-          },
-          "timestampFormat": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Timestampformat"
-          },
-          "type": {
-            "enum": [
-              "run_time",
-              "latest_observation_timestamp",
-              "per_task",
-              "window_start",
-              "window_end"
-            ],
-            "title": "Type",
-            "type": "string"
-          }
-        },
-        "title": "PlaceholderVariablePatchBody",
         "type": "object"
       },
       "PlaceholderVariablePostBody": {
@@ -17093,6 +17065,11 @@
               "schema": {
                 "$ref": "#/components/schemas/AggregationStatisticPatchBody"
               }
+            },
+            "application/merge-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AggregationStatisticPatchBody"
+              }
             }
           },
           "required": true
@@ -17747,6 +17724,11 @@
         "requestBody": {
           "content": {
             "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RatingCurvePatchBody"
+              }
+            },
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/RatingCurvePatchBody"
               }
@@ -18519,6 +18501,11 @@
         "requestBody": {
           "content": {
             "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DataProductTaskPatchBody"
+              }
+            },
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/DataProductTaskPatchBody"
               }
@@ -19718,6 +19705,11 @@
               "schema": {
                 "$ref": "#/components/schemas/DataProductTransformationPatchBody"
               }
+            },
+            "application/merge-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DataProductTransformationPatchBody"
+              }
             }
           },
           "required": true
@@ -20296,6 +20288,11 @@
         "requestBody": {
           "content": {
             "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatastreamStatusPatchBody"
+              }
+            },
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/DatastreamStatusPatchBody"
               }
@@ -21227,6 +21224,11 @@
         "requestBody": {
           "content": {
             "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatastreamPatchBody"
+              }
+            },
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/DatastreamPatchBody"
               }
@@ -22768,6 +22770,11 @@
               "schema": {
                 "$ref": "#/components/schemas/DataConnectionPatchBody"
               }
+            },
+            "application/merge-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DataConnectionPatchBody"
+              }
             }
           },
           "required": true
@@ -23452,6 +23459,11 @@
         "requestBody": {
           "content": {
             "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EtlMappingPatchBody"
+              }
+            },
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/EtlMappingPatchBody"
               }
@@ -24259,6 +24271,11 @@
         "requestBody": {
           "content": {
             "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EtlTaskPatchBody"
+              }
+            },
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/EtlTaskPatchBody"
               }
@@ -25301,6 +25318,11 @@
               "schema": {
                 "$ref": "#/components/schemas/LinkedResourceTypePatchBody"
               }
+            },
+            "application/merge-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkedResourceTypePatchBody"
+              }
             }
           },
           "required": true
@@ -25857,6 +25879,11 @@
         "requestBody": {
           "content": {
             "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MethodTypePatchBody"
+              }
+            },
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/MethodTypePatchBody"
               }
@@ -26628,6 +26655,11 @@
               "schema": {
                 "$ref": "#/components/schemas/MethodPatchBody"
               }
+            },
+            "application/merge-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MethodPatchBody"
+              }
             }
           },
           "required": true
@@ -27317,6 +27349,11 @@
               "schema": {
                 "$ref": "#/components/schemas/MonitoringRulePatchBody"
               }
+            },
+            "application/merge-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MonitoringRulePatchBody"
+              }
             }
           },
           "required": true
@@ -27895,6 +27932,11 @@
         "requestBody": {
           "content": {
             "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MonitoringSiteTypePatchBody"
+              }
+            },
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/MonitoringSiteTypePatchBody"
               }
@@ -28657,6 +28699,11 @@
         "requestBody": {
           "content": {
             "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MonitoringSitePatchBody"
+              }
+            },
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/MonitoringSitePatchBody"
               }
@@ -30419,6 +30466,11 @@
         "requestBody": {
           "content": {
             "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MonitoringTaskPatchBody"
+              }
+            },
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/MonitoringTaskPatchBody"
               }
@@ -32415,6 +32467,11 @@
               "schema": {
                 "$ref": "#/components/schemas/ObservedPropertyPatchBody"
               }
+            },
+            "application/merge-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ObservedPropertyPatchBody"
+              }
             }
           },
           "required": true
@@ -32971,6 +33028,11 @@
         "requestBody": {
           "content": {
             "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ObservedPropertyTypePatchBody"
+              }
+            },
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/ObservedPropertyTypePatchBody"
               }
@@ -33653,6 +33715,11 @@
         "requestBody": {
           "content": {
             "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProcessingLevelPatchBody"
+              }
+            },
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/ProcessingLevelPatchBody"
               }
@@ -34941,6 +35008,11 @@
               "schema": {
                 "$ref": "#/components/schemas/QualityControlSessionPatchBody"
               }
+            },
+            "application/merge-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/QualityControlSessionPatchBody"
+              }
             }
           },
           "required": true
@@ -35695,6 +35767,11 @@
               "schema": {
                 "$ref": "#/components/schemas/QualityControlOperationPatchBody"
               }
+            },
+            "application/merge-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/QualityControlOperationPatchBody"
+              }
             }
           },
           "required": true
@@ -36319,6 +36396,11 @@
         "requestBody": {
           "content": {
             "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResultQualifierPatchBody"
+              }
+            },
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/ResultQualifierPatchBody"
               }
@@ -37207,6 +37289,11 @@
               "schema": {
                 "$ref": "#/components/schemas/SampledMediumPatchBody"
               }
+            },
+            "application/merge-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SampledMediumPatchBody"
+              }
             }
           },
           "required": true
@@ -37763,6 +37850,11 @@
         "requestBody": {
           "content": {
             "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnitTypePatchBody"
+              }
+            },
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/UnitTypePatchBody"
               }
@@ -38457,6 +38549,11 @@
               "schema": {
                 "$ref": "#/components/schemas/UnitPatchBody"
               }
+            },
+            "application/merge-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnitPatchBody"
+              }
             }
           },
           "required": true
@@ -39091,6 +39188,11 @@
         "requestBody": {
           "content": {
             "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkspacePatchBody"
+              }
+            },
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/WorkspacePatchBody"
               }
@@ -40075,6 +40177,11 @@
         "requestBody": {
           "content": {
             "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServiceAccountPatchBody"
+              }
+            },
+            "application/merge-patch+json": {
               "schema": {
                 "$ref": "#/components/schemas/ServiceAccountPatchBody"
               }

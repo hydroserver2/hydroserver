@@ -27,5 +27,6 @@
 {% endblock content %}
 {% block extra_body %}
     {{ block.super }}
+    {{ form.media }}
     {% include "account/snippets/signup_org_toggle.html" %}
 {% endblock extra_body %}

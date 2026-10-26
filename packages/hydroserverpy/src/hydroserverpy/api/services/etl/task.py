@@ -84,21 +84,25 @@ class TaskService(HydroServerBaseService):
     def update(
         self,
         uid: Union[UUID, str],
-        name: str,
+        name: str = ...,
         description: Optional[str] = ...,
-        task_variables: Optional[Dict[str, Any]] = None,
+        task_variables: Optional[Dict[str, Any]] = ...,
         crontab: Optional[str] = ...,
         interval: Optional[int] = ...,
         interval_period: Optional[Literal["minutes", "hours", "days"]] = ...,
         start_time: Optional[datetime] = ...,
         enabled: bool = ...,
     ) -> EtlTask:
-        """Update an ETL task."""
+        """Merge supplied fields into an ETL task; None deletes a variable key.
+
+        Omit task_variables to leave variables unchanged. Passing None is sent
+        to the server, which rejects it because task variables must be an object.
+        """
 
         body: Dict[str, Any] = {
             "name": name,
             "description": description,
-            "taskVariables": task_variables or {},
+            "taskVariables": task_variables,
         }
 
         if crontab is None and interval is None:

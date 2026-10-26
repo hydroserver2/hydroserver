@@ -11,6 +11,7 @@ from interfaces.api.formats import EncodeContext, collection_formats
 from interfaces.api.formats.profiles import collection_profiles, has_profiles
 from interfaces.api.http.links import link_header
 from interfaces.api.http.content_negotiation import FORMAT_PARAM, PROFILE_PARAM, items_route
+from interfaces.api.merge_patch import MERGE_PATCH_MEDIA_TYPE
 
 PARAMETER_SERIALIZATION_KEYS = ("style", "explode")
 
@@ -75,7 +76,11 @@ class HydroServerNinjaAPI(NinjaAPI):
         schema = super().get_openapi_schema(path_prefix=path_prefix, path_params=path_params)
 
         for path, path_item in schema.get("paths", {}).items():
-            for operation in path_item.values():
+            for method, operation in path_item.items():
+                if method == "patch":
+                    content = operation.get("requestBody", {}).get("content", {})
+                    if "application/json" in content:
+                        content[MERGE_PATCH_MEDIA_TYPE] = content["application/json"]
                 for parameter in operation.get("parameters", []):
                     parameter_schema = parameter.get("schema", {})
                     for key in PARAMETER_SERIALIZATION_KEYS:

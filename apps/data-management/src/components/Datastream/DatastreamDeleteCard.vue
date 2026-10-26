@@ -11,10 +11,12 @@
       <strong> ({{ datastream.name }}) </strong>
     </v-card-text>
     <v-card-text>
-      Please type <strong> Delete </strong> to confirm deletion:
+      Please type <strong>Delete</strong> to confirm deletion:
       <v-form>
         <v-text-field
           v-model="confirmationInput"
+          :error-messages="confirmationError"
+          @update:model-value="confirmationError = ''"
           @keydown.enter.prevent="onDelete"
         />
       </v-form>
@@ -29,7 +31,6 @@
 </template>
 
 <script setup lang="ts">
-import { Snackbar } from '@/utils/notifications'
 import { mdiAlert } from '@mdi/js'
 import { ref } from 'vue'
 
@@ -43,10 +44,11 @@ const props = defineProps({
 })
 
 const confirmationInput = ref('')
+const confirmationError = ref('')
 
 const onDelete = () => {
-  if (confirmationInput.value.toLocaleLowerCase() !== 'delete') {
-    Snackbar.error('inputs do not match')
+  if (confirmationInput.value.trim().toLowerCase() !== 'delete') {
+    confirmationError.value = 'Type Delete to confirm deletion.'
     return
   }
   emit('delete')

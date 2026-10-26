@@ -252,12 +252,14 @@ class EtlTaskAPIService(TaskService[EtlTask], APIService):
     ):
         task = self.get_task_for_action(principal=principal, uid=uid, action="edit")
 
+        # Every update saves the full instance, including omitted JSON fields.
+        task = self.task_model.objects.select_for_update().get(pk=task.pk)
+
         task_data = data.dict(
             include=set(EtlTaskPatchBody.model_fields.keys()) - {"schedule"},
             exclude_unset=True,
         )
-        for field, value in task_data.items():
-            setattr(task, field, value)
+        self.apply_merge_patch(task, task_data)
 
         task.save()
 

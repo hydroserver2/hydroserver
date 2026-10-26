@@ -1,4 +1,6 @@
 from dataclasses import replace
+import json
+from pathlib import Path
 from typing import Iterator, NamedTuple
 from urllib.parse import parse_qs, urlsplit
 
@@ -15,6 +17,7 @@ from interfaces.api.views import ogc
 # import them rather than importing from conftest.
 
 API_PREFIX = "/api/ogc/"
+MERGE_PATCH_CASES = json.loads((Path(__file__).parents[3] / "contracts" / "merge-patch-cases.json").read_text())
 
 # The PROXY_BASE_URL the proxy_base_url fixture sets. Links are built from it, not the request's Host, which the test
 # client sends as "testserver".

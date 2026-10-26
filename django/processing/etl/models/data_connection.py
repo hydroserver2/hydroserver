@@ -238,6 +238,22 @@ class Payload(models.Model):
                     "Ensure the string uses valid strftime directives (e.g., '%Y-%m-%d %H:%M:%S')."
                 ) from e
 
+        for side in ("start", "end"):
+            prefix = f"data_ingestion_window_{side}"
+            anchor = getattr(self, f"{prefix}_anchor")
+            lookback = getattr(self, f"{prefix}_lookback")
+            lookback_unit = getattr(self, f"{prefix}_lookback_unit")
+            timestamp = getattr(self, f"{prefix}_timestamp")
+
+            if anchor is None and any(value is not None for value in (lookback, lookback_unit, timestamp)):
+                raise ValidationError(f"{prefix}_anchor is required when boundary settings are provided.")
+            if anchor == DataIngestionWindowAnchorType.FIXED_TIMESTAMP and timestamp is None:
+                raise ValidationError(f"{prefix}_timestamp is required for a fixed timestamp boundary.")
+            if (lookback is None) != (lookback_unit is None):
+                raise ValidationError(f"{prefix}_lookback and {prefix}_lookback_unit must both be provided.")
+            if lookback_unit is not None and lookback_unit not in ("minutes", "hours", "days"):
+                raise ValidationError(f"Invalid {prefix}_lookback_unit.")
+
 
 class DataConnectionNotification(models.Model):
     data_connection = models.OneToOneField(

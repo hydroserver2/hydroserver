@@ -1,0 +1,74 @@
+[
+  {
+    "name": "change one variable",
+    "original": {"taskVariables": {"station": "A", "parameter": "temperature"}},
+    "updated": {"taskVariables": {"station": "B", "parameter": "temperature"}},
+    "patch": {"taskVariables": {"station": "B"}}
+  },
+  {
+    "name": "add a variable",
+    "original": {"taskVariables": {"station": "A"}},
+    "updated": {"taskVariables": {"station": "A", "parameter": "temperature"}},
+    "patch": {"taskVariables": {"parameter": "temperature"}}
+  },
+  {
+    "name": "remove a variable",
+    "original": {"taskVariables": {"station": "A", "parameter": "temperature"}},
+    "updated": {"taskVariables": {"station": "A"}},
+    "patch": {"taskVariables": {"parameter": null}}
+  },
+  {
+    "name": "clear all variables",
+    "original": {"taskVariables": {"station": "A", "parameter": "temperature"}},
+    "updated": {"taskVariables": {}},
+    "patch": {"taskVariables": {"station": null, "parameter": null}}
+  },
+  {
+    "name": "unchanged variables",
+    "original": {"taskVariables": {"station": "A", "parameter": "temperature"}},
+    "updated": {"taskVariables": {"station": "A", "parameter": "temperature"}},
+    "patch": {}
+  },
+  {
+    "name": "nested variable edits and deletion",
+    "original": {"taskVariables": {"source": {"station": "A", "parameter": "temperature", "units": "C"}}},
+    "updated": {"taskVariables": {"source": {"station": "B", "parameter": "temperature"}}},
+    "patch": {"taskVariables": {"source": {"station": "B", "units": null}}}
+  },
+  {
+    "name": "replace an array",
+    "original": {"taskVariables": {"stations": ["A", "B"], "parameter": "temperature"}},
+    "updated": {"taskVariables": {"stations": ["C"], "parameter": "temperature"}},
+    "patch": {"taskVariables": {"stations": ["C"]}}
+  },
+  {
+    "name": "replace a scalar with an empty object",
+    "original": {"taskVariables": {"source": "A"}},
+    "updated": {"taskVariables": {"source": {}}},
+    "patch": {"taskVariables": {"source": {}}}
+  },
+  {
+    "name": "change a number to a boolean",
+    "original": {"taskVariables": {"flag": 1, "off": 0}},
+    "updated": {"taskVariables": {"flag": true, "off": false}},
+    "patch": {"taskVariables": {"flag": true, "off": false}}
+  },
+  {
+    "name": "change an array of numbers to booleans",
+    "original": {"taskVariables": {"flags": [1, 0]}},
+    "updated": {"taskVariables": {"flags": [true, false]}},
+    "patch": {"taskVariables": {"flags": [true, false]}}
+  },
+  {
+    "name": "remove variables whose names match object prototype properties",
+    "original": {"taskVariables": {"constructor": "A", "toString": "B", "parameter": "temperature"}},
+    "updated": {"taskVariables": {"parameter": "temperature"}},
+    "patch": {"taskVariables": {"constructor": null, "toString": null}}
+  },
+  {
+    "name": "add empty objects whose names match object prototype properties",
+    "original": {"taskVariables": {}},
+    "updated": {"taskVariables": {"constructor": {}, "toString": {}}},
+    "patch": {"taskVariables": {"constructor": {}, "toString": {}}}
+  }
+]
