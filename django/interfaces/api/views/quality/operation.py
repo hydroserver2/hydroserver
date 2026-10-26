@@ -45,7 +45,7 @@ def get_qc_operations(
 @qc_operation_router.post(
     "",
     auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
-    response={201: list[CreatedResponse], 400: str, 401: str, 403: str, 404: str},
+    response={201: list[CreatedResponse], 400: str, 401: str, 403: str, 404: str, 409: str},
     by_alias=True,
 )
 def create_qc_operations(
@@ -90,7 +90,7 @@ def get_qc_operation(
 @qc_operation_router.patch(
     "/{operation_id}",
     auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
-    response={204: None, 400: str, 401: str, 403: str, 404: str},
+    response={204: None, 400: str, 401: str, 403: str, 404: str, 409: str},
     by_alias=True,
 )
 def update_qc_operation(

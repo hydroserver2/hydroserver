@@ -1,0 +1,10 @@
+{% load i18n %}
+<div class="auth-method-options">
+    {% include "socialaccount/snippets/provider_list.html" with process="login" %}
+    {% if not SOCIALACCOUNT_ONLY %}
+        <a href="{% querystring method='email' %}" class="hs-button hs-button--full">
+            {% trans "Continue with email" %}
+        </a>
+    {% endif %}
+</div>
+{% include "socialaccount/snippets/login_extra.html" %}

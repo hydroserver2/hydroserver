@@ -4,6 +4,7 @@ from functools import cached_property
 from typing import Any, ClassVar, Dict, List, Literal, Optional, Union, TYPE_CHECKING
 from pydantic import AliasChoices, Field, AliasPath
 from ..base import HydroServerBaseModel
+from ...utils import create_merge_patch
 from ..orchestration.run import TaskRun
 from .mapping import EtlMapping
 
@@ -16,6 +17,7 @@ class EtlTask(HydroServerBaseModel):
     name: str
     description: Optional[str] = None
     task_variables: Dict[str, Any] = Field(default_factory=dict)
+    workspace_id: uuid.UUID
     data_connection_id: uuid.UUID = Field(
         validation_alias=AliasChoices(
             "dataConnectionId", AliasPath("dataConnection", "id")
@@ -50,7 +52,10 @@ class EtlTask(HydroServerBaseModel):
             self.uid,
             name=self.name,
             description=self.description,
-            task_variables=self.task_variables,
+            task_variables=create_merge_patch(
+                {"task_variables": self._server_data["task_variables"]},
+                {"task_variables": self.task_variables},
+            ).get("task_variables", ...),
             crontab=self.crontab,
             interval=self.interval,
             interval_period=self.interval_period,

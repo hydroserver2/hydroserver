@@ -1,6 +1,6 @@
-from typing import Optional, Union, TYPE_CHECKING
+from typing import List, Optional, Union, TYPE_CHECKING
 from uuid import UUID
-from pydantic import Field
+from pydantic import BaseModel, ConfigDict, Field
 from ..base import HydroServerBaseModel
 
 if TYPE_CHECKING:
@@ -8,10 +8,18 @@ if TYPE_CHECKING:
     from hydroserverpy.api.models import Workspace
 
 
+class RolePermission(BaseModel):
+    resource: str
+    action: str
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
 class Role(HydroServerBaseModel):
     name: str = Field(..., max_length=255)
     description: Optional[str] = None
     workspace_id: Optional[Union[UUID, str]] = None
+    permissions: List[RolePermission] = []
 
     def __init__(self, client: "HydroServer", **data):
         super().__init__(client=client, service=client.workspaces, **data)

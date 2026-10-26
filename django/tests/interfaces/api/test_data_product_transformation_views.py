@@ -36,7 +36,7 @@ TRANSFORMATION_FIELDS = {
     "timezoneType",
     "timezone",
     "minValues",
-    "stopOnNoData",
+    "stopOnGaps",
     "stopOnError",
 }
 

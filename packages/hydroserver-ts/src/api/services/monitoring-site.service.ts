@@ -141,11 +141,6 @@ export class MonitoringSiteService extends HydroServerBaseService<typeof C, Moni
     return await apiMethods.patch<HydroShareArchive>(url, archive, old)
   }
 
-  getHydroShareArchive(monitoringSiteId: string) {
-    const url = `${this._route}/${monitoringSiteId}/archive`
-    return apiMethods.fetch<HydroShareArchive>(url)
-  }
-
   deleteHydroShareArchive(monitoringSiteId: string) {
     const url = `${this._route}/${monitoringSiteId}/archive`
     return apiMethods.delete<null>(url)
@@ -154,22 +149,5 @@ export class MonitoringSiteService extends HydroServerBaseService<typeof C, Moni
   triggerHydroShareArchive(monitoringSiteId: string) {
     const url = `${this._route}/${monitoringSiteId}/archive/trigger`
     return apiMethods.post<string>(url, {})
-  }
-
-  /* ---------------------- Ownership management ----------------------- */
-
-  removeOwner(monitoringSiteId: string, email: string) {
-    const url = `${this._route}/${monitoringSiteId}/ownership`
-    return apiMethods.patch<MonitoringSite>(url, { email, removeOwner: true })
-  }
-
-  addSecondaryOwner(monitoringSiteId: string, email: string) {
-    const url = `${this._route}/${monitoringSiteId}/ownership`
-    return apiMethods.patch<MonitoringSite>(url, { email, makeOwner: true })
-  }
-
-  transferPrimaryOwnership(monitoringSiteId: string, email: string) {
-    const url = `${this._route}/${monitoringSiteId}/ownership`
-    return apiMethods.patch<MonitoringSite>(url, { email, transferPrimary: true })
   }
 }

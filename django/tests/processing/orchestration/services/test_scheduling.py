@@ -1,3 +1,6 @@
+from datetime import datetime, timedelta, timezone as dt_timezone
+from unittest import mock
+
 import pytest
 from django.core.exceptions import ValidationError
 from django_celery_beat.models import PeriodicTask
@@ -49,6 +52,29 @@ def test_apply_schedule_creates_interval_schedule():
     assert periodic_task.crontab is None
 
 
+@pytest.mark.parametrize("patch, every, period", [
+    ({"interval": 10}, 10, "minutes"),
+    ({"interval_period": "hours"}, 5, "hours"),
+    ({"enabled": False}, 5, "minutes"),
+    ({"crontab": None}, 5, "minutes"),
+    ({}, 5, "minutes"),
+])
+def test_apply_schedule_preserves_omitted_members(patch, every, period):
+    service = SchedulingService()
+    periodic_task = service.apply_schedule(
+        periodic_task=None, interval=5, interval_period="minutes",
+        celery_task_name="processing.etl.tasks.run_etl_task", periodic_task_name="partial-schedule",
+    )
+
+    updated = service.apply_schedule(periodic_task=periodic_task, **patch)
+
+    assert updated is not None
+    updated.refresh_from_db()
+    assert updated.interval.every == every
+    assert updated.interval.period == period
+    assert updated.enabled is patch.get("enabled", True)
+
+
 def test_apply_schedule_rejects_interval_less_than_one():
     with pytest.raises(ValidationError):
         SchedulingService().apply_schedule(
@@ -80,3 +106,51 @@ def test_apply_schedule_rejects_both_crontab_and_interval():
             celery_task_name="processing.etl.tasks.run_etl_task",
             periodic_task_name="test-both-crontab-and-interval",
         )
+
+
+@pytest.mark.parametrize("initial, patch, crontab, every", [
+    ({"crontab": "0 5 * * *"}, {"interval": 10, "interval_period": "hours"}, None, 10),
+    ({"interval": 5, "interval_period": "minutes"}, {"crontab": "0 6 * * *"}, "0 6 * * *", None),
+])
+def test_apply_schedule_switches_between_crontab_and_interval(initial, patch, crontab, every):
+    service = SchedulingService()
+    periodic_task = service.apply_schedule(
+        periodic_task=None, **initial,
+        celery_task_name="processing.etl.tasks.run_etl_task", periodic_task_name="switch-schedule",
+    )
+
+    updated = service.apply_schedule(periodic_task=periodic_task, **patch)
+
+    updated.refresh_from_db()
+    assert service.get_crontab_string(updated) == crontab
+    assert (updated.interval.every if updated.interval else None) == every
+
+
+def test_compute_previous_run_at_returns_run_before_current_crontab_run():
+    periodic_task = SchedulingService().apply_schedule(
+        periodic_task=None,
+        crontab="0 9 * * *",
+        celery_task_name="processing.etl.tasks.send_etl_notification_email",
+        periodic_task_name="test-previous-crontab",
+    )
+
+    with mock.patch("django.utils.timezone.now", return_value=datetime(2026, 1, 2, 9, 0, 5, tzinfo=dt_timezone.utc)):
+        previous = SchedulingService.compute_previous_run_at(periodic_task)
+
+    assert previous == datetime(2026, 1, 1, 9, 0, tzinfo=dt_timezone.utc)
+
+
+def test_compute_previous_run_at_subtracts_interval():
+    periodic_task = SchedulingService().apply_schedule(
+        periodic_task=None,
+        interval=6,
+        interval_period="hours",
+        celery_task_name="processing.etl.tasks.send_etl_notification_email",
+        periodic_task_name="test-previous-interval",
+    )
+    now = datetime(2026, 1, 2, 9, 0, tzinfo=dt_timezone.utc)
+
+    with mock.patch("django.utils.timezone.now", return_value=now):
+        previous = SchedulingService.compute_previous_run_at(periodic_task)
+
+    assert previous == now - timedelta(hours=6)

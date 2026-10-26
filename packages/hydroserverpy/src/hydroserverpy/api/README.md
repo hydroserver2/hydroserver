@@ -1079,13 +1079,13 @@ new_transformation = hs_api.transformations.create_derivation(
         {'datastream_id': '00000000-0000-0000-0000-000000000001', 'variable_name': 'x'},
     ],
     formula='x * 0.3048',  # feet to meters
-    stop_on_no_data=True,  # stop the run if an input holds its no-data value
+    stop_on_gaps=True,  # stop the run at timestamps not shared by all inputs
     stop_on_error=True,    # stop the run if the formula produces a non-finite result
 )
 
 # A derivation with multiple inputs works the same way, just with more entries.
-# Inputs are matched by exact timestamp; if they stop lining up, the run stops
-# there until they're back in sync.
+# Inputs are matched by exact timestamp; with stop_on_gaps=True a gap stops the
+# run there until it's filled, and with False those timestamps are skipped.
 new_derived_transformation = hs_api.transformations.create_derivation(
     task_id='00000000-0000-0000-0000-000000000000',
     output_datastream='00000000-0000-0000-0000-000000000000',

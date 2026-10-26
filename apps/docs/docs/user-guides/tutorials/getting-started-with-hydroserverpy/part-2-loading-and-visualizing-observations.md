@@ -10,7 +10,7 @@ pip install pandas numpy matplotlib
 
 ## Generate sample observations
 
-Since we're working with a fictional monitoring station, we'll generate some synthetic discharge data rather than using a real dataset. The code below creates 30 days of 15-minute readings starting April 1, 2026, with a gentle rise-and-fall pattern typical of spring snowmelt.
+To keep this part self-contained, we'll generate some synthetic discharge data rather than using a real dataset. The code below creates 30 days of 15-minute readings starting April 1, 2026.
 
 ```python
 import pandas as pd
@@ -52,7 +52,7 @@ discharge_datastream.load_observations(observations)
 print(f"Loaded {len(observations)} observations.")
 ```
 
-By default, `load_observations` runs in `insert` mode, which adds new observations to the datastream if observations at those timestamps don't already exist. If you want to overwrite everything in the provided range, you can pass `mode='replace'` instead.
+By default, `load_observations` runs in `insert` mode, which adds the observations to the datastream. If any of the timestamps already exist, the whole request is rejected with a `409` error and nothing is loaded — so running this cell twice will fail the second time. To overwrite existing observations instead, pass `mode='replace'`, which replaces the datastream's observations within the time range covered by your DataFrame.
 
 ## Fetch observations back
 
@@ -70,7 +70,7 @@ print(f"Retrieved {len(df)} observations.")
 print(df.describe())
 ```
 
-`get_observations` returns an `ObservationCollection` — a paginated result object. Calling `.dataframe` on it gives you a standard pandas DataFrame. We passed `fetch_all=True` here so that all pages are merged automatically; for large datasets with millions of rows you may want to work page by page instead.
+`get_observations` returns an `ObservationCollection` — a paginated result object. Its `.dataframe` property gives you a standard pandas DataFrame. We passed `fetch_all=True` here so that all pages are merged automatically; for large datasets with millions of rows you may want to work page by page instead.
 
 ## Plot the data
 
@@ -84,7 +84,7 @@ ax.plot(df['phenomenon_time'], df['result'], linewidth=0.8, color='steelblue')
 
 ax.set_xlabel('Date')
 ax.set_ylabel('Discharge (m3/s)')
-ax.set_title('Blacksmith Fork River Discharge — April 2024')
+ax.set_title('Blacksmith Fork River Discharge — April 2026')
 ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %d'))
 ax.xaxis.set_major_locator(mdates.WeekdayLocator(byweekday=mdates.MO))
 fig.autofmt_xdate()
@@ -92,7 +92,7 @@ plt.tight_layout()
 plt.show()
 ```
 
-You should see a smooth curve that rises through mid-April and falls off toward the end of the month — our simulated snowmelt hydrograph.
+You should see a month of 15-minute discharge readings plotted across April.
 
 ## What we've built
 

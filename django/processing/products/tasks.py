@@ -116,10 +116,27 @@ def run_derivation(transformation: DataProductTransformation) -> int:
     if start is not None and end <= start:
         return 0
 
+    since = None
+    if start is None:
+        input_starts = [
+            Observation.objects.filter(datastream=entry.datastream)
+            .order_by("phenomenon_time")
+            .values_list("phenomenon_time", flat=True)
+            .first()
+            for entry in input_entries
+        ]
+        if any(s is None for s in input_starts):
+            return 0
+        since = max(input_starts)
+        if since > end:
+            return 0
+
     inputs = {}
     input_no_data_values = {}
     for entry in input_entries:
-        df = _fetch_observations(entry.datastream, after=start, through=end)
+        df = _fetch_observations(
+            entry.datastream, after=start, through=end, at_or_after=since
+        )
         if len(df) == 0:
             return 0
         inputs[entry.variable_name] = df
@@ -128,7 +145,7 @@ def run_derivation(transformation: DataProductTransformation) -> int:
     result_df = apply_derivation(
         inputs=inputs,
         formula=transformation.formula,
-        stop_on_no_data=transformation.stop_on_no_data,
+        stop_on_gaps=transformation.stop_on_gaps,
         stop_on_error=transformation.stop_on_error,
         input_no_data_values=input_no_data_values,
         output_no_data_value=output_ds.no_data_value,
@@ -192,9 +209,18 @@ def run_aggregation(transformation: DataProductTransformation) -> int:
     if start is not None and end <= start:
         return 0
 
-    input_df = _fetch_observations(input_ds, after=start, through=end)
+    # Buckets are left-closed, so include the observation at the next bucket start.
+    input_df = _fetch_observations(input_ds, at_or_after=start, through=end)
     if len(input_df) == 0:
         return 0
+
+    # Time-weighted means interpolate each bucket's start boundary from the
+    # preceding observation, so include the last valid one before the window.
+    # The previous bucket it lands in is already in the output and is dropped below.
+    if start is not None and transformation.aggregation_method == "time_weighted_mean":
+        prior_df = _fetch_observation_before(input_ds, start, exclude_value=input_ds.no_data_value)
+        if len(prior_df) > 0:
+            input_df = pd.concat([prior_df, input_df], ignore_index=True)
 
     result_df = apply_aggregation(
         input_df,
@@ -215,6 +241,10 @@ def run_aggregation(transformation: DataProductTransformation) -> int:
             result_df[TIMESTAMP_COL] + pd.Timedelta(microseconds=interval_us) <= end_utc
         ].reset_index(drop=True)
 
+    # Never re-emit buckets that are already in the output datastream.
+    if start is not None and len(result_df) > 0:
+        result_df = result_df[result_df[TIMESTAMP_COL] >= start].reset_index(drop=True)
+
     if len(result_df) == 0:
         return 0
 
@@ -225,19 +255,50 @@ def _fetch_observations(
     datastream: Datastream,
     after=None,
     through=None,
+    *,
+    at_or_after=None,
 ) -> pd.DataFrame:
     """
     Fetch observations for a datastream as a canonical pandas timeseries DataFrame.
+
+    `after` is exclusive for pointwise continuation; `at_or_after` includes an
+    aggregation bucket's starting observation. `through` is always inclusive.
     """
 
     qs = Observation.objects.filter(datastream=datastream).order_by("phenomenon_time")
 
     if after is not None:
         qs = qs.filter(phenomenon_time__gt=after)
+    if at_or_after is not None:
+        qs = qs.filter(phenomenon_time__gte=at_or_after)
     if through is not None:
         qs = qs.filter(phenomenon_time__lte=through)
 
-    data = list(qs.values_list("phenomenon_time", "result"))
+    return _to_timeseries_df(list(qs.values_list("phenomenon_time", "result")))
+
+
+def _fetch_observation_before(
+    datastream: Datastream,
+    before,
+    exclude_value=None,
+) -> pd.DataFrame:
+    """
+    Fetch the latest observation strictly before `before`, skipping `exclude_value`
+    (e.g. the no-data value), as a canonical pandas timeseries DataFrame.
+    """
+
+    qs = Observation.objects.filter(datastream=datastream, phenomenon_time__lt=before)
+
+    if exclude_value is not None:
+        qs = qs.exclude(result=exclude_value)
+
+    return _to_timeseries_df(list(qs.order_by("-phenomenon_time").values_list("phenomenon_time", "result")[:1]))
+
+
+def _to_timeseries_df(data: list) -> pd.DataFrame:
+    """
+    Convert (phenomenon_time, result) rows into a canonical pandas timeseries DataFrame.
+    """
 
     if not data:
         return pd.DataFrame({

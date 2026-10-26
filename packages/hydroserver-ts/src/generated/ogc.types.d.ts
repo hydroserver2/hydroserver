@@ -2432,7 +2432,7 @@ export interface components {
             /** Payload */
             payload?: components["schemas"]["PayloadPatchBody"];
             /** Placeholdervariables */
-            placeholderVariables?: components["schemas"]["PlaceholderVariablePatchBody"][];
+            placeholderVariables?: components["schemas"]["PlaceholderVariablePostBody"][];
             /** Sourceurl */
             sourceUrl?: string;
             /** Timezone */
@@ -2762,7 +2762,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "taskId" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
+            properties?: ("id" | "taskId" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnGaps" | "stopOnError")[];
         };
         /** DataProductTransformationPatchBody */
         DataProductTransformationPatchBody: {
@@ -2787,8 +2787,8 @@ export interface components {
             ratingCurveId?: string | null;
             /** Stoponerror */
             stopOnError?: boolean;
-            /** Stoponnodata */
-            stopOnNoData?: boolean;
+            /** Stopongaps */
+            stopOnGaps?: boolean;
             /** Timezone */
             timezone?: string | null;
             /** Timezonetype */
@@ -2829,10 +2829,10 @@ export interface components {
              */
             stopOnError: boolean;
             /**
-             * Stoponnodata
-             * @default true
+             * Stopongaps
+             * @default false
              */
-            stopOnNoData: boolean;
+            stopOnGaps: boolean;
             /**
              * Taskid
              * Format: uuid
@@ -2887,7 +2887,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "taskId" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
+            properties?: ("id" | "taskId" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnGaps" | "stopOnError")[];
             /**
              * Sortby
              * @description Select one or more fields to sort the response by.
@@ -2949,10 +2949,10 @@ export interface components {
              */
             stopOnError: boolean;
             /**
-             * Stoponnodata
-             * @default true
+             * Stopongaps
+             * @default false
              */
-            stopOnNoData: boolean;
+            stopOnGaps: boolean;
             /**
              * Taskid
              * Format: uuid
@@ -5500,7 +5500,7 @@ export interface components {
             /** Recipientemails */
             recipientEmails?: string[];
             /** Schedule */
-            schedule?: components["schemas"]["SchedulePatchBody"];
+            schedule?: components["schemas"]["SchedulePatchBody"] | null;
         };
         /** NotificationPostBody */
         NotificationPostBody: {
@@ -6483,18 +6483,6 @@ export interface components {
              * @enum {string}
              */
             resource: "*" | "Workspace" | "Role" | "ServiceAccount" | "Collaborator" | "MonitoringSite" | "MonitoringSiteType" | "LinkedResourceType" | "ObservedProperty" | "ObservedPropertyType" | "ProcessingLevel" | "ResultQualifier" | "Method" | "MethodType" | "Unit" | "UnitType" | "SampledMedium" | "AggregationStatistic" | "DatastreamStatus" | "Datastream" | "Observation" | "DataConnection" | "EtlTask" | "EtlMapping" | "RatingCurve" | "DataProductTask" | "DataProductTransformation" | "MonitoringTask" | "MonitoringRule";
-        };
-        /** PlaceholderVariablePatchBody */
-        PlaceholderVariablePatchBody: {
-            /** Name */
-            name?: string;
-            /** Timestampformat */
-            timestampFormat?: string | null;
-            /**
-             * Type
-             * @enum {string}
-             */
-            type?: "run_time" | "latest_observation_timestamp" | "per_task" | "window_start" | "window_end";
         };
         /** PlaceholderVariablePostBody */
         PlaceholderVariablePostBody: {
@@ -8168,6 +8156,15 @@ export interface operations {
                     "application/json": string;
                 };
             };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
         };
     };
     interfaces_api_views_sta_aggregation_statistic_get_aggregation_statistic: {
@@ -8274,6 +8271,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AggregationStatisticPatchBody"];
+                "application/merge-patch+json": components["schemas"]["AggregationStatisticPatchBody"];
             };
         };
         responses: {
@@ -8295,6 +8293,15 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8407,6 +8414,15 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8531,6 +8547,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["RatingCurvePatchBody"];
+                "application/merge-patch+json": components["schemas"]["RatingCurvePatchBody"];
             };
         };
         responses: {
@@ -8570,6 +8587,15 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8816,6 +8842,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["DataProductTaskPatchBody"];
+                "application/merge-patch+json": components["schemas"]["DataProductTaskPatchBody"];
             };
         };
         responses: {
@@ -9041,7 +9068,7 @@ export interface operations {
                 /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
                 datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "taskId" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
+                properties?: ("id" | "taskId" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnGaps" | "stopOnError")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("outputDatastream" | "ratingCurve")[];
                 /** @description Number of items to skip. */
@@ -9165,13 +9192,22 @@ export interface operations {
                     "application/json": string;
                 };
             };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
         };
     };
     interfaces_api_views_products_transformation_get_data_product_transformation: {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "taskId" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnNoData" | "stopOnError")[];
+                properties?: ("id" | "taskId" | "transformationType" | "outputDatastreamId" | "inputDatastreams" | "ratingCurveId" | "formula" | "aggregationMethod" | "outputIntervalUnits" | "outputInterval" | "timezoneType" | "timezone" | "minValues" | "stopOnGaps" | "stopOnError")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("outputDatastream" | "ratingCurve")[];
                 /** @description Response format. Overrides the Accept header. */
@@ -9282,6 +9318,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["DataProductTransformationPatchBody"];
+                "application/merge-patch+json": components["schemas"]["DataProductTransformationPatchBody"];
             };
         };
         responses: {
@@ -9321,6 +9358,15 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9420,6 +9466,15 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9533,6 +9588,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["DatastreamStatusPatchBody"];
+                "application/merge-patch+json": components["schemas"]["DatastreamStatusPatchBody"];
             };
         };
         responses: {
@@ -9554,6 +9610,15 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9691,6 +9756,15 @@ export interface operations {
                     "application/json": string;
                 };
             };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
         };
     };
     interfaces_api_views_sta_datastream_get_datastream: {
@@ -9791,6 +9865,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["DatastreamPatchBody"];
+                "application/merge-patch+json": components["schemas"]["DatastreamPatchBody"];
             };
         };
         responses: {
@@ -9979,6 +10054,15 @@ export interface operations {
                     "application/json": string;
                 };
             };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
             /** @description Content Too Large */
             413: {
                 headers: {
@@ -10151,6 +10235,15 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -10462,6 +10555,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["DataConnectionPatchBody"];
+                "application/merge-patch+json": components["schemas"]["DataConnectionPatchBody"];
             };
         };
         responses: {
@@ -10492,6 +10586,15 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -10631,6 +10734,15 @@ export interface operations {
                     "application/json": string;
                 };
             };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
         };
     };
     interfaces_api_views_etl_mapping_get_etl_mapping: {
@@ -10748,6 +10860,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["EtlMappingPatchBody"];
+                "application/merge-patch+json": components["schemas"]["EtlMappingPatchBody"];
             };
         };
         responses: {
@@ -10787,6 +10900,15 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -11035,6 +11157,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["EtlTaskPatchBody"];
+                "application/merge-patch+json": components["schemas"]["EtlTaskPatchBody"];
             };
         };
         responses: {
@@ -11349,6 +11472,15 @@ export interface operations {
                     "application/json": string;
                 };
             };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
         };
     };
     interfaces_api_views_sta_linked_resource_type_get_linked_resource_type: {
@@ -11455,6 +11587,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["LinkedResourceTypePatchBody"];
+                "application/merge-patch+json": components["schemas"]["LinkedResourceTypePatchBody"];
             };
         };
         responses: {
@@ -11476,6 +11609,15 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -11575,6 +11717,15 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -11688,6 +11839,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["MethodTypePatchBody"];
+                "application/merge-patch+json": components["schemas"]["MethodTypePatchBody"];
             };
         };
         responses: {
@@ -11709,6 +11861,15 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -11836,6 +11997,15 @@ export interface operations {
                     "application/json": string;
                 };
             };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
         };
     };
     interfaces_api_views_sta_method_get_method: {
@@ -11953,6 +12123,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["MethodPatchBody"];
+                "application/merge-patch+json": components["schemas"]["MethodPatchBody"];
             };
         };
         responses: {
@@ -12122,6 +12293,15 @@ export interface operations {
                     "application/json": string;
                 };
             };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
         };
     };
     interfaces_api_views_monitoring_rule_get_monitoring_rule: {
@@ -12239,6 +12419,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["MonitoringRulePatchBody"];
+                "application/merge-patch+json": components["schemas"]["MonitoringRulePatchBody"];
             };
         };
         responses: {
@@ -12278,6 +12459,15 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -12377,6 +12567,15 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -12490,6 +12689,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["MonitoringSiteTypePatchBody"];
+                "application/merge-patch+json": components["schemas"]["MonitoringSiteTypePatchBody"];
             };
         };
         responses: {
@@ -12511,6 +12711,15 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -12623,6 +12832,15 @@ export interface operations {
                     "application/json": string;
                 };
             };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
         };
     };
     interfaces_api_views_sta_monitoring_site_get_monitoring_site: {
@@ -12723,6 +12941,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["MonitoringSitePatchBody"];
+                "application/merge-patch+json": components["schemas"]["MonitoringSitePatchBody"];
             };
         };
         responses: {
@@ -12866,6 +13085,15 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -13045,6 +13273,15 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -13454,6 +13691,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["MonitoringTaskPatchBody"];
+                "application/merge-patch+json": components["schemas"]["MonitoringTaskPatchBody"];
             };
         };
         responses: {
@@ -13725,6 +13963,15 @@ export interface operations {
                     "application/json": string;
                 };
             };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
         };
     };
     interfaces_api_views_sta_observation_delete_observations: {
@@ -13880,6 +14127,15 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -14098,6 +14354,15 @@ export interface operations {
                     "application/json": string;
                 };
             };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
         };
     };
     interfaces_api_views_sta_observed_property_get_observed_property: {
@@ -14215,6 +14480,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ObservedPropertyPatchBody"];
+                "application/merge-patch+json": components["schemas"]["ObservedPropertyPatchBody"];
             };
         };
         responses: {
@@ -14351,6 +14617,15 @@ export interface operations {
                     "application/json": string;
                 };
             };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
         };
     };
     interfaces_api_views_sta_observed_property_type_get_observed_property_type: {
@@ -14457,6 +14732,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ObservedPropertyTypePatchBody"];
+                "application/merge-patch+json": components["schemas"]["ObservedPropertyTypePatchBody"];
             };
         };
         responses: {
@@ -14478,6 +14754,15 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -14592,6 +14877,15 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -14716,6 +15010,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ProcessingLevelPatchBody"];
+                "application/merge-patch+json": components["schemas"]["ProcessingLevelPatchBody"];
             };
         };
         responses: {
@@ -14865,6 +15160,15 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -15106,6 +15410,15 @@ export interface operations {
                     "application/json": string;
                 };
             };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
         };
     };
     interfaces_api_views_quality_session_get_qc_session: {
@@ -15231,6 +15544,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["QualityControlSessionPatchBody"];
+                "application/merge-patch+json": components["schemas"]["QualityControlSessionPatchBody"];
             };
         };
         responses: {
@@ -15458,6 +15772,15 @@ export interface operations {
                     "application/json": string;
                 };
             };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
         };
     };
     interfaces_api_views_quality_operation_get_qc_operation: {
@@ -15577,6 +15900,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["QualityControlOperationPatchBody"];
+                "application/merge-patch+json": components["schemas"]["QualityControlOperationPatchBody"];
             };
         };
         responses: {
@@ -15616,6 +15940,15 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -15717,6 +16050,15 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -15832,6 +16174,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ResultQualifierPatchBody"];
+                "application/merge-patch+json": components["schemas"]["ResultQualifierPatchBody"];
             };
         };
         responses: {
@@ -15853,6 +16196,15 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -16052,6 +16404,15 @@ export interface operations {
                     "application/json": string;
                 };
             };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
         };
     };
     interfaces_api_views_sta_sampled_medium_get_sampled_medium: {
@@ -16158,6 +16519,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SampledMediumPatchBody"];
+                "application/merge-patch+json": components["schemas"]["SampledMediumPatchBody"];
             };
         };
         responses: {
@@ -16179,6 +16541,15 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -16278,6 +16649,15 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -16391,6 +16771,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["UnitTypePatchBody"];
+                "application/merge-patch+json": components["schemas"]["UnitTypePatchBody"];
             };
         };
         responses: {
@@ -16412,6 +16793,15 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -16519,6 +16909,15 @@ export interface operations {
             };
             /** @description Unauthorized */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -16643,6 +17042,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["UnitPatchBody"];
+                "application/merge-patch+json": components["schemas"]["UnitPatchBody"];
             };
         };
         responses: {
@@ -16784,6 +17184,15 @@ export interface operations {
                     "application/json": string;
                 };
             };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
         };
     };
     interfaces_api_views_iam_workspace_get_workspace: {
@@ -16893,6 +17302,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["WorkspacePatchBody"];
+                "application/merge-patch+json": components["schemas"]["WorkspacePatchBody"];
             };
         };
         responses: {
@@ -16923,6 +17333,15 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -17087,6 +17506,15 @@ export interface operations {
                     "application/json": string;
                 };
             };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
         };
     };
     interfaces_api_views_iam_collaborator_remove_collaborator: {
@@ -17215,6 +17643,15 @@ export interface operations {
                     "application/json": string;
                 };
             };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
         };
     };
     interfaces_api_views_iam_service_account_get_service_account: {
@@ -17315,6 +17752,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ServiceAccountPatchBody"];
+                "application/merge-patch+json": components["schemas"]["ServiceAccountPatchBody"];
             };
         };
         responses: {

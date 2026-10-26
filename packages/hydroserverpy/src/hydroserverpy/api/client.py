@@ -134,13 +134,13 @@ class HydroServer:
             response.raise_for_status()
         except requests.HTTPError as e:
             try:
-                http_error_msg = (
-                    f"{response.status_code} Client Error: "
-                    f"{str(json.loads(response.content).get('detail'))}"
-                )
+                body = json.loads(response.content)
+                error_detail = body.get("message") or body.get("detail") or response.text
+                http_error_msg = f"{response.status_code} Client Error: {error_detail}"
             except (
                     ValueError,
                     TypeError,
+                    AttributeError,
             ):
                 http_error_msg = e
             if 400 <= response.status_code < 500:

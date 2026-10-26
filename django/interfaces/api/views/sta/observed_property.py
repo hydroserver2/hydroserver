@@ -57,6 +57,7 @@ def get_observed_properties(
         400: str,
         401: str,
         403: str,
+        409: str,
     },
     by_alias=True,
 )

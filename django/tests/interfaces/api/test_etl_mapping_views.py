@@ -194,7 +194,7 @@ def test_create_etl_mapping_returns_404_for_nonexistent_task(client):
     assert response.status_code == 404
 
 
-def test_create_etl_mapping_returns_400_for_duplicate_target_datastream(client):
+def test_create_etl_mapping_returns_409_for_duplicate_target_datastream(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     task = _make_task(workspace)
@@ -211,7 +211,7 @@ def test_create_etl_mapping_returns_400_for_duplicate_target_datastream(client):
         content_type="application/json",
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 409
 
 
 # --- get_etl_mapping --------------------------------------------------------------

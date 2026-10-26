@@ -30,13 +30,62 @@ def _signup_data(**overrides):
 
 
 def test_signup_persists_profile_fields(client):
-    client.post(reverse("account_signup"), data=_signup_data())
+    client.post(
+        reverse("account_signup"),
+        data=_signup_data(
+            middle_name="Ann",
+            phone="(801) 555-1234",
+            address="123 Main Street",
+            link="https://example.com/jane",
+        ),
+    )
 
     user = User.objects.get(email="new-user@example.com")
     assert user.first_name == "Jane"
+    assert user.middle_name == "Ann"
     assert user.last_name == "Doe"
+    assert user.phone == "(801) 555-1234"
+    assert user.address == "123 Main Street"
+    assert user.link == "https://example.com/jane"
     assert user.user_type == "Researcher"
     assert user.organization is None
+
+
+@pytest.mark.parametrize("route", ["account_signup", "socialaccount_signup"])
+def test_signup_renders_optional_contact_fields(utahid_signup, route):
+    response = utahid_signup.get(reverse(route), {"method": "email"})
+
+    assert response.status_code == 200
+    for name in ("middle_name", "phone", "address", "link"):
+        assert f'name="{name}"'.encode() in response.content
+        assert not response.context["form"].fields[name].required
+    assert b'data-maska="(###) ###-####"' in response.content
+    assert b'inputmode="numeric"' in response.content
+    assert b'/static/vendor/maska/maska-3.2.0.js' in response.content
+    assert b'/static/js/phone-input.js' in response.content
+
+
+@pytest.mark.parametrize("route", ["account_signup", "socialaccount_signup"])
+def test_signup_rejects_incomplete_phone(utahid_signup, route):
+    response = utahid_signup.post(
+        reverse(route), data=_signup_data(phone="(801) 555-123")
+    )
+
+    assert response.status_code == 200
+    assert response.context["form"].errors["phone"] == [
+        "Phone number must contain 10 digits."
+    ]
+    assert not User.objects.filter(email="new-user@example.com").exists()
+
+
+def test_signup_rejects_invalid_profile_link(client):
+    response = client.post(
+        reverse("account_signup"), data=_signup_data(link="not a URL")
+    )
+
+    assert response.status_code == 200
+    assert response.context["form"].errors.get("link")
+    assert not User.objects.filter(email="new-user@example.com").exists()
 
 
 def test_signup_creates_and_links_organization(client):
@@ -189,7 +238,11 @@ def test_social_signup_saves_account_type_and_organization(utahid_signup):
         data={
             "email": "utahid-user@example.com",
             "first_name": "Jane",
+            "middle_name": "Ann",
             "last_name": "Doe",
+            "phone": "(801) 555-1234",
+            "address": "123 Main Street",
+            "link": "https://example.com/jane",
             "user_type": "Researcher",
             "has_organization": True,
             "org_name": "Utah State University",
@@ -199,6 +252,10 @@ def test_social_signup_saves_account_type_and_organization(utahid_signup):
     )
 
     user = User.objects.get(email="utahid-user@example.com")
+    assert user.middle_name == "Ann"
+    assert user.phone == "(801) 555-1234"
+    assert user.address == "123 Main Street"
+    assert user.link == "https://example.com/jane"
     assert user.user_type == "Researcher"
     assert user.organization.organization_type == "University"
     assert SocialAccount.objects.get(user=user).provider == "utahid"

@@ -53,6 +53,13 @@ export function useWorkspacePermissions(
     if (!w) return false
     if (isOwner(w) || isAdmin()) return true
 
+    if (
+      resource === PermissionResource.Workspace &&
+      [PermissionAction.Edit, PermissionAction.Delete].includes(action)
+    ) {
+      return false
+    }
+
     const perms = w.collaboratorRole?.permissions ?? []
     return perms.some(
       (permission) =>

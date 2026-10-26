@@ -49,7 +49,7 @@ class DataProductTransformationFields(Schema):
     timezone_type: Optional[TimezoneType] = None
     timezone: Optional[str] = None
     min_values: Optional[int] = None
-    stop_on_no_data: bool = True
+    stop_on_gaps: bool = False
     stop_on_error: bool = True
 
 

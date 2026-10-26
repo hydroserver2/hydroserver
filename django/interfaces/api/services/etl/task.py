@@ -24,6 +24,8 @@ from interfaces.api.schemas.etl.task import (
 
 User = get_user_model()
 
+CELERY_TASK_NAME = "processing.etl.tasks.run_etl_task"
+
 
 class EtlTaskAPIService(TaskService[EtlTask], APIService):
 
@@ -236,7 +238,7 @@ class EtlTaskAPIService(TaskService[EtlTask], APIService):
             interval_period=schedule.interval_period if schedule else None,
             start_time=schedule.start_time if schedule else None,
             enabled=schedule.enabled if schedule else True,
-            celery_task_name="processing.etl.tasks.run_etl_task",
+            celery_task_name=CELERY_TASK_NAME,
         )
 
         return {"id": task.pk}
@@ -250,12 +252,14 @@ class EtlTaskAPIService(TaskService[EtlTask], APIService):
     ):
         task = self.get_task_for_action(principal=principal, uid=uid, action="edit")
 
+        # Every update saves the full instance, including omitted JSON fields.
+        task = self.task_model.objects.select_for_update().get(pk=task.pk)
+
         task_data = data.dict(
             include=set(EtlTaskPatchBody.model_fields.keys()) - {"schedule"},
             exclude_unset=True,
         )
-        for field, value in task_data.items():
-            setattr(task, field, value)
+        self.apply_merge_patch(task, task_data)
 
         task.save()
 
@@ -268,5 +272,5 @@ class EtlTaskAPIService(TaskService[EtlTask], APIService):
                 interval_period=schedule.interval_period if schedule else None,
                 start_time=schedule.start_time if schedule else None,
                 enabled=schedule.enabled if schedule else True,
-                celery_task_name="processing.etl.tasks.run_etl_task",
+                celery_task_name=CELERY_TASK_NAME,
             )

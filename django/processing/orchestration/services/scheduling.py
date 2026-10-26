@@ -5,6 +5,7 @@ from pydantic import validate_call, ConfigDict
 from croniter import croniter
 
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 from django_celery_beat.models import CrontabSchedule, IntervalSchedule, PeriodicTask
 
 from core.types import Unset
@@ -44,6 +45,22 @@ class SchedulingService:
             periodic_task.interval.period  # noqa
             if periodic_task and periodic_task.interval else None
         )
+
+        # Crontab and interval are alternatives: supplying one replaces the other
+        # unless the patch also names it.
+        if crontab is Unset and interval not in (None, Unset):
+            crontab = None
+        if interval is Unset and crontab not in (None, Unset):
+            interval = None
+            interval_period = None if interval_period is Unset else interval_period
+
+        # A schedule is a nested resource: omitted members retain their values.
+        crontab = current_crontab if crontab is Unset else crontab
+        interval = current_interval if interval is Unset else interval
+        interval_period = current_interval_period if interval_period is Unset else interval_period
+
+        if crontab is not None and interval is not None:
+            raise ValidationError("A schedule cannot have both a crontab and an interval.")
 
         crontab_schedule = None
         interval_schedule = None
@@ -239,5 +256,27 @@ class SchedulingService:
                 if next_run > now:
                     return next_run
             return now + delta
+
+        return None
+
+    @staticmethod
+    def compute_previous_run_at(periodic_task: Optional[PeriodicTask]) -> Optional[datetime]:
+        """
+        Return the scheduled run time preceding the current run of a PeriodicTask, or None if unscheduled.
+        """
+
+        if not periodic_task:
+            return None
+
+        now = timezone.now()
+
+        if periodic_task.crontab:
+            cron_string = SchedulingService.get_crontab_string(periodic_task)
+            cron = croniter(cron_string, timezone.make_naive(now, dt_timezone.utc))
+            cron.get_prev(datetime)  # The run currently executing
+            return timezone.make_aware(cron.get_prev(datetime), dt_timezone.utc)
+
+        if periodic_task.interval:
+            return now - timedelta(**{periodic_task.interval.period: periodic_task.interval.every})
 
         return None

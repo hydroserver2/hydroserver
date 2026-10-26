@@ -3,7 +3,7 @@ import uuid
 from collections import defaultdict
 from typing import Optional, Literal, Sequence, get_args
 from django.contrib.auth import get_user_model
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.db.models import Min, Max, Count, Exists, OuterRef
 from django.utils import timezone
 from django.http import StreamingHttpResponse
@@ -385,6 +385,7 @@ class DatastreamAPIService(APIService):
 
         return {"id": datastream.id}
 
+    @transaction.atomic
     def update(
         self,
         principal: User | ServiceAccount | AnonymousPrincipal,
@@ -406,13 +407,10 @@ class DatastreamAPIService(APIService):
                 action="view",
             )
 
-        if (tags_payload := datastream_data.pop("tags", None)) is not None:
-            datastream = Datastream.objects.select_for_update().get(pk=datastream.pk)
-            merged_tags = {**(datastream.tags or {}), **tags_payload}
-            datastream.tags = {k: v for k, v in merged_tags.items() if v is not None}
+        # Scalar-only edits must not save stale tags over another update.
+        datastream = Datastream.objects.select_for_update().get(pk=datastream.pk)
 
-        for field, value in datastream_data.items():
-            setattr(datastream, field, value)
+        self.apply_merge_patch(datastream, datastream_data)
 
         datastream.full_clean()
         datastream.save()

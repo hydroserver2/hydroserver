@@ -11,6 +11,61 @@ const jsonResponse = (body: unknown) =>
     headers: { 'Content-Type': 'application/json' },
   })
 
+describe('patch', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('merges nested objects consistently and preserves request headers', async () => {
+    const original = {
+      settings: { source: { station: 'A', parameter: 'temperature' } },
+      organization: { name: 'OriginalOrg', code: '001' },
+    }
+    const updated = {
+      settings: { source: { station: 'B', parameter: 'temperature' } },
+      organization: { name: 'UpdatedOrg', code: '001' },
+    }
+    const fetchMock = vi.fn().mockImplementation(async () => jsonResponse(updated))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await apiMethods.patch('https://hydro.example.com/resource', updated, original, {
+      headers: { 'X-Example': 'preserved' },
+    })
+
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
+      settings: { source: { station: 'B' } },
+      organization: { name: 'UpdatedOrg' },
+    })
+    expect(fetchMock.mock.calls[0][1].headers.get('Content-Type')).toBe('application/merge-patch+json')
+    expect(fetchMock.mock.calls[0][1].headers.get('X-Example')).toBe('preserved')
+  })
+
+  it('forwards an explicit patch without an original snapshot', async () => {
+    const fetchMock = vi.fn().mockImplementation(async () => jsonResponse({}))
+    vi.stubGlobal('fetch', fetchMock)
+    const patch = { taskVariables: { parameter: null } }
+    await apiMethods.patch('https://hydro.example.com/resource', patch)
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual(patch)
+  })
+
+  it('preserves multipart PATCH requests', async () => {
+    const fetchMock = vi.fn().mockImplementation(async () => jsonResponse({}))
+    vi.stubGlobal('fetch', fetchMock)
+    const body = new FormData()
+    body.set('name', 'Attachment')
+    await apiMethods.patch('https://hydro.example.com/resource', body)
+    expect(fetchMock.mock.calls[0][1].body).toBe(body)
+    expect(fetchMock.mock.calls[0][1].headers.has('Content-Type')).toBe(false)
+  })
+
+  it.each([null, [], false])('does not silently skip a non-object patch: %j', async (patch) => {
+    const fetchMock = vi.fn().mockImplementation(async () => jsonResponse({}))
+    vi.stubGlobal('fetch', fetchMock)
+    await apiMethods.patch('https://hydro.example.com/resource', patch)
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual(patch)
+  })
+})
+
 describe('paginatedFetch', () => {
   afterEach(() => {
     vi.restoreAllMocks()

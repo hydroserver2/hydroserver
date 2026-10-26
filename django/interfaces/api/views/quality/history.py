@@ -47,7 +47,7 @@ def get_qc_histories(
 @qc_history_router.post(
     "/items",
     auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
-    response={201: CreatedResponse, 400: str, 401: str, 403: str, 404: str},
+    response={201: CreatedResponse, 400: str, 401: str, 403: str, 404: str, 409: str},
     by_alias=True,
 )
 def create_qc_history(

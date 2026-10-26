@@ -49,12 +49,14 @@ class Collaborator(models.Model):
                 condition=Q(user__isnull=False),
                 name="unique_workspace_user_collaborator",
                 violation_error_message="This account already collaborates on the workspace",
+                violation_error_code="unique",
             ),
             models.UniqueConstraint(
                 fields=["workspace", "service_account"],
                 condition=Q(service_account__isnull=False),
                 name="unique_workspace_service_account_collaborator",
                 violation_error_message="This account already collaborates on the workspace",
+                violation_error_code="unique",
             ),
         ]
 

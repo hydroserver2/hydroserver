@@ -10,6 +10,7 @@ class FakeResponse:
     def __init__(self, status_code=200, content=b"{}"):
         self.status_code = status_code
         self.content = content
+        self.text = content.decode()
 
     def json(self):
         return json.loads(self.content)
@@ -297,3 +298,41 @@ def test_list_sends_camel_case_params_and_keeps_public_filter_names(fake_session
     assert not any("_" in key for key in params)
     assert collection.filters["workspace"] == "00000000-0000-0000-0000-000000000001"
     assert collection.filters["tag"] == ("river", "green")
+
+
+
+def test_workspace_roles_include_system_roles(fake_session_factory):
+    hs = client_module.HydroServer(host="https://example.com", apikey="hs_test_api_key")
+    workspace_id = "00000000-0000-0000-0000-000000000001"
+    fake_session_factory[0].queue(
+        "get",
+        FakeResponse(content=json.dumps({"data": {
+            "id": workspace_id, "name": "My Workspace", "isPrivate": False, "ownerEmail": "owner@example.com",
+        }}).encode()),
+        FakeResponse(content=json.dumps({"data": [
+            {"id": "00000000-0000-0000-0000-000000000002", "name": "Editor", "workspaceId": None, "permissions": []},
+            {"id": "00000000-0000-0000-0000-000000000003", "name": "Custom", "workspaceId": workspace_id,
+             "permissions": []},
+        ]}).encode()),
+    )
+
+    roles = hs.workspaces.get(workspace_id).roles
+
+    params = fake_session_factory[0].last_kwargs["params"]
+    assert params["workspaceId"] == [workspace_id, "null"]
+    assert [role.name for role in roles] == ["Editor", "Custom"]
+
+@pytest.mark.parametrize(
+    "content, expected",
+    [
+        (b'{"message": "Duplicate phenomenonTime found on this datastream."}',
+         "409 Client Error: Duplicate phenomenonTime found on this datastream."),
+        (b'{"detail": "Unauthorized"}', "409 Client Error: Unauthorized"),
+        (b'{"other": "value"}', '409 Client Error: {"other": "value"}'),
+    ],
+)
+def test_client_errors_surface_the_server_error_message(content, expected):
+    with pytest.raises(requests.HTTPError) as exc_info:
+        client_module.HydroServer._raise_for_hs_status(FakeResponse(409, content))
+
+    assert str(exc_info.value) == expected

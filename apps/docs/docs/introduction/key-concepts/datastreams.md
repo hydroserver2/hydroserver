@@ -11,11 +11,11 @@ For example, you could have a datastream of:
 - a Sampled Medium of Surface Water
 - measured using A YSI EXO2 Multiparameter Water Quality Sonde sensor
 
-A datastream acts as the hub for understanding what's being measured at a given location. For example, if you want to know what's being measured, you'll ask the API for `datastream.observed_property` which will return 'Water temperature' along with metadata describing exactly what 'Water temperature' means to your organization. If you want to know how the observations are produced, you'd ask for `datastream.method`, which may include instrument details when applicable. If you want the actual data, you'll call `datastream.observations`.
+A datastream acts as the hub for understanding what's being measured at a given location. For example, if you want to know what's being measured, you'll ask the API for `datastream.observedProperty` which will return 'Water temperature' along with metadata describing exactly what 'Water temperature' means to your organization. If you want to know how the observations are produced, you'd ask for `datastream.method`, which may include instrument details when applicable. If you want the actual data, you'll call `datastream.observations`.
 
 ## Naming Datastreams
 
-The `datastream.name` must be unique and unambiguous within its monitoring site. Use a short, data-focused name and do not append the monitoring site name. HydroServer applications provide the monitoring-site context when it is needed.
+The `datastream.name` must be unique and unambiguous within its monitoring site. Use a short, data-focused name and do not append the monitoring site name. HydroServer applications provide the monitoring site context when it is needed.
 
 Use this recommended convention:
 

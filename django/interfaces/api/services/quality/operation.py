@@ -134,11 +134,11 @@ class QCOperationAPIService(APIService):
         arguments: dict[str, Any] | list[Any] | None | Unset = Unset,
     ):
         operation = self.get(principal=principal, history=history, session=session, operation=operation, action="edit")
+        # Scalar-only edits must not save stale arguments over another update.
+        operation = QCOperation.objects.select_for_update().get(pk=operation.pk)
         editable_fields = {"order": order, "comment": comment, "arguments": arguments}
 
-        for field, value in editable_fields.items():
-            if value is not Unset:
-                setattr(operation, field, value)
+        self.apply_merge_patch(operation, {k: v for k, v in editable_fields.items() if v is not Unset})
 
         operation.full_clean()
         operation.save()

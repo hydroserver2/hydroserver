@@ -56,6 +56,7 @@ def get_monitoring_rules(
         401: str,
         403: str,
         404: str,
+        409: str,
     },
     by_alias=True,
 )
@@ -109,6 +110,7 @@ def get_monitoring_rule(
         401: str,
         403: str,
         404: str,
+        409: str,
     },
     by_alias=True,
 )

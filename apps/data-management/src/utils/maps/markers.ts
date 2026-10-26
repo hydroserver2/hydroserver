@@ -44,9 +44,23 @@ const addColorToMarkersByValue = <T extends MapMonitoringSite>(
 
 export const addColorToMarkers = <T extends ColorableMonitoringSite>(
   monitoringSites: T[],
-  key: string
+  key: string,
+  untaggedColor: string
 ): Array<ColorizedMonitoringSite<T>> =>
-  addColorToMarkersByValue(monitoringSites, (monitoringSite) => getTagValue(monitoringSite.tags, key))
+  addColorToMarkersByValue(monitoringSites, (monitoringSite) =>
+    getTagValue(monitoringSite.tags, key)
+  ).map((monitoringSite) =>
+    monitoringSite.color
+      ? monitoringSite
+      : {
+          ...monitoringSite,
+          color: {
+            borderColor: untaggedColor,
+            background: untaggedColor,
+            glyphColor: untaggedColor,
+          },
+        }
+  )
 
 export const addWorkspaceColorToMarkers = <T extends MapMonitoringSite>(
   monitoringSites: T[]

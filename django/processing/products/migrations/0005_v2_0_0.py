@@ -73,7 +73,7 @@ def _search_vector_trigger_sql(
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("products", "0003_remove_dataproducttransformation_max_gap_interval_and_more"),
+        ("products", "0004_rename_stop_on_no_data_dataproducttransformation_stop_on_gaps"),
         ("sta", "0009_v2_0_0"),
     ]
 
@@ -112,6 +112,16 @@ class Migration(migrations.Migration):
                 fields=("rating_curve", "input_value"),
                 name="unique_rating_curve_point_input_value",
                 violation_error_message="A point with this input_value already exists on this rating curve.",
+            ),
+        ),
+        migrations.AlterConstraint(
+            model_name="dataproducttransformationinput",
+            name="unique_data_product_transformation_input_variable",
+            constraint=models.UniqueConstraint(
+                condition=models.Q(("variable_name__isnull", False)),
+                fields=("transformation", "variable_name"),
+                name="unique_data_product_transformation_input_variable",
+                violation_error_code="unique",
             ),
         ),
         migrations.AddField(

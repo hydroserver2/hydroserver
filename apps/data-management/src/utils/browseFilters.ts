@@ -107,16 +107,22 @@ const queryArray = (values: string[]): string | string[] | undefined => {
 export function parseBrowseFilterQuery(
   query: LocationQuery
 ): BrowseFilterRouteState {
+  const tagKey = querySingleValue(query.tagKey)
+  const colorBy =
+    parseMarkerColorMode(query.colorBy) ?? (tagKey ? 'metadata' : null)
+
   return {
     siteIds: readQueryValues(query, ['selectedSite']),
     searchText: querySingleValue(query.search),
     workspaceIds: readQueryValues(query, ['workspaces']),
     siteTypes: readExactQueryValues(query, ['siteTypes']),
-    tagKey: querySingleValue(query.tagKey),
+    tagKey,
     tagValues: readExactQueryValues(query, ['tagValues']),
     mySites: parseBooleanQuery(query.mySites),
-    colorBy: parseMarkerColorMode(query.colorBy),
-    colorTagKey: querySingleValue(query.colorTagKey),
+    colorBy,
+    colorTagKey:
+      querySingleValue(query.colorTagKey) ||
+      (colorBy === 'metadata' ? tagKey : ''),
     drawer: parseBooleanQuery(query.drawer),
   }
 }
@@ -145,7 +151,7 @@ export function buildBrowseFilterQuery(
   if (tagKey) nextQuery.tagKey = tagKey
   if (tagValues !== undefined) nextQuery.tagValues = tagValues
   if (state.mySites) nextQuery.mySites = '1'
-  if (state.colorBy && state.colorBy !== 'none')
+  if (state.colorBy && (state.colorBy !== 'none' || tagKey))
     nextQuery.colorBy = state.colorBy
   if (state.colorBy === 'metadata' && colorTagKey)
     nextQuery.colorTagKey = colorTagKey
@@ -177,8 +183,8 @@ export function filterMonitoringSiteMarkers(
     const tagValue = tagKey ? getTagValue(monitoringSite.tags, tagKey) : undefined
     const hasSelectedTag =
       !tagKey ||
-      (tagValue !== undefined &&
-        (selectedTagValues.length === 0 || selectedTagValues.includes(tagValue)))
+      selectedTagValues.length === 0 ||
+      (tagValue !== undefined && selectedTagValues.includes(tagValue))
 
     return (
       isSelectedSite &&

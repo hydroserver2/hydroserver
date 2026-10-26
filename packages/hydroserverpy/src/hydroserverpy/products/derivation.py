@@ -106,7 +106,7 @@ def apply_derivation(
     inputs: dict[str, pd.DataFrame],
     formula: str,
     *,
-    stop_on_no_data: bool,
+    stop_on_gaps: bool,
     stop_on_error: bool,
     input_no_data_values: dict[str, float] | None = None,
     output_no_data_value: float | None = None,
@@ -114,23 +114,23 @@ def apply_derivation(
     """
     Apply a mathematical formula to one or more input timeseries DataFrames.
 
-    Inputs are matched on exact timestamp (sorted defensively first). If they
-    diverge — one has a timestamp the others don't — output stops before that
-    point, and it's logged; nothing after is evaluated, even if they realign
-    later.
+    Inputs are matched on exact timestamp (sorted defensively first).
+    stop_on_gaps controls gaps, where one input has a timestamp the others
+    don't: True stops output before the first gap and logs it, so nothing
+    after is evaluated even if the inputs realign later; False skips every
+    timestamp not shared by all inputs and continues.
 
-    Within the aligned rows, stop_on_no_data and stop_on_error each
-    independently control a bad row (an input at its own no-data value, per
-    input_no_data_values, or a non-finite formula result): True truncates
-    there and logs it, False fills it with output_no_data_value and
-    continues silently.
+    Within the aligned rows, an input at its own no-data value (per
+    input_no_data_values) always produces output_no_data_value. stop_on_error
+    controls a non-finite formula result: True truncates there and logs it,
+    False fills it with output_no_data_value and continues silently.
     """
 
     if not inputs:
         raise ValueError("At least one input DataFrame must be provided to run a derivation.")
 
-    if not stop_on_no_data and output_no_data_value is None:
-        raise ValueError("output_no_data_value is required when stop_on_no_data is False.")
+    if input_no_data_values and output_no_data_value is None:
+        raise ValueError("output_no_data_value is required when input_no_data_values are given.")
 
     if not stop_on_error and output_no_data_value is None:
         raise ValueError("output_no_data_value is required when stop_on_error is False.")
@@ -144,9 +144,9 @@ def apply_derivation(
     }
 
     logger.debug(
-        "Evaluating derivation (formula=%r, variables=%r, stopOnNoData=%r, stopOnError=%r, "
+        "Evaluating derivation (formula=%r, variables=%r, stopOnGaps=%r, stopOnError=%r, "
         "inputNoDataValues=%r, outputNoDataValue=%r, rows=%r).",
-        formula, variables, stop_on_no_data, stop_on_error, input_no_data_values, output_no_data_value,
+        formula, variables, stop_on_gaps, stop_on_error, input_no_data_values, output_no_data_value,
         {var: len(df) for var, df in validated.items()},
     )
 
@@ -160,6 +160,13 @@ def apply_derivation(
         other = validated[var][[TIMESTAMP_COL, RESULT_COL]].rename(columns={RESULT_COL: var})
         combined_df = combined_df.merge(other, on=TIMESTAMP_COL, how="inner")
     combined_df = combined_df.sort_values(TIMESTAMP_COL).reset_index(drop=True)
+
+    if divergence_timestamp is not None and not stop_on_gaps:
+        logger.info(
+            "Derivation skipped %d timestamp(s) not shared by all inputs, starting at %s.",
+            len(divergent_timestamps), divergence_timestamp,
+        )
+        divergence_timestamp = None
 
     if divergence_timestamp is not None:
         combined_df = combined_df[combined_df[TIMESTAMP_COL] < divergence_timestamp].reset_index(drop=True)
@@ -194,32 +201,23 @@ def apply_derivation(
         except Exception as e:
             raise ValueError(f"Formula evaluation failed: {e}") from e
 
-    # Excludes no-data rows, which stop_on_no_data already accounts for.
+    # Excludes no-data rows, which always get output_no_data_value instead.
     error_mask = ~ndv_mask & ~np.isfinite(result_array)
 
-    ndv_stop_idx = int(np.argmax(ndv_mask)) if stop_on_no_data and ndv_mask.any() else None
-    error_stop_idx = int(np.argmax(error_mask)) if stop_on_error and error_mask.any() else None
-
-    stop_idx = None
-    stop_reason = None
-    if ndv_stop_idx is not None and (error_stop_idx is None or ndv_stop_idx <= error_stop_idx):
-        stop_idx, stop_reason = ndv_stop_idx, "input(s) contained a no-data value"
-    elif error_stop_idx is not None:
-        stop_idx, stop_reason = error_stop_idx, "formula produced a non-finite result"
-
-    if stop_idx is not None:
+    if stop_on_error and error_mask.any():
+        stop_idx = int(np.argmax(error_mask))
         stop_timestamp = combined_df[TIMESTAMP_COL].iloc[stop_idx]
         combined_df = combined_df.iloc[:stop_idx].reset_index(drop=True)
         result_array = result_array[:stop_idx]
         ndv_mask = ndv_mask[:stop_idx]
         error_mask = error_mask[:stop_idx]
-        logger.warning("Derivation stopped at %s: %s.", stop_timestamp, stop_reason)
+        logger.warning("Derivation stopped at %s: formula produced a non-finite result.", stop_timestamp)
     elif divergence_timestamp is not None:
         logger.warning(
             "Derivation stopped at %s: input timestamps are not aligned.", divergence_timestamp,
         )
 
-    if not stop_on_no_data and ndv_mask.any():
+    if ndv_mask.any():
         result_array = np.where(ndv_mask, output_no_data_value, result_array)
 
     if not stop_on_error and error_mask.any():

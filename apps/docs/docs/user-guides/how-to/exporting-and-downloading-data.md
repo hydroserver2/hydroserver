@@ -28,4 +28,4 @@ Observation values are exported as a simple CSV table with columns for the times
 
 ## Automated or Scripted Data Download
 
-If you want to automate data retrieval or code data download, you should consult the sections in the documentation on using HydroServer's Python client hydroserverpy or using HydroServer's API (for other programming languages).
+If you want to automate data retrieval or code data download, use HydroServer's Python client, hydroserverpy — see [retrieving observations](/user-guides/how-to/using-the-python-client.md#observation-methods) in the client reference — or call [HydroServer's APIs](/references/hydroserver-apis.md) directly from other programming languages.

@@ -2,7 +2,7 @@
 
 In this first part, we'll connect to HydroServer and create everything needed to represent a monitoring site: a workspace, a site, linked metadata (method, observed property, unit, and processing level), and a datastream. By the end you'll have a fully described datastream ready to receive observations in the next part.
 
-The site we'll be building throughout this tutorial is a fictional stream gauge station on the Cache River in northern Utah. We'll use it to measure water surface elevation (stage) — a common measurement at stream monitoring stations.
+The site we'll be building in this part is a stream gauge station on the Blacksmith Fork River in northern Utah, modeled on a Logan River Observatory site. We'll use it to record discharge — the volume of water flowing past the station per unit time.
 
 ## Connect to HydroServer
 
@@ -108,7 +108,7 @@ discharge_observed_property = hs_api.observedproperties.create(
 discharge_unit = hs_api.units.create(
     workspace=workspace,
     name='Cubic meters per second',
-    symbol='m3^s',
+    symbol='m^3/s',
     definition='https://qudt.org/vocab/unit/M3-PER-SEC',
     type='Flow rate'
 )
@@ -165,4 +165,4 @@ We'll use `discharge_datastream` directly in the next part to load observations.
 
 In a few dozen lines of Python, we've created a fully described monitoring site in HydroServer with a datastream ready to receive data. If you open the web interface and navigate to your workspace, you should see the Blacksmith Fork River above confluence with Logan River on the map and the discharge datastream listed in its detail page.
 
-In Part 2, we'll load some sample stage observations into that datastream and visualize them.
+In Part 2, we'll load some sample discharge observations into that datastream and visualize them.

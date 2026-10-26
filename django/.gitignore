@@ -9,6 +9,12 @@ db.sqlite3
 !/static/css/
 /static/css/*
 !/static/css/auth.css
+!/static/js/
+/static/js/*
+!/static/js/phone-input.js
+!/static/vendor/
+/static/vendor/*
+!/static/vendor/maska/
 !/static/img/
 /static/img/*
 !/static/img/hydroserver-icon-min.png

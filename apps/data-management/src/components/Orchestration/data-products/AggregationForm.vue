@@ -471,7 +471,6 @@ async function onCreate() {
     minValues: minValues.value ?? null,
     timezoneType: timezoneType.value ?? null,
     timezone: timezone.value ?? null,
-    stopOnNoData: true,
     stopOnError: true,
   } as any)
 

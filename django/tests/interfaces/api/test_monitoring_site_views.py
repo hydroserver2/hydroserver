@@ -754,7 +754,7 @@ def test_update_monitoring_site_tags_locks_row_for_update(client):
     assert any("FOR UPDATE" in query["sql"] for query in queries.captured_queries)
 
 
-def test_update_monitoring_site_without_tags_does_not_lock_row(client):
+def test_update_monitoring_site_without_tags_locks_row_for_update(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     monitoring_site = MonitoringSiteFactory(workspace=workspace, name="Original Name")
@@ -767,7 +767,7 @@ def test_update_monitoring_site_without_tags_does_not_lock_row(client):
             content_type="application/json",
         )
 
-    assert not any("FOR UPDATE" in query["sql"] for query in queries.captured_queries)
+    assert any("FOR UPDATE" in query["sql"] for query in queries.captured_queries)
 
 
 def test_update_monitoring_site_tags_returns_403_for_viewer_collaborator(client):
@@ -1071,7 +1071,7 @@ def test_add_monitoring_site_linked_resource_succeeds_with_link(client):
     assert linked_resources[0]["name"] == "Site Report"
 
 
-def test_add_monitoring_site_linked_resource_returns_400_for_duplicate_name(client):
+def test_add_monitoring_site_linked_resource_returns_409_for_duplicate_name(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     monitoring_site = MonitoringSiteFactory(workspace=workspace)
@@ -1086,7 +1086,7 @@ def test_add_monitoring_site_linked_resource_returns_400_for_duplicate_name(clie
         data={"name": "Site Report", "type": "Report", "link": "https://example.com/b.pdf"},
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 409
 
 
 def test_add_monitoring_site_linked_resource_returns_400_without_file_or_link(client):

@@ -118,18 +118,48 @@ describe('filterMonitoringSiteMarkers', () => {
     ).toEqual([])
   })
 
-  it('filters monitoringSites by metadata key and optional values', () => {
+  it('keeps untagged monitoringSites when only a metadata key is selected', () => {
     expect(
       filterMonitoringSiteMarkers(monitoringSites as any, [], [], undefined, 'Network').map(
         (monitoringSite) => monitoringSite.id
       )
-    ).toEqual(['monitoringSite-1', 'monitoringSite-2', 'monitoringSite-3'])
+    ).toEqual(['monitoringSite-1', 'monitoringSite-2', 'monitoringSite-3', 'monitoringSite-4'])
+  })
 
+  it('only includes matching key:value pairs when a value is selected', () => {
     expect(
       filterMonitoringSiteMarkers(monitoringSites as any, [], [], undefined, 'Network', [
         'Primary',
       ]).map((monitoringSite) => monitoringSite.id)
     ).toEqual(['monitoringSite-1', 'monitoringSite-3'])
+  })
+
+  it('matches any selected value while excluding sites without the key', () => {
+    expect(
+      filterMonitoringSiteMarkers(
+        monitoringSites as any, [], [], undefined, 'Network', ['Primary', 'Secondary']
+      ).map((site) => site.id)
+    ).toEqual(['monitoringSite-1', 'monitoringSite-2', 'monitoringSite-3'])
+  })
+
+  it('keeps workspace and site type filters active for key-only selections', () => {
+    expect(
+      filterMonitoringSiteMarkers(
+        monitoringSites as any,
+        [{ id: 'workspace-1' }] as any,
+        ['Lake, Reservoir, Impoundment'],
+        undefined,
+        'Network'
+      ).map((site) => site.id)
+    ).toEqual(['monitoringSite-4'])
+  })
+
+  it('returns no sites for a key:value pair that does not exist', () => {
+    expect(
+      filterMonitoringSiteMarkers(
+        monitoringSites as any, [], [], undefined, 'Network', ['Unknown']
+      )
+    ).toEqual([])
   })
 
   it('does not match a prototype-named tag key against sites without that own tag', () => {
@@ -139,13 +169,31 @@ describe('filterMonitoringSiteMarkers', () => {
         [],
         [],
         undefined,
-        'constructor'
+        'constructor',
+        ['Object']
       ).map((monitoringSite) => monitoringSite.id)
     ).toEqual([])
   })
 })
 
 describe('parseBrowseFilterQuery', () => {
+  it('activates metadata coloring from a key-only URL', () => {
+    expect(parseBrowseFilterQuery({ tagKey: 'basin' })).toMatchObject({
+      tagKey: 'basin',
+      colorBy: 'metadata',
+      colorTagKey: 'basin',
+    })
+  })
+
+  it('preserves explicit coloring choices alongside a metadata filter', () => {
+    expect(parseBrowseFilterQuery({ tagKey: 'basin', colorBy: 'none' }))
+      .toMatchObject({ colorBy: 'none', colorTagKey: '' })
+    expect(parseBrowseFilterQuery({ tagKey: 'basin', colorBy: 'workspace' }))
+      .toMatchObject({ colorBy: 'workspace' })
+    expect(parseBrowseFilterQuery({ tagKey: 'basin', colorBy: 'metadata', colorTagKey: 'Network' }))
+      .toMatchObject({ colorBy: 'metadata', colorTagKey: 'Network' })
+  })
+
   it('reads canonical query params', () => {
     expect(
       parseBrowseFilterQuery({
@@ -239,6 +287,14 @@ describe('parseBrowseFilterQuery', () => {
 })
 
 describe('buildBrowseFilterQuery', () => {
+  it('retains an explicit opt-out of metadata coloring through query round trips', () => {
+    const query = buildBrowseFilterQuery({}, {
+      workspaceIds: [], siteTypes: [], tagKey: 'basin', colorBy: 'none',
+    })
+    expect(query).toEqual({ tagKey: 'basin', colorBy: 'none' })
+    expect(parseBrowseFilterQuery(query).colorBy).toBe('none')
+  })
+
   it('writes selected Browse state to canonical query params and omits an open drawer', () => {
     expect(
       buildBrowseFilterQuery(

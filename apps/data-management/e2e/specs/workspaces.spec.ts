@@ -306,7 +306,7 @@ test.describe('workspace management', () => {
     ).toHaveCount(0)
   })
 
-  test('editor controls follow resource permissions instead of ownership', async ({
+  test('editor can edit workspace contents but cannot manage the workspace itself', async ({
     page,
   }) => {
     await authenticateSession(page, users.editor.email, users.editor.password)
@@ -320,12 +320,27 @@ test.describe('workspace management', () => {
     )
     await expect(
       workspaceItem.locator('[data-testid^="workspace-edit-"]')
-    ).toBeEnabled()
+    ).toBeDisabled()
     await expect(
       workspaceItem.locator('[data-testid^="workspace-delete-"]')
+    ).toBeDisabled()
+    await expect(page.getByLabel('Make this workspace private')).toBeDisabled()
+    await expect(page.getByRole('tab', { name: 'Ownership' })).toHaveCount(0)
+
+    await page.getByRole('tab', { name: 'Metadata' }).click()
+    await page.getByTestId('metadata-scope-workspace').click()
+    await page.getByRole('tab', { name: 'Methods' }).click()
+    await expect(page.getByTestId('add-workspace-metadata-item')).toBeEnabled()
+    await expect(
+      page.getByTestId(
+        `edit-metadata-${fixtures.metadata.privateAssignedMethod.id}`
+      )
     ).toBeEnabled()
-    await expect(page.getByLabel('Make this workspace private')).toBeEnabled()
-    await expect(page.getByRole('tab', { name: 'Ownership' })).toBeVisible()
+    await expect(
+      page.getByTestId(
+        `delete-metadata-${fixtures.metadata.privateAssignedMethod.id}`
+      )
+    ).toBeEnabled()
   })
 
   test('workspace selection carries into the rest of the management app', async ({
