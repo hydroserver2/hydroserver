@@ -70,6 +70,7 @@ function readCurrentUserScriptTag(): string | null {
 export class UserService {
   private readonly _client: HydroServer
   private _cachedUser: User | null | undefined = undefined
+  private _cachedUserToken: string | null = null
 
   constructor(client: HydroServer) {
     this._client = client
@@ -110,24 +111,36 @@ export class UserService {
    * always go through a full navigation (login/logout redirects), so it
    * stays accurate for the SPA's lifetime.
    *
-   * OIDC and token modes: fetched once from the OIDC UserInfo endpoint and
-   * cached, so the token needs the `openid profile email` scopes.
+   * OIDC and token modes: fetched from the OIDC UserInfo endpoint, so the
+   * token needs the `openid profile email` scopes. The result is cached for
+   * the access token it was fetched with, so signing out or switching
+   * accounts never returns the previous user. A token refresh costs one
+   * extra UserInfo request.
    * HydroServer's OIDC provider adds HydroServer-specific claims
    * (organization, isSuperuser, etc.) to that response for clients
    * requesting the `profile` scope (see core/iam/auth/oidc_adapter.py).
    * The access token is attached automatically by requestInterceptor via
-   * the accessTokenProvider registered in runtime.ts.
+   * the accessTokenProvider registered in HydroServer.initialize().
    */
   get = async (): Promise<ApiResponse<User>> => {
     if (this._client.authMode !== 'session') {
-      if (this._cachedUser) {
+      const token = await this._client.session.getAccessToken()
+      if (!token) {
+        this._cachedUser = undefined
+        this._cachedUserToken = null
+        return { ok: false, status: 401, message: 'Not authenticated' }
+      }
+      if (this._cachedUser && this._cachedUserToken === token) {
         return { ok: true, data: this._cachedUser, status: 200, message: 'OK' }
       }
 
       const res = await apiMethods.fetch<User>(
         this._client.resolveUrl('/identity/o/api/userinfo')
       )
-      if (res.ok) this._cachedUser = res.data
+      if (res.ok) {
+        this._cachedUser = res.data
+        this._cachedUserToken = this._client.session.accessToken
+      }
       return res
     }
 

@@ -138,4 +138,63 @@ describe('UserService with an access token provider', () => {
     expect(url).toBe('https://hydro.example.com/identity/o/api/userinfo')
     expect(new Headers(init.headers).get('Authorization')).toBe('Bearer token-123')
   })
+
+  const userInfoResponse = (email: string) =>
+    new Response(JSON.stringify({ email }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    })
+
+  it('reuses the cached user while the token is unchanged', async () => {
+    const client = await HydroServer.initialize({
+      host: 'https://hydro.example.com',
+      accessTokenProvider: async () => 'token-123',
+    })
+    const fetchMock = vi.fn().mockResolvedValue(userInfoResponse('user@example.com'))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await client.user.get()
+    const response = await client.user.get()
+
+    expect(response.ok && response.data.email).toBe('user@example.com')
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not return the cached user after the token is gone', async () => {
+    let token: string | null = 'token-123'
+    const client = await HydroServer.initialize({
+      host: 'https://hydro.example.com',
+      accessTokenProvider: async () => token,
+    })
+    const fetchMock = vi.fn().mockResolvedValue(userInfoResponse('user@example.com'))
+    vi.stubGlobal('fetch', fetchMock)
+    await client.user.get()
+
+    token = null
+    const response = await client.user.get()
+
+    expect(response.ok).toBe(false)
+    expect(response.status).toBe(401)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('fetches the user again when the token changes', async () => {
+    let token = 'token-a'
+    const client = await HydroServer.initialize({
+      host: 'https://hydro.example.com',
+      accessTokenProvider: async () => token,
+    })
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(userInfoResponse('a@example.com'))
+      .mockResolvedValueOnce(userInfoResponse('b@example.com'))
+    vi.stubGlobal('fetch', fetchMock)
+    await client.user.get()
+
+    token = 'token-b'
+    const response = await client.user.get()
+
+    expect(response.ok && response.data.email).toBe('b@example.com')
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
 })
