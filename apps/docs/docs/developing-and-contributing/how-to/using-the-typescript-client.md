@@ -123,33 +123,71 @@ const yourPrivateWorkspaces = await hs.workspaces.listAllItems({
 
 ## Authentication and session
 
+HydroServer provides pages for signing in, signing up, and editing account details. Your app can open these pages
+using the client methods below.
+
+### Sign in and sign out
+
+Call `hs.session.login()` when the user clicks your app's sign-in button. This opens HydroServer's sign-in page.
+The user enters their email and password there.
+
 ```ts
-const loginRes = await hs.session.login("user@example.com", "password");
-if (!loginRes.ok) {
-  console.error(loginRes.message);
+async function signIn() {
+  await hs.session.login("/");
 }
 
-if (hs.session.isAuthenticated) {
-  console.log("Logged in");
+async function signOut() {
+  await hs.session.logout("/");
 }
-
-hs.on("session:expired", () => {
-  console.log("Session expired");
-});
-
-await hs.session.logout();
 ```
 
-`createHydroServer` initializes the session snapshot before it resolves. Account operations are available through `hs.user`:
+The `"/"` tells HydroServer to send the user back to your app's home page afterwards. You can replace it with another
+path in your app, such as `"/workspaces"`. If you leave it out, signing in returns to the current page and signing out
+returns to the home page.
+
+### Check who is signed in
+
+After setting up the client with `await createHydroServer(...)`, you can check whether the user is signed in.
+Check again when the user returns from the sign-in page:
+
+```ts
+if (hs.session.isAuthenticated) {
+  console.log("You are signed in.");
+} else {
+  console.log("Please sign in.");
+}
+```
+
+Use `hs.user.get()` to read the signed-in user's details. Check `ok` before using the returned data:
 
 ```ts
 const accountRes = await hs.user.get();
 if (accountRes.ok) {
-  const account = accountRes.data;
-  account.firstName = "Updated";
-  await hs.user.update(account);
+  console.log(accountRes.data.firstName);
+} else {
+  console.log(accountRes.message);
 }
 ```
+
+### Edit an account or sign up
+
+To let the user edit their profile, open HydroServer's account page:
+
+```ts
+window.location.assign(hs.session.getAccountProfileUrl("/"));
+```
+
+Here, `getAccountProfileUrl()` builds the account page's address, and `window.location.assign()` opens it in the browser.
+Use `getAccountSignupUrl()` in the same way to open the sign-up page. The `"/"` sets the return page, just as it does
+for signing in. If you leave it out, the return page is your current page.
+
+See [Managing Your Account](/user-guides/how-to/creating-user-accounts.md#managing-your-account)
+for the changes a user can make on the account page.
+
+::: details If your app uses OpenID Connect (OIDC)
+If you set the client's `oidc` option, your app needs a page to handle the user's return from signing in.
+On that page, call `await hs.session.completeLogin()` to finish signing in. It returns the path your app should open next.
+:::
 
 ### Tokens managed by your app
 
