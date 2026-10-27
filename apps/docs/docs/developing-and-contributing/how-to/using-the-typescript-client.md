@@ -150,6 +150,35 @@ if (accountRes.ok) {
 }
 ```
 
+### Tokens managed by your app
+
+If your app already holds HydroServer access tokens, for example because its backend signs users in through
+HydroServer, pass an `accessTokenProvider` so the client uses those tokens instead of signing the user in itself:
+
+```ts
+await createHydroServer({
+  host: "https://playground.hydroserver.org",
+  accessTokenProvider: async () => {
+    const res = await fetch("/my-app/hydroserver-token/");
+    return res.ok ? (await res.json()).access_token : null;
+  },
+  onUnauthorized: () => window.location.assign("/login/"),
+});
+```
+
+- The provider is called before each request, so cache the token until shortly before it expires. Return `null` when
+  the user isn't signed in.
+- When a request is rejected with a `401`, the client calls the provider again and retries once. If the retry is also
+  rejected, it calls `onUnauthorized` and emits `session:expired`.
+- `hs.session.isAuthenticated` reflects whether the provider returned a token. `hs.user.get()` reads the user from the
+  OIDC UserInfo endpoint, so the token needs the `openid`, `profile`, and `email` scopes.
+- Your app handles sign-in and sign-out: `hs.session.login()` and `hs.session.logout()` throw in this mode.
+- `accessTokenProvider` can't be combined with the `oidc` option.
+
+The endpoint that returns the token should require your app's own sign-in, reject cross-origin requests, and send
+`Cache-Control: no-store`. The browser can use the token for everything its scopes allow, so request only the
+[scopes](/developing-and-contributing/how-to/using-oidc-scopes) your frontend needs.
+
 ## Workspaces
 
 Workspaces are the top-level access-control boundary for HydroServer data.

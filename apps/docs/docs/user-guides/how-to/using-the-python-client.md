@@ -24,6 +24,12 @@ hs_api = HydroServer(host, email=email, password=password)
 
 # API key authentication (a service account key)
 hs_api = HydroServer(host, apikey=apikey)
+
+# OIDC access token authentication
+hs_api = HydroServer(host, access_token=access_token)
+
+# OIDC access token from a function, called before each request
+hs_api = HydroServer(host, access_token=get_access_token)
 ```
 
 | Parameter | Type | Default | Description |
@@ -33,6 +39,7 @@ hs_api = HydroServer(host, apikey=apikey)
 | `email` | `str` | `None` | Account email; must be given together with `password` |
 | `password` | `str` | `None` | Account password |
 | `apikey` | `str` | `None` | Service account API key (alternative to email/password) |
+| `access_token` | `str \| Callable[[], str \| None]` | `None` | OIDC access token, or a function that returns a current one before each request so it can refresh expired tokens. |
 
 API keys belong to [service accounts](#service-accounts). They can read and write data the service account has access to, but cannot manage workspace access (collaborators, service accounts, ownership) — use email/password for those operations.
 

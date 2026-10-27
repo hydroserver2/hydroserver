@@ -11,6 +11,11 @@ class HydroServerOIDCAdapter(DefaultOIDCAdapter):
 
     Kept out of the ID token to keep it lean and only returned to clients
     that request the standard "profile" scope.
+
+    HydroServer has no usernames, so allauth omits the standard
+    "preferred_username" claim. The user's email stands in for it in both
+    the ID token and /userinfo, but only for clients that were also granted
+    the "email" scope.
     """
 
     scope_display = {
@@ -22,6 +27,9 @@ class HydroServerOIDCAdapter(DefaultOIDCAdapter):
         claims = super().get_claims(
             purpose, user, client, scopes, email=email, **kwargs
         )
+
+        if "profile" in scopes and "email" in scopes and user.email:
+            claims.setdefault("preferred_username", user.email)
 
         if purpose == "userinfo" and "profile" in scopes:
             claims.update(user.to_profile_claims())

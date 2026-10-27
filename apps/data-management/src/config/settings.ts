@@ -4,6 +4,7 @@ const devHost = import.meta.env.VITE_APP_PROXY_BASE_URL || 'http://127.0.0.1:800
 const defaultSettings: AppSettings = {
   authenticationConfiguration: {
     hydroserverSignupEnabled: false,
+    csrfCookieName: 'csrftoken',
     providers: [],
   },
   aboutInformation: {

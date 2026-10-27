@@ -1,5 +1,19 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { HydroServer } from '../HydroServer'
+import { apiMethods } from '../apiMethods'
+import { registerCSRFCookieName } from '../getCSRFToken'
+import {
+  registerAccessTokenProvider,
+  registerUnauthorizedHandler,
+  requestInterceptor,
+} from '../requestInterceptor'
+
+afterEach(() => {
+  registerAccessTokenProvider(null)
+  registerUnauthorizedHandler(null)
+  registerCSRFCookieName('csrftoken')
+  vi.unstubAllGlobals()
+})
 
 describe('SessionService account URLs', () => {
   it('includes the app developer’s return destination', () => {
@@ -63,5 +77,131 @@ describe('SessionService account URLs', () => {
         Reflect.deleteProperty(globalThis, 'window')
       }
     }
+  })
+})
+
+describe('SessionService with an access token provider', () => {
+  it('cannot be combined with OIDC options', () => {
+    expect(
+      () =>
+        new HydroServer({
+          host: 'https://api.example.test',
+          oidc: { clientId: 'client' },
+          accessTokenProvider: async () => 'token-123',
+        })
+    ).toThrow('cannot be used together')
+  })
+
+  it('reports token mode', () => {
+    const client = new HydroServer({
+      host: 'https://api.example.test',
+      accessTokenProvider: async () => 'token-123',
+    })
+
+    expect(client.authMode).toBe('token')
+  })
+
+  it('authenticates from the token the provider returns', async () => {
+    const provider = vi.fn().mockResolvedValue('token-123')
+    const client = await HydroServer.initialize({
+      host: 'https://api.example.test',
+      accessTokenProvider: provider,
+    })
+
+    expect(provider).toHaveBeenCalledTimes(1)
+    expect(client.session.isAuthenticated).toBe(true)
+    expect(client.session.accessToken).toBe('token-123')
+    expect(client.user.isAuthenticated).toBe(true)
+  })
+
+  it('is signed out when the provider has no token', async () => {
+    const client = await HydroServer.initialize({
+      host: 'https://api.example.test',
+      accessTokenProvider: async () => null,
+    })
+
+    expect(client.session.isAuthenticated).toBe(false)
+    expect(client.session.accessToken).toBeNull()
+  })
+
+  it('is signed out when the provider fails', async () => {
+    const client = await HydroServer.initialize({
+      host: 'https://api.example.test',
+      accessTokenProvider: async () => {
+        throw new Error('token endpoint unavailable')
+      },
+    })
+
+    expect(client.session.isAuthenticated).toBe(false)
+  })
+
+  it('tracks the latest token returned by getAccessToken()', async () => {
+    const tokens = ['token-1', 'token-2']
+    const client = await HydroServer.initialize({
+      host: 'https://api.example.test',
+      accessTokenProvider: async () => tokens.shift() ?? null,
+    })
+
+    expect(await client.session.getAccessToken()).toBe('token-2')
+    expect(client.session.accessToken).toBe('token-2')
+  })
+
+  it('leaves sign-in and sign-out to the host app', async () => {
+    const client = new HydroServer({
+      host: 'https://api.example.test',
+      accessTokenProvider: async () => 'token-123',
+    })
+
+    await expect(client.session.login('/')).rejects.toThrow('managed by the host app')
+    await expect(client.session.logout('/')).rejects.toThrow('managed by the host app')
+  })
+})
+
+describe('HydroServer.initialize() request setup', () => {
+  const endpoint = 'https://api.example.test/api/ogc/collections/workspaces/items/1'
+
+  it('sends the bearer token from accessTokenProvider', async () => {
+    await HydroServer.initialize({
+      host: 'https://api.example.test',
+      accessTokenProvider: async () => 'token-123',
+    })
+    const fetchMock = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await apiMethods.fetch(endpoint)
+
+    const [, init] = fetchMock.mock.calls[0]
+    expect(new Headers(init.headers).get('Authorization')).toBe('Bearer token-123')
+  })
+
+  it('calls onUnauthorized when a token is rejected after a retry', async () => {
+    const onUnauthorized = vi.fn()
+    await HydroServer.initialize({
+      host: 'https://api.example.test',
+      accessTokenProvider: async () => 'revoked-token',
+      onUnauthorized,
+    })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation(async () => new Response(null, { status: 401 }))
+    )
+
+    await apiMethods.fetch(endpoint)
+
+    expect(onUnauthorized).toHaveBeenCalledTimes(1)
+  })
+
+  it('reads the configured CSRF cookie name', async () => {
+    vi.stubGlobal('document', {
+      cookie: 'csrftoken=other-app; hs_csrftoken=csrf-123',
+    })
+    await HydroServer.initialize({
+      host: 'https://api.example.test',
+      csrfCookieName: 'hs_csrftoken',
+    })
+
+    const result = await requestInterceptor({})
+
+    expect(new Headers(result.headers).get('X-CSRFToken')).toBe('csrf-123')
   })
 })

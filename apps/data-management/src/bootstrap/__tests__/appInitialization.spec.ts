@@ -39,6 +39,12 @@ vi.mock('@hydroserver/client', () => {
   }
 })
 
+vi.mock('@/config/settings', () => ({
+  settings: {
+    authenticationConfiguration: { csrfCookieName: 'hs_csrftoken' },
+  },
+}))
+
 vi.mock('@/composables/useVocabulary', () => ({
   useVocabularyStore: () => ({
     fetchAllVocabularies: fetchAllVocabulariesMock,
@@ -90,6 +96,18 @@ describe('app initialization bootstrap', () => {
     expect(waitResolved).toBe(true)
     expect(isHydroServerReady.value).toBe(true)
     expect(fetchAllVocabulariesMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('passes the configured CSRF cookie name to the HydroServer client', async () => {
+    createHydroServerMock.mockResolvedValue(undefined)
+    fetchAllVocabulariesMock.mockResolvedValue(undefined)
+
+    const { startAppInitialization } = await import('../appInitialization')
+    await startAppInitialization()
+
+    expect(createHydroServerMock).toHaveBeenCalledWith(
+      expect.objectContaining({ csrfCookieName: 'hs_csrftoken' })
+    )
   })
 
   it('does not mark workspace bootstrap complete when initialized while logged out', async () => {

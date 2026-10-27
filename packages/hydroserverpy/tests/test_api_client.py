@@ -97,6 +97,104 @@ def test_hydroserver_requires_both_email_and_password(fake_session_factory):
         )
 
 
+def test_hydroserver_sends_access_token_as_bearer_header(fake_session_factory):
+    hs = client_module.HydroServer(host="https://example.com", access_token="token-1")
+    fake_session_factory[0].queue("get", FakeResponse())
+
+    hs.request("get", "/api/ogc/collections/workspaces/items")
+
+    assert hs._session.auth is None
+    assert "X-API-Key" not in hs._session.headers
+    assert fake_session_factory[0].last_kwargs["headers"] == {
+        "Authorization": "Bearer token-1"
+    }
+
+
+def test_hydroserver_calls_access_token_provider_before_each_request(
+    fake_session_factory,
+):
+    tokens = iter(["token-1", "token-2"])
+    hs = client_module.HydroServer(
+        host="https://example.com", access_token=lambda: next(tokens)
+    )
+    fake_session_factory[0].queue("get", FakeResponse(), FakeResponse())
+
+    hs.request("get", "/api/ogc/collections/workspaces/items")
+    first_headers = fake_session_factory[0].last_kwargs["headers"]
+    hs.request("get", "/api/ogc/collections/workspaces/items")
+    second_headers = fake_session_factory[0].last_kwargs["headers"]
+
+    assert first_headers == {"Authorization": "Bearer token-1"}
+    assert second_headers == {"Authorization": "Bearer token-2"}
+
+
+def test_hydroserver_retries_401_with_refreshed_access_token(
+    fake_session_factory, monkeypatch
+):
+    tokens = iter(["expired-token", "fresh-token"])
+    hs = client_module.HydroServer(
+        host="https://example.com", access_token=lambda: next(tokens)
+    )
+    fake_session_factory[0].queue("get", FakeResponse(status_code=401))
+
+    replacement_session = FakeSession()
+    replacement_session.queue("get", FakeResponse())
+    monkeypatch.setattr(client_module.requests, "Session", lambda: replacement_session)
+
+    hs.request("get", "/api/ogc/collections/workspaces/items")
+
+    assert fake_session_factory[0].last_kwargs["headers"] == {
+        "Authorization": "Bearer expired-token"
+    }
+    assert hs._session is replacement_session
+    assert replacement_session.last_kwargs["headers"] == {
+        "Authorization": "Bearer fresh-token"
+    }
+
+
+def test_hydroserver_sends_no_authorization_when_provider_returns_none(
+    fake_session_factory,
+):
+    hs = client_module.HydroServer(host="https://example.com", access_token=lambda: None)
+    fake_session_factory[0].queue("get", FakeResponse())
+
+    hs.request("get", "/api/ogc/collections/workspaces/items")
+
+    assert fake_session_factory[0].last_kwargs["headers"] == {}
+
+
+def test_hydroserver_keeps_caller_authorization_header(fake_session_factory):
+    hs = client_module.HydroServer(host="https://example.com", access_token="token-1")
+    fake_session_factory[0].queue("get", FakeResponse())
+
+    hs.request(
+        "get",
+        "/api/ogc/collections/workspaces/items",
+        headers={"authorization": "Bearer caller-token", "Accept": "text/csv"},
+    )
+
+    assert fake_session_factory[0].last_kwargs["headers"] == {
+        "authorization": "Bearer caller-token",
+        "Accept": "text/csv",
+    }
+
+
+@pytest.mark.parametrize(
+    "credentials",
+    [
+        {"apikey": "hs_test_api_key"},
+        {"email": "user@example.com", "password": "secret"},
+    ],
+)
+def test_hydroserver_rejects_access_token_with_other_credentials(
+    fake_session_factory, credentials
+):
+    with pytest.raises(ValueError, match="Provide only one of"):
+        client_module.HydroServer(
+            host="https://example.com", access_token="token-1", **credentials
+        )
+
+
 def test_hydroserver_retries_connection_errors_with_same_basic_auth(
     fake_session_factory, monkeypatch
 ):

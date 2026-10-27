@@ -26,6 +26,15 @@ hs_api = HydroServer(
 )
 ```
 
+Or with an OIDC access token issued by HydroServer, either as a string or as a function that returns a current token before each request:
+
+```python
+hs_api = HydroServer(
+    host='https://playground.hydroserver.org',
+    access_token=get_access_token
+)
+```
+
 The hydroserverpy connection instance exposes the following types of core data and metadata you can retrieve or create, either as a collection or by ID using the `list`, `get`, or `create` methods of the associated property:
 
 * workspaces

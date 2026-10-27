@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { apiMethods } from '../apiMethods'
+import {
+  registerAccessTokenProvider,
+  registerUnauthorizedHandler,
+} from '../requestInterceptor'
 
 const jsonResponse = (body: unknown) =>
   new Response(JSON.stringify(body), {
@@ -382,5 +386,89 @@ describe('paginatedFetch', () => {
     expect(response.ok).toBe(true)
     if (!response.ok) return
     expect(response.data.map((item) => item.id)).toEqual(['1', '2', '3'])
+  })
+})
+
+describe('access token retries', () => {
+  const endpoint = 'https://hydro.example.com/api/ogc/collections/workspaces/items/1'
+  const unauthorized = () => new Response(null, { status: 401 })
+  const authorizationOf = (init: RequestInit) =>
+    new Headers(init.headers).get('Authorization')
+
+  afterEach(() => {
+    registerAccessTokenProvider(null)
+    registerUnauthorizedHandler(null)
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+  })
+
+  it('retries a 401 once with a token fetched again from the provider', async () => {
+    const tokens = ['expired-token', 'fresh-token']
+    registerAccessTokenProvider(async () => tokens.shift() ?? null)
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(unauthorized())
+      .mockResolvedValueOnce(jsonResponse({ id: '1' }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const response = await apiMethods.fetch(endpoint)
+
+    expect(response.ok).toBe(true)
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(authorizationOf(fetchMock.mock.calls[0][1])).toBe('Bearer expired-token')
+    expect(authorizationOf(fetchMock.mock.calls[1][1])).toBe('Bearer fresh-token')
+  })
+
+  it('notifies the unauthorized handler when the retry is also rejected', async () => {
+    const onUnauthorized = vi.fn()
+    registerAccessTokenProvider(async () => 'revoked-token')
+    registerUnauthorizedHandler(onUnauthorized)
+    const fetchMock = vi.fn().mockImplementation(async () => unauthorized())
+    vi.stubGlobal('fetch', fetchMock)
+
+    const response = await apiMethods.fetch(endpoint)
+
+    expect(response.ok).toBe(false)
+    expect(response.status).toBe(401)
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(onUnauthorized).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not retry a 401 for a request sent without a token', async () => {
+    const onUnauthorized = vi.fn()
+    registerUnauthorizedHandler(onUnauthorized)
+    const fetchMock = vi.fn().mockImplementation(async () => unauthorized())
+    vi.stubGlobal('fetch', fetchMock)
+
+    await apiMethods.fetch(endpoint)
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(onUnauthorized).not.toHaveBeenCalled()
+  })
+
+  it('does not retry a 401 when the provider has no token', async () => {
+    const onUnauthorized = vi.fn()
+    registerAccessTokenProvider(async () => null)
+    registerUnauthorizedHandler(onUnauthorized)
+    const fetchMock = vi.fn().mockImplementation(async () => unauthorized())
+    vi.stubGlobal('fetch', fetchMock)
+
+    await apiMethods.fetch(endpoint)
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(onUnauthorized).not.toHaveBeenCalled()
+  })
+
+  it('does not resend a streamed body', async () => {
+    const onUnauthorized = vi.fn()
+    registerAccessTokenProvider(async () => 'token-123')
+    registerUnauthorizedHandler(onUnauthorized)
+    const fetchMock = vi.fn().mockImplementation(async () => unauthorized())
+    vi.stubGlobal('fetch', fetchMock)
+
+    await apiMethods.post(endpoint, new ReadableStream())
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(onUnauthorized).toHaveBeenCalledTimes(1)
   })
 })

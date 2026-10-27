@@ -49,6 +49,38 @@ hs_api = HydroServer(
 )
 ```
 
+### Example: OIDC Access Token Authentication
+
+Applications that sign users in through HydroServer's OpenID Connect provider can act on the user's behalf with the access token they received:
+
+```python
+from hydroserverpy import HydroServer
+
+hs_api = HydroServer(
+    host='https://playground.hydroserver.org',
+    access_token='your_access_token'
+)
+```
+
+Access tokens expire, so you can pass a function instead of a string. It is called before every request, so it can return a refreshed token when the current one has expired. For example, with a token stored by python-social-auth:
+
+```python
+from social_django.utils import load_strategy
+
+def get_access_token():
+    social = user.social_auth.get(provider='oidc')
+    if social.access_token_expired():
+        social.refresh_token(load_strategy())
+    return social.extra_data['access_token']
+
+hs_api = HydroServer(
+    host='https://playground.hydroserver.org',
+    access_token=get_access_token
+)
+```
+
+The token must carry the scopes for the operations you perform, for example `data:read` to read monitoring sites, datastreams, and observations, `data:write` to change them, and `workspace:read` to list workspaces. Requests made without a required scope fail with a 403 error that names the missing scope.
+
 ## Funding and Acknowledgements
 
 Funding for this project was provided by the National Oceanic & Atmospheric Administration (NOAA), awarded to the Cooperative Institute for Research to Operations in Hydrology (CIROH) through the NOAA Cooperative Agreement with The University of Alabama (NA22NWS4320003). Utah State University is a founding member of CIROH and receives funding under subaward from the University of Alabama. Additional funding and support have been provided by the State of Utah Division of Water Rights, the World Meteorological Organization, and the Utah Water Research laboratory at Utah State University.

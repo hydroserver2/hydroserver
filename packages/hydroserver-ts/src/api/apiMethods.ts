@@ -1,4 +1,8 @@
-import { requestInterceptor, RequestOptions } from './requestInterceptor'
+import {
+  notifyUnauthorized,
+  requestInterceptor,
+  RequestOptions,
+} from './requestInterceptor'
 import { ApiResponse, responseInterceptor } from './responseInterceptor'
 import { createMergePatch } from './createMergePatch'
 import pLimit from 'p-limit'
@@ -6,12 +10,32 @@ import pLimit from 'p-limit'
 const limit = pLimit(10)
 const DEFAULT_PAGE_SIZE = 200
 
+function canResend(body: BodyInit | null | undefined): boolean {
+  return !(typeof ReadableStream !== 'undefined' && body instanceof ReadableStream)
+}
+
+/** Sends a request, retrying a token-authenticated 401 once with a fresh token. */
+async function send(
+  endpoint: string,
+  options: RequestOptions
+): Promise<Response> {
+  const opts = await requestInterceptor(options)
+  let response = await fetch(endpoint, opts)
+  const usedToken = new Headers(opts.headers).has('Authorization')
+  if (response.status !== 401 || !usedToken) return response
+
+  if (canResend(opts.body)) {
+    response = await fetch(endpoint, await requestInterceptor(options))
+  }
+  if (response.status === 401) notifyUnauthorized()
+  return response
+}
+
 async function interceptedFetch<T>(
   endpoint: string,
   options: RequestOptions
 ): Promise<ApiResponse<T>> {
-  const opts = await requestInterceptor(options)
-  const response = await fetch(endpoint, opts)
+  const response = await send(endpoint, options)
   return await responseInterceptor<T>(response)
 }
 
@@ -95,8 +119,7 @@ export const apiMethods = {
 
   /** GET `endpoint` and return the value of response header `name`. */
   async fetchHeader(endpoint: string, name: string): Promise<ApiResponse<string>> {
-    const opts = await requestInterceptor({ method: 'GET' })
-    const response = await limit(() => fetch(endpoint, opts))
+    const response = await limit(() => send(endpoint, { method: 'GET' }))
     const res = await responseInterceptor<unknown>(response)
     if (!res.ok) return res
     const value = response.headers.get(name)
