@@ -12,9 +12,9 @@ All resources in HydroServer (monitoring sites, datastreams, etc.) are handled w
 
 ## User Roles
 
-Each collaborator in a workspace is assigned a role. A role is a set of permissions configurable at the resource level. For example, you can give a role read only access to the monitoring sites in a workspace, but give it full edit access to the datastreams of a workspace. By default, HydroServer ships with owner, editor, and viewer roles, but you can configure your own as an admininstrative option.
+Each collaborator in a workspace is assigned a role. A role is a set of permissions configurable at the resource level. For example, you can give a role read only access to the monitoring sites in a workspace, but give it full edit access to the datastreams of a workspace. The workspace owner has full control of the workspace. By default, HydroServer also ships with Editor, Viewer, and Data Loader roles that can be assigned to collaborators and service accounts, and an administrator can configure additional roles.
 
-The following table is a comparison of permissions for the owners, editors, and viewers of a workspace.
+The following table is a comparison of permissions for the owner and the default roles of a workspace.
 
 | Permission                                              | Owner | Editor | Viewer | Data Loader |
 |---------------------------------------------------------| ----- | ------ | ------ |-------------|
@@ -22,7 +22,7 @@ The following table is a comparison of permissions for the owners, editors, and 
 | Invite new workspace collaborators                      | Yes   | Yes    | No     | No          |
 | Create, update, delete sites, datastreams, and metadata | Yes   | Yes    | No     | No          |
 | Stream observations into datastreams                    | Yes   | Yes    | No     | Yes         |
-| Set up Job Orchestration System tasks                   | Yes   | Yes    | No     | Yes         |
+| Set up Job Orchestration System tasks                   | Yes   | Yes    | No     | No          |
 | View public and private data within workspace           | Yes   | Yes    | Yes    | Yes         |
 
 ## Service Accounts and API Keys
@@ -43,4 +43,4 @@ It's assumed in a HydroServer setup that you want your data to be publicly viewa
 
 These privacy settings work in a hierarchical, conditional manner:
 
-If you set the **Site Privacy** to private (`monitoringSite.isPrivate`), then both **Datastream Provacy** (`datastream.isPrivate`) and **Datastream Data Visibility** (`datastream.isVisible`) will automatically be set to private as well. However, if the site is public, you can still control the visibility of each datastream and its data individually.
+If you set the **Site Privacy** to private (`monitoringSite.isPrivate`), then both **Datastream Privacy** (`datastream.isPrivate`) and **Datastream Data Visibility** (`datastream.isVisible`) will automatically be set to private as well. However, if the site is public, you can still control the visibility of each datastream and its data individually.

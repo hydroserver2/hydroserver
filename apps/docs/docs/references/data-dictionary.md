@@ -18,7 +18,7 @@ Method, ObservedProperty, ProcessingLevel, Unit, and ResultQualifier share these
 | `definition` | A URL defining or documenting the item, such as a vocabulary term, standard, or manual. | Optional URL; at most 2,000 characters. ResultQualifier has no definition. |
 | `code` | An external or organizational identifier. | Optional; at most 255 characters. Unit has no code because its definition serves this purpose. |
 
-Elsewhere in the data model, `link` is a person's or organization's website. An attachment's `url` identifies an external link or an uploaded file.
+Elsewhere in the data model, `link` is a person's or organization's website. A linked resource's `url` identifies an external link, and its `file` holds an uploaded file.
 
 ## Datastream
 
@@ -52,6 +52,7 @@ A Datastream groups a collection of Observations measuring the same ObservedProp
 | O        | result_end_time                | The timestamp of the last Observation in the Datastream. This field remains in the model but is currently unused.  | Datetime  |
 | M        | is_private                     | An access control flag indicating whether the Datastream metadata and data are private by default.                 | Boolean   |
 | M        | is_visible                     | An access control flag indicating whether the Datastream should be shown in normal data-discovery responses.       | Boolean   |
+| M        | tags                           | Custom key-value metadata for the Datastream, stored as a JSON object of non-empty string keys and values. Defaults to `{}`. | JSON      |
 
 ## Observation
 
@@ -189,10 +190,7 @@ A MonitoringSite stores a site and its single physical location in one row.
 | O        | country         | A two-character ISO country code.                                                                                            | String    |
 | M        | is_private      | Whether the MonitoringSite is discoverable and its metadata publicly available.                                             | Boolean   |
 | O        | data_disclaimer | A disclaimer displayed with the MonitoringSite's data.                                                                      | Text      |
-
-## MonitoringSiteTag
-
-A key-value tag associated with a MonitoringSite. The database enforces unique `(monitoring_site_id, key)` pairs.
+| M        | tags            | Custom key-value metadata for the MonitoringSite, stored as a JSON object of non-empty string keys and values. Defaults to `{}`. | JSON      |
 
 ## MonitoringSiteLinkedResource
 
@@ -303,17 +301,6 @@ A ServiceAccount grants non-interactive access through a generated API key. It b
 | O        | key_created_at | The datetime when the current API key was generated.                        | Datetime  |
 | O        | key_expires_at | The datetime when the current API key expires.                              | Datetime  |
 
-## DatastreamTag
-
-A key-value tag associated with a Datastream.
-
-| Required | Attribute     | Definition                                                            | Data Type  |
-| -------- | ------------- | --------------------------------------------------------------------- | ---------- |
-| M        | id            | A primary key unique identifier for the DatastreamTag.                | BigInteger |
-| M        | datastream_id | A foreign key identifier for the Datastream to which the tag belongs. | UUID       |
-| M        | key           | The tag key.                                                          | String     |
-| M        | value         | The tag value.                                                        | String     |
-
 ## DatastreamLinkedResource
 
 A linked resource associated with a Datastream, pointing to either a hosted file or an external URL.
@@ -377,8 +364,6 @@ A DataConnection describes a single external data source: where to fetch payload
 | M        | source_url        | The URL template fetched by the extractor. May contain placeholder variables resolved at run time.          | Text      |
 | O        | auth_header_name  | The name of an HTTP header used to authenticate against the source URL (e.g. `Authorization`).              | String    |
 | O        | auth_header_value | The value sent with the auth header, such as an API token. Stored as plain text.                            | Text      |
-| M        | timestamp_key     | The field name or column key that identifies the timestamp in the source payload.                           | String    |
-| O        | timestamp_format  | An optional format string used to parse non-ISO timestamps from the source payload.                         | String    |
 | O        | timezone_type     | The kind of timezone interpretation applied to the timestamps: `utc`, `offset`, or `iana`.                  | String    |
 | O        | timezone          | The timezone value (an IANA name or an offset) used when `timezone_type` is `offset` or `iana`.             | String    |
 
@@ -391,7 +376,7 @@ A PlaceholderVariable defines a named substitution that is resolved into the Dat
 | M        | id                 | A primary key unique identifier for the PlaceholderVariable.                                                | UUID      |
 | M        | data_connection_id | A foreign key identifier for the DataConnection to which the placeholder belongs.                           | UUID      |
 | M        | name               | The placeholder name as it appears in the `source_url` template.                                            | String    |
-| M        | variable_type      | The type of value substituted at run time: `run_time`, `latest_observation_timestamp`, or `per_task`.       | String    |
+| M        | variable_type      | The type of value substituted at run time: `run_time`, `latest_observation_timestamp`, `window_start`, `window_end`, or `per_task`. | String    |
 | O        | timestamp_format   | An optional format string used to render the substituted value when the value is a timestamp.               | String    |
 
 ## Payload
@@ -407,6 +392,16 @@ A Payload describes how the response body returned by the extractor should be pa
 | O        | data_start_row     | For CSV payloads, the row index where data begins.                                                      | Integer   |
 | O        | delimiter          | For CSV payloads, the field delimiter: `,`, `\t`, `;`, `\|`, or ` `.                                    | String    |
 | O        | jmespath           | For JSON payloads, a JMESPath expression used to select observation records out of the response body.  | Text      |
+| M        | timestamp_key      | The field name or column key that identifies the timestamp in the source payload.                       | String    |
+| O        | timestamp_format   | An optional format string used to parse non-ISO timestamps from the source payload.                     | String    |
+| O        | data_ingestion_window_start_anchor | The reference point for the start of the data ingestion window: `latest_observation_timestamp`, `run_time`, or `fixed_timestamp`. If omitted, the window has no start. | String |
+| O        | data_ingestion_window_start_lookback | An amount of time subtracted from the start anchor. Not used with `fixed_timestamp`.          | Integer   |
+| O        | data_ingestion_window_start_lookback_unit | The unit for `data_ingestion_window_start_lookback`: `minutes`, `hours`, or `days`.     | String    |
+| O        | data_ingestion_window_start_timestamp | The window start datetime, required when the start anchor is `fixed_timestamp`.              | Datetime  |
+| O        | data_ingestion_window_end_anchor | The reference point for the end of the data ingestion window, with the same choices as the start anchor. If omitted, the window has no end. | String |
+| O        | data_ingestion_window_end_lookback | An amount of time subtracted from the end anchor. Not used with `fixed_timestamp`.              | Integer   |
+| O        | data_ingestion_window_end_lookback_unit | The unit for `data_ingestion_window_end_lookback`: `minutes`, `hours`, or `days`.         | String    |
+| O        | data_ingestion_window_end_timestamp | The window end datetime, required when the end anchor is `fixed_timestamp`.                    | Datetime  |
 
 ## DataConnectionNotification
 
@@ -569,19 +564,18 @@ A notification email recipient associated with a MonitoringTask.
 
 HydroServer also includes simple lookup tables that primarily store controlled vocabulary terms used by the main entities.
 
-| Table                   | Attributes             | Data Type                   |
-| ----------------------- | ---------------------- | --------------------------- |
-| `UserType`              | `id`, `name`, `public` | BigInteger, String, Boolean |
-| `OrganizationType`      | `id`, `name`, `public` | BigInteger, String, Boolean |
-| `SiteType`              | `id`, `name`           | BigInteger, String          |
-| `LinkedResourceType`    | `id`, `name`           | BigInteger, String          |
-| `VariableType`          | `id`, `name`           | BigInteger, String          |
-| `SensorEncodingType`    | `id`, `name`           | BigInteger, String          |
-| `MethodType`            | `id`, `name`           | BigInteger, String          |
-| `UnitType`              | `id`, `name`           | BigInteger, String          |
-| `DatastreamAggregation` | `id`, `name`           | BigInteger, String          |
-| `DatastreamStatus`      | `id`, `name`           | BigInteger, String          |
-| `SampledMedium`         | `id`, `name`           | BigInteger, String          |
+| Table                  | Attributes                  | Data Type                   |
+| ---------------------- | --------------------------- | --------------------------- |
+| `UserType`             | `id`, `name`, `public`      | BigInteger, String, Boolean |
+| `OrganizationType`     | `id`, `name`, `public`      | BigInteger, String, Boolean |
+| `MonitoringSiteType`   | `id`, `name`, `description` | UUID, String, Text          |
+| `LinkedResourceType`   | `id`, `name`, `description` | UUID, String, Text          |
+| `ObservedPropertyType` | `id`, `name`, `description` | UUID, String, Text          |
+| `MethodType`           | `id`, `name`, `description` | UUID, String, Text          |
+| `UnitType`             | `id`, `name`, `description` | UUID, String, Text          |
+| `AggregationStatistic` | `id`, `name`, `description` | UUID, String, Text          |
+| `DatastreamStatus`     | `id`, `name`, `description` | UUID, String, Text          |
+| `SampledMedium`        | `id`, `name`, `description` | UUID, String, Text          |
 
 ## SensorThings Conceptual Entities
 

@@ -6,7 +6,7 @@ The Data Management Web App provides straightforward user interfaces for creatin
 
 Creating and finding monitoring sites is done on the **Browse monitoring sites** page in the Data Management App. The page combines a map with a searchable site panel. You can filter sites by workspace, site type, or additional metadata, and selecting a site reveals a link to its details page. The **Color markers by** control can group map markers by workspace, site type, or the values of a selected metadata tag without changing the active site filters.
 
-To create a new site, sign in, expand the monitoring-sites panel if needed, and click the **Register a monitoring site** (+) button. Select the workspace where the site belongs. This will launch the **Register a Site** window.
+To create a new site, sign in, expand the monitoring-sites panel if needed, and click the **Create Site** button. This will launch the **Create Site** window, where you first select the workspace the site belongs to.
 
 In this form, you can create the basic metadata for a monitoring site. Type or select the following attributes on the form:
 
@@ -17,7 +17,7 @@ In this form, you can create the basic metadata for a monitoring site. Type or s
 
 You can choose whether you want to include a data disclaimer to be displayed above the table of datastreams on your site's landing page. Default text is provided, but you can edit it if you wish
 
-For the Site's location, you can zoom in on the map and click on the site's location. This will automatically populate the latitude, longitude, elevation, state, county, and country (in the U.S.). You can also type those attributes in if you know them.
+For the Site's location, you can zoom in on the map and click on the site's location. This will automatically populate the latitude, longitude, elevation, state/province/region, county/district, and country. You can also type those attributes in if you know them.
 
 With this minimum metadata, you can click the 'Save' button to save the monitoring site.
 
@@ -35,13 +35,15 @@ Tags are displayed in the site metadata on the landing page for the site. They c
 Key: "Maintenance Log"
 Value: "http://www.url.com/maintenancelog.pdf"
 
-Where URLs are used in the Value element, they are hyperlinked and made clickable on the site's landing page.
+Where URLs are used in the Value element, they are hyperlinked and made clickable on the site's landing page. On the **Browse monitoring sites** page, you can also filter sites by a tag and color the map markers by its values.
 
-<img src="/data-management-app/additional-site-metadata.png" alt="Create site form" class="img-white-bg">
+<img src="/data-management-app/additional-site-metadata.png" alt="Additional site metadata" class="img-white-bg">
 
 ## Photos and Linked Resources
 
-You can also attach photos to your monitoring site. You can either drag and drop photo files onto the upload area on the form, or you can use the 'click to upload' link. You can choose any number of photos and they will be displayed on the site landing page next to the metadata for the site. Photos can also be added later by clicking on the 'Edit site information' on the site's landing page.
+You can also add photos to your monitoring site in the **Add Photos** section of the site form. Choose **Upload files** to drag and drop photo files onto the upload area or use the 'click to upload' link, or choose **Add link** to enter the URL of a photo hosted elsewhere. You can add any number of photos and they will be displayed on the site landing page next to the metadata for the site. Photos can also be added later by clicking on the 'Edit site information' on the site's landing page.
+
+**NOTE**: Uploading files is available only when the HydroServer administrator has enabled file storage for the instance. Otherwise, the form only accepts photo links.
 
 ## Deleting a Site
 

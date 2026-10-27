@@ -12,13 +12,13 @@ Before creating an aggregation task, make sure that metadata for the output data
 
 After the output datastream is ready, go to the **Job Orchestration** page and select **Aggregations & products** from the left navigation rail. 
 
-Data aggregations and transformation products are organized by monitoring site. First select the site where you want to create new, aggregated data and then click the **+Aggregation** button to create a new aggregation task.
+Data aggregations and transformation products are organized by monitoring site. First select the site where you want to create new, aggregated data and then click the **Add aggregation** button to create a new aggregation task.
 
 **NOTE**: Make sure you have selected the correct Workspace at the top of the Job Orchestration System window to ensure that the correct list of monitoring sites is shown.
 
 <img src="/job-orchestration/aggregation_2_aggregation.png" alt="Open the Aggregations and products section and add an aggregation task" width="550">
 
-Aggregation tasks are used to summarize higher-frequency data into lower-frequency data. In this example, the input datastream contains discharge observations recorded every 15 minutes, and the task calculates one daily average discharge value for each day. The input datastream name is `BC_CONF_A Discharge (cfs) - Provisional data`, and the output datastream name is `Discharge at BC_CONF_A with average daily discharge`.
+Aggregation tasks are used to summarize higher-frequency data into lower-frequency data. In this example, the input datastream contains discharge observations recorded every 15 minutes, and the task calculates one daily average discharge value for each day. The input datastream name is `Discharge - 15 min, Provisional (cfs)`, and the output datastream name is `Discharge - Daily Mean (cfs)`.
 
 In the task form, enter a clear task name, such as `BC_CONF_A Discharge (15 mins to daily average)`. Then choose whether the task should run manually or on a schedule. In this example, the task is scheduled to run every `1 Hour`. The schedule controls how often HydroServer checks and runs the task, but it does not control the output time interval used by the aggregated data.
 
@@ -42,7 +42,7 @@ For derivation tasks, the output datastream uses the same time spacing as the in
 
 Before creating a derivation task, make sure the output datastream already exists in the workspace. The derivation task needs a target datastream where HydroServer can save the calculated results. In this example, the input datastream contains daily average discharge values in `cfs`, and the output datastream is created to store the converted daily discharge values in `cms`.
 
-To create a derivation task, go to the **Job Orchestration** page and select **Aggregations & products** from the left menu. Then click the **+Derivation** button. The derivation task form will open.
+To create a derivation task, go to the **Job Orchestration** page and select **Aggregations & products** from the left menu. Then click the **Add derivation** button. The derivation task form will open.
 
 In the "Create derivation task" form, enter a clear task name that describes what the derivation will do. In this example, the task is named `Discharge data from cfs to cms` because the task converts discharge values from cubic feet per second to cubic meters per second.
 
@@ -53,8 +53,8 @@ Select the output datastream and then specify one or more input datastreams. Hyd
 In this example:
 
 ```text
-Output datastream: Discharge at BC_CONF_A with daily discharge in cms
-Input datastream 1: Discharge at BC_CONF_A with average daily discharge
+Output datastream: Discharge - Daily Mean (cms)
+Input datastream 1: Discharge - Daily Mean (cfs)
 ```
 
 In the "Formula" section, HydroServer represents each input value as the variable (e.g., `a` for Input datastream 1). Since `1 cfs = 0.0283168 cms`, the formula is written as:
@@ -71,7 +71,7 @@ Derivation tasks can also be used when a calculated output depends on **multiple
 
 Input datastreams must have the same time spacing for a derivation to compute successfully. Before creating a derivation task, make sure the output datastream already exists in the workspace. The derivation task needs a target datastream where HydroServer can save the calculated results.
 
-To create a derivation task, go to the **Job Orchestration** page and select **Aggregations & products** from the left menu. Then click **Derivation**. The derivation task form will open.
+To create a derivation task, go to the **Job Orchestration** page and select **Aggregations & products** from the left menu. Then click **Add derivation**. The derivation task form will open.
 
 <img src="/job-orchestration/derivation_2_task.png" alt="Derivation task form" width="550">
 
@@ -103,7 +103,7 @@ The general workflow is:
 stage or gage height → rating curve → discharge
 ```
 
-Before creating a rating curve task, make sure the required datastreams already exist in the workspace. The input datastream should contain the water level, stage, or gage-height values - or, in general the input values from which the output values will be derived using the rating curve. The output datastream should be the datastream where HydroServer will save the calculated values. To create a rating curve task, go to the **Job Orchestration** page and select **Aggregations & products** from the left menu. Then click **Rating curve**. This will open the rating curve task form.
+Before creating a rating curve task, make sure the required datastreams already exist in the workspace. The input datastream should contain the water level, stage, or gage-height values - or, in general the input values from which the output values will be derived using the rating curve. The output datastream should be the datastream where HydroServer will save the calculated values. To create a rating curve task, go to the **Job Orchestration** page and select **Aggregations & products** from the left menu. Then click **Add rating curve**. This will open the rating curve task form.
 
 <img src="/job-orchestration/rating_curve_1_rc_task.png" alt="Rating curve task form" width="550">
 
@@ -111,7 +111,7 @@ In the rating curve task form, first enter a clear task name. The task name shou
 
 Next, configure the schedule. The task can be run manually or on a schedule. The schedule controls how often HydroServer checks the input datastream and applies the rating curve. For testing, it may be helpful to run the task manually first and then enable the schedule after confirming that the task works correctly.
 
-After setting the schedule, select the input datastream. The input datastream should be the datastream that contains the water level, stage, or gage-height values. In this example, the input datastream is `BC_CONF_A_WaterLevel_Data`. Then select the output datastream. The output datastream is where HydroServer will save the calculated discharge values from the rating curve. The output datastream should already be created before setting up the rating curve task. In this example, the output datastream is named `Rating Curve`.
+After setting the schedule, select the input datastream. The input datastream should be the datastream that contains the water level, stage, or gage-height values. In this example, the input datastream is `Water Level - 15 min`. Then select the output datastream. The output datastream is where HydroServer will save the calculated discharge values from the rating curve. The output datastream should already be created before setting up the rating curve task. In this example, the output datastream is named `Discharge - 15 min, Rating Curve`.
 
 The next step is to select or create the rating curve. If a rating curve already exists in HydroServer for the monitoring site, you can choose **Select existing rating curve** and select the rating curve that should be used. If a rating curve has not been created yet, choose **Create new rating curve**. When creating a new rating curve, a CSV file containing x-y pairs that define the rating curve must be uploaded. This CSV file provides the reference values HydroServer uses to build the rating curve. The CSV file should contain paired values, usually one column for the input variable (e.g., water level, stage, or gage height), and one column for the output variable (e.g., discharge).
 

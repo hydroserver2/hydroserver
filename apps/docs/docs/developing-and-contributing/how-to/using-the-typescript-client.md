@@ -22,7 +22,8 @@ The TypeScript client exposes these services:
 | --- | --- |
 | Authentication and account | `session`, `user` |
 | Data management | `workspaces`, `monitoringSites`, `datastreams`, `methods`, `units`, `processingLevels`, `observedProperties`, `resultQualifiers` |
-| Ingestion and orchestration | `dataConnections`, `tasks`, `monitoringTasks`, `dataProductTasks`, `ratingCurves` |
+| Controlled vocabularies | `monitoringSiteTypes`, `methodTypes`, `observedPropertyTypes`, `unitTypes`, `sampledMediums`, `aggregationStatistics`, `datastreamStatuses`, `linkedResourceTypes` |
+| Ingestion and orchestration | `dataConnections`, `tasks`, `etlMappings`, `monitoringTasks`, `monitoringRules`, `dataProductTasks`, `dataProductTransformations`, `ratingCurves` |
 | Quality control | `qualityControlHistories`, `qualityControlSessions`, `qualityControlOperations` |
 
 Services are created lazily, so reading a service property does not make a request.
@@ -496,6 +497,21 @@ await hs.resultQualifiers.update(created);
 await hs.resultQualifiers.delete("00000000-0000-0000-0000-000000000000");
 ```
 
+## Controlled Vocabularies
+
+Metadata forms choose some values from controlled vocabularies: monitoring site types, method types, observed property types, unit types, sampled mediums, aggregation statistics, datastream statuses, and linked resource types. Each vocabulary has its own service with the standard collection helpers. Every term has an `id`, a `name`, and an optional `description`. Monitoring sites, datastreams, and other records store the term's `name`.
+
+### Example: List vocabulary terms
+
+```ts
+const siteTypes = await hs.monitoringSiteTypes.listAllItems();
+const siteTypeNames = siteTypes.map((term) => term.name);
+
+const statuses = await hs.datastreamStatuses.listAllItems({ q: "complete" });
+```
+
+Anyone can read vocabulary terms. Only HydroServer administrators can create, update, or delete them, using the same `create`, `update`, and `delete` helpers as other services.
+
 ## Datastreams
 
 Datastreams group observations for one observed property, produced by one method, at one monitoring site.
@@ -778,6 +794,23 @@ created.name = "Updated Task";
 await hs.tasks.update(created);
 ```
 
+### Example: Manage a task's mappings
+
+A task's `mappings` are also available as a top-level resource through `hs.etlMappings`, which is useful when you need to find which tasks load a datastream or change one mapping without updating the whole task.
+
+```ts
+const mappings = await hs.etlMappings.listAllItems({
+  targetDatastreamId: ["33333333-3333-3333-3333-333333333333"],
+  include: ["targetDatastream"],
+});
+
+await hs.etlMappings.create({
+  etlTaskId: "00000000-0000-0000-0000-000000000000",
+  sourceIdentifier: "humidity",
+  targetDatastreamId: "44444444-4444-4444-4444-444444444444",
+});
+```
+
 ### Example: Trigger a task run
 
 ```ts
@@ -861,15 +894,21 @@ const task = await hs.dataProductTasks.createItem(
 
 if (!task) throw new Error("Unable to create data product task");
 
-await hs.dataProductTasks.createDerivationTransformation(task.id, {
-  inputDatastreamId: "11111111-1111-1111-1111-111111111111",
+await hs.dataProductTransformations.create({
+  taskId: task.id,
+  transformationType: "derivation",
   outputDatastreamId: "22222222-2222-2222-2222-222222222222",
-  variableName: "temperature",
+  inputDatastreams: [
+    {
+      datastreamId: "11111111-1111-1111-1111-111111111111",
+      variableName: "temperature",
+    },
+  ],
   formula: "temperature * 9 / 5 + 32",
 });
 ```
 
-Each transformation type has matching `create`, `list`, `update`, and `delete` helpers. Rating curves themselves are managed through `hs.ratingCurves`:
+Transformations are a top-level resource: use `hs.dataProductTransformations`' `list` (filtered with `{ taskId: task.id }`), `get`, `create`, `update`, and `delete` methods for every transformation type. Set `transformationType` to `derivation`, `rating_curve`, or `aggregation` and supply that type's fields. Rating curves themselves are managed through `hs.ratingCurves`:
 
 ```ts
 import { RatingCurve } from "@hydroserver/client";
@@ -908,7 +947,7 @@ const history = await hs.qualityControlHistories.getItem(historyRes.data.id);
 if (!history) throw new Error("Quality control history not found");
 
 const historiesRes = await hs.qualityControlHistories.list({
-  managed_datastream_id: [history.managedDatastreamId],
+  managedDatastreamId: [history.managedDatastreamId],
   include: ["sourceDatastream", "managedDatastream"],
 });
 ```

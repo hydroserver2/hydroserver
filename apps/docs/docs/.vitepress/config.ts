@@ -175,10 +175,6 @@ export default defineConfig({
                 link: "/user-guides/how-to/exporting-and-downloading-data",
               },
               {
-                text: "Archiving Data to HydroShare",
-                link: "/user-guides/how-to/archiving-data-to-hydroshare",
-              },
-              {
                 text: "Using the Python Client",
                 link: "/user-guides/how-to/using-the-python-client",
               },

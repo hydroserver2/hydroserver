@@ -7,7 +7,7 @@ A site encompasses both the physical location and the metadata describing the si
 A site is _not_ the physical instruments that are deployed at the site's location. Instrument and procedure metadata lives in the Method table of HydroServer's database.
 
 ::: tip MonitoringSite and SensorThings
-HydroServer's data model and Data Management API use `MonitoringSite`. The SensorThings API continues to expose the standard `Thing` and `Location` entities by deriving one of each from a monitoring site.
+HydroServer's data model and the HydroServer Data Management API use `MonitoringSite`. The SensorThings API continues to expose the standard `Thing` and `Location` entities by deriving one of each from a monitoring site.
 :::
 
 ## key:value tagging system
