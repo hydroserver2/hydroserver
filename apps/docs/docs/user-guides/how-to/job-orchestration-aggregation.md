@@ -38,7 +38,7 @@ After the aggregation task runs successfully, return to the site details page an
 
 Derivation tasks are used to create a new datastream by applying a mathematical formula or expression to values from one or more input datastreams. This is useful when the original data are already stored in HydroServer, but the values need to be converted, adjusted, or recalculated before being used for analysis or reporting. For example, a derivation task can be used to convert discharge values from cubic feet per second (`cfs`) to cubic meters per second (`cms`).
 
-For derivation tasks, the output datastream uses the same time spacing as the input datastreams, so all input datastreams must share the same time spacing. Derivations are appropriate for simple transformations such as unit conversions or for more complex calculations involving multiple input datastreams. For example, a derivation task can calculate the difference between two temperature datastreams, combine measurements from multiple sensors, or calculate a basin sum from several streamflow datastreams.
+With one input datastream, the calculated values use the input's timestamps. With multiple inputs, HydroServer matches values by their exact timestamps, as described below. Derivations are appropriate for simple transformations such as unit conversions or for more complex calculations involving multiple input datastreams. For example, a derivation task can calculate the difference between two temperature datastreams, combine measurements from multiple sensors, or calculate a basin sum from several streamflow datastreams.
 
 Before creating a derivation task, make sure the output datastream already exists in the workspace. The derivation task needs a target datastream where HydroServer can save the calculated results. In this example, the input datastream contains daily average discharge values in `cfs`, and the output datastream is created to store the converted daily discharge values in `cms`.
 
@@ -69,7 +69,11 @@ a * 0.0283168
 
 Derivation tasks can also be used when a calculated output depends on **multiple input datastreams**. Each input datastream is assigned a variable name, such as `a`, `b`, or `c`, and those variables are used together in a formula to calculate an output datastream.
 
-Input datastreams must have the same time spacing for a derivation to compute successfully. Before creating a derivation task, make sure the output datastream already exists in the workspace. The derivation task needs a target datastream where HydroServer can save the calculated results.
+HydroServer calculates a result only when every input has a value at the exact same timestamp. The inputs can have different time spacing, but HydroServer does not estimate values between observations to make them match. For example, if one input has values every 15 minutes and another every 30 minutes, their timestamps can match every 30 minutes. The **Stop on input gaps** setting controls what happens to the timestamps that do not match.
+
+Each run processes data only up to the latest timestamp of the input datastream that is furthest behind. Later timestamps wait for that input to catch up.
+
+Before creating a derivation task, make sure the output datastream already exists in the workspace. The derivation task needs a target datastream where HydroServer can save the calculated results.
 
 To create a derivation task, go to the **Job Orchestration** page and select **Aggregations & products** from the left menu. Then click **Add derivation**. The derivation task form will open.
 
@@ -92,6 +96,15 @@ a = first input datastream
 b = second input datastream
 a - b = output value derived using the expression
 ```
+
+### Handling Missing Values and Calculation Errors
+
+The **Error handling** section of the derivation form has two settings:
+
+- **Stop on input gaps** is off by default. When an input has no observation at a timestamp where another input does, HydroServer skips that timestamp and continues. Turn this setting on to stop before the first gap, so a later run can process it once the missing observation arrives.
+- **Stop on calculation error** is on by default. If the formula produces an invalid numeric result, such as division by zero, HydroServer stops before that timestamp. Turn this setting off to write the output datastream's no-data value at that timestamp and continue.
+
+A missing observation is different from an observation that contains a datastream's no-data value. If any input contains its no-data value at a matching timestamp, HydroServer writes the output datastream's no-data value there. This happens regardless of the two settings above.
 
 ## 3. Deriving New Values Using a Rating Curve
 

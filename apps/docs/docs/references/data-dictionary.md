@@ -476,7 +476,7 @@ A DataProductTransformation describes how a single derived (output) Datastream i
 | O        | output_interval        | The positive interval count corresponding to `output_interval_units`.                                                               | Integer   |
 | O        | timezone_type          | For interval-aligned aggregations, the timezone interpretation: `utc`, `offset`, or `iana`.                                         | String    |
 | O        | timezone               | The timezone value (an IANA name or an offset) used when `timezone_type` is `offset` or `iana`.                                     | String    |
-| O        | aggregation_method     | For `aggregation` transformations, the aggregation function: `mean`, `sum`, `min`, `max`, `first`, or `last`.                       | String    |
+| O        | aggregation_method     | For `aggregation` transformations, the aggregation function: `mean`, `sum`, `min`, `max`, `first`, `last`, or `time_weighted_mean`. | String    |
 | O        | min_values             | For `aggregation` transformations, the minimum number of input observations required per window.                                    | Integer   |
 
 ## DataProductTransformationInput
