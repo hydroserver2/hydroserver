@@ -10,7 +10,7 @@
  * Worker API contract).
  */
 
-import { fillGapsCore } from '../operation-cores';
+import { fillGapsCore, valueThresholdCore } from '../operation-cores';
 
 type MockWorkerInstance = {
   onmessage: ((event: { data: any }) => void) | null;
@@ -330,29 +330,6 @@ export const MockRateOfChangeWorker = makeMockWorker((data) => {
 });
 
 export const MockValueThresholdWorker = makeMockWorker((data) => {
-  const { bufferY, start, end, ops, values } = data;
-  const arrayY = new Float64Array(bufferY);
-  const indexes: number[] = [];
-  const nFilters = ops.length;
-  for (let i = start; i < end; i++) {
-    const v = arrayY[i];
-    let match = false;
-    for (let k = 0; k < nFilters; k++) {
-      const op = ops[k];
-      const t = values[k];
-      if (op === 0) {
-        if (v < t) { match = true; break; }
-      } else if (op === 1) {
-        if (v <= t) { match = true; break; }
-      } else if (op === 2) {
-        if (v > t) { match = true; break; }
-      } else if (op === 3) {
-        if (v >= t) { match = true; break; }
-      } else {
-        if (v == t) { match = true; break; }
-      }
-    }
-    if (match) indexes.push(i);
-  }
-  return indexes;
+  const { bufferY, start, end, ops, values, matchAll } = data;
+  return valueThresholdCore(new Float64Array(bufferY), start, end, ops, values, matchAll);
 });

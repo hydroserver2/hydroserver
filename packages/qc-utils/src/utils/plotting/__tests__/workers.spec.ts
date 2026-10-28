@@ -214,6 +214,18 @@ describe('core-backed worker wiring', () => {
     })
     expect(posted[0]).toEqual([1, 2])
   })
+
+  it('passes matchAll through to the kernel', () => {
+    const posted = invokeValueThreshold({
+      bufferY: bufferY([1, 5, 10]),
+      start: 0,
+      end: 3,
+      ops: [2, 5], // GT, NE
+      values: [4, 10],
+      matchAll: true,
+    })
+    expect(posted[0]).toEqual([1])
+  })
 })
 
 describe('shift-datetimes.worker', () => {
