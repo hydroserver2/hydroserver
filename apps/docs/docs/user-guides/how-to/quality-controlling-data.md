@@ -6,7 +6,7 @@ The HydroServer Quality Control (QC) App is under active development. It is incl
 
 This guide is for the operator of the QC App: Usually a hydrologist or data technician who picks a datastream, flags, edits, and/or corrects the bad or erroneous points, and then submits the cleaned datastream back to HydroServer. It walks through every feature of the QC App and the shortest path to common QC tasks.
 
-If you are looking for developer / deployment docs for the QC App, start with the QC App [ARCHITECTURE](https://github.com/hydroserver2/hydroserver/blob/main/apps/qc-app/docs/ARCHITECTURE.md) documentation instead.
+If you are looking for developer / deployment docs for the QC App, start with the QC App [ARCHITECTURE](https://github.com/hydroserver2/hydroserver/blob/main/packages/qc-utils/docs/ARCHITECTURE.md) documentation instead.
 
 ## What this app does
 
@@ -50,7 +50,7 @@ Everything runs in your web browser. The backend never sees your edit history un
 
 4. On **Home**, the left filter drawer is open. Pick a time range and filter the datastream list by site / observed property / processing level. Click a row to plot it.
 
-If the screen ever stays blank with a console error like `Failed to fetch app settings`, ask your administrator to check the API URL and COOP/COEP configuration (the QC App [DEPLOYMENT](https://github.com/hydroserver2/hydroserver/blob/main/apps/qc-app/docs/DEPLOYMENT.md) documentation covers this).
+If the screen ever stays blank with a console error like `Failed to fetch app settings`, ask your administrator to check the API URL and COOP/COEP configuration (the QC App [DEPLOYMENT](https://github.com/hydroserver2/hydroserver/blob/main/packages/qc-utils/docs/DEPLOYMENT.md) documentation covers this).
 
 ## The QC App user interface, top to bottom
 
@@ -376,7 +376,7 @@ Attach qualifier flags (e.g., "Ice affected", "Estimated") to the selected point
 
 The **New qualifier** button opens a small dialog where you can register a new data qualifier code + description against the workspace.
 
-> **Note:** qualifier codes are tracked locally in your browser and are POSTed to the workspace's qualifier list, but the per-point qualifier applications themselves are not yet serialized to the backend on Save. See the QC App [QUALITY](https://github.com/hydroserver2/hydroserver/blob/main/apps/qc-app/docs/QUALITY.md) documentation for the status.
+> **Note:** qualifier codes are tracked locally in your browser and are POSTed to the workspace's qualifier list, but the per-point qualifier applications themselves are not yet serialized to the backend on Save. See the QC App [QUALITY](https://github.com/hydroserver2/hydroserver/blob/main/packages/qc-utils/docs/QUALITY.md) documentation for the status.
 
 #### Add points
 
@@ -486,7 +486,7 @@ For datastreams with hundreds of thousands of points:
   `SharedArrayBuffer` (or the deployment dropped the COOP/COEP headers), operations run inline and a particularly large edit may freeze the UI for a moment. The result is identical either way.
 - The **Performance Calibration** dialog (stopwatch icon in the nav rail) shows the measured worker / inline throughput on your device and lets you re-benchmark on demand. If big edits feel slower than they used to (e.g., after you upgraded your OS), re-benchmark.
 
-See the QC App [PERFORMANCE](https://github.com/hydroserver2/hydroserver/blob/main/apps/qc-app/docs/PERFORMANCE.md) documentation for the envelope details.
+See the QC App [PERFORMANCE](https://github.com/hydroserver2/hydroserver/blob/main/packages/qc-utils/docs/PERFORMANCE.md) documentation for the envelope details.
 
 ## Common tasks
 
@@ -522,7 +522,7 @@ Click the grid icon in the nav rail → pick another. If you have unsaved edits,
 
 | Symptom | Likely cause | Fix |
 |---------|--------------|-----|
-| Blank page on load | Wrong API URL or `localhost` vs `127.0.0.1` mismatch. | See the QC App [DEPLOYMENT](https://github.com/hydroserver2/hydroserver/blob/main/apps/qc-app/docs/DEPLOYMENT.md) documentation. |
+| Blank page on load | Wrong API URL or `localhost` vs `127.0.0.1` mismatch. | See the QC App [DEPLOYMENT](https://github.com/hydroserver2/hydroserver/blob/main/packages/qc-utils/docs/DEPLOYMENT.md) documentation. |
 | Plot stays empty after picking a datastream | Time range falls outside the datastream's observations. The plotted row shows a database-off icon and the subtitle reads `0 pts loaded`. | Click **All** in Time range. |
 | Pencil ("Edit") icon is greyed out | No QC datastream selected. | Plot at least one datastream. The first becomes the QC target. |
 | Big edits freeze the page | `SharedArrayBuffer` not available; running inline. | Have your admin re-enable COOP/COEP headers, or accept the slower fallback. |
@@ -532,4 +532,4 @@ Click the grid icon in the nav rail → pick another. If you have unsaved edits,
 ## See also
 
 - [HydroServer QC App source code](https://github.com/hydroserver2/hydroserver/tree/main/apps/qc-app)
-- [QC App ARCHITECTURE](https://github.com/hydroserver2/hydroserver/blob/main/apps/qc-app/docs/ARCHITECTURE.md): what's running behind the screen
+- [QC App ARCHITECTURE](https://github.com/hydroserver2/hydroserver/blob/main/packages/qc-utils/docs/ARCHITECTURE.md): what's running behind the screen
