@@ -52,7 +52,9 @@ Clicking the 'create' button will bring you to the main dashboard where you'll s
 
 ## Visualizing Your Data
 
-Congrats! You've completed this tutorial! To visualize your newly pushed data, click 'Visualize data' on the main navigation bar in the Data Management App. This will take you to a page where you'll see all the public data on the playground instance and your data regardless of if it's public or private (don't worry, private data still can't be seen by others). Use the 'Workspace' filter on the left to make it easier to find your datastream in the list. Select your datastream in the Datastreams table and you should see something like this:
+Congrats! You've completed this tutorial! To visualize your newly pushed data, click **Visualize data** in the main navigation bar in the Data Management App. This page lets you explore public data on the playground instance as well as your own public and private data. Your private data remain accessible only to you and your workspace collaborators.
+
+Find the **Datastreams** table at the bottom of the page. Open its **Workspaces** filter and select your workspace to narrow the list. Then check the box next to your datastream to plot it. You should see something like this:
 
 <img src="/hydroserver-101/data-visualization.png" alt="Data connection" class="img-white-bg">
 
