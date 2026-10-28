@@ -63,6 +63,8 @@ By default, workspaces, sites, and datastreams are public. However, each has a v
 
 4. **Datastream Data Visibility**: This is a convenience setting for controlling visibility of data in the Data Management Web Application. When a datastream is public, its metadata will be visible to the public. However this setting enables datastream observations to be hidden. **Note**: Observations can still be retrieved by anyone through the SensorThings API regardless of this setting.
 
-These privacy settings work in a hierarchical, conditional manner:
+HydroServer checks privacy at all three levels. A datastream and its observations are publicly accessible only when its workspace, monitoring site, and the datastream itself are all public.
 
-If you set the **Site Privacy** to private (`monitoringSite.isPrivate`), then both **Datastream Privacy** (`datastream.isPrivate`) and **Datastream Data Visibility** (`datastream.isVisible`) will automatically be set to private as well. However, if the site is public, you can still control the visibility of each datastream and its data individually.
+Making a site private blocks public access to its datastreams and observations. Each datastream keeps its own privacy (`datastream.isPrivate`) and data visibility (`datastream.isVisible`) settings.
+
+For example, if you make the site public again and its workspace is also public, datastreams that were public before become publicly accessible again. Datastreams marked private stay private. The saved data visibility setting still controls whether observations are shown in the Data Management Web Application.
