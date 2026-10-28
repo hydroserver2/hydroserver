@@ -69,7 +69,7 @@ export type BeginOutcome = 'resumed' | 'needs-session' | 'not-managed'
 export function useEditSession() {
   const { qcDatastream } = storeToRefs(useDataVisStore())
   const { replaceDatastream, setEditRecord } = useDataVisStore()
-  const { selectedSeries } = storeToRefs(usePlotlyStore())
+  const { selectedSeries, previewIndex } = storeToRefs(usePlotlyStore())
   const { hs } = storeToRefs(useHydroServer())
   // Working copies build on records of their own, so the plotted source
   // keeps its context window.
@@ -321,6 +321,13 @@ export function useEditSession() {
     const source = sourceDatastream.value
     if (!managed || !historyId || !session || !record || !source) {
       throw new Error('No active edit session to commit.')
+    }
+    // A preview shows an earlier step's data but keeps every step, so the
+    // pushed observations would not match the saved operations.
+    if (previewIndex.value !== null) {
+      throw new Error(
+        'You are previewing an earlier step. Return to the latest step before committing.'
+      )
     }
     await saveDraft()
 
