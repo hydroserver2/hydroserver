@@ -74,6 +74,79 @@ test.describe("visualization", () => {
     expect(
       await figure.evaluate((gd: any) => gd._fullLayout.xaxis.range),
     ).toEqual(range);
+    const widthField = dialog.getByRole("spinbutton", {
+      name: "Width",
+      exact: true,
+    });
+    const heightField = dialog.getByRole("spinbutton", {
+      name: "Height",
+      exact: true,
+    });
+    await expect(widthField).toHaveValue("1200");
+    await expect(heightField).toHaveValue("900");
+    await dialog
+      .getByRole("combobox", { name: "Image shape", exact: true })
+      .press("ArrowDown");
+    await page.getByRole("option", { name: "Custom", exact: true }).click();
+    await expect(
+      dialog.getByRole("combobox", { name: "Image shape", exact: true }),
+    ).toHaveValue("Custom");
+    await expect(widthField).toHaveValue("1200");
+    await expect(heightField).toHaveValue("900");
+    await widthField.fill("2400");
+    await heightField.fill("1800");
+    await expect(
+      dialog.getByRole("combobox", { name: "Image shape", exact: true }),
+    ).toHaveValue("Custom");
+    await dialog
+      .getByRole("combobox", { name: "Image shape", exact: true })
+      .press("ArrowDown");
+    await page
+      .getByRole("option", { name: "Square (1:1)", exact: true })
+      .click();
+    await expect(widthField).toHaveValue("1200");
+    await expect(heightField).toHaveValue("1200");
+    await expect
+      .poll(() =>
+        figure.evaluate((gd: any) => [
+          gd._fullLayout.width,
+          gd._fullLayout.height,
+        ]),
+      )
+      .toEqual([1200, 1200]);
+    await widthField.fill("");
+    await expect(
+      dialog.getByRole("button", { name: "Download PNG", exact: true }),
+    ).toBeDisabled();
+    await widthField.fill("400");
+    await heightField.fill("300");
+    await expect(
+      dialog.getByRole("combobox", { name: "Image shape", exact: true }),
+    ).toHaveValue("Custom");
+    await expect
+      .poll(() =>
+        figure.evaluate((gd: any) => [
+          gd._fullLayout.width,
+          gd._fullLayout.height,
+        ]),
+      )
+      .toEqual([400, 300]);
+    await widthField.fill("1000");
+    await heightField.fill("700");
+    await expect(
+      dialog.getByRole("combobox", { name: "Image shape", exact: true }),
+    ).toHaveValue("Custom");
+    await expect
+      .poll(() =>
+        figure.evaluate((gd: any) => [
+          gd._fullLayout.width,
+          gd._fullLayout.height,
+        ]),
+      )
+      .toEqual([1000, 700]);
+    await page.screenshot({
+      path: testInfo.outputPath("image-dimensions.png"),
+    });
     await dialog
       .getByRole("textbox", { name: "Image title", exact: true })
       .fill("Logan River flow");
@@ -144,6 +217,25 @@ test.describe("visualization", () => {
     ).toHaveCount(1);
     await expect(figure.locator(".xtitle")).toHaveText("Time (UTC)");
     await expect(figure.locator(".ytitle")).toHaveText("Discharge (m³ s⁻¹)");
+    await expect
+      .poll(() =>
+        figure.evaluate((gd: any) => {
+          const title = gd.querySelector(".annotation-text");
+          const axis = gd.querySelector(".xtitle");
+          const titleBounds = title.getBoundingClientRect();
+          const axisBounds = axis.getBoundingClientRect();
+          return (
+            Math.abs(
+              titleBounds.x +
+                titleBounds.width / 2 -
+                axisBounds.x -
+                axisBounds.width / 2,
+            ) < 1 &&
+            getComputedStyle(title).fontSize === getComputedStyle(axis).fontSize
+          );
+        }),
+      )
+      .toBe(true);
     await expect(
       dialog.getByRole("checkbox", { name: /site name for trace/i }),
     ).toHaveCount(0);
@@ -154,6 +246,17 @@ test.describe("visualization", () => {
       .getByRole("combobox", { name: "Legend position" })
       .press("ArrowDown");
     await page.getByRole("option", { name: "Above plot", exact: true }).click();
+    await expect
+      .poll(() =>
+        figure.evaluate((gd: any) => {
+          const legend = gd.querySelector(".legend").getBoundingClientRect();
+          const title = gd
+            .querySelector(".annotation-text")
+            .getBoundingClientRect();
+          return legend.bottom <= title.top;
+        }),
+      )
+      .toBe(true);
     await expect
       .poll(() => figure.evaluate((gd: any) => gd._fullLayout.legend.yanchor))
       .toBe("bottom");
@@ -214,7 +317,8 @@ test.describe("visualization", () => {
     const imagePath = testInfo.outputPath("figure-export.png");
     await download.saveAs(imagePath);
     const png = await readFile(imagePath);
-    expect(png.readUInt32BE(16)).toBeGreaterThanOrEqual(3840);
+    expect(png.readUInt32BE(16)).toBe(1000);
+    expect(png.readUInt32BE(20)).toBe(700);
     await dialog.getByRole("button", { name: "Close image preview" }).click();
     await expect(dialog).toHaveCount(0);
     await expect(page).toHaveURL(url);

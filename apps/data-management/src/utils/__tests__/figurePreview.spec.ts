@@ -28,7 +28,8 @@ const source: PlotlyOptions = {
 const defaults = (): FigureSettings => ({
   title: 'Study reach',
   fontSize: 18,
-  aspectRatio: 4 / 3,
+  width: 1200,
+  height: 900,
   showLegend: true,
   showSiteNames: true,
   legendPosition: 'above',
@@ -101,10 +102,33 @@ describe('figure preview', () => {
     expect(below.layout.annotations[0].y).toBe(1)
     const plotHeight =
       below.layout.height - below.layout.margin.t - below.layout.margin.b
-    expect(-below.layout.legend.y * plotHeight).toBe(above.layout.margin.b)
+    expect(-below.layout.legend.y * plotHeight).toBeCloseTo(above.layout.margin.b)
     settings.showLegend = false
     const hidden = buildFigurePreview(source, settings, 'Arial', measure)
     expect(hidden.layout.margin.b).toBe(above.layout.margin.b)
+  })
+
+  it('centers the image title on the X-axis domain with matching typography and spacing', () => {
+    const settings = defaults()
+    const shifted = {
+      ...source,
+      layout: {
+        ...source.layout,
+        xaxis: {
+          ...source.layout.xaxis,
+          domain: [0.1, 0.8],
+          title: { text: 'Datetime', standoff: 24 },
+        },
+      },
+    }
+    const result = buildFigurePreview(shifted, settings, 'Arial', measure)
+    const title = result.layout.annotations[0]
+    expect(title.x).toBe(0.45)
+    expect(title.xanchor).toBe('center')
+    expect(title.align).toBe('center')
+    expect(title.font).toEqual(result.layout.xaxis.title.font)
+    expect(title.yshift).toBe(result.layout.xaxis.title.standoff)
+    expect(result.layout.legend.y).toBeGreaterThan(1)
   })
 
   it('shows or hides site names for every trace together', () => {
@@ -129,6 +153,21 @@ describe('figure preview', () => {
         (trace) => !trace.name.includes('@ ')
       )
     ).toBe(true)
+  })
+
+  it('respects exact dimensions and reports space needed instead of growing the image', () => {
+    const settings = defaults()
+    settings.width = 800
+    settings.height = 300
+    settings.title = 'Long image title '.repeat(10)
+    const result = buildFigurePreview(source, settings, 'Arial', measure)
+    expect(result.layout.width).toBe(800)
+    expect(result.layout.height).toBe(300)
+    expect(result.minHeight).toBeGreaterThan(300)
+    settings.height = result.minHeight
+    const fitted = buildFigurePreview(source, settings, 'Arial', measure)
+    expect(fitted.layout.height).toBeGreaterThanOrEqual(fitted.minHeight)
+    expect(fitted.layout.width).toBe(800)
   })
 
   it('escapes user text and wraps long axis labels to fit the requested page shape', () => {

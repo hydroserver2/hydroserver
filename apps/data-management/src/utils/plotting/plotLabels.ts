@@ -77,15 +77,19 @@ export function applyPlotLabels(
         lineHeight +
       8
   }
+  const xDomain = options.layout.xaxis?.domain ?? [0, 1]
+  const titleGap = options.layout.xaxis?.title?.standoff ?? 24
   const titleLines = title
-    ? wrapPlotLabel(title, availableWidth, (text) => measure(text) * 1.5)
+    ? wrapPlotLabel(title, availableWidth * (xDomain[1] - xDomain[0]), measure)
     : []
+  const titleHeight = titleLines.length
+    ? titleLines.length * lineHeight + titleGap
+    : 0
   const aboveLegendHeight = legendPosition === 'above' ? legendHeight : 0
-  const topMargin =
-    32 +
-    aboveLegendHeight +
-    titleLines.length * lineHeight * 1.5 +
-    (title ? 12 : 0)
+  const topMargin = 32 + aboveLegendHeight + titleHeight
+  const bottomMargin =
+    (options.layout.margin?.b ?? 80) +
+    (legendPosition === 'below' && legendHeight ? legendHeight + 16 : 0)
   // A rotated axis title must also fit below the legend. Plotly does not
   // reserve vertical space for it and otherwise lets it run into the header.
   const axisTitleHeight = Math.max(
@@ -109,21 +113,26 @@ export function applyPlotLabels(
         )
       })
   )
+  const minHeight = Math.ceil(
+    topMargin + bottomMargin + Math.max(220, axisTitleHeight)
+  )
+  const plotHeight = Math.max(
+    1,
+    (options.layout.height ?? minHeight) - topMargin - bottomMargin
+  )
   const layout = {
     ...options.layout,
     margin: {
       ...options.layout.margin,
       t: topMargin,
-      b:
-        (options.layout.margin?.b ?? 80) +
-        (legendPosition === 'below' && legendHeight ? legendHeight + 16 : 0),
+      b: bottomMargin,
     },
     legend: {
       ...options.layout.legend,
       orientation: 'h',
       x: 0,
       xanchor: 'left',
-      y: legendPosition === 'above' ? 1 : 0,
+      y: legendPosition === 'above' ? 1 + titleHeight / plotHeight : 0,
       yanchor: legendPosition === 'above' ? 'bottom' : 'top',
       font: { family: fontFamily, size: fontSize },
       entrywidth: 1 / columns,
@@ -141,14 +150,14 @@ export function applyPlotLabels(
               text: titleLines.map(escapePlotText).join('<br>'),
               xref: 'paper',
               yref: 'paper',
-              x: 0,
+              x: (xDomain[0] + xDomain[1]) / 2,
               y: 1,
-              xanchor: 'left',
+              xanchor: 'center',
               yanchor: 'bottom',
-              yshift: aboveLegendHeight + 20,
-              align: 'left',
+              yshift: titleGap,
+              align: 'center',
               showarrow: false,
-              font: { family: fontFamily, size: fontSize * 1.5 },
+              font: { family: fontFamily, size: fontSize },
             },
           ]
         : []),
@@ -164,8 +173,6 @@ export function applyPlotLabels(
       })),
     },
     // Let the page grow to fit the legend while retaining a usable plot area.
-    minHeight: Math.ceil(
-      topMargin + (layout.margin.b ?? 80) + Math.max(220, axisTitleHeight)
-    ),
+    minHeight,
   }
 }

@@ -16,7 +16,7 @@
           <v-btn-dialog-action
             :prepend-icon="mdiDownload"
             :loading="exporting"
-            :disabled="!ready"
+            :disabled="!ready || !dimensionsValid"
             @click="download"
             >Download PNG</v-btn-dialog-action
           >
@@ -44,15 +44,41 @@
               hide-details
             />
             <v-select
-              v-model="settings.aspectRatio"
+              v-model="imageShape"
               label="Image shape"
               :items="shapes"
               hide-details
             />
+            <div class="figure-dimensions">
+              <v-text-field
+                v-model.number="settings.width"
+                @update:model-value="imageShape = 0"
+                label="Width"
+                type="number"
+                suffix="px"
+                :min="MIN_IMAGE_WIDTH"
+                :max="MAX_IMAGE_DIMENSION"
+                step="1"
+                :rules="[(value) => dimensionRule(value, MIN_IMAGE_WIDTH)]"
+                hide-details="auto"
+              />
+              <v-text-field
+                v-model.number="settings.height"
+                @update:model-value="imageShape = 0"
+                label="Height"
+                type="number"
+                suffix="px"
+                :min="MIN_IMAGE_HEIGHT"
+                :max="MAX_IMAGE_DIMENSION"
+                step="1"
+                :rules="[(value) => dimensionRule(value, MIN_IMAGE_HEIGHT)]"
+                hide-details="auto"
+              />
+            </div>
             <v-select
               v-model="settings.fontSize"
               label="Text size"
-              :items="[16, 20, 24, 28, 32, 40]"
+              :items="[16, 18, 20, 22, 24, 28, 32, 40]"
               suffix="px"
               hide-details
             />
@@ -199,14 +225,14 @@
             v-if="figure"
             class="figure-frame"
             :style="{
-              width: `${FIGURE_WIDTH * scale}px`,
+              width: `${figure.layout.width * scale}px`,
               height: `${figure.layout.height * scale}px`,
             }"
           >
             <div
               class="figure-paper"
               :style="{
-                width: `${FIGURE_WIDTH}px`,
+                width: `${figure.layout.width}px`,
                 height: `${figure.layout.height}px`,
                 transform: `scale(${scale})`,
               }"
@@ -239,7 +265,11 @@ import {
 } from '@/utils/plotting/plotly'
 import {
   buildFigurePreview,
-  FIGURE_WIDTH,
+  DEFAULT_IMAGE_WIDTH,
+  DEFAULT_IMAGE_HEIGHT,
+  MIN_IMAGE_WIDTH,
+  MIN_IMAGE_HEIGHT,
+  MAX_IMAGE_DIMENSION,
   type FigureSettings,
 } from '@/utils/plotting/figurePreview'
 import { Snackbar } from '@/utils/notifications'
@@ -274,7 +304,8 @@ const settings = ref<FigureSettings>({
   showSiteNames: true,
   legendPosition: 'below',
   fontSize: 24,
-  aspectRatio: 4 / 3,
+  width: DEFAULT_IMAGE_WIDTH,
+  height: DEFAULT_IMAGE_HEIGHT,
   traces: [],
   axes: [],
 })
@@ -283,6 +314,7 @@ const shapes = [
   { title: 'Widescreen (16:9)', value: 16 / 9 },
   { title: 'Square (1:1)', value: 1 },
   { title: 'Portrait (3:4)', value: 3 / 4 },
+  { title: 'Custom', value: 0 },
 ]
 const stage = ref<HTMLElement | null>(null)
 const plotContainer = ref<HTMLElement | null>(null)
@@ -290,23 +322,51 @@ const stageSize = ref({ width: 800, height: 600 })
 const fontFamily = ref('Arial, sans-serif')
 const fontVersion = ref(0)
 const context = document.createElement('canvas').getContext('2d')
-const figure = computed(() => {
-  if (!source.value) return null
-  void fontVersion.value
-  if (context) context.font = `${settings.value.fontSize}px ${fontFamily.value}`
-  return buildFigurePreview(
-    source.value,
-    settings.value,
-    fontFamily.value,
-    (text) =>
-      context?.measureText(text).width ??
-      Array.from(text).length * settings.value.fontSize * 0.65
+function dimensionRule(value: unknown, min: number) {
+  const number = Number(value)
+  return (
+    (Number.isInteger(number) &&
+      number >= min &&
+      number <= MAX_IMAGE_DIMENSION) ||
+    `${min}–${MAX_IMAGE_DIMENSION} px, whole numbers`
   )
+}
+const dimensionsValid = computed(
+  () =>
+    dimensionRule(settings.value.width, MIN_IMAGE_WIDTH) === true &&
+    dimensionRule(settings.value.height, MIN_IMAGE_HEIGHT) === true
+)
+const selectedShape = ref(4 / 3)
+const imageShape = computed({
+  get: () => selectedShape.value,
+  set: (ratio: number) => {
+    selectedShape.value = ratio
+    if (ratio <= 0) return
+    settings.value.width = DEFAULT_IMAGE_WIDTH
+    settings.value.height = Math.round(DEFAULT_IMAGE_WIDTH / ratio)
+  },
 })
+const figure = computed<ReturnType<typeof buildFigurePreview> | null>(
+  (previous) => {
+    if (!source.value) return null
+    if (!dimensionsValid.value) return previous ?? null
+    void fontVersion.value
+    if (context)
+      context.font = `${settings.value.fontSize}px ${fontFamily.value}`
+    return buildFigurePreview(
+      source.value,
+      settings.value,
+      fontFamily.value,
+      (text) =>
+        context?.measureText(text).width ??
+        Array.from(text).length * settings.value.fontSize * 0.65
+    )
+  }
+)
 const scale = computed(() =>
   Math.min(
     1,
-    stageSize.value.width / FIGURE_WIDTH,
+    stageSize.value.width / (figure.value?.layout.width || DEFAULT_IMAGE_WIDTH),
     stageSize.value.height / (figure.value?.layout.height || 900)
   )
 )
@@ -340,7 +400,8 @@ function openPreview() {
     showSiteNames: true,
     legendPosition: 'below',
     fontSize: 24,
-    aspectRatio: 4 / 3,
+    width: DEFAULT_IMAGE_WIDTH,
+    height: DEFAULT_IMAGE_HEIGHT,
     traces: gd.data.map((trace: any, index: number) => {
       const item = plotLabelItems.value.find((item) => item.id === trace.id)
       const color = trace.line?.color ?? trace.marker?.color
@@ -369,7 +430,10 @@ function openPreview() {
 }
 
 function resetFigure() {
-  if (defaults.value) settings.value = cloneDeep(defaults.value)
+  if (defaults.value) {
+    settings.value = cloneDeep(defaults.value)
+    selectedShape.value = 4 / 3
+  }
 }
 
 function resetTraceColor(id: string) {
@@ -447,7 +511,7 @@ watch(open, async (value) => {
 })
 
 async function download() {
-  if (exporting.value || !ready.value) return
+  if (exporting.value || !ready.value || !dimensionsValid.value) return
   exporting.value = true
   try {
     await renderFigure()
@@ -457,7 +521,7 @@ async function download() {
         .trim()
         .replace(/[\\/:*?"<>|]+/g, '-')
         .replace(/\s+/g, '_') || 'HydroServer_image'
-    await downloadPlotlyImage(chart, { filename, format: 'png' })
+    await downloadPlotlyImage(chart, { filename, format: 'png', scale: 1 })
   } catch (error) {
     console.error('Unable to download image', error)
     Snackbar.error('Unable to download the image. Please try again.')
@@ -525,6 +589,11 @@ defineExpose({ openPreview })
   margin-top: var(--hs-space-24);
   padding-top: var(--hs-space-20);
   border-top: 1px solid var(--hs-border);
+}
+.figure-dimensions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--hs-space-12);
 }
 .figure-trace-fields {
   padding: var(--hs-space-12);

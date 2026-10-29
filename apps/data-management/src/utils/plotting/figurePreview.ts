@@ -16,12 +16,17 @@ export type FigureSettings = {
   legendPosition: 'above' | 'below'
   showLegend: boolean
   fontSize: number
-  aspectRatio: number
+  width: number
+  height: number
   traces: FigureTraceLabel[]
   axes: FigureAxisLabel[]
 }
 
-export const FIGURE_WIDTH = 1200
+export const DEFAULT_IMAGE_WIDTH = 1200
+export const DEFAULT_IMAGE_HEIGHT = 900
+export const MIN_IMAGE_WIDTH = 400
+export const MIN_IMAGE_HEIGHT = 300
+export const MAX_IMAGE_DIMENSION = 6000
 
 /** Build a separate figure; its labels and layout never mutate the live plot. */
 export function buildFigurePreview(
@@ -30,7 +35,7 @@ export function buildFigurePreview(
   fontFamily: string,
   measure: (text: string) => number
 ) {
-  const { fontSize } = settings
+  const { fontSize, width, height } = settings
   const colors = new Map(
     settings.traces.map((trace) => [trace.id, trace.color])
   )
@@ -49,6 +54,7 @@ export function buildFigurePreview(
     title: undefined,
     annotations: [],
     autosize: false,
+    height,
     font: { ...source.layout.font, family: fontFamily, size: fontSize },
     margin: { l: 48, r: 48, b: Math.max(80, fontSize * 6), pad: 0 },
     showlegend: settings.showLegend,
@@ -118,19 +124,18 @@ export function buildFigurePreview(
   let labeled = applyPlotLabels(
     baseOptions,
     labels,
-    FIGURE_WIDTH,
+    width,
     fontFamily,
     measure,
     { title: settings.title, fontSize, legendPosition: settings.legendPosition }
   )
-  const desiredHeight = Math.round(FIGURE_WIDTH / settings.aspectRatio)
   for (const { key, label } of settings.axes) {
     const axisLength = key.startsWith('y')
-      ? desiredHeight -
+      ? height -
         labeled.options.layout.margin.t -
         labeled.options.layout.margin.b -
         48
-      : FIGURE_WIDTH *
+      : width *
           ((layout[key].domain?.[1] ?? 1) - (layout[key].domain?.[0] ?? 0)) -
         120
     layout[key].title.text = wrapPlotLabel(
@@ -141,23 +146,22 @@ export function buildFigurePreview(
       .map(escapePlotText)
       .join('<br>')
   }
-  labeled = applyPlotLabels(
-    baseOptions,
-    labels,
-    FIGURE_WIDTH,
-    fontFamily,
-    measure,
-    { title: settings.title, fontSize, legendPosition: settings.legendPosition }
-  )
-  const height = Math.max(desiredHeight, labeled.minHeight)
+  labeled = applyPlotLabels(baseOptions, labels, width, fontFamily, measure, {
+    title: settings.title,
+    fontSize,
+    legendPosition: settings.legendPosition,
+  })
   if (settings.legendPosition === 'below') {
     // Place the legend after the space reserved for X-axis ticks and title.
-    const plotHeight =
+    const plotHeight = Math.max(
+      1,
       height - labeled.options.layout.margin.t - labeled.options.layout.margin.b
+    )
     labeled.options.layout.legend.y = -layout.margin.b / plotHeight
   }
   return {
     ...labeled.options,
-    layout: { ...labeled.options.layout, width: FIGURE_WIDTH, height },
+    minHeight: labeled.minHeight,
+    layout: { ...labeled.options.layout, width, height },
   }
 }
