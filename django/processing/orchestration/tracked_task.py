@@ -1,7 +1,15 @@
+import logging
+
 from celery import Task
+from celery.exceptions import Ignore
+from django.conf import settings
 from django.utils import timezone
 
 from processing.orchestration.logging import RunIdFilter, run_id_var
+
+logger = logging.getLogger(__name__)
+
+CLEANUP_TASK_NAME = "processing.orchestration.tasks.cleanup_task_runs"
 
 
 class TrackedTask(Task):
@@ -42,6 +50,10 @@ class TrackedTask(Task):
         return None
 
     def before_start(self, task_id, args, kwargs):
+        if not settings.CELERY_ENABLED and self.name != CLEANUP_TASK_NAME:
+            logger.info("Skipping %s because CELERY_ENABLED is False.", self.name)
+            raise Ignore()
+
         self.request.tracking_run_id = self._get_or_create_run(kwargs)
         run_id_var.set(self.request.tracking_run_id or "-")
 
