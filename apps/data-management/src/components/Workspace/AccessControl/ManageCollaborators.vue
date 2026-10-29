@@ -332,7 +332,7 @@
             </div>
             <div class="hs-text-sm text-medium-emphasis">
               <span v-if="!item.isBeingEdited">
-                {{ item.role.name }} · {{ item.email }} ·
+                {{ collaboratorRoleLabel(item) }} · {{ item.email }} ·
                 {{ item.organization }}
               </span>
               <v-select
@@ -467,7 +467,7 @@ const route = useRoute()
 const router = useRouter()
 
 const { user } = storeToRefs(useUserStore())
-const { hasPermission } = useWorkspacePermissions()
+const { hasPermission, isAdmin } = useWorkspacePermissions()
 const isDataReady = ref(false)
 const canCreate = computed(
   () =>
@@ -500,6 +500,17 @@ const canEditCollaborator = (item: { isOwner?: boolean }) =>
   canEdit.value && !item.isOwner
 const canRemoveCollaborator = (item: { email: string; isOwner?: boolean }) =>
   canRemove(item) && !item.isOwner
+
+function collaboratorRoleLabel(item: {
+  email: string
+  isOwner?: boolean
+  role: { name: string }
+}) {
+  const isCurrentAdmin =
+    !item.isOwner && item.email === user.value.email && isAdmin()
+  return isCurrentAdmin ? `${item.role.name} (Admin)` : item.role.name
+}
+
 const collaboratorEditDeniedMessage = (item: { isOwner?: boolean }) =>
   item.isOwner
     ? 'The workspace owner cannot be edited.'

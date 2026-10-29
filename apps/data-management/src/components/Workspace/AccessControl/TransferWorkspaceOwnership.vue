@@ -28,9 +28,9 @@
             ownership rights for this workspace, and its permissions will then
             determine who can
             <strong>rename</strong>, <strong>delete</strong>, and
-            <strong>change the privacy</strong> of this workspace. Unless the
-            new owner adds you as a collaborator, you may lose access to it
-            entirely.
+            <strong>change the privacy</strong> of this workspace. The previous
+            owner may lose access unless added as a collaborator. Instance
+            admins retain management access.
           </small>
         </p>
 
@@ -68,8 +68,8 @@
           density="compact"
           class="mt-4"
         >
-          Once accepted, you will no longer own this workspace and may lose
-          access to it entirely.
+          Once accepted, ownership moves to the new owner. The previous owner
+          may lose access unless added as a collaborator.
         </v-alert>
       </template>
     </div>
@@ -94,7 +94,7 @@ const emits = defineEmits(['needs-refresh'])
 const showPendingTransferText = computed(
   () =>
     props.workspace.pendingTransferTo?.email &&
-    permissionsStore.isOwner(props.workspace)
+    (permissionsStore.isOwner(props.workspace) || permissionsStore.isAdmin())
 )
 
 const newOwnerEmail = ref('')
