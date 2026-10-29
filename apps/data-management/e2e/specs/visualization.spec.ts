@@ -2,8 +2,235 @@ import { expect, test, type Page } from "../support/test";
 
 import { authenticateSession } from "../support/auth";
 import { fixtures, users } from "../support/fixtures";
+import { readFile } from "node:fs/promises";
+import { PlotlyColors } from "../../src/utils/materialColors";
 
 test.describe("visualization", () => {
+  test("figure preview edits a zoomed snapshot and downloads a figure without changing the page", async ({
+    page,
+  }, testInfo) => {
+    await authenticateSession(page, users.owner.email, users.owner.password);
+    await page.goto(
+      `/visualize-data?datastreams=${fixtures.datastreams.public.id}`,
+    );
+    const live = page.locator(".plot-card .js-plotly-plot");
+    await expect(live.locator(".legendtext")).toHaveCount(1);
+    await expect(live.locator(".annotation-text")).toHaveCount(0);
+    const originalLegend = await live.locator(".legendtext").textContent();
+    const originalColor = await live.evaluate(
+      (gd: any) => gd.data[0].line.color,
+    );
+    expect(await live.evaluate((gd: any) => gd.data[0].name)).toContain("@ ");
+    await live.locator('[data-title="Zoom"]').click();
+    const dragArea = live.locator(".nsewdrag").first();
+    await dragArea.scrollIntoViewIfNeeded();
+    const box = (await dragArea.boundingBox())!;
+    await page.mouse.move(box.x + box.width * 0.25, box.y + box.height * 0.25);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width * 0.75, box.y + box.height * 0.75, {
+      steps: 10,
+    });
+    await page.mouse.up();
+    await expect(page).toHaveURL(/xStart=/);
+    const url = page.url();
+    const range = await live.evaluate((gd: any) => gd._fullLayout.xaxis.range);
+    await page
+      .locator(".plot-toolbar")
+      .screenshot({ path: testInfo.outputPath("screenshot-controls.png") });
+    await page
+      .locator(".plot-preview-tools")
+      .getByRole("button", { name: "Prepare screenshot", exact: true })
+      .click();
+    const dialog = page.getByRole("dialog", { name: "Figure preview" });
+    const figure = page.getByTestId("figure-plot");
+    await expect(
+      dialog.getByRole("button", { name: "Use blue for trace 1", exact: true }),
+    ).toHaveCSS("background-color", "rgb(31, 119, 180)");
+    await expect(figure.locator(".legendtext")).toHaveCount(1);
+    await expect(figure.locator(".annotation-text")).toHaveCount(0);
+    expect(await figure.evaluate((gd: any) => gd.data[0].name)).toContain("@ ");
+    expect(
+      await figure.evaluate((gd: any) => gd._fullLayout.xaxis.range),
+    ).toEqual(range);
+    await dialog
+      .getByRole("textbox", { name: "Figure title", exact: true })
+      .fill("Logan River flow");
+    await dialog
+      .getByRole("checkbox", { name: "Show subtitle", exact: true })
+      .check();
+    await dialog
+      .getByRole("textbox", { name: "Subtitle", exact: true })
+      .fill("Study reach — February 2025");
+    await dialog
+      .getByRole("textbox", { name: "Trace 1 name", exact: true })
+      .fill("Upstream flow");
+    await dialog
+      .getByRole("button", { name: "Use red for trace 1", exact: true })
+      .click();
+    await expect
+      .poll(() => figure.evaluate((gd: any) => gd.data[0].line.color))
+      .toBe(PlotlyColors[3]);
+    await dialog
+      .getByLabel("Custom color for trace 1", { exact: true })
+      .fill("#123456");
+    await expect
+      .poll(() =>
+        figure.evaluate((gd: any) => [
+          gd.data[0].line.color,
+          gd.data[0].marker.color,
+          gd._fullLayout.yaxis.title.font.color,
+        ]),
+      )
+      .toEqual(["#123456", "#123456", "#123456"]);
+    await dialog
+      .getByRole("button", { name: "Hide site names", exact: true })
+      .click();
+    await dialog
+      .getByRole("textbox", { name: "X-axis label", exact: true })
+      .fill("Time (UTC)");
+    await dialog
+      .getByRole("textbox", { name: "Y-axis label", exact: true })
+      .fill("Discharge (m³ s⁻¹)");
+    await expect(figure.locator(".legendtext")).toHaveText("Upstream flow");
+    await expect(
+      figure
+        .locator(".annotation-text")
+        .filter({ hasText: "Logan River flow" }),
+    ).toHaveCount(1);
+    await expect(figure.locator(".xtitle")).toHaveText("Time (UTC)");
+    await expect(figure.locator(".ytitle")).toHaveText("Discharge (m³ s⁻¹)");
+    await page.screenshot({ path: testInfo.outputPath("figure-editor.png") });
+    await expect(
+      dialog.getByRole("complementary", { name: "Figure settings" }),
+    ).toHaveCount(1);
+    await expect(
+      dialog.getByRole("button", { name: "Download PNG", exact: true }),
+    ).toHaveCount(1);
+    await expect(figure.locator(".modebar")).toHaveCount(0);
+    await figure.screenshot({
+      path: testInfo.outputPath("figure-screenshot.png"),
+    });
+    const downloadPromise = page.waitForEvent("download");
+    await dialog
+      .getByRole("button", { name: "Download PNG", exact: true })
+      .click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toBe("Logan_River_flow.png");
+    const imagePath = testInfo.outputPath("figure-export.png");
+    await download.saveAs(imagePath);
+    const png = await readFile(imagePath);
+    expect(png.readUInt32BE(16)).toBeGreaterThanOrEqual(3840);
+    await dialog.getByRole("button", { name: "Close figure preview" }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(page).toHaveURL(url);
+    await expect(live.locator(".legendtext")).toHaveText(originalLegend!);
+    expect(await live.evaluate((gd: any) => gd.data[0].line.color)).toBe(
+      originalColor,
+    );
+    expect(
+      await live.evaluate((gd: any) => gd._fullLayout.xaxis.range),
+    ).toEqual(range);
+    await page
+      .locator(".plot-preview-tools")
+      .getByRole("button", { name: "Prepare screenshot", exact: true })
+      .click();
+    await expect(
+      dialog.getByRole("textbox", { name: "Figure title", exact: true }),
+    ).toHaveValue("");
+    await expect(
+      dialog.getByLabel("Custom color for trace 1", { exact: true }),
+    ).toHaveValue(originalColor);
+    await dialog.getByRole("button", { name: "Close figure preview" }).click();
+  });
+
+  test("figure preview supports site-name controls, multiple axes, reset and vector export on narrow screens", async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width: 500, height: 900 });
+    await authenticateSession(page, users.owner.email, users.owner.password);
+    await page.goto(
+      `/visualize-data?datastreams=${fixtures.datastreams.public.id}&datastreams=${fixtures.datastreams.privateWorkspacePublic.id}&table=0`,
+    );
+    const live = page.locator(".plot-card .js-plotly-plot");
+    await expect(live.locator(".legendtext")).toHaveCount(2);
+    await live.locator('[data-title="Prepare screenshot"]').click();
+    const dialog = page.getByRole("dialog", { name: "Figure preview" });
+    const figure = page.getByTestId("figure-plot");
+    await dialog
+      .getByRole("button", { name: "Use green for trace 1", exact: true })
+      .click();
+    await expect
+      .poll(() => figure.evaluate((gd: any) => gd.data[0].line.color))
+      .toBe(PlotlyColors[2]);
+    await dialog
+      .getByRole("group", { name: "Trace 1 color", exact: true })
+      .getByRole("button", { name: "Reset color", exact: true })
+      .click();
+    await expect
+      .poll(() => figure.evaluate((gd: any) => gd.data[0].line.color))
+      .toBe(PlotlyColors[0]);
+    await dialog
+      .getByRole("button", { name: "Use green for trace 1", exact: true })
+      .click();
+    await expect(
+      dialog.getByRole("textbox", { name: "Y-axis 2 label", exact: true }),
+    ).toBeVisible();
+    await dialog
+      .getByRole("button", { name: "Hide site names", exact: true })
+      .click();
+    await expect
+      .poll(() =>
+        figure.evaluate((gd: any) =>
+          gd.data.every((trace: any) => !trace.name.includes("@")),
+        ),
+      )
+      .toBe(true);
+    await dialog
+      .getByRole("button", { name: "Add site names", exact: true })
+      .click();
+    await dialog
+      .getByRole("textbox", { name: "Trace 1 site name", exact: true })
+      .fill("Upper reach");
+    await dialog
+      .getByRole("textbox", { name: "Trace 1 name", exact: true })
+      .fill("Temperature");
+    await dialog
+      .getByRole("textbox", { name: "Y-axis label", exact: true })
+      .fill("Temperature (°C)");
+    await dialog
+      .getByRole("textbox", { name: "Y-axis 2 label", exact: true })
+      .fill("Flow (m³/s)");
+    await expect(figure.locator(".legendtext").first()).toContainText(
+      "@ Upper reach",
+    );
+    const bounds = await figure.boundingBox();
+    expect(bounds!.x).toBeGreaterThanOrEqual(0);
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(500);
+    await figure.screenshot({ path: testInfo.outputPath("mobile-figure.png") });
+    const svgPromise = page.waitForEvent("download");
+    await dialog
+      .getByRole("button", { name: "Download SVG", exact: true })
+      .click();
+    const svgPath = testInfo.outputPath("figure.svg");
+    await (await svgPromise).saveAs(svgPath);
+    const svg = await readFile(svgPath, "utf8");
+    expect(svg).toContain("<svg");
+    expect(svg).toContain("Upper reach");
+    expect(svg).not.toContain("<image");
+    expect(svg).toContain("rgb(44, 160, 44)");
+    await dialog
+      .getByRole("button", { name: "Reset figure", exact: true })
+      .click();
+    await expect(
+      dialog.getByRole("textbox", { name: "Trace 1 name", exact: true }),
+    ).toHaveValue(fixtures.datastreams.public.name);
+    await expect(
+      dialog.getByLabel("Custom color for trace 1", { exact: true }),
+    ).toHaveValue(PlotlyColors[0]);
+    await dialog.getByRole("button", { name: "Close figure preview" }).click();
+    await expect(page).not.toHaveURL(/plotLabels=/);
+  });
+
   function mobileDatastreamRow(page: Page, datastreamName: string) {
     return page.getByRole("row").filter({ hasText: datastreamName }).first();
   }

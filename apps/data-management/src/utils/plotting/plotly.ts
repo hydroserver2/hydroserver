@@ -208,7 +208,7 @@ const getExportConfig = (gd: any) => {
   }
 }
 
-const downloadPlotlyImage = async (
+export const downloadPlotlyImage = async (
   gd: any,
   {
     filename,

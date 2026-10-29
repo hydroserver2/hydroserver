@@ -18,7 +18,7 @@
         class="plot-shell"
       >
         <div class="plot-body">
-          <div class="plot-rail">
+          <div ref="plotRail" class="plot-rail">
             <v-tooltip bottom :openDelay="0">
               <template v-slot:activator="{ props }">
                 <v-btn
@@ -59,7 +59,7 @@
           <div class="plot-panel">
             <v-window v-model="viewMode" class="plot-window" :touch="false">
               <v-window-item value="plot" class="plot-window-item">
-                <div class="plot-plot-area">
+                <div ref="plotArea" class="plot-plot-area">
                   <div v-if="showLargeSeriesDisclaimer" class="plot-disclaimer">
                     <v-tooltip
                       location="bottom"
@@ -93,10 +93,24 @@
                       </v-card>
                     </v-tooltip>
                   </div>
-                  <div ref="plotContainer" class="plotly-chart" />
+                  <div
+                    ref="plotContainer"
+                    class="plotly-chart"
+                    :style="{ minHeight: `${labeledPlot?.minHeight ?? 0}px` }"
+                  />
                 </div>
-                <div class="plot-toolbar">
-                  <DataVisTimeFilters />
+                <div ref="plotToolbar" class="plot-toolbar">
+                  <DataVisTimeFilters>
+                    <template #actions>
+                      <div class="plot-preview-tools">
+                        <DataVisFigurePreview
+                          ref="figurePreview"
+                          :get-plot="getLivePlot"
+                          :disabled="!plotlyRef"
+                        />
+                      </div>
+                    </template>
+                  </DataVisTimeFilters>
                 </div>
               </v-window-item>
               <v-window-item value="summary" class="plot-window-item">
@@ -149,16 +163,27 @@
 <script setup lang="ts">
 import SummaryStatisticsTable from './SummaryStatisticsTable.vue'
 import DataVisTimeFilters from './DataVisTimeFilters.vue'
+import DataVisFigurePreview from './DataVisFigurePreview.vue'
 import { useDataVisStore } from '@/store/dataVisualization'
-import { ref, watch, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import {
+  ref,
+  watch,
+  computed,
+  nextTick,
+  onMounted,
+  onBeforeUnmount,
+  triggerRef,
+} from 'vue'
 import { storeToRefs } from 'pinia'
 import { debounce } from 'lodash-es'
 import { getXRangeBounds, supportsWebgl } from '@/utils/plotting/plotly'
+import { applyPlotLabels } from '@/utils/plotting/plotLabels'
 import { mdiChartLine, mdiSigma } from '@mdi/js'
 
 const props = defineProps({
   cardHeight: { type: Number, required: true },
 })
+const emit = defineEmits<{ minimumHeight: [height: number] }>()
 
 const {
   showSummaryStatistics,
@@ -172,10 +197,68 @@ const {
   endDate,
   xAxisRange,
   yAxisRanges,
+  plotLabelItems,
 } = storeToRefs(useDataVisStore())
 
+const plotArea = ref<HTMLDivElement | null>(null)
+const plotToolbar = ref<HTMLDivElement | null>(null)
+const figurePreview = ref<InstanceType<typeof DataVisFigurePreview> | null>(
+  null
+)
+const plotRail = ref<HTMLDivElement | null>(null)
 const plotContainer = ref<HTMLDivElement | null>(null)
+const plotWidth = ref(800)
+const plotFont = ref('Arial, sans-serif')
+const labelContext = document.createElement('canvas').getContext('2d')
+const labeledPlot = computed(() => {
+  if (!plotlyOptions.value) return null
+  if (labelContext) labelContext.font = `12px ${plotFont.value}`
+  return applyPlotLabels(
+    plotlyOptions.value,
+    plotLabelItems.value,
+    '',
+    plotWidth.value,
+    plotFont.value,
+    (text) =>
+      labelContext?.measureText(text).width ?? Array.from(text).length * 8
+  )
+})
+let plotResizeObserver: ResizeObserver | undefined
+const updatePlotSize = () => {
+  if (!plotArea.value || showSummaryStatistics.value) {
+    emit('minimumHeight', 0)
+    return
+  }
+  plotWidth.value = plotArea.value.clientWidth || 800
+  const railHeight = window.matchMedia('(max-width: 600px)').matches
+    ? (plotRail.value?.offsetHeight ?? 0)
+    : 0
+  emit(
+    'minimumHeight',
+    (labeledPlot.value?.minHeight ?? 0) +
+      (plotToolbar.value?.offsetHeight ?? 0) +
+      railHeight
+  )
+}
+watch([plotArea, plotToolbar, plotRail], ([area, toolbar, rail]) => {
+  plotResizeObserver?.disconnect()
+  if (!area) {
+    emit('minimumHeight', 0)
+    return
+  }
+  updatePlotSize()
+  plotResizeObserver = new ResizeObserver(updatePlotSize)
+  for (const element of [area, toolbar, rail]) {
+    if (element) plotResizeObserver.observe(element)
+  }
+})
+watch(
+  () => labeledPlot.value?.minHeight,
+  () => nextTick(updatePlotSize)
+)
+watch(showSummaryStatistics, () => nextTick(updatePlotSize))
 const plotlyRef = ref<(HTMLDivElement & { [key: string]: any }) | null>(null)
+const getLivePlot = () => plotlyRef.value
 const handlersAttached = ref(false)
 let plotlyApi: any | null = null
 
@@ -680,26 +763,55 @@ const attachHandlers = () => {
   handlersAttached.value = true
 }
 
+let rendering = false
+let renderAgain = false
 const renderPlot = async () => {
-  if (!plotlyOptions.value || !plotContainer.value) return
-
-  const Plotly = await ensurePlotly()
-  const { traces, layout, config } = plotlyOptions.value
-  preserveLiveAxisRanges()
-  if (!plotlyRef.value) {
-    plotlyRef.value = await Plotly.newPlot(
-      plotContainer.value,
-      traces,
-      layout,
-      config
-    )
-    attachHandlers()
-  } else {
-    await Plotly.react(plotlyRef.value, traces, layout, config)
+  if (!labeledPlot.value || !plotContainer.value) return
+  if (rendering) {
+    renderAgain = true
+    return
   }
+  rendering = true
 
-  applyLargeSeriesModeForCurrentRange()
-  queueResize()
+  try {
+    const Plotly = await ensurePlotly()
+    if (!labeledPlot.value || !plotContainer.value) return
+    // Keep the user's current zoom while editing presentation labels.
+    preserveLiveAxisRanges()
+    const { traces, layout, config } = labeledPlot.value.options
+    const previewConfig = {
+      ...config,
+      modeBarButtonsToAdd: config.modeBarButtonsToAdd?.map((button: any) =>
+        button.name === 'Download plot'
+          ? {
+              ...button,
+              name: 'Prepare screenshot',
+              click: () => figurePreview.value?.openPreview(),
+            }
+          : button
+      ),
+    }
+    if (!plotlyRef.value) {
+      plotlyRef.value = await Plotly.newPlot(
+        plotContainer.value,
+        traces,
+        layout,
+        previewConfig
+      )
+      attachHandlers()
+    } else {
+      await Plotly.react(plotlyRef.value, traces, layout, previewConfig)
+    }
+
+    applyLargeSeriesModeForCurrentRange()
+    queueResize()
+  } finally {
+    rendering = false
+    if (renderAgain) {
+      renderAgain = false
+      void renderPlot()
+    }
+  }
 }
 
 const cleanupPlot = () => {
@@ -750,7 +862,7 @@ watch(
 )
 
 watch(
-  () => plotlyOptions.value,
+  () => labeledPlot.value,
   () => {
     syncDefaultTraceStyles()
     if (showPlot.value) {
@@ -774,12 +886,24 @@ watch(
 )
 
 onBeforeUnmount(() => {
+  plotResizeObserver?.disconnect()
   window.removeEventListener('datavis-layout', handleLayoutResize)
   window.removeEventListener('resize', handleLayoutResize)
   cleanupPlot()
 })
 
 onMounted(() => {
+  const syncPlotFont = () => {
+    plotFont.value =
+      getComputedStyle(document.documentElement)
+        .getPropertyValue('--hs-font-body')
+        .trim() || 'Arial, sans-serif'
+  }
+  syncPlotFont()
+  void document.fonts?.ready.then(() => {
+    syncPlotFont()
+    triggerRef(plotFont)
+  })
   window.addEventListener('datavis-layout', handleLayoutResize)
   window.addEventListener('resize', handleLayoutResize)
   setTimeout(() => {
@@ -865,6 +989,15 @@ onMounted(() => {
 
 .plot-toolbar {
   padding: 0;
+}
+
+.plot-preview-tools {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-inline-start: auto;
+  flex-shrink: 0;
+  padding: var(--hs-space-4) var(--hs-space-8);
 }
 
 .plot-shell {
