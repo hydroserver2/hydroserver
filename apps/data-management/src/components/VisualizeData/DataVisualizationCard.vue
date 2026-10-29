@@ -102,12 +102,17 @@
                 <div ref="plotToolbar" class="plot-toolbar">
                   <DataVisTimeFilters>
                     <template #actions>
-                      <div class="plot-preview-tools">
-                        <DataVisFigurePreview
-                          ref="figurePreview"
-                          :get-plot="getLivePlot"
-                          :disabled="!plotlyRef"
-                        />
+                      <div class="plot-label-tools">
+                        <v-btn
+                          variant="text"
+                          size="small"
+                          :aria-pressed="showSiteName"
+                          @click="showSiteName = !showSiteName"
+                        >
+                          {{
+                            showSiteName ? 'Hide site name' : 'Show site name'
+                          }}
+                        </v-btn>
                       </div>
                     </template>
                   </DataVisTimeFilters>
@@ -121,6 +126,8 @@
         </div>
       </v-card-text>
     </keep-alive>
+
+    <DataVisFigurePreview ref="figurePreview" :get-plot="getLivePlot" />
 
     <div v-if="showInstructions && viewMode === 'plot'" class="plot-empty">
       <v-card-text>
@@ -201,6 +208,7 @@ const {
 } = storeToRefs(useDataVisStore())
 
 const plotArea = ref<HTMLDivElement | null>(null)
+const showSiteName = ref(false)
 const plotToolbar = ref<HTMLDivElement | null>(null)
 const figurePreview = ref<InstanceType<typeof DataVisFigurePreview> | null>(
   null
@@ -215,7 +223,10 @@ const labeledPlot = computed(() => {
   if (labelContext) labelContext.font = `12px ${plotFont.value}`
   return applyPlotLabels(
     plotlyOptions.value,
-    plotLabelItems.value,
+    plotLabelItems.value.map((item) => ({
+      id: item.id,
+      label: showSiteName.value ? item.label : item.name,
+    })),
     '',
     plotWidth.value,
     plotFont.value,
@@ -991,7 +1002,7 @@ onMounted(() => {
   padding: 0;
 }
 
-.plot-preview-tools {
+.plot-label-tools {
   display: flex;
   justify-content: flex-end;
   align-items: center;

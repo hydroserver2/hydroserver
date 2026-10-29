@@ -20,7 +20,12 @@ test.describe("visualization", () => {
     const originalColor = await live.evaluate(
       (gd: any) => gd.data[0].line.color,
     );
-    expect(await live.evaluate((gd: any) => gd.data[0].name)).toContain("@ ");
+    expect(await live.evaluate((gd: any) => gd.data[0].name)).not.toContain(
+      "@ ",
+    );
+    await expect(
+      page.getByRole("button", { name: "Show site name", exact: true }),
+    ).toBeVisible();
     await live.locator('[data-title="Zoom"]').click();
     const dragArea = live.locator(".nsewdrag").first();
     await dragArea.scrollIntoViewIfNeeded();
@@ -35,12 +40,27 @@ test.describe("visualization", () => {
     const url = page.url();
     const range = await live.evaluate((gd: any) => gd._fullLayout.xaxis.range);
     await page
+      .getByRole("button", { name: "Show site name", exact: true })
+      .click();
+    await expect
+      .poll(() => live.evaluate((gd: any) => gd.data[0].name))
+      .toContain("@ ");
+    expect(
+      await live.evaluate((gd: any) => gd._fullLayout.xaxis.range),
+    ).toEqual(range);
+    await page
+      .getByRole("button", { name: "Hide site name", exact: true })
+      .click();
+    await expect
+      .poll(() => live.evaluate((gd: any) => gd.data[0].name))
+      .not.toContain("@ ");
+    expect(
+      await live.evaluate((gd: any) => gd._fullLayout.xaxis.range),
+    ).toEqual(range);
+    await page
       .locator(".plot-toolbar")
       .screenshot({ path: testInfo.outputPath("screenshot-controls.png") });
-    await page
-      .locator(".plot-preview-tools")
-      .getByRole("button", { name: "Prepare screenshot", exact: true })
-      .click();
+    await live.locator('[data-title="Prepare screenshot"]').click();
     const dialog = page.getByRole("dialog", { name: "Figure preview" });
     const figure = page.getByTestId("figure-plot");
     await expect(
@@ -130,10 +150,7 @@ test.describe("visualization", () => {
     expect(
       await live.evaluate((gd: any) => gd._fullLayout.xaxis.range),
     ).toEqual(range);
-    await page
-      .locator(".plot-preview-tools")
-      .getByRole("button", { name: "Prepare screenshot", exact: true })
-      .click();
+    await live.locator('[data-title="Prepare screenshot"]').click();
     await expect(
       dialog.getByRole("textbox", { name: "Figure title", exact: true }),
     ).toHaveValue("");
@@ -153,6 +170,21 @@ test.describe("visualization", () => {
     );
     const live = page.locator(".plot-card .js-plotly-plot");
     await expect(live.locator(".legendtext")).toHaveCount(2);
+    expect(
+      await live.evaluate((gd: any) =>
+        gd.data.every((trace: any) => !trace.name.includes("@ ")),
+      ),
+    ).toBe(true);
+    await page
+      .getByRole("button", { name: "Show site name", exact: true })
+      .click();
+    await expect
+      .poll(() =>
+        live.evaluate((gd: any) =>
+          gd.data.every((trace: any) => trace.name.includes("@ ")),
+        ),
+      )
+      .toBe(true);
     await live.locator('[data-title="Prepare screenshot"]').click();
     const dialog = page.getByRole("dialog", { name: "Figure preview" });
     const figure = page.getByTestId("figure-plot");
@@ -229,6 +261,14 @@ test.describe("visualization", () => {
     ).toHaveValue(PlotlyColors[0]);
     await dialog.getByRole("button", { name: "Close figure preview" }).click();
     await expect(page).not.toHaveURL(/plotLabels=/);
+    await expect(
+      page.getByRole("button", { name: "Hide site name", exact: true }),
+    ).toBeVisible();
+    expect(
+      await live.evaluate((gd: any) =>
+        gd.data.every((trace: any) => trace.name.includes("@ ")),
+      ),
+    ).toBe(true);
   });
 
   function mobileDatastreamRow(page: Page, datastreamName: string) {

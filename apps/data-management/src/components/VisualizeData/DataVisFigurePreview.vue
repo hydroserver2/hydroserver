@@ -1,13 +1,4 @@
 <template>
-  <v-btn
-    variant="text"
-    size="small"
-    :prepend-icon="mdiCameraOutline"
-    :disabled="disabled"
-    @click="openPreview"
-  >
-    Prepare screenshot
-  </v-btn>
   <v-dialog
     v-model="open"
     fullscreen
@@ -234,7 +225,7 @@ import {
 } from 'vue'
 import { storeToRefs } from 'pinia'
 import { cloneDeep } from 'lodash-es'
-import { mdiCameraOutline, mdiClose, mdiDownload } from '@mdi/js'
+import { mdiClose, mdiDownload } from '@mdi/js'
 import { useDataVisStore } from '@/store/dataVisualization'
 import {
   downloadPlotlyImage,
@@ -248,7 +239,7 @@ import {
 import { Snackbar } from '@/utils/notifications'
 import { PlotlyColors } from '@/utils/materialColors'
 
-const props = defineProps<{ getPlot: () => any; disabled?: boolean }>()
+const props = defineProps<{ getPlot: () => any }>()
 const colorNames = [
   'blue',
   'orange',
