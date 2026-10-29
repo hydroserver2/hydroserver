@@ -100,47 +100,64 @@
                 role="group"
                 :aria-label="`Trace ${index + 1} color`"
               >
-                <div class="figure-section-heading">
-                  <span class="hs-title">Color</span>
-                  <v-btn
-                    variant="text"
-                    size="small"
-                    @click="resetTraceColor(trace.id)"
-                    >Reset color</v-btn
+                <span class="hs-title">Color</span>
+                <v-menu :close-on-content-click="false" location="bottom start">
+                  <template #activator="{ props: menuProps }">
+                    <v-btn
+                      v-bind="menuProps"
+                      variant="outlined"
+                      :aria-label="`Choose color for trace ${index + 1}`"
+                    >
+                      <span
+                        class="figure-current-color"
+                        :style="{ backgroundColor: trace.color }"
+                      />
+                      <span class="hs-font-data">{{ trace.color }}</span>
+                    </v-btn>
+                  </template>
+                  <v-card
+                    class="figure-color-popup"
+                    role="group"
+                    @keydown.tab.stop
+                    :aria-label="`Trace ${index + 1} color picker`"
                   >
-                </div>
-                <span class="hs-text-sm figure-hint">Default palette</span>
-                <div class="figure-color-palette">
-                  <v-btn-icon
-                    v-for="swatch in palette"
-                    :key="swatch.color"
-                    :color="swatch.color"
-                    :style="{ backgroundColor: swatch.color }"
-                    variant="flat"
-                    size="x-small"
-                    class="figure-color-swatch"
-                    :class="{
-                      'figure-color-swatch--selected':
-                        trace.color.toLowerCase() ===
-                        swatch.color.toLowerCase(),
-                    }"
-                    :aria-label="`Use ${swatch.name} for trace ${index + 1}`"
-                    :aria-pressed="
-                      trace.color.toLowerCase() === swatch.color.toLowerCase()
-                    "
-                    :title="swatch.name"
-                    @click="trace.color = swatch.color"
-                  />
-                </div>
-                <label class="figure-custom-color">
-                  <span class="hs-text-sm">Custom color</span>
-                  <input
-                    v-model="trace.color"
-                    type="color"
-                    :aria-label="`Custom color for trace ${index + 1}`"
-                  />
-                  <span class="hs-text-sm hs-font-data">{{ trace.color }}</span>
-                </label>
+                    <div class="figure-color-palette">
+                      <v-btn-icon
+                        v-for="swatch in palette"
+                        :key="swatch.color"
+                        :color="swatch.color"
+                        :style="{ backgroundColor: swatch.color }"
+                        variant="flat"
+                        size="x-small"
+                        class="figure-color-swatch"
+                        :class="{
+                          'figure-color-swatch--selected':
+                            trace.color.toLowerCase() ===
+                            swatch.color.toLowerCase(),
+                        }"
+                        :aria-label="`Use ${swatch.name} for trace ${index + 1}`"
+                        :aria-pressed="
+                          trace.color.toLowerCase() ===
+                          swatch.color.toLowerCase()
+                        "
+                        :title="swatch.name"
+                        @click="trace.color = swatch.color"
+                      />
+                    </div>
+                    <v-color-picker
+                      v-model="trace.color"
+                      mode="hex"
+                      :modes="['hex']"
+                      width="100%"
+                    />
+                  </v-card>
+                </v-menu>
+                <v-btn
+                  variant="text"
+                  size="small"
+                  @click="resetTraceColor(trace.id)"
+                  >Reset color</v-btn
+                >
               </div>
               <v-textarea
                 v-if="settings.showLegend && settings.showSiteNames"
@@ -467,11 +484,7 @@ defineExpose({ openPreview })
   border-bottom: 1px solid var(--hs-border);
   background: var(--hs-surface);
 }
-.figure-hint {
-  color: var(--hs-text-secondary);
-}
-.figure-actions,
-.figure-section-heading {
+.figure-actions {
   display: flex;
   align-items: center;
   gap: var(--hs-space-8);
@@ -507,14 +520,27 @@ defineExpose({ openPreview })
 }
 .figure-trace-colors {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  flex-wrap: wrap;
   gap: var(--hs-space-8);
+}
+.figure-color-popup {
+  width: 20rem;
+  max-width: calc(100vw - var(--hs-space-24));
+}
+.figure-current-color {
+  display: inline-block;
+  width: var(--hs-space-20);
+  height: var(--hs-space-20);
+  margin-right: var(--hs-space-8);
+  border: 1px solid var(--hs-border);
+  border-radius: var(--hs-radius-sm);
 }
 .figure-color-palette {
   display: flex;
   flex-wrap: wrap;
   gap: var(--hs-space-4);
-  padding: var(--hs-space-2);
+  padding: var(--hs-space-12);
 }
 .figure-color-swatch {
   width: var(--hs-space-24);
@@ -525,21 +551,6 @@ defineExpose({ openPreview })
 }
 .figure-color-swatch--selected {
   outline: 2px solid var(--hs-primary);
-}
-.figure-custom-color {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--hs-space-8);
-}
-.figure-custom-color input {
-  width: var(--hs-space-32);
-  height: var(--hs-space-32);
-  padding: var(--hs-space-2);
-  border: 1px solid var(--hs-border);
-  border-radius: var(--hs-radius-sm);
-  background: var(--hs-surface);
-  cursor: pointer;
 }
 .figure-stage {
   display: grid;

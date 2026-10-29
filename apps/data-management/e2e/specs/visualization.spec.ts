@@ -64,7 +64,9 @@ test.describe("visualization", () => {
     const dialog = page.getByRole("dialog", { name: "Download plot image" });
     const figure = page.getByTestId("figure-plot");
     await expect(
-      dialog.getByRole("button", { name: "Use blue for trace 1", exact: true }),
+      dialog
+        .getByRole("button", { name: "Choose color for trace 1", exact: true })
+        .locator(".figure-current-color"),
     ).toHaveCSS("background-color", "rgb(31, 119, 180)");
     await expect(figure.locator(".legendtext")).toHaveCount(1);
     await expect(figure.locator(".annotation-text")).toHaveCount(0);
@@ -79,14 +81,43 @@ test.describe("visualization", () => {
       .getByRole("textbox", { name: "Trace 1 name", exact: true })
       .fill("Upstream flow");
     await dialog
+      .getByRole("button", { name: "Choose color for trace 1", exact: true })
+      .click();
+    await page
       .getByRole("button", { name: "Use red for trace 1", exact: true })
       .click();
     await expect
       .poll(() => figure.evaluate((gd: any) => gd.data[0].line.color))
       .toBe(PlotlyColors[3]);
-    await dialog
-      .getByLabel("Custom color for trace 1", { exact: true })
+    const colorPopup = page.getByRole("group", {
+      name: "Trace 1 color picker",
+      exact: true,
+    });
+    const paletteBounds = await colorPopup
+      .getByRole("button", { name: "Use red for trace 1", exact: true })
+      .boundingBox();
+    const canvasBounds = await colorPopup.locator("canvas").boundingBox();
+    expect(paletteBounds!.y + paletteBounds!.height).toBeLessThanOrEqual(
+      canvasBounds!.y,
+    );
+    await colorPopup
+      .getByRole("textbox", { name: "HEX value", exact: true })
       .fill("#123456");
+    await colorPopup
+      .getByRole("textbox", { name: "HEX value", exact: true })
+      .press("Tab");
+    await expect
+      .poll(() =>
+        figure.evaluate((gd: any) => gd.data[0].line.color.toLowerCase()),
+      )
+      .toBe("#123456");
+    await page.screenshot({
+      path: testInfo.outputPath("color-picker-desktop.png"),
+    });
+    await page.keyboard.press("Escape");
+    await expect(
+      page.getByRole("button", { name: "Use red for trace 1", exact: true }),
+    ).not.toBeVisible();
     await expect
       .poll(() =>
         figure.evaluate((gd: any) => [
@@ -199,8 +230,11 @@ test.describe("visualization", () => {
       dialog.getByRole("textbox", { name: "Image title", exact: true }),
     ).toHaveValue("");
     await expect(
-      dialog.getByLabel("Custom color for trace 1", { exact: true }),
-    ).toHaveValue(originalColor);
+      dialog.getByRole("button", {
+        name: "Choose color for trace 1",
+        exact: true,
+      }),
+    ).toContainText(originalColor);
     await dialog.getByRole("button", { name: "Close image preview" }).click();
   });
 
@@ -233,11 +267,23 @@ test.describe("visualization", () => {
     const dialog = page.getByRole("dialog", { name: "Download plot image" });
     const figure = page.getByTestId("figure-plot");
     await dialog
+      .getByRole("button", { name: "Choose color for trace 1", exact: true })
+      .click();
+    await page
       .getByRole("button", { name: "Use green for trace 1", exact: true })
       .click();
     await expect
       .poll(() => figure.evaluate((gd: any) => gd.data[0].line.color))
       .toBe(PlotlyColors[2]);
+    const popupBounds = await page
+      .getByRole("group", { name: "Trace 1 color picker", exact: true })
+      .boundingBox();
+    expect(popupBounds!.x).toBeGreaterThanOrEqual(0);
+    expect(popupBounds!.x + popupBounds!.width).toBeLessThanOrEqual(500);
+    await page.screenshot({
+      path: testInfo.outputPath("color-picker-mobile.png"),
+    });
+    await page.keyboard.press("Escape");
     await dialog
       .getByRole("group", { name: "Trace 1 color", exact: true })
       .getByRole("button", { name: "Reset color", exact: true })
@@ -246,8 +292,12 @@ test.describe("visualization", () => {
       .poll(() => figure.evaluate((gd: any) => gd.data[0].line.color))
       .toBe(PlotlyColors[0]);
     await dialog
+      .getByRole("button", { name: "Choose color for trace 1", exact: true })
+      .click();
+    await page
       .getByRole("button", { name: "Use green for trace 1", exact: true })
       .click();
+    await page.keyboard.press("Escape");
     await expect(
       dialog.getByRole("textbox", { name: "Y-axis 2 label", exact: true }),
     ).toBeVisible();
@@ -309,8 +359,11 @@ test.describe("visualization", () => {
       dialog.getByRole("textbox", { name: "Trace 1 name", exact: true }),
     ).toHaveValue(fixtures.datastreams.public.name);
     await expect(
-      dialog.getByLabel("Custom color for trace 1", { exact: true }),
-    ).toHaveValue(PlotlyColors[0]);
+      dialog.getByRole("button", {
+        name: "Choose color for trace 1",
+        exact: true,
+      }),
+    ).toContainText(PlotlyColors[0]);
     await expect(
       dialog.getByRole("checkbox", { name: "Show site names", exact: true }),
     ).toBeChecked();
