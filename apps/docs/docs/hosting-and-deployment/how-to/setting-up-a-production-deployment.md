@@ -248,7 +248,8 @@ HydroServer’s Docker image supports the following environment variables for co
 
 - **TASK_RUN_RETENTION_DAYS**  
   Number of days of Job Orchestration System task run history to keep. Older runs are deleted by a scheduled cleanup
-  task (requires Celery). Defaults to `7`.  
+  task, which requires a Celery worker and scheduler and keeps running when `CELERY_ENABLED` is `False`. Defaults to
+  `7`.  
   Example: `30`
 
 - **TASK_RUN_CLEANUP_CRONTAB**  
@@ -369,15 +370,26 @@ When deploying HydroServer in production, you should implement multiple layers o
 
 ### Enabling Celery for HydroServer
 
-HydroServer optionally supports Celery for scheduling background tasks. To run Celery, you must set up several 
-additional services, including at least one worker instance, a scheduler, and a broker such as
-[Redis](https://redis.io/docs/latest/).
+HydroServer's Job Orchestration System uses Celery to run data ingestion, data product, and quality monitoring tasks
+in the background. To use it, you must set up several additional services, including at least one worker instance, a
+scheduler, and a broker such as [Redis](https://redis.io/docs/latest/). The rest of HydroServer works without these
+services.
 
 The following HydroServer settings can be used to configure Celery:
 
 - **CELERY_ENABLED**  
-  Controls whether Celery scheduling is enabled. If not enabled, all data processing will be handled by HydroServer's
-  web server.
+  Controls whether the Job Orchestration System is enabled. Defaults to `True`. Set it to `False` if you don't run
+  the Celery services, or to turn off orchestration on an instance that does. When `False`:
+  - Users can't create new tasks or run existing tasks. The API returns `501 Not Implemented` for these requests, and
+    the Job Orchestration page in the Data Management App disables these buttons.
+  - Users can still view, edit, and delete existing tasks, and can create, edit, and delete data connections.
+  - The scheduler stops sending scheduled tasks, and workers skip any tasks they receive, including ones that were
+    queued before the setting changed. Data connection notification emails are not sent. The task run cleanup
+    (see [`TASK_RUN_RETENTION_DAYS`](#task-runs-and-logging)) keeps running if able.
+  - Task schedules are left unchanged, so they resume as they were when you set `CELERY_ENABLED` back to `True`.
+
+  Set `CELERY_ENABLED` to the same value on the web server, worker, and scheduler containers, and restart all of them
+  after changing it.  
   Example: `True` / `False`
 
 - **CELERY_BROKER_URL** 
@@ -401,8 +413,8 @@ celery -A hydroserver beat --loglevel=INFO
 ### HydroServer Management Commands
 
 After provisioning your infrastructure, but before starting HydroServer’s web server, you must run several management 
-commands to complete setup. In the demo deployments from the previous section, these steps are bundled into the 
-convenience command:
+commands to complete setup. In the demo deployments from the [deployment tutorials](/hosting-and-deployment/tutorials/),
+these steps are bundled into the convenience command:
 
 ```bash
 python manage.py run_demo

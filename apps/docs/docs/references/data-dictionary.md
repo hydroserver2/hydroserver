@@ -562,7 +562,7 @@ A notification email recipient associated with a MonitoringTask.
 
 ## Controlled Vocabulary Tables
 
-HydroServer also includes simple lookup tables that primarily store controlled vocabulary terms used by the main entities.
+HydroServer also stores the controlled vocabulary terms used by the main entities in the following tables. `UserType` and `OrganizationType` are simple lookup tables. The rest are resources managed through the Data Management API, each with its own collection (for example, `monitoring-site-types`), and administrators can also manage them in the [administrator dashboard](/hosting-and-deployment/how-to/using-the-administrator-dashboard.md#controlled-vocabularies).
 
 | Table                  | Attributes                  | Data Type                   |
 | ---------------------- | --------------------------- | --------------------------- |
