@@ -200,8 +200,33 @@
                 </template>
                 <span>{{ pauseTooltipText(task) }}</span>
               </v-tooltip>
+              <v-tooltip
+                v-if="canEdit && !orchestrationEnabled"
+                location="top"
+              >
+                <template #activator="{ props: tooltipProps }">
+                  <span
+                    v-bind="tooltipProps"
+                    class="inline-flex"
+                    @click.stop
+                  >
+                    <v-btn
+                      variant="outlined"
+                      color="primary"
+                      :prepend-icon="mdiPlay"
+                      class="task-action-button text-none"
+                      rounded="lg"
+                      disabled
+                      data-testid="run-now-disabled"
+                    >
+                      Run now
+                    </v-btn>
+                  </span>
+                </template>
+                <span>{{ ORCHESTRATION_DISABLED_TOOLTIP }}</span>
+              </v-tooltip>
               <v-btn
-                v-if="canEdit && !task.userClickedRunNow"
+                v-else-if="canEdit && !task.userClickedRunNow"
                 variant="outlined"
                 color="primary"
                 :prepend-icon="mdiPlay"
@@ -254,6 +279,12 @@ import {
   taskTypeChipStyle as getTaskTypeChipStyle,
 } from './taskPresentation'
 import TaskTableFilter from './TaskTableFilter.vue'
+import {
+  ORCHESTRATION_DISABLED_TOOLTIP,
+  isOrchestrationEnabled,
+} from '@/composables/orchestration/orchestrationAvailability'
+
+const orchestrationEnabled = isOrchestrationEnabled()
 
 const props = defineProps<{
   tasks: TaskRow[]

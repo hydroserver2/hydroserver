@@ -18251,6 +18251,17 @@
               }
             },
             "description": "Not Found"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Implemented"
           }
         },
         "security": [
@@ -19029,6 +19040,17 @@
               }
             },
             "description": "Not Found"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Implemented"
           }
         },
         "security": [
@@ -24020,6 +24042,17 @@
               }
             },
             "description": "Conflict"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Implemented"
           }
         },
         "security": [
@@ -24799,6 +24832,17 @@
               }
             },
             "description": "Not Found"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Implemented"
           }
         },
         "security": [
@@ -30215,6 +30259,17 @@
               }
             },
             "description": "Not Found"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Implemented"
           }
         },
         "security": [
@@ -30994,6 +31049,17 @@
               }
             },
             "description": "Not Found"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Implemented"
           }
         },
         "security": [

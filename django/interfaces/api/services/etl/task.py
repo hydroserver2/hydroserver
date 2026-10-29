@@ -11,6 +11,7 @@ from core.iam.models import ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
 from interfaces.api.http.errors import PermissionDeniedError, NotFoundError
 from interfaces.api.service import APIService
+from interfaces.api.services.orchestration import require_orchestration_enabled
 from processing.orchestration.services import TaskService
 from processing.etl.models import EtlTask, DataConnection
 from interfaces.api.schemas.etl.task import (
@@ -212,6 +213,8 @@ class EtlTaskAPIService(TaskService[EtlTask], APIService):
         principal: User | ServiceAccount | AnonymousPrincipal,
         data: EtlTaskPostBody,
     ):
+        require_orchestration_enabled()
+
         try:
             data_connection = DataConnection.objects.select_related("workspace").get(
                 pk=data.data_connection_id

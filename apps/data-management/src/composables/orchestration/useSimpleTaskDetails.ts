@@ -12,6 +12,10 @@ import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import { Snackbar } from '@/utils/notifications'
 import { formatTimeWithZone } from '@/utils/time'
 import {
+  ORCHESTRATION_DISABLED_TOOLTIP,
+  isOrchestrationEnabled,
+} from '@/composables/orchestration/orchestrationAvailability'
+import {
   getDisplayedTaskStatus,
   getMonitoringRunViolations,
   getTaskRunMessage,
@@ -115,6 +119,7 @@ export function useSimpleTaskDetails(
     return ''
   })
   const runNowDisabledReason = computed(() => {
+    if (!isOrchestrationEnabled()) return ORCHESTRATION_DISABLED_TOOLTIP
     if (!canEdit.value) return readOnlyTooltip
     if (runNowRequested.value) return 'A run has already been requested.'
     return ''
@@ -294,7 +299,7 @@ export function useSimpleTaskDetails(
   }
 
   async function runNow() {
-    if (!canEdit.value || !task.value?.id || runNowRequested.value) return
+    if (runNowDisabledReason.value || !task.value?.id) return
     runNowRequested.value = true
     try {
       const response = await service.runTask(task.value.id)

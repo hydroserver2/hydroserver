@@ -14,6 +14,7 @@ from processing.orchestration.services import TaskService
 from processing.monitoring.models import MonitoringTask, MonitoringRule, MonitoringNotificationRecipient
 from interfaces.api.http.errors import PermissionDeniedError, NotFoundError
 from interfaces.api.service import APIService
+from interfaces.api.services.orchestration import require_orchestration_enabled
 from interfaces.api.schemas.monitoring.task import (
     MonitoringTaskSortByFields,
     MonitoringTaskResponse,
@@ -206,6 +207,8 @@ class MonitoringTaskAPIService(TaskService[MonitoringTask], APIService):
         principal: User | ServiceAccount | AnonymousPrincipal,
         data: MonitoringTaskPostBody,
     ):
+        require_orchestration_enabled()
+
         try:
             monitoring_site = MonitoringSite.objects.select_related("workspace").get(
                 pk=data.monitoring_site_id

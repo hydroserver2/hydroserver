@@ -1,5 +1,18 @@
 <template>
   <div class="orchestration-page hs-workbench-canvas">
+    <v-alert
+      v-if="!orchestrationEnabled"
+      class="orchestration-disabled-alert"
+      type="info"
+      variant="tonal"
+      border="start"
+      density="compact"
+      data-testid="orchestration-disabled-banner"
+    >
+      Job orchestration isn't enabled on this HydroServer instance. You can
+      view, edit, and delete existing tasks and data connections, but you can't
+      create or run tasks, and scheduled tasks won't run.
+    </v-alert>
     <div v-if="!routeWorkspaceDenied" class="orchestration-page-body">
       <HsMasterDetailLayout
         class="hs-workbench-canvas"
@@ -71,8 +84,8 @@
 
             <TaskListPanel
               v-else
-              :can-create="canCreateActiveTasks"
-              :can-create-rating-curve="canCreateRatingCurves"
+              :create-disabled-reason="createTaskDisabledReason"
+              :rating-curve-create-disabled-reason="ratingCurveCreateDisabledReason"
               :can-edit="canEditActiveTasks"
               :loading="listLoading"
               :has-selection="hasSelection"
@@ -223,7 +236,12 @@ import RatingCurveForm from '@/components/Orchestration/data-products/RatingCurv
 import QualityManagementForm from '@/components/Orchestration/monitoring/QualityManagementForm.vue'
 
 import {
+  ORCHESTRATION_DISABLED_TOOLTIP,
+  isOrchestrationEnabled,
+} from '@/composables/orchestration/orchestrationAvailability'
+import {
   TAB_META,
+  READ_ONLY_TOOLTIP,
   countTaskIssues,
   worstDotColor,
   DOT_PALETTE,
@@ -276,6 +294,7 @@ const {
   draftDatastreams,
 } = storeToRefs(orchestrationStore)
 const { selectedWorkspace, workspaces } = storeToRefs(workspaceStore)
+const orchestrationEnabled = isOrchestrationEnabled()
 const { hasPermission } = useWorkspacePermissions()
 const selectedWorkspaceId = computed(() => selectedWorkspace.value?.id ?? null)
 
@@ -397,8 +416,11 @@ const canDeleteDataConnections = computed(() =>
     PermissionAction.Delete
   )
 )
-const canCreateActiveTasks = computed(() =>
+const canCreateActiveTasksPermission = computed(() =>
   hasWorkspacePermission(activeTaskResource.value, PermissionAction.Create)
+)
+const canCreateActiveTasks = computed(
+  () => orchestrationEnabled && canCreateActiveTasksPermission.value
 )
 const canEditActiveTasks = computed(() =>
   hasWorkspacePermission(activeTaskResource.value, PermissionAction.Edit)
@@ -411,6 +433,16 @@ const canCreateRatingCurves = computed(
       PermissionAction.Create
     )
 )
+const createTaskDisabledReason = computed(() => {
+  if (!orchestrationEnabled) return ORCHESTRATION_DISABLED_TOOLTIP
+  if (!canCreateActiveTasks.value) return READ_ONLY_TOOLTIP
+  return ''
+})
+const ratingCurveCreateDisabledReason = computed(() => {
+  if (!orchestrationEnabled) return ORCHESTRATION_DISABLED_TOOLTIP
+  if (!canCreateRatingCurves.value) return READ_ONLY_TOOLTIP
+  return ''
+})
 
 const tabs = computed<TabDefinition[]>(() => [
   {
@@ -1024,7 +1056,7 @@ const onDataConnectionDeleted = async () => {
 }
 
 const onRunNow = async (row: TaskRow) => {
-  if (!canEditActiveTasks.value) return
+  if (!orchestrationEnabled || !canEditActiveTasks.value) return
   await runTaskNow(row.kind, row.id)
 }
 
@@ -1046,6 +1078,13 @@ const goToTask = async (row: TaskRow) => {
   height: calc(100dvh - var(--v-layout-top, 0px) - var(--v-layout-bottom, 0px));
   min-height: 0;
   overflow: hidden;
+}
+
+.orchestration-disabled-alert {
+  /* Vuetify sets v-alert to `flex: 1 1`, which would split the page with the body. */
+  flex: 0 0 auto;
+  margin: 0;
+  border-radius: 0;
 }
 
 .orchestration-page-body {

@@ -1,4 +1,5 @@
 import pytest
+from django.test import override_settings
 
 from django.test.utils import CaptureQueriesContext
 from django.db import connection
@@ -360,3 +361,28 @@ def test_delete_etl_mapping_returns_403_for_viewer_collaborator(client):
     response = client.delete(_detail_url(mapping.id))
 
     assert response.status_code == 403
+
+
+# --- CELERY_ENABLED=False ------------------------------------------------------------------
+
+
+@override_settings(CELERY_ENABLED=False)
+def test_create_etl_mapping_still_succeeds_when_orchestration_disabled(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task = _make_task(workspace)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    target = DatastreamFactory(monitoring_site=monitoring_site)
+    client.force_login(owner)
+
+    response = client.post(
+        MAPPINGS_URL,
+        data={
+            "etlTaskId": str(task.id),
+            "sourceIdentifier": "col_a",
+            "targetDatastreamId": str(target.id),
+        },
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201

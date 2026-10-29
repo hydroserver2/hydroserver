@@ -43,12 +43,12 @@
           <v-tooltip
             v-if="activeTab === 'ingestion' && selectedConnection"
             location="top"
-            :disabled="canCreate"
+            :disabled="!createDisabledReason"
           >
             <template #activator="{ props: tooltipProps }">
               <span v-bind="tooltipProps" class="inline-flex">
                 <VBtnPageAction
-                  :disabled="!canCreate"
+                  :disabled="!!createDisabledReason"
                   data-testid="add-ingestion-task"
                   @click="emit('add-task')"
                 >
@@ -56,15 +56,15 @@
                 </VBtnPageAction>
               </span>
             </template>
-            <span>{{ READ_ONLY_TOOLTIP }}</span>
+            <span>{{ createDisabledReason }}</span>
           </v-tooltip>
 
           <template v-if="activeTab === 'aggregation'">
-            <v-tooltip location="top" :disabled="canCreate">
+            <v-tooltip location="top" :disabled="!createDisabledReason">
               <template #activator="{ props: tooltipProps }">
                 <span v-bind="tooltipProps" class="inline-flex">
                   <VBtnPageAction
-                    :disabled="!canCreate"
+                    :disabled="!!createDisabledReason"
                     data-testid="add-aggregation-task"
                     @click="emit('add-aggregation')"
                   >
@@ -72,13 +72,13 @@
                   </VBtnPageAction>
                 </span>
               </template>
-              <span>{{ READ_ONLY_TOOLTIP }}</span>
+              <span>{{ createDisabledReason }}</span>
             </v-tooltip>
-            <v-tooltip location="top" :disabled="canCreate">
+            <v-tooltip location="top" :disabled="!createDisabledReason">
               <template #activator="{ props: tooltipProps }">
                 <span v-bind="tooltipProps" class="inline-flex">
                   <VBtnPageAction
-                    :disabled="!canCreate"
+                    :disabled="!!createDisabledReason"
                     data-testid="add-derivation-task"
                     @click="emit('add-derivation')"
                   >
@@ -86,13 +86,13 @@
                   </VBtnPageAction>
                 </span>
               </template>
-              <span>{{ READ_ONLY_TOOLTIP }}</span>
+              <span>{{ createDisabledReason }}</span>
             </v-tooltip>
-            <v-tooltip location="top" :disabled="canCreateRatingCurve">
+            <v-tooltip location="top" :disabled="!ratingCurveCreateDisabledReason">
               <template #activator="{ props: tooltipProps }">
                 <span v-bind="tooltipProps" class="inline-flex">
                   <VBtnPageAction
-                    :disabled="!canCreateRatingCurve"
+                    :disabled="!!ratingCurveCreateDisabledReason"
                     data-testid="add-rating-curve-task"
                     @click="emit('add-rating-curve')"
                   >
@@ -100,19 +100,19 @@
                   </VBtnPageAction>
                 </span>
               </template>
-              <span>{{ READ_ONLY_TOOLTIP }}</span>
+              <span>{{ ratingCurveCreateDisabledReason }}</span>
             </v-tooltip>
           </template>
 
           <v-tooltip
             v-if="activeTab === 'quality'"
             location="top"
-            :disabled="canCreate"
+            :disabled="!createDisabledReason"
           >
             <template #activator="{ props: tooltipProps }">
               <span v-bind="tooltipProps" class="inline-flex">
                 <VBtnPageAction
-                  :disabled="!canCreate"
+                  :disabled="!!createDisabledReason"
                   data-testid="add-quality-task"
                   @click="emit('add-quality')"
                 >
@@ -120,7 +120,7 @@
                 </VBtnPageAction>
               </span>
             </template>
-            <span>{{ READ_ONLY_TOOLTIP }}</span>
+            <span>{{ createDisabledReason }}</span>
           </v-tooltip>
         </div>
       </div>
@@ -205,7 +205,6 @@ import IngestionTaskTable from './IngestionTaskTable.vue'
 import OrchestrationTaskTable from './OrchestrationTaskTable.vue'
 import {
   DATA_PRODUCT_TYPE_OPTIONS,
-  READ_ONLY_TOOLTIP,
   STATUS_OPTIONS,
   TAB_META,
   type DataProductTaskType,
@@ -213,8 +212,8 @@ import {
 } from './orchestrationTabs'
 
 defineProps<{
-  canCreate: boolean
-  canCreateRatingCurve: boolean
+  createDisabledReason: string
+  ratingCurveCreateDisabledReason: string
   canEdit: boolean
   loading: boolean
   hasSelection: boolean

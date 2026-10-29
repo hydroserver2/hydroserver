@@ -2,6 +2,7 @@ from datetime import timedelta
 from unittest.mock import patch
 
 import pytest
+from django.test import override_settings
 from tests.interfaces.api.helpers import MERGE_PATCH_CASES as CASES
 from django.conf import settings
 from django.db import connection
@@ -599,3 +600,55 @@ def test_get_etl_tasks_sorts_by_latest_run_fields(client, sortby, expected):
     assert response.status_code == 200
     ids = [task["id"] for task in response.json()["data"]]
     assert ids == [str(tasks[name].id) for name in expected]
+
+
+# --- CELERY_ENABLED=False ------------------------------------------------------------------
+
+
+@override_settings(CELERY_ENABLED=False)
+def test_create_etl_task_returns_501_when_orchestration_disabled(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    data_connection = DataConnectionFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.post(
+        ETL_TASKS_URL,
+        data=_etl_task_body(data_connection.id),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 501
+    assert response.json()["message"] == "Job orchestration is not enabled on this HydroServer instance."
+    assert not data_connection.etl_tasks.exists()
+
+
+@override_settings(CELERY_ENABLED=False)
+def test_trigger_etl_task_returns_501_without_creating_run_when_orchestration_disabled(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task = _make_etl_task(workspace)
+    client.force_login(owner)
+
+    with patch("processing.etl.tasks.run_etl_task.apply_async") as mock_apply_async:
+        response = client.post(f"{_detail_url(task.id)}/trigger")
+
+    assert response.status_code == 501
+    mock_apply_async.assert_not_called()
+    assert not TaskRun.objects.filter(task=task).exists()
+
+
+@override_settings(CELERY_ENABLED=False)
+def test_existing_etl_task_can_be_edited_and_deleted_when_orchestration_disabled(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task = _make_etl_task(workspace)
+    client.force_login(owner)
+
+    response = client.patch(
+        _detail_url(task.id), data={"name": "Renamed"}, content_type="application/json"
+    )
+    assert response.status_code == 204
+    assert client.get(_detail_url(task.id)).json()["data"]["name"] == "Renamed"
+
+    assert client.delete(_detail_url(task.id)).status_code == 204

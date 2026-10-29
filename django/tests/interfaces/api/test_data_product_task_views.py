@@ -2,6 +2,7 @@ from datetime import timedelta
 from unittest.mock import patch
 
 import pytest
+from django.test import override_settings
 from django.conf import settings
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
@@ -493,3 +494,38 @@ def test_get_data_product_tasks_sorts_by_latest_run_fields(client, sortby, expec
     assert response.status_code == 200
     ids = [task["id"] for task in response.json()["data"]]
     assert ids == [str(tasks[name].id) for name in expected]
+
+
+# --- CELERY_ENABLED=False ------------------------------------------------------------------
+
+
+@override_settings(CELERY_ENABLED=False)
+def test_create_data_product_task_returns_501_when_orchestration_disabled(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.post(
+        DATA_PRODUCT_TASKS_URL,
+        data=_data_product_task_body(monitoring_site.id),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 501
+    assert response.json()["message"] == "Job orchestration is not enabled on this HydroServer instance."
+
+
+@override_settings(CELERY_ENABLED=False)
+def test_trigger_data_product_task_returns_501_without_creating_run_when_orchestration_disabled(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task = _make_data_product_task(workspace)
+    client.force_login(owner)
+
+    with patch("processing.products.tasks.run_data_product_task.apply_async") as mock_apply_async:
+        response = client.post(f"{_detail_url(task.id)}/trigger")
+
+    assert response.status_code == 501
+    mock_apply_async.assert_not_called()
+    assert not TaskRun.objects.filter(task=task).exists()

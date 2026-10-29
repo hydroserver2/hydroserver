@@ -32,6 +32,7 @@ const defaultSettings: AppSettings = {
   },
   extensionsConfiguration: {
     fileUploadEnabled: false,
+    orchestrationEnabled: true,
   },
   legalInformation: {
     termsOfUseLink: null,
