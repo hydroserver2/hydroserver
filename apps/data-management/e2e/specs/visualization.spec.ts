@@ -6,7 +6,7 @@ import { readFile } from "node:fs/promises";
 import { PlotlyColors } from "../../src/utils/materialColors";
 
 test.describe("visualization", () => {
-  test("figure preview edits a zoomed snapshot and downloads a figure without changing the page", async ({
+  test("image preview edits a zoomed snapshot and downloads an image without changing the page", async ({
     page,
   }, testInfo) => {
     await authenticateSession(page, users.owner.email, users.owner.password);
@@ -60,8 +60,8 @@ test.describe("visualization", () => {
     await page
       .locator(".plot-toolbar")
       .screenshot({ path: testInfo.outputPath("screenshot-controls.png") });
-    await live.locator('[data-title="Prepare screenshot"]').click();
-    const dialog = page.getByRole("dialog", { name: "Figure preview" });
+    await live.locator('[data-title="Download plot image"]').click();
+    const dialog = page.getByRole("dialog", { name: "Download plot image" });
     const figure = page.getByTestId("figure-plot");
     await expect(
       dialog.getByRole("button", { name: "Use blue for trace 1", exact: true }),
@@ -73,14 +73,8 @@ test.describe("visualization", () => {
       await figure.evaluate((gd: any) => gd._fullLayout.xaxis.range),
     ).toEqual(range);
     await dialog
-      .getByRole("textbox", { name: "Figure title", exact: true })
+      .getByRole("textbox", { name: "Image title", exact: true })
       .fill("Logan River flow");
-    await dialog
-      .getByRole("checkbox", { name: "Show subtitle", exact: true })
-      .check();
-    await dialog
-      .getByRole("textbox", { name: "Subtitle", exact: true })
-      .fill("Study reach — February 2025");
     await dialog
       .getByRole("textbox", { name: "Trace 1 name", exact: true })
       .fill("Upstream flow");
@@ -103,8 +97,8 @@ test.describe("visualization", () => {
       )
       .toEqual(["#123456", "#123456", "#123456"]);
     await dialog
-      .getByRole("button", { name: "Hide site names", exact: true })
-      .click();
+      .getByRole("checkbox", { name: "Show site names", exact: true })
+      .uncheck();
     await dialog
       .getByRole("textbox", { name: "X-axis label", exact: true })
       .fill("Time (UTC)");
@@ -119,9 +113,59 @@ test.describe("visualization", () => {
     ).toHaveCount(1);
     await expect(figure.locator(".xtitle")).toHaveText("Time (UTC)");
     await expect(figure.locator(".ytitle")).toHaveText("Discharge (m³ s⁻¹)");
+    await expect(
+      dialog.getByRole("checkbox", { name: /site name for trace/i }),
+    ).toHaveCount(0);
+    await expect
+      .poll(() => figure.evaluate((gd: any) => gd._fullLayout.legend.yanchor))
+      .toBe("top");
+    await dialog
+      .getByRole("combobox", { name: "Legend position" })
+      .press("ArrowDown");
+    await page.getByRole("option", { name: "Above plot", exact: true }).click();
+    await expect
+      .poll(() => figure.evaluate((gd: any) => gd._fullLayout.legend.yanchor))
+      .toBe("bottom");
+    await dialog
+      .getByRole("combobox", { name: "Legend position" })
+      .press("ArrowDown");
+    await page.getByRole("option", { name: "Below plot", exact: true }).click();
+    await expect
+      .poll(() => figure.evaluate((gd: any) => gd._fullLayout.legend.yanchor))
+      .toBe("top");
+    await expect
+      .poll(() =>
+        figure.evaluate((gd: any) => {
+          const legend = gd.querySelector(".legend").getBoundingClientRect();
+          const axis = gd.querySelector(".xtitle").getBoundingClientRect();
+          const canvas = gd.getBoundingClientRect();
+          return legend.top > axis.bottom && legend.bottom <= canvas.bottom;
+        }),
+      )
+      .toBe(true);
+    await dialog
+      .getByRole("checkbox", { name: "Show legend", exact: true })
+      .uncheck();
+    await expect(figure.locator(".legend")).toHaveCount(0);
+    await expect(
+      dialog.getByRole("checkbox", { name: "Show site names", exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      dialog.getByRole("combobox", { name: "Legend position" }),
+    ).toHaveCount(0);
+    await dialog
+      .getByRole("checkbox", { name: "Show legend", exact: true })
+      .check();
+    await expect(figure.locator(".legendtext")).toHaveText("Upstream flow");
+    await expect(
+      dialog.getByRole("checkbox", { name: "Show site names", exact: true }),
+    ).not.toBeChecked();
+    await expect(
+      dialog.getByRole("combobox", { name: "Legend position" }),
+    ).toHaveValue("Below plot");
     await page.screenshot({ path: testInfo.outputPath("figure-editor.png") });
     await expect(
-      dialog.getByRole("complementary", { name: "Figure settings" }),
+      dialog.getByRole("complementary", { name: "Image settings" }),
     ).toHaveCount(1);
     await expect(
       dialog.getByRole("button", { name: "Download PNG", exact: true }),
@@ -140,7 +184,7 @@ test.describe("visualization", () => {
     await download.saveAs(imagePath);
     const png = await readFile(imagePath);
     expect(png.readUInt32BE(16)).toBeGreaterThanOrEqual(3840);
-    await dialog.getByRole("button", { name: "Close figure preview" }).click();
+    await dialog.getByRole("button", { name: "Close image preview" }).click();
     await expect(dialog).toHaveCount(0);
     await expect(page).toHaveURL(url);
     await expect(live.locator(".legendtext")).toHaveText(originalLegend!);
@@ -150,17 +194,17 @@ test.describe("visualization", () => {
     expect(
       await live.evaluate((gd: any) => gd._fullLayout.xaxis.range),
     ).toEqual(range);
-    await live.locator('[data-title="Prepare screenshot"]').click();
+    await live.locator('[data-title="Download plot image"]').click();
     await expect(
-      dialog.getByRole("textbox", { name: "Figure title", exact: true }),
+      dialog.getByRole("textbox", { name: "Image title", exact: true }),
     ).toHaveValue("");
     await expect(
       dialog.getByLabel("Custom color for trace 1", { exact: true }),
     ).toHaveValue(originalColor);
-    await dialog.getByRole("button", { name: "Close figure preview" }).click();
+    await dialog.getByRole("button", { name: "Close image preview" }).click();
   });
 
-  test("figure preview supports site-name controls, multiple axes, reset and vector export on narrow screens", async ({
+  test("image preview supports site-name controls, multiple axes and reset on narrow screens", async ({
     page,
   }, testInfo) => {
     await page.setViewportSize({ width: 500, height: 900 });
@@ -185,8 +229,8 @@ test.describe("visualization", () => {
         ),
       )
       .toBe(true);
-    await live.locator('[data-title="Prepare screenshot"]').click();
-    const dialog = page.getByRole("dialog", { name: "Figure preview" });
+    await live.locator('[data-title="Download plot image"]').click();
+    const dialog = page.getByRole("dialog", { name: "Download plot image" });
     const figure = page.getByTestId("figure-plot");
     await dialog
       .getByRole("button", { name: "Use green for trace 1", exact: true })
@@ -208,8 +252,8 @@ test.describe("visualization", () => {
       dialog.getByRole("textbox", { name: "Y-axis 2 label", exact: true }),
     ).toBeVisible();
     await dialog
-      .getByRole("button", { name: "Hide site names", exact: true })
-      .click();
+      .getByRole("checkbox", { name: "Show site names", exact: true })
+      .uncheck();
     await expect
       .poll(() =>
         figure.evaluate((gd: any) =>
@@ -218,8 +262,8 @@ test.describe("visualization", () => {
       )
       .toBe(true);
     await dialog
-      .getByRole("button", { name: "Add site names", exact: true })
-      .click();
+      .getByRole("checkbox", { name: "Show site names", exact: true })
+      .check();
     await dialog
       .getByRole("textbox", { name: "Trace 1 site name", exact: true })
       .fill("Upper reach");
@@ -235,23 +279,31 @@ test.describe("visualization", () => {
     await expect(figure.locator(".legendtext").first()).toContainText(
       "@ Upper reach",
     );
+    await dialog
+      .getByRole("combobox", { name: "Legend position" })
+      .press("ArrowDown");
+    await page.getByRole("option", { name: "Below plot", exact: true }).click();
+    await expect
+      .poll(() => figure.evaluate((gd: any) => gd._fullLayout.legend.yanchor))
+      .toBe("top");
+    await expect
+      .poll(() =>
+        figure.evaluate((gd: any) => {
+          const legend = gd.querySelector(".legend").getBoundingClientRect();
+          const axis = gd.querySelector(".xtitle").getBoundingClientRect();
+          return (
+            legend.top > axis.bottom &&
+            legend.bottom <= gd.getBoundingClientRect().bottom
+          );
+        }),
+      )
+      .toBe(true);
     const bounds = await figure.boundingBox();
     expect(bounds!.x).toBeGreaterThanOrEqual(0);
     expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(500);
     await figure.screenshot({ path: testInfo.outputPath("mobile-figure.png") });
-    const svgPromise = page.waitForEvent("download");
     await dialog
-      .getByRole("button", { name: "Download SVG", exact: true })
-      .click();
-    const svgPath = testInfo.outputPath("figure.svg");
-    await (await svgPromise).saveAs(svgPath);
-    const svg = await readFile(svgPath, "utf8");
-    expect(svg).toContain("<svg");
-    expect(svg).toContain("Upper reach");
-    expect(svg).not.toContain("<image");
-    expect(svg).toContain("rgb(44, 160, 44)");
-    await dialog
-      .getByRole("button", { name: "Reset figure", exact: true })
+      .getByRole("button", { name: "Reset image", exact: true })
       .click();
     await expect(
       dialog.getByRole("textbox", { name: "Trace 1 name", exact: true }),
@@ -259,7 +311,16 @@ test.describe("visualization", () => {
     await expect(
       dialog.getByLabel("Custom color for trace 1", { exact: true }),
     ).toHaveValue(PlotlyColors[0]);
-    await dialog.getByRole("button", { name: "Close figure preview" }).click();
+    await expect(
+      dialog.getByRole("checkbox", { name: "Show site names", exact: true }),
+    ).toBeChecked();
+    await expect(
+      dialog.getByRole("checkbox", { name: "Show legend", exact: true }),
+    ).toBeChecked();
+    await expect
+      .poll(() => figure.evaluate((gd: any) => gd._fullLayout.legend.yanchor))
+      .toBe("top");
+    await dialog.getByRole("button", { name: "Close image preview" }).click();
     await expect(page).not.toHaveURL(/plotLabels=/);
     await expect(
       page.getByRole("button", { name: "Hide site name", exact: true }),

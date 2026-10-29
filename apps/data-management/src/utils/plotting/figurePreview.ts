@@ -5,7 +5,6 @@ export type FigureTraceLabel = {
   id: string
   name: string
   siteName: string
-  includeSiteName: boolean
   color: string
 }
 
@@ -13,8 +12,8 @@ export type FigureAxisLabel = { key: string; label: string }
 
 export type FigureSettings = {
   title: string
-  subtitle: string
-  showSubtitle: boolean
+  showSiteNames: boolean
+  legendPosition: 'above' | 'below'
   showLegend: boolean
   fontSize: number
   aspectRatio: number
@@ -32,7 +31,6 @@ export function buildFigurePreview(
   measure: (text: string) => number
 ) {
   const { fontSize } = settings
-  const subtitle = settings.showSubtitle ? settings.subtitle : ''
   const colors = new Map(
     settings.traces.map((trace) => [trace.id, trace.color])
   )
@@ -104,7 +102,7 @@ export function buildFigurePreview(
     id: trace.id,
     label:
       trace.name +
-      (trace.includeSiteName && trace.siteName ? `\n@ ${trace.siteName}` : ''),
+      (settings.showSiteNames && trace.siteName ? `\n@ ${trace.siteName}` : ''),
   }))
   const baseOptions = {
     ...source,
@@ -120,16 +118,18 @@ export function buildFigurePreview(
   let labeled = applyPlotLabels(
     baseOptions,
     labels,
-    subtitle,
     FIGURE_WIDTH,
     fontFamily,
     measure,
-    { title: settings.title, fontSize }
+    { title: settings.title, fontSize, legendPosition: settings.legendPosition }
   )
   const desiredHeight = Math.round(FIGURE_WIDTH / settings.aspectRatio)
   for (const { key, label } of settings.axes) {
     const axisLength = key.startsWith('y')
-      ? desiredHeight - labeled.options.layout.margin.t - layout.margin.b - 48
+      ? desiredHeight -
+        labeled.options.layout.margin.t -
+        labeled.options.layout.margin.b -
+        48
       : FIGURE_WIDTH *
           ((layout[key].domain?.[1] ?? 1) - (layout[key].domain?.[0] ?? 0)) -
         120
@@ -144,13 +144,18 @@ export function buildFigurePreview(
   labeled = applyPlotLabels(
     baseOptions,
     labels,
-    subtitle,
     FIGURE_WIDTH,
     fontFamily,
     measure,
-    { title: settings.title, fontSize }
+    { title: settings.title, fontSize, legendPosition: settings.legendPosition }
   )
   const height = Math.max(desiredHeight, labeled.minHeight)
+  if (settings.legendPosition === 'below') {
+    // Place the legend after the space reserved for X-axis ticks and title.
+    const plotHeight =
+      height - labeled.options.layout.margin.t - labeled.options.layout.margin.b
+    labeled.options.layout.legend.y = -layout.margin.b / plotHeight
+  }
   return {
     ...labeled.options,
     layout: { ...labeled.options.layout, width: FIGURE_WIDTH, height },

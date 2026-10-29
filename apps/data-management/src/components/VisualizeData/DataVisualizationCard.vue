@@ -227,7 +227,6 @@ const labeledPlot = computed(() => {
       id: item.id,
       label: showSiteName.value ? item.label : item.name,
     })),
-    '',
     plotWidth.value,
     plotFont.value,
     (text) =>
@@ -796,7 +795,7 @@ const renderPlot = async () => {
         button.name === 'Download plot'
           ? {
               ...button,
-              name: 'Prepare screenshot',
+              name: 'Download plot image',
               click: () => figurePreview.value?.openPreview(),
             }
           : button

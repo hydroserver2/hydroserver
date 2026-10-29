@@ -32,35 +32,25 @@ describe('presentation plot labels', () => {
     }
   }
 
-  it('expands the header for narrow charts and leaves room for every legend row and subtitle', () => {
+  it('expands the header for narrow charts and leaves room for every legend row and title', () => {
     const base = baseOptions()
     const labels = base.traces.map((trace) => ({
       id: trace.id,
       label:
         'Water temperature\n@ A very long monitoring site name with no ellipses',
     }))
-    const wide = applyPlotLabels(
-      base,
-      labels,
-      'Logan River',
-      1200,
-      'Arial',
-      measure
-    )
-    const narrow = applyPlotLabels(
-      base,
-      labels,
-      'Logan River',
-      300,
-      'Arial',
-      measure
-    )
+    const wide = applyPlotLabels(base, labels, 1200, 'Arial', measure, {
+      title: 'Logan River',
+    })
+    const narrow = applyPlotLabels(base, labels, 300, 'Arial', measure, {
+      title: 'Logan River',
+    })
     expect(narrow.minHeight).toBeGreaterThan(wide.minHeight)
     expect(narrow.options.layout.legend.entrywidth).toBe(1)
     expect(narrow.options.layout.legend.maxheight).toBeGreaterThan(200)
-    const subtitle = narrow.options.layout.annotations[0]
-    expect(subtitle.text).toBe('Logan River')
-    expect(narrow.options.layout.margin.t).toBeGreaterThan(subtitle.yshift + 18)
+    const title = narrow.options.layout.annotations[0]
+    expect(title.text).toBe('Logan River')
+    expect(narrow.options.layout.margin.t).toBeGreaterThan(title.yshift + 18)
     expect(narrow.minHeight - narrow.options.layout.margin.t - 80).toBe(220)
     expect(
       narrow.options.traces.every((trace) => trace.name.includes('ellipses'))
@@ -72,10 +62,10 @@ describe('presentation plot labels', () => {
     const result = applyPlotLabels(
       base,
       [{ id: 'stream-0', label: '<b>Upstream</b> & downstream' }],
-      '<i>Site</i>',
       800,
       'Arial',
-      measure
+      measure,
+      { title: '<i>Site</i>' }
     )
     expect(result.options.traces[0].name).toContain(
       '&lt;b&gt;Upstream&lt;/b&gt;'

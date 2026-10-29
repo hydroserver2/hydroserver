@@ -35,11 +35,18 @@ export function wrapPlotLabel(
 export function applyPlotLabels(
   options: PlotlyOptions,
   labels: { id: string; label: string }[],
-  subtitle: string,
   width: number,
   fontFamily: string,
   measure: (text: string) => number,
-  { title = '', fontSize = 12 }: { title?: string; fontSize?: number } = {}
+  {
+    title = '',
+    fontSize = 12,
+    legendPosition = 'above',
+  }: {
+    title?: string
+    fontSize?: number
+    legendPosition?: 'above' | 'below'
+  } = {}
 ): { options: PlotlyOptions; minHeight: number } {
   const availableWidth = Math.max(
     80,
@@ -70,16 +77,13 @@ export function applyPlotLabels(
         lineHeight +
       8
   }
-  const subtitleLines = subtitle
-    ? wrapPlotLabel(subtitle, availableWidth, measure)
-    : []
   const titleLines = title
     ? wrapPlotLabel(title, availableWidth, (text) => measure(text) * 1.5)
     : []
+  const aboveLegendHeight = legendPosition === 'above' ? legendHeight : 0
   const topMargin =
     32 +
-    legendHeight +
-    subtitleLines.length * lineHeight +
+    aboveLegendHeight +
     titleLines.length * lineHeight * 1.5 +
     (title ? 12 : 0)
   // A rotated axis title must also fit below the legend. Plotly does not
@@ -107,14 +111,20 @@ export function applyPlotLabels(
   )
   const layout = {
     ...options.layout,
-    margin: { ...options.layout.margin, t: topMargin },
+    margin: {
+      ...options.layout.margin,
+      t: topMargin,
+      b:
+        (options.layout.margin?.b ?? 80) +
+        (legendPosition === 'below' && legendHeight ? legendHeight + 16 : 0),
+    },
     legend: {
       ...options.layout.legend,
       orientation: 'h',
       x: 0,
       xanchor: 'left',
-      y: 1,
-      yanchor: 'bottom',
+      y: legendPosition === 'above' ? 1 : 0,
+      yanchor: legendPosition === 'above' ? 'bottom' : 'top',
       font: { family: fontFamily, size: fontSize },
       entrywidth: 1 / columns,
       entrywidthmode: 'fraction',
@@ -124,24 +134,6 @@ export function applyPlotLabels(
     },
     annotations: [
       ...(options.layout.annotations ?? []),
-      ...(subtitleLines.length
-        ? [
-            {
-              name: 'site-subtitle',
-              text: subtitleLines.map(escapePlotText).join('<br>'),
-              xref: 'paper',
-              yref: 'paper',
-              x: 0,
-              y: 1,
-              xanchor: 'left',
-              yanchor: 'bottom',
-              yshift: legendHeight + 8,
-              align: 'left',
-              showarrow: false,
-              font: { family: fontFamily, size: fontSize },
-            },
-          ]
-        : []),
       ...(titleLines.length
         ? [
             {
@@ -153,7 +145,7 @@ export function applyPlotLabels(
               y: 1,
               xanchor: 'left',
               yanchor: 'bottom',
-              yshift: legendHeight + subtitleLines.length * lineHeight + 20,
+              yshift: aboveLegendHeight + 20,
               align: 'left',
               showarrow: false,
               font: { family: fontFamily, size: fontSize * 1.5 },

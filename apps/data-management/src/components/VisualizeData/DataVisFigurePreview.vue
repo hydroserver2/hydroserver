@@ -4,36 +4,25 @@
     fullscreen
     :persistent="exporting"
     transition="dialog-bottom-transition"
-    aria-label="Figure preview"
+    aria-label="Download plot image"
   >
     <div class="figure-preview">
       <header class="figure-header">
-        <div>
-          <h1 class="hs-subheading">Figure preview</h1>
-          <p class="hs-text-sm">
-            Prepare a figure for your paper or presentation.
-          </p>
-        </div>
+        <h1 class="hs-subheading">Download plot image</h1>
         <div class="figure-actions">
           <v-btn variant="text" :disabled="exporting" @click="resetFigure"
-            >Reset figure</v-btn
+            >Reset image</v-btn
           >
           <v-btn-dialog-action
             :prepend-icon="mdiDownload"
             :loading="exporting"
             :disabled="!ready"
-            @click="download('png')"
+            @click="download"
             >Download PNG</v-btn-dialog-action
-          >
-          <v-btn
-            variant="text"
-            :disabled="!ready || exporting"
-            @click="download('svg')"
-            >Download SVG</v-btn
           >
           <v-btn-icon
             :icon="mdiClose"
-            aria-label="Close figure preview"
+            aria-label="Close image preview"
             :disabled="exporting"
             @click="open = false"
           />
@@ -42,37 +31,21 @@
       <div class="figure-body">
         <aside
           class="figure-editor"
-          aria-label="Figure settings"
+          aria-label="Image settings"
           :inert="exporting"
         >
           <section class="figure-settings-section">
-            <h2 class="hs-subheading">Figure</h2>
-            <p class="hs-text-sm figure-hint">
-              Edits apply only to this preview.
-            </p>
+            <h2 class="hs-subheading">Image</h2>
             <v-textarea
               v-model="settings.title"
-              label="Figure title"
-              rows="2"
-              auto-grow
-              hide-details
-            />
-            <v-checkbox
-              v-model="settings.showSubtitle"
-              label="Show subtitle"
-              hide-details
-            />
-            <v-textarea
-              v-if="settings.showSubtitle"
-              v-model="settings.subtitle"
-              label="Subtitle"
+              label="Image title"
               rows="2"
               auto-grow
               hide-details
             />
             <v-select
               v-model="settings.aspectRatio"
-              label="Figure shape"
+              label="Image shape"
               :items="shapes"
               hide-details
             />
@@ -83,24 +56,33 @@
               suffix="px"
               hide-details
             />
+          </section>
+          <section class="figure-settings-section">
+            <h2 class="hs-subheading">Legend</h2>
             <v-checkbox
               v-model="settings.showLegend"
               label="Show legend"
               hide-details
             />
+            <v-checkbox
+              v-if="settings.showLegend"
+              v-model="settings.showSiteNames"
+              label="Show site names"
+              hide-details
+            />
+            <v-select
+              v-if="settings.showLegend"
+              v-model="settings.legendPosition"
+              label="Legend position"
+              :items="[
+                { title: 'Above plot', value: 'above' },
+                { title: 'Below plot', value: 'below' },
+              ]"
+              hide-details
+            />
           </section>
           <section class="figure-settings-section">
-            <div class="figure-section-heading">
-              <h2 class="hs-subheading">Traces</h2>
-              <v-btn
-                variant="text"
-                size="small"
-                @click="setAllSiteNames(!allSiteNamesIncluded)"
-                >{{
-                  allSiteNamesIncluded ? 'Hide site names' : 'Add site names'
-                }}</v-btn
-              >
-            </div>
+            <h2 class="hs-subheading">Traces</h2>
             <div
               v-for="(trace, index) in settings.traces"
               :key="trace.id"
@@ -160,13 +142,8 @@
                   <span class="hs-text-sm hs-font-data">{{ trace.color }}</span>
                 </label>
               </div>
-              <v-checkbox
-                v-model="trace.includeSiteName"
-                :label="`Include site name for trace ${index + 1}`"
-                hide-details
-              />
               <v-textarea
-                v-if="trace.includeSiteName"
+                v-if="settings.showLegend && settings.showSiteNames"
                 v-model="trace.siteName"
                 :label="`Trace ${index + 1} site name`"
                 rows="2"
@@ -188,7 +165,7 @@
             />
           </section>
         </aside>
-        <main ref="stage" class="figure-stage" aria-label="Figure canvas">
+        <main ref="stage" class="figure-stage" aria-label="Image canvas">
           <div
             v-if="figure"
             class="figure-frame"
@@ -264,9 +241,9 @@ const source = shallowRef<PlotlyOptions | null>(null)
 const defaults = shallowRef<FigureSettings | null>(null)
 const settings = ref<FigureSettings>({
   title: '',
-  subtitle: '',
-  showSubtitle: false,
   showLegend: true,
+  showSiteNames: true,
+  legendPosition: 'below',
   fontSize: 24,
   aspectRatio: 4 / 3,
   traces: [],
@@ -304,9 +281,6 @@ const scale = computed(() =>
     stageSize.value.height / (figure.value?.layout.height || 900)
   )
 )
-const allSiteNamesIncluded = computed(() =>
-  settings.value.traces.every((trace) => trace.includeSiteName)
-)
 
 function axisCaption(key: string) {
   const match = key.match(/^([xy])axis(\d*)$/)
@@ -333,9 +307,9 @@ function openPreview() {
   }
   defaults.value = {
     title: '',
-    subtitle: '',
-    showSubtitle: false,
     showLegend: true,
+    showSiteNames: true,
+    legendPosition: 'below',
     fontSize: 24,
     aspectRatio: 4 / 3,
     traces: gd.data.map((trace: any, index: number) => {
@@ -345,7 +319,6 @@ function openPreview() {
         id: trace.id,
         name: item?.name ?? trace.name.replace(/<br>/g, '\n'),
         siteName: item?.siteName ?? '',
-        includeSiteName: true,
         color:
           typeof color === 'string' && /^#[\da-f]{6}$/i.test(color)
             ? color
@@ -368,12 +341,6 @@ function openPreview() {
 
 function resetFigure() {
   if (defaults.value) settings.value = cloneDeep(defaults.value)
-}
-
-function setAllSiteNames(include: boolean) {
-  settings.value.traces.forEach((trace) => {
-    trace.includeSiteName = include
-  })
 }
 
 function resetTraceColor(id: string) {
@@ -414,8 +381,8 @@ function renderFigure() {
       if (request === renderRequest) ready.value = true
     })
     .catch((error) => {
-      console.error('Unable to render figure preview', error)
-      Snackbar.error('Unable to render the figure. Please try again.')
+      console.error('Unable to render image preview', error)
+      Snackbar.error('Unable to render the image. Please try again.')
     })
   return renderChain
 }
@@ -450,50 +417,22 @@ watch(open, async (value) => {
   }
 })
 
-async function download(format: 'png' | 'svg') {
+async function download() {
   if (exporting.value || !ready.value) return
   exporting.value = true
-  let vectorPlot: HTMLDivElement | undefined
   try {
     await renderFigure()
     if (!chart || !figure.value) return
-    let target = chart
-    // SVG exports use SVG traces so lines remain vector paths even when the
-    // interactive chart used WebGL for a large dataset.
-    if (
-      format === 'svg' &&
-      figure.value.traces.some((trace) => trace.type === 'scattergl')
-    ) {
-      vectorPlot = document.createElement('div')
-      vectorPlot.style.position = 'fixed'
-      vectorPlot.style.left = '-10000px'
-      document.body.appendChild(vectorPlot)
-      const api = await ensurePlotly()
-      await api.newPlot(
-        vectorPlot,
-        cloneDeep(figure.value.traces).map((trace) => ({
-          ...trace,
-          type: trace.type === 'scattergl' ? 'scatter' : trace.type,
-        })),
-        cloneDeep(figure.value.layout),
-        figure.value.config
-      )
-      target = vectorPlot
-    }
     const filename =
       settings.value.title
         .trim()
         .replace(/[\\/:*?"<>|]+/g, '-')
-        .replace(/\s+/g, '_') || 'HydroServer_figure'
-    await downloadPlotlyImage(target, { filename, format })
+        .replace(/\s+/g, '_') || 'HydroServer_image'
+    await downloadPlotlyImage(chart, { filename, format: 'png' })
   } catch (error) {
-    console.error('Unable to download figure', error)
-    Snackbar.error('Unable to download the figure. Please try again.')
+    console.error('Unable to download image', error)
+    Snackbar.error('Unable to download the image. Please try again.')
   } finally {
-    if (vectorPlot) {
-      plotly?.purge(vectorPlot)
-      vectorPlot.remove()
-    }
     exporting.value = false
   }
 }
@@ -528,7 +467,6 @@ defineExpose({ openPreview })
   border-bottom: 1px solid var(--hs-border);
   background: var(--hs-surface);
 }
-.figure-header p,
 .figure-hint {
   color: var(--hs-text-secondary);
 }
