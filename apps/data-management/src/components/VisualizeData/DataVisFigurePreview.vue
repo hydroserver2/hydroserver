@@ -87,14 +87,17 @@
               v-for="(trace, index) in settings.traces"
               :key="trace.id"
               class="figure-trace-fields"
+              role="group"
+              :aria-label="`Trace ${index + 1} settings`"
             >
-              <v-textarea
-                v-model="trace.name"
-                :label="`Trace ${index + 1} name`"
-                rows="2"
-                auto-grow
-                hide-details
-              />
+              <h3 class="hs-title figure-trace-heading">
+                <span
+                  class="figure-trace-marker"
+                  :style="{ backgroundColor: trace.color }"
+                  aria-hidden="true"
+                />
+                Trace {{ index + 1 }}
+              </h3>
               <div
                 class="figure-trace-colors"
                 role="group"
@@ -105,7 +108,9 @@
                   <template #activator="{ props: menuProps }">
                     <v-btn
                       v-bind="menuProps"
+                      class="figure-color-trigger"
                       variant="outlined"
+                      size="small"
                       :aria-label="`Choose color for trace ${index + 1}`"
                     >
                       <span
@@ -159,6 +164,13 @@
                   >Reset color</v-btn
                 >
               </div>
+              <v-textarea
+                v-model="trace.name"
+                :label="`Trace ${index + 1} name`"
+                rows="2"
+                auto-grow
+                hide-details
+              />
               <v-textarea
                 v-if="settings.showLegend && settings.showSiteNames"
                 v-model="trace.siteName"
@@ -514,15 +526,30 @@ defineExpose({ openPreview })
   padding-top: var(--hs-space-20);
   border-top: 1px solid var(--hs-border);
 }
-.figure-trace-fields + .figure-trace-fields {
-  padding-top: var(--hs-space-16);
-  border-top: 1px solid var(--hs-border);
+.figure-trace-fields {
+  padding: var(--hs-space-12);
+  border: 1px solid var(--hs-border);
+  border-radius: var(--hs-radius-md);
+  background: var(--hs-surface-subtle);
+}
+.figure-trace-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--hs-space-8);
+}
+.figure-trace-marker {
+  width: var(--hs-space-20);
+  height: var(--hs-space-4);
+  border-radius: var(--hs-radius-sm);
 }
 .figure-trace-colors {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: var(--hs-space-8);
+}
+.figure-color-trigger {
+  min-height: var(--hs-space-32);
 }
 .figure-color-popup {
   width: 20rem;
