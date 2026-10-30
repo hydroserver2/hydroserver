@@ -74,11 +74,29 @@ class QualityControlSessionQueryParameters(QualityControlSessionFilterFields, Co
         BeforeValidator(split_sortby),
         WithJsonSchema(sortby_array_schema(QualityControlSessionSortByFields)),
     ] = Query([], description="Select one or more fields to sort the response by.")
-    status: Optional[SessionStatus] = None
-    range_start: Optional[ISODatetime] = Query(None, description="Return sessions overlapping with this range start.")
-    range_end: Optional[ISODatetime] = Query(None, description="Return sessions overlapping with this range end.")
-    ancestor_of: Optional[uuid.UUID] = Query(None, description="Return all transitive ancestors of the given session ID.")
-    include_ancestors: QueryBool = Query(False, description="Also return transitive ancestors of all sessions matched by other filters.")
+    status: Optional[SessionStatus] = Query(
+        None, description="Sessions with this status: `in_progress` or `committed`."
+    )
+    range_start: Optional[ISODatetime] = Query(
+        None,
+        description="Sessions whose time range ends after this RFC 3339 date-time. Use with `rangeEnd` to "
+        "find the sessions that overlap a time range.",
+    )
+    range_end: Optional[ISODatetime] = Query(
+        None,
+        description="Sessions whose time range starts before this RFC 3339 date-time. Use with `rangeStart` "
+        "to find the sessions that overlap a time range.",
+    )
+    ancestor_of: Optional[uuid.UUID] = Query(
+        None,
+        description="Returns the sessions that this session depends on, directly or through other sessions. "
+        "Matches `id` of a session in this history.",
+    )
+    include_ancestors: QueryBool = Query(
+        False,
+        description="`true` also returns the sessions that the matched sessions depend on, directly or "
+        "through other sessions.",
+    )
 
 
 class QualityControlSessionResponse(BaseGetResponse, ItemId):

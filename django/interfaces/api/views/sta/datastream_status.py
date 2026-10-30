@@ -36,7 +36,7 @@ def get_datastream_statuses(
     query: Query[VocabularyQueryParameters],
 ):
     """
-    Get Datastream Statuses.
+    Get datastream statuses.
     """
 
     return 200, datastream_status_service.list(
@@ -65,7 +65,7 @@ def create_datastream_status(
     data: DatastreamStatusPostBody,
 ):
     """
-    Create a new Datastream Status.
+    Create a new datastream status.
     """
 
     return 201, datastream_status_service.create(
@@ -92,7 +92,7 @@ def get_datastream_status(
     query: Query[VocabularyItemQueryParameters],
 ):
     """
-    Get a Datastream Status.
+    Get a datastream status.
     """
 
     return 200, datastream_status_service.get(
@@ -119,7 +119,7 @@ def update_datastream_status(
     data: DatastreamStatusPatchBody,
 ):
     """
-    Update a Datastream Status.
+    Update a datastream status.
     """
 
     datastream_status_service.update(
@@ -145,7 +145,7 @@ def delete_datastream_status(
     request: HydroServerHttpRequest, datastream_status_id: Path[uuid.UUID]
 ):
     """
-    Delete a Datastream Status.
+    Delete a datastream status.
     """
 
     return 204, datastream_status_service.delete(

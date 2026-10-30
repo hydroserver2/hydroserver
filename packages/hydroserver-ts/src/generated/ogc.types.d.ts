@@ -34,7 +34,8 @@ export interface paths {
         };
         /**
          * Get Collections
-         * @description Get the collections the API serves.
+         * @description Get the collections the API serves, with links to each collection's items in the formats
+         *     they're available in.
          */
         get: operations["interfaces_api_views_ogc_get_collections"];
         put?: never;
@@ -54,13 +55,13 @@ export interface paths {
         };
         /**
          * Get Aggregation Statistics
-         * @description Get Aggregation Statistics.
+         * @description Get aggregation statistics.
          */
         get: operations["interfaces_api_views_sta_aggregation_statistic_get_aggregation_statistics"];
         put?: never;
         /**
          * Create Aggregation Statistic
-         * @description Create a new Aggregation Statistic.
+         * @description Create a new aggregation statistic.
          */
         post: operations["interfaces_api_views_sta_aggregation_statistic_create_aggregation_statistic"];
         delete?: never;
@@ -78,21 +79,21 @@ export interface paths {
         };
         /**
          * Get Aggregation Statistic
-         * @description Get an Aggregation Statistic.
+         * @description Get an aggregation statistic.
          */
         get: operations["interfaces_api_views_sta_aggregation_statistic_get_aggregation_statistic"];
         put?: never;
         post?: never;
         /**
          * Delete Aggregation Statistic
-         * @description Delete an Aggregation Statistic.
+         * @description Delete an aggregation statistic.
          */
         delete: operations["interfaces_api_views_sta_aggregation_statistic_delete_aggregation_statistic"];
         options?: never;
         head?: never;
         /**
          * Update Aggregation Statistic
-         * @description Update an Aggregation Statistic.
+         * @description Update an aggregation statistic.
          */
         patch: operations["interfaces_api_views_sta_aggregation_statistic_update_aggregation_statistic"];
         trace?: never;
@@ -210,7 +211,8 @@ export interface paths {
         };
         /**
          * Get Data Product Task Runs
-         * @description Get runs for a data product task.
+         * @description Get the runs of a data product task, each with its status, start and finish times, and
+         *     outcome message.
          */
         get: operations["interfaces_api_views_products_task_get_data_product_task_runs"];
         put?: never;
@@ -230,7 +232,8 @@ export interface paths {
         };
         /**
          * Get Data Product Task Run
-         * @description Get a single run for a data product task.
+         * @description Get one run of a data product task, with its status, start and finish times, outcome
+         *     message, and `result` details.
          */
         get: operations["interfaces_api_views_products_task_get_data_product_task_run"];
         put?: never;
@@ -252,7 +255,7 @@ export interface paths {
         put?: never;
         /**
          * Trigger Data Product Task
-         * @description Trigger an immediate run of a data product task on a Celery worker.
+         * @description Run a data product task now and return the new task run.
          */
         post: operations["interfaces_api_views_products_task_trigger_data_product_task"];
         delete?: never;
@@ -322,13 +325,13 @@ export interface paths {
         };
         /**
          * Get Datastream Statuses
-         * @description Get Datastream Statuses.
+         * @description Get datastream statuses.
          */
         get: operations["interfaces_api_views_sta_datastream_status_get_datastream_statuses"];
         put?: never;
         /**
          * Create Datastream Status
-         * @description Create a new Datastream Status.
+         * @description Create a new datastream status.
          */
         post: operations["interfaces_api_views_sta_datastream_status_create_datastream_status"];
         delete?: never;
@@ -346,21 +349,21 @@ export interface paths {
         };
         /**
          * Get Datastream Status
-         * @description Get a Datastream Status.
+         * @description Get a datastream status.
          */
         get: operations["interfaces_api_views_sta_datastream_status_get_datastream_status"];
         put?: never;
         post?: never;
         /**
          * Delete Datastream Status
-         * @description Delete a Datastream Status.
+         * @description Delete a datastream status.
          */
         delete: operations["interfaces_api_views_sta_datastream_status_delete_datastream_status"];
         options?: never;
         head?: never;
         /**
          * Update Datastream Status
-         * @description Update a Datastream Status.
+         * @description Update a datastream status.
          */
         patch: operations["interfaces_api_views_sta_datastream_status_update_datastream_status"];
         trace?: never;
@@ -374,13 +377,13 @@ export interface paths {
         };
         /**
          * Get Datastreams
-         * @description Get public Datastreams and Datastreams associated with the authenticated user.
+         * @description Get public datastreams and datastreams associated with the authenticated user.
          */
         get: operations["interfaces_api_views_sta_datastream_get_datastreams"];
         put?: never;
         /**
          * Create Datastream
-         * @description Create a new Datastream.
+         * @description Create a new datastream.
          */
         post: operations["interfaces_api_views_sta_datastream_create_datastream"];
         delete?: never;
@@ -398,21 +401,21 @@ export interface paths {
         };
         /**
          * Get Datastream
-         * @description Get a Datastream.
+         * @description Get a datastream.
          */
         get: operations["interfaces_api_views_sta_datastream_get_datastream"];
         put?: never;
         post?: never;
         /**
          * Delete Datastream
-         * @description Delete a Datastream.
+         * @description Delete a datastream.
          */
         delete: operations["interfaces_api_views_sta_datastream_delete_datastream"];
         options?: never;
         head?: never;
         /**
          * Update Datastream
-         * @description Update a Datastream.
+         * @description Update a datastream.
          */
         patch: operations["interfaces_api_views_sta_datastream_update_datastream"];
         trace?: never;
@@ -426,7 +429,7 @@ export interface paths {
         };
         /**
          * Get Datastream Csv
-         * @description Get a CSV representation of the Datastream.
+         * @description Download a datastream's observations and metadata as a CSV file.
          */
         get: operations["interfaces_api_views_sta_datastream_get_datastream_csv"];
         put?: never;
@@ -446,13 +449,13 @@ export interface paths {
         };
         /**
          * Get Datastream Linked Resources
-         * @description Get all linked resources associated with a Datastream.
+         * @description Get the files and links attached to a datastream.
          */
         get: operations["interfaces_api_views_sta_datastream_get_datastream_linked_resources"];
         put?: never;
         /**
          * Add Datastream Linked Resource
-         * @description Add a linked resource to a datastream.
+         * @description Add a file or link to a datastream as multipart form data.
          */
         post: operations["interfaces_api_views_sta_datastream_add_datastream_linked_resource"];
         delete?: never;
@@ -470,22 +473,21 @@ export interface paths {
         };
         /**
          * Get Datastream Linked Resource
-         * @description Get a linked resource associated with a Datastream.
+         * @description Get a file or link attached to a datastream.
          */
         get: operations["interfaces_api_views_sta_datastream_get_datastream_linked_resource"];
         put?: never;
         post?: never;
         /**
          * Remove Datastream Linked Resource
-         * @description Remove a linked resource from a datastream.
+         * @description Remove a file or link from a datastream.
          */
         delete: operations["interfaces_api_views_sta_datastream_remove_datastream_linked_resource"];
         options?: never;
         head?: never;
         /**
          * Update Datastream Linked Resource
-         * @description Update a linked resource for a datastream. A linked resource's mode (hosted file vs.
-         *     external URL) cannot be changed in place — delete it and create a new one instead.
+         * @description Update a datastream's linked resource as multipart form data.
          */
         patch: operations["interfaces_api_views_sta_datastream_update_datastream_linked_resource"];
         trace?: never;
@@ -499,7 +501,7 @@ export interface paths {
         };
         /**
          * Get Datastream Tag Keys
-         * @description Get all existing unique datastream tag keys.
+         * @description Get the tag keys and values used by datastreams, for HydroServer's web apps.
          */
         get: operations["interfaces_api_views_sta_datastream_get_datastream_tag_keys"];
         put?: never;
@@ -519,7 +521,7 @@ export interface paths {
         };
         /**
          * Get Datastream Visualization Bootstrap
-         * @description Get the lean metadata required to bootstrap the visualization page.
+         * @description Get datastream metadata for HydroServer's data visualization page.
          */
         get: operations["interfaces_api_views_sta_datastream_get_datastream_visualization_bootstrap"];
         put?: never;
@@ -539,13 +541,13 @@ export interface paths {
         };
         /**
          * Get Data Connections
-         * @description Get ETL Data Connections associated with the authenticated user.
+         * @description Get ETL data connections associated with the authenticated user.
          */
         get: operations["interfaces_api_views_etl_data_connection_get_data_connections"];
         put?: never;
         /**
          * Create Data Connection
-         * @description Create a new ETL Data Connection.
+         * @description Create a new ETL data connection.
          */
         post: operations["interfaces_api_views_etl_data_connection_create_data_connection"];
         delete?: never;
@@ -563,21 +565,21 @@ export interface paths {
         };
         /**
          * Get Data Connection
-         * @description Get an ETL Data Connection.
+         * @description Get an ETL data connection.
          */
         get: operations["interfaces_api_views_etl_data_connection_get_data_connection"];
         put?: never;
         post?: never;
         /**
          * Delete Data Connection
-         * @description Delete an ETL Data Connection.
+         * @description Delete an ETL data connection.
          */
         delete: operations["interfaces_api_views_etl_data_connection_delete_data_connection"];
         options?: never;
         head?: never;
         /**
          * Update Data Connection
-         * @description Update an ETL Data Connection.
+         * @description Update an ETL data connection.
          */
         patch: operations["interfaces_api_views_etl_data_connection_update_data_connection"];
         trace?: never;
@@ -643,13 +645,13 @@ export interface paths {
         };
         /**
          * Get Etl Tasks
-         * @description Get ETL Tasks accessible to the authenticated user.
+         * @description Get ETL tasks accessible to the authenticated user.
          */
         get: operations["interfaces_api_views_etl_task_get_etl_tasks"];
         put?: never;
         /**
          * Create Etl Task
-         * @description Create a new ETL Task.
+         * @description Create a new ETL task.
          */
         post: operations["interfaces_api_views_etl_task_create_etl_task"];
         delete?: never;
@@ -667,21 +669,21 @@ export interface paths {
         };
         /**
          * Get Etl Task
-         * @description Get an ETL Task.
+         * @description Get an ETL task.
          */
         get: operations["interfaces_api_views_etl_task_get_etl_task"];
         put?: never;
         post?: never;
         /**
          * Delete Etl Task
-         * @description Delete an ETL Task.
+         * @description Delete an ETL task.
          */
         delete: operations["interfaces_api_views_etl_task_delete_etl_task"];
         options?: never;
         head?: never;
         /**
          * Update Etl Task
-         * @description Update an ETL Task.
+         * @description Update an ETL task.
          */
         patch: operations["interfaces_api_views_etl_task_update_etl_task"];
         trace?: never;
@@ -695,7 +697,8 @@ export interface paths {
         };
         /**
          * Get Etl Task Runs
-         * @description Get runs for an ETL Task.
+         * @description Get the runs of an ETL task, each with its status, start and finish times, and outcome
+         *     message.
          */
         get: operations["interfaces_api_views_etl_task_get_etl_task_runs"];
         put?: never;
@@ -715,7 +718,8 @@ export interface paths {
         };
         /**
          * Get Etl Task Run
-         * @description Get a single run for an ETL Task.
+         * @description Get one run of an ETL task, with its status, start and finish times, outcome message, and
+         *     `result` details.
          */
         get: operations["interfaces_api_views_etl_task_get_etl_task_run"];
         put?: never;
@@ -737,7 +741,7 @@ export interface paths {
         put?: never;
         /**
          * Trigger Etl Task
-         * @description Trigger an immediate run of an ETL Task on a Celery worker.
+         * @description Run an ETL task now and return the new task run.
          */
         post: operations["interfaces_api_views_etl_task_trigger_etl_task"];
         delete?: never;
@@ -755,13 +759,13 @@ export interface paths {
         };
         /**
          * Get Linked Resource Types
-         * @description Get Linked Resource Types.
+         * @description Get linked resource types.
          */
         get: operations["interfaces_api_views_sta_linked_resource_type_get_linked_resource_types"];
         put?: never;
         /**
          * Create Linked Resource Type
-         * @description Create a new Linked Resource Type.
+         * @description Create a new linked resource type.
          */
         post: operations["interfaces_api_views_sta_linked_resource_type_create_linked_resource_type"];
         delete?: never;
@@ -779,21 +783,21 @@ export interface paths {
         };
         /**
          * Get Linked Resource Type
-         * @description Get a Linked Resource Type.
+         * @description Get a linked resource type.
          */
         get: operations["interfaces_api_views_sta_linked_resource_type_get_linked_resource_type"];
         put?: never;
         post?: never;
         /**
          * Delete Linked Resource Type
-         * @description Delete a Linked Resource Type.
+         * @description Delete a linked resource type.
          */
         delete: operations["interfaces_api_views_sta_linked_resource_type_delete_linked_resource_type"];
         options?: never;
         head?: never;
         /**
          * Update Linked Resource Type
-         * @description Update a Linked Resource Type.
+         * @description Update a linked resource type.
          */
         patch: operations["interfaces_api_views_sta_linked_resource_type_update_linked_resource_type"];
         trace?: never;
@@ -807,13 +811,13 @@ export interface paths {
         };
         /**
          * Get Method Types
-         * @description Get Method Types.
+         * @description Get method types.
          */
         get: operations["interfaces_api_views_sta_method_type_get_method_types"];
         put?: never;
         /**
          * Create Method Type
-         * @description Create a new Method Type.
+         * @description Create a new method type.
          */
         post: operations["interfaces_api_views_sta_method_type_create_method_type"];
         delete?: never;
@@ -831,21 +835,21 @@ export interface paths {
         };
         /**
          * Get Method Type
-         * @description Get a Method Type.
+         * @description Get a method type.
          */
         get: operations["interfaces_api_views_sta_method_type_get_method_type"];
         put?: never;
         post?: never;
         /**
          * Delete Method Type
-         * @description Delete a Method Type.
+         * @description Delete a method type.
          */
         delete: operations["interfaces_api_views_sta_method_type_delete_method_type"];
         options?: never;
         head?: never;
         /**
          * Update Method Type
-         * @description Update a Method Type.
+         * @description Update a method type.
          */
         patch: operations["interfaces_api_views_sta_method_type_update_method_type"];
         trace?: never;
@@ -859,13 +863,13 @@ export interface paths {
         };
         /**
          * Get Methods
-         * @description Get public Methods and Methods associated with the authenticated user.
+         * @description Get public methods and methods associated with the authenticated user.
          */
         get: operations["interfaces_api_views_sta_method_get_methods"];
         put?: never;
         /**
          * Create Method
-         * @description Create a new Method.
+         * @description Create a new method.
          */
         post: operations["interfaces_api_views_sta_method_create_method"];
         delete?: never;
@@ -883,21 +887,21 @@ export interface paths {
         };
         /**
          * Get Method
-         * @description Get a Method.
+         * @description Get a method.
          */
         get: operations["interfaces_api_views_sta_method_get_method"];
         put?: never;
         post?: never;
         /**
          * Delete Method
-         * @description Delete a Method.
+         * @description Delete a method.
          */
         delete: operations["interfaces_api_views_sta_method_delete_method"];
         options?: never;
         head?: never;
         /**
          * Update Method
-         * @description Update a Method.
+         * @description Update a method.
          */
         patch: operations["interfaces_api_views_sta_method_update_method"];
         trace?: never;
@@ -963,13 +967,13 @@ export interface paths {
         };
         /**
          * Get Monitoring Site Types
-         * @description Get Monitoring Site Types.
+         * @description Get monitoring site types.
          */
         get: operations["interfaces_api_views_sta_monitoring_site_type_get_monitoring_site_types"];
         put?: never;
         /**
          * Create Monitoring Site Type
-         * @description Create a new Monitoring Site Type.
+         * @description Create a new monitoring site type.
          */
         post: operations["interfaces_api_views_sta_monitoring_site_type_create_monitoring_site_type"];
         delete?: never;
@@ -987,21 +991,21 @@ export interface paths {
         };
         /**
          * Get Monitoring Site Type
-         * @description Get a Monitoring Site Type.
+         * @description Get a monitoring site type.
          */
         get: operations["interfaces_api_views_sta_monitoring_site_type_get_monitoring_site_type"];
         put?: never;
         post?: never;
         /**
          * Delete Monitoring Site Type
-         * @description Delete a Monitoring Site Type.
+         * @description Delete a monitoring site type.
          */
         delete: operations["interfaces_api_views_sta_monitoring_site_type_delete_monitoring_site_type"];
         options?: never;
         head?: never;
         /**
          * Update Monitoring Site Type
-         * @description Update a Monitoring Site Type.
+         * @description Update a monitoring site type.
          */
         patch: operations["interfaces_api_views_sta_monitoring_site_type_update_monitoring_site_type"];
         trace?: never;
@@ -1015,13 +1019,13 @@ export interface paths {
         };
         /**
          * Get Monitoring Sites
-         * @description Get public MonitoringSites and MonitoringSites associated with the authenticated user.
+         * @description Get public monitoring sites and monitoring sites associated with the authenticated user.
          */
         get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_sites"];
         put?: never;
         /**
          * Create Monitoring Site
-         * @description Create a new MonitoringSite.
+         * @description Create a new monitoring site.
          */
         post: operations["interfaces_api_views_sta_monitoring_site_create_monitoring_site"];
         delete?: never;
@@ -1039,21 +1043,21 @@ export interface paths {
         };
         /**
          * Get Monitoring Site
-         * @description Get a MonitoringSite.
+         * @description Get a monitoring site.
          */
         get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site"];
         put?: never;
         post?: never;
         /**
          * Delete Monitoring Site
-         * @description Delete a MonitoringSite.
+         * @description Delete a monitoring site.
          */
         delete: operations["interfaces_api_views_sta_monitoring_site_delete_monitoring_site"];
         options?: never;
         head?: never;
         /**
          * Update Monitoring Site
-         * @description Update a MonitoringSite.
+         * @description Update a monitoring site.
          */
         patch: operations["interfaces_api_views_sta_monitoring_site_update_monitoring_site"];
         trace?: never;
@@ -1067,13 +1071,13 @@ export interface paths {
         };
         /**
          * Get Monitoring Site Linked Resources
-         * @description Get all linked resources associated with a MonitoringSite.
+         * @description Get the files and links attached to a monitoring site.
          */
         get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site_linked_resources"];
         put?: never;
         /**
          * Add Monitoring Site Linked Resource
-         * @description Add a linked resource to a monitoring_site.
+         * @description Add a file or link to a monitoring site as multipart form data.
          */
         post: operations["interfaces_api_views_sta_monitoring_site_add_monitoring_site_linked_resource"];
         delete?: never;
@@ -1091,22 +1095,21 @@ export interface paths {
         };
         /**
          * Get Monitoring Site Linked Resource
-         * @description Get a linked resource associated with a MonitoringSite.
+         * @description Get a file or link attached to a monitoring site.
          */
         get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site_linked_resource"];
         put?: never;
         post?: never;
         /**
          * Remove Monitoring Site Linked Resource
-         * @description Remove a linked resource from a monitoring_site.
+         * @description Remove a file or link from a monitoring site.
          */
         delete: operations["interfaces_api_views_sta_monitoring_site_remove_monitoring_site_linked_resource"];
         options?: never;
         head?: never;
         /**
          * Update Monitoring Site Linked Resource
-         * @description Update a linked resource for a monitoring_site. A linked resource's mode (hosted file vs.
-         *     external URL) cannot be changed in place — delete it and create a new one instead.
+         * @description Update a monitoring site's linked resource as multipart form data.
          */
         patch: operations["interfaces_api_views_sta_monitoring_site_update_monitoring_site_linked_resource"];
         trace?: never;
@@ -1120,7 +1123,7 @@ export interface paths {
         };
         /**
          * Get Monitoring Site Markers
-         * @description Get lean marker data for public MonitoringSites plus private MonitoringSites visible to the authenticated user.
+         * @description Get map marker data for monitoring sites, for HydroServer's web apps.
          */
         get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site_markers"];
         put?: never;
@@ -1140,7 +1143,7 @@ export interface paths {
         };
         /**
          * Get Monitoring Site Summaries
-         * @description Get lean site summary data for public MonitoringSites and MonitoringSites associated with the authenticated user.
+         * @description Get summary data for monitoring sites, for HydroServer's web apps.
          */
         get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site_summaries"];
         put?: never;
@@ -1160,7 +1163,7 @@ export interface paths {
         };
         /**
          * Get Site Type Icons
-         * @description Get the configured site type icon mappings.
+         * @description Get the icon for each monitoring site type, for HydroServer's web apps.
          */
         get: operations["interfaces_api_views_sta_monitoring_site_get_site_type_icons"];
         put?: never;
@@ -1180,7 +1183,7 @@ export interface paths {
         };
         /**
          * Get Monitoring Site Tag Keys
-         * @description Get all existing unique monitoring_site tag keys.
+         * @description Get the tag keys and values used by monitoring sites, for HydroServer's web apps.
          */
         get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site_tag_keys"];
         put?: never;
@@ -1200,7 +1203,7 @@ export interface paths {
         };
         /**
          * Get Monitoring Site Task Summaries
-         * @description Get task count summaries for MonitoringSites associated with the authenticated user.
+         * @description Get task counts for monitoring sites, for HydroServer's web apps.
          */
         get: operations["interfaces_api_views_sta_monitoring_site_get_monitoring_site_task_summaries"];
         put?: never;
@@ -1272,7 +1275,8 @@ export interface paths {
         };
         /**
          * Get Monitoring Task Runs
-         * @description Get runs for a monitoring task.
+         * @description Get the runs of a monitoring task, each with its status, start and finish times, and outcome
+         *     message.
          */
         get: operations["interfaces_api_views_monitoring_task_get_monitoring_task_runs"];
         put?: never;
@@ -1292,7 +1296,8 @@ export interface paths {
         };
         /**
          * Get Monitoring Task Run
-         * @description Get a single run for a monitoring task.
+         * @description Get one run of a monitoring task, with its status, start and finish times, outcome message,
+         *     and `result` details.
          */
         get: operations["interfaces_api_views_monitoring_task_get_monitoring_task_run"];
         put?: never;
@@ -1314,7 +1319,7 @@ export interface paths {
         put?: never;
         /**
          * Trigger Monitoring Task
-         * @description Trigger an immediate run of a monitoring task on a Celery worker.
+         * @description Run a monitoring task now and return the new task run.
          */
         post: operations["interfaces_api_views_monitoring_task_trigger_monitoring_task"];
         delete?: never;
@@ -1334,7 +1339,7 @@ export interface paths {
         put?: never;
         /**
          * Insert Observations
-         * @description Insert Observations.
+         * @description Create many observations in a datastream at once.
          */
         post: operations["interfaces_api_views_sta_observation_insert_observations"];
         delete?: never;
@@ -1354,7 +1359,7 @@ export interface paths {
         put?: never;
         /**
          * Delete Observations
-         * @description Delete Observations between the given phenomenon start and end times.
+         * @description Delete a datastream's observations between the given phenomenon start and end times.
          */
         post: operations["interfaces_api_views_sta_observation_delete_observations"];
         delete?: never;
@@ -1372,13 +1377,13 @@ export interface paths {
         };
         /**
          * Get Observations
-         * @description Get Observations.
+         * @description Get public observations and observations associated with the authenticated user.
          */
         get: operations["interfaces_api_views_sta_observation_get_observations"];
         put?: never;
         /**
          * Create Observation
-         * @description Create a new Observation.
+         * @description Create a new observation.
          */
         post: operations["interfaces_api_views_sta_observation_create_observation"];
         delete?: never;
@@ -1396,14 +1401,14 @@ export interface paths {
         };
         /**
          * Get Observation
-         * @description Get an Observation.
+         * @description Get an observation.
          */
         get: operations["interfaces_api_views_sta_observation_get_observation"];
         put?: never;
         post?: never;
         /**
          * Delete Observation
-         * @description Delete an Observation.
+         * @description Delete an observation.
          */
         delete: operations["interfaces_api_views_sta_observation_delete_observation"];
         options?: never;
@@ -1420,13 +1425,13 @@ export interface paths {
         };
         /**
          * Get Observed Properties
-         * @description Get public Observed Properties and Observed Properties associated with the authenticated user.
+         * @description Get public observed properties and observed properties associated with the authenticated user.
          */
         get: operations["interfaces_api_views_sta_observed_property_get_observed_properties"];
         put?: never;
         /**
          * Create Observed Property
-         * @description Create a new Observed Property.
+         * @description Create a new observed property.
          */
         post: operations["interfaces_api_views_sta_observed_property_create_observed_property"];
         delete?: never;
@@ -1444,21 +1449,21 @@ export interface paths {
         };
         /**
          * Get Observed Property
-         * @description Get an Observed Property.
+         * @description Get an observed property.
          */
         get: operations["interfaces_api_views_sta_observed_property_get_observed_property"];
         put?: never;
         post?: never;
         /**
          * Delete Observed Property
-         * @description Delete an Observed Property.
+         * @description Delete an observed property.
          */
         delete: operations["interfaces_api_views_sta_observed_property_delete_observed_property"];
         options?: never;
         head?: never;
         /**
          * Update Observed Property
-         * @description Update an Observed Property.
+         * @description Update an observed property.
          */
         patch: operations["interfaces_api_views_sta_observed_property_update_observed_property"];
         trace?: never;
@@ -1472,13 +1477,13 @@ export interface paths {
         };
         /**
          * Get Observed Property Types
-         * @description Get Observed Property Types.
+         * @description Get observed property types.
          */
         get: operations["interfaces_api_views_sta_observed_property_type_get_observed_property_types"];
         put?: never;
         /**
          * Create Observed Property Type
-         * @description Create a new Observed Property Type.
+         * @description Create a new observed property type.
          */
         post: operations["interfaces_api_views_sta_observed_property_type_create_observed_property_type"];
         delete?: never;
@@ -1496,21 +1501,21 @@ export interface paths {
         };
         /**
          * Get Observed Property Type
-         * @description Get an Observed Property Type.
+         * @description Get an observed property type.
          */
         get: operations["interfaces_api_views_sta_observed_property_type_get_observed_property_type"];
         put?: never;
         post?: never;
         /**
          * Delete Observed Property Type
-         * @description Delete an Observed Property Type.
+         * @description Delete an observed property type.
          */
         delete: operations["interfaces_api_views_sta_observed_property_type_delete_observed_property_type"];
         options?: never;
         head?: never;
         /**
          * Update Observed Property Type
-         * @description Update an Observed Property Type.
+         * @description Update an observed property type.
          */
         patch: operations["interfaces_api_views_sta_observed_property_type_update_observed_property_type"];
         trace?: never;
@@ -1524,13 +1529,13 @@ export interface paths {
         };
         /**
          * Get Processing Levels
-         * @description Get public Processing Levels and Processing Levels associated with the authenticated user.
+         * @description Get public processing levels and processing levels associated with the authenticated user.
          */
         get: operations["interfaces_api_views_sta_processing_level_get_processing_levels"];
         put?: never;
         /**
          * Create Processing Level
-         * @description Create a new Processing Level.
+         * @description Create a new processing level.
          */
         post: operations["interfaces_api_views_sta_processing_level_create_processing_level"];
         delete?: never;
@@ -1548,21 +1553,21 @@ export interface paths {
         };
         /**
          * Get Processing Level
-         * @description Get a Processing Level.
+         * @description Get a processing level.
          */
         get: operations["interfaces_api_views_sta_processing_level_get_processing_level"];
         put?: never;
         post?: never;
         /**
          * Delete Processing Level
-         * @description Delete a Processing Level.
+         * @description Delete a processing level.
          */
         delete: operations["interfaces_api_views_sta_processing_level_delete_processing_level"];
         options?: never;
         head?: never;
         /**
          * Update Processing Level
-         * @description Update a Processing Level.
+         * @description Update a processing level.
          */
         patch: operations["interfaces_api_views_sta_processing_level_update_processing_level"];
         trace?: never;
@@ -1748,13 +1753,13 @@ export interface paths {
         };
         /**
          * Get Result Qualifiers
-         * @description Get public Result Qualifiers and Result Qualifiers associated with the authenticated user.
+         * @description Get public result qualifiers and result qualifiers associated with the authenticated user.
          */
         get: operations["interfaces_api_views_sta_result_qualifier_get_result_qualifiers"];
         put?: never;
         /**
          * Create Result Qualifier
-         * @description Create a new Result Qualifier.
+         * @description Create a new result qualifier.
          */
         post: operations["interfaces_api_views_sta_result_qualifier_create_result_qualifier"];
         delete?: never;
@@ -1772,21 +1777,21 @@ export interface paths {
         };
         /**
          * Get Result Qualifier
-         * @description Get a Result Qualifier.
+         * @description Get a result qualifier.
          */
         get: operations["interfaces_api_views_sta_result_qualifier_get_result_qualifier"];
         put?: never;
         post?: never;
         /**
          * Delete Result Qualifier
-         * @description Delete a Result Qualifier.
+         * @description Delete a result qualifier.
          */
         delete: operations["interfaces_api_views_sta_result_qualifier_delete_result_qualifier"];
         options?: never;
         head?: never;
         /**
          * Update Result Qualifier
-         * @description Update a Result Qualifier.
+         * @description Update a result qualifier.
          */
         patch: operations["interfaces_api_views_sta_result_qualifier_update_result_qualifier"];
         trace?: never;
@@ -1800,7 +1805,7 @@ export interface paths {
         };
         /**
          * Get Roles
-         * @description Get public Roles and Roles associated with the authenticated user.
+         * @description Get public roles and roles associated with the authenticated user.
          */
         get: operations["interfaces_api_views_iam_role_get_roles"];
         put?: never;
@@ -1820,7 +1825,7 @@ export interface paths {
         };
         /**
          * Get Role
-         * @description Get a Role.
+         * @description Get a role.
          */
         get: operations["interfaces_api_views_iam_role_get_role"];
         put?: never;
@@ -1840,13 +1845,13 @@ export interface paths {
         };
         /**
          * Get Sampled Mediums
-         * @description Get Sampled Mediums.
+         * @description Get sampled mediums.
          */
         get: operations["interfaces_api_views_sta_sampled_medium_get_sampled_mediums"];
         put?: never;
         /**
          * Create Sampled Medium
-         * @description Create a new Sampled Medium.
+         * @description Create a new sampled medium.
          */
         post: operations["interfaces_api_views_sta_sampled_medium_create_sampled_medium"];
         delete?: never;
@@ -1864,21 +1869,21 @@ export interface paths {
         };
         /**
          * Get Sampled Medium
-         * @description Get a Sampled Medium.
+         * @description Get a sampled medium.
          */
         get: operations["interfaces_api_views_sta_sampled_medium_get_sampled_medium"];
         put?: never;
         post?: never;
         /**
          * Delete Sampled Medium
-         * @description Delete a Sampled Medium.
+         * @description Delete a sampled medium.
          */
         delete: operations["interfaces_api_views_sta_sampled_medium_delete_sampled_medium"];
         options?: never;
         head?: never;
         /**
          * Update Sampled Medium
-         * @description Update a Sampled Medium.
+         * @description Update a sampled medium.
          */
         patch: operations["interfaces_api_views_sta_sampled_medium_update_sampled_medium"];
         trace?: never;
@@ -1892,13 +1897,13 @@ export interface paths {
         };
         /**
          * Get Unit Types
-         * @description Get Unit Types.
+         * @description Get unit types.
          */
         get: operations["interfaces_api_views_sta_unit_type_get_unit_types"];
         put?: never;
         /**
          * Create Unit Type
-         * @description Create a new Unit Type.
+         * @description Create a new unit type.
          */
         post: operations["interfaces_api_views_sta_unit_type_create_unit_type"];
         delete?: never;
@@ -1916,21 +1921,21 @@ export interface paths {
         };
         /**
          * Get Unit Type
-         * @description Get a Unit Type.
+         * @description Get a unit type.
          */
         get: operations["interfaces_api_views_sta_unit_type_get_unit_type"];
         put?: never;
         post?: never;
         /**
          * Delete Unit Type
-         * @description Delete a Unit Type.
+         * @description Delete a unit type.
          */
         delete: operations["interfaces_api_views_sta_unit_type_delete_unit_type"];
         options?: never;
         head?: never;
         /**
          * Update Unit Type
-         * @description Update a Unit Type.
+         * @description Update a unit type.
          */
         patch: operations["interfaces_api_views_sta_unit_type_update_unit_type"];
         trace?: never;
@@ -1944,13 +1949,13 @@ export interface paths {
         };
         /**
          * Get Units
-         * @description Get public Units and Units associated with the authenticated user.
+         * @description Get public units and units associated with the authenticated user.
          */
         get: operations["interfaces_api_views_sta_unit_get_units"];
         put?: never;
         /**
          * Create Unit
-         * @description Create a new Unit.
+         * @description Create a new unit.
          */
         post: operations["interfaces_api_views_sta_unit_create_unit"];
         delete?: never;
@@ -1968,21 +1973,21 @@ export interface paths {
         };
         /**
          * Get Unit
-         * @description Get a Unit.
+         * @description Get a unit.
          */
         get: operations["interfaces_api_views_sta_unit_get_unit"];
         put?: never;
         post?: never;
         /**
          * Delete Unit
-         * @description Delete a Unit.
+         * @description Delete a unit.
          */
         delete: operations["interfaces_api_views_sta_unit_delete_unit"];
         options?: never;
         head?: never;
         /**
          * Update Unit
-         * @description Update a Unit.
+         * @description Update a unit.
          */
         patch: operations["interfaces_api_views_sta_unit_update_unit"];
         trace?: never;
@@ -2002,7 +2007,7 @@ export interface paths {
         put?: never;
         /**
          * Create Workspace
-         * @description Create a new workspace owned by the authenticated user.
+         * @description Create a workspace owned by you.
          */
         post: operations["interfaces_api_views_iam_workspace_create_workspace"];
         delete?: never;
@@ -2048,17 +2053,17 @@ export interface paths {
         };
         /**
          * Get Collaborators
-         * @description Get all collaborators associated with a workspace.
+         * @description Get a workspace's collaborators and their roles.
          */
         get: operations["interfaces_api_views_iam_collaborator_get_collaborators"];
         /**
          * Edit Collaborator Role
-         * @description Edit a collaborator's role in a workspace.
+         * @description Change a collaborator's role in a workspace.
          */
         put: operations["interfaces_api_views_iam_collaborator_edit_collaborator_role"];
         /**
          * Add Collaborator
-         * @description Add a collaborator to a workspace.
+         * @description Give a user or service account a role in a workspace.
          */
         post: operations["interfaces_api_views_iam_collaborator_add_collaborator"];
         /**
@@ -2080,13 +2085,13 @@ export interface paths {
         };
         /**
          * Get Service Accounts
-         * @description Get service accounts associated with the authenticated user.
+         * @description Get a workspace's service accounts.
          */
         get: operations["interfaces_api_views_iam_service_account_get_service_accounts"];
         put?: never;
         /**
          * Create Service Account
-         * @description Create a new service account for the workspace.
+         * @description Create a service account and return its API key.
          */
         post: operations["interfaces_api_views_iam_service_account_create_service_account"];
         delete?: never;
@@ -2104,7 +2109,7 @@ export interface paths {
         };
         /**
          * Get Service Account
-         * @description Get service account details.
+         * @description Get a service account.
          */
         get: operations["interfaces_api_views_iam_service_account_get_service_account"];
         put?: never;
@@ -2133,7 +2138,7 @@ export interface paths {
         get?: never;
         /**
          * Regenerate Service Account Key
-         * @description Regenerate a service account's key using existing settings.
+         * @description Replace a service account's API key and return the new key.
          */
         put: operations["interfaces_api_views_iam_service_account_regenerate_service_account_key"];
         post?: never;
@@ -2153,17 +2158,17 @@ export interface paths {
         get?: never;
         /**
          * Accept Workspace Transfer
-         * @description Accept a pending workspace transfer.
+         * @description Accept a pending transfer of a workspace to you.
          */
         put: operations["interfaces_api_views_iam_workspace_accept_workspace_transfer"];
         /**
          * Transfer Workspace
-         * @description Transfer a workspace owned by the authenticated user to another HydroServer user.
+         * @description Start transferring a workspace you own to another HydroServer user.
          */
         post: operations["interfaces_api_views_iam_workspace_transfer_workspace"];
         /**
          * Reject Workspace Transfer
-         * @description Reject a pending workspace transfer.
+         * @description Reject or cancel a pending workspace transfer.
          */
         delete: operations["interfaces_api_views_iam_workspace_reject_workspace_transfer"];
         options?: never;
@@ -2180,7 +2185,7 @@ export interface paths {
         };
         /**
          * Get Collection Metadata
-         * @description Get a collection.
+         * @description Get a collection's description and links.
          */
         get: operations["interfaces_api_views_ogc_get_collection_metadata"];
         put?: never;
@@ -2334,7 +2339,7 @@ export interface components {
             properties?: ("roleId" | "userEmail" | "serviceAccountEmail")[];
             /**
              * Roleid
-             * @description Filter collaborators by role ID.
+             * @description Collaborators with this role. Matches `id` in `roles`.
              * @default []
              */
             roleId: string[];
@@ -2497,7 +2502,7 @@ export interface components {
             offset: number | null;
             /**
              * Payloadtype
-             * @description Filter data connections by payload type.
+             * @description Data connections whose payload is in this format: `CSV` or `JSON`.
              * @default []
              */
             payloadType: string[];
@@ -2519,7 +2524,7 @@ export interface components {
             sortby: ("id" | "name" | "timestampKey" | "timestampFormat" | "timezoneType" | "timezone" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-timestampKey" | "-timestampFormat" | "-timezoneType" | "-timezone" | "-workspaceId" | "-workspaceName" | "+id" | "+name" | "+timestampKey" | "+timestampFormat" | "+timezoneType" | "+timezone" | "+workspaceId" | "+workspaceName")[];
             /**
              * Workspaceid
-             * @description Filter data connections by workspace ID.
+             * @description Data connections in this workspace. Matches `id` in `workspaces`.
              * @default []
              */
             workspaceId: string[];
@@ -2652,13 +2657,13 @@ export interface components {
             include?: "monitoringSite"[];
             /**
              * Inputdatastreamid
-             * @description Filter data product tasks by input datastream ID.
+             * @description Data product tasks with a transformation that uses this datastream as an input. Matches `id` in `datastreams`.
              * @default []
              */
             inputDatastreamId: string[];
             /**
              * Latestrunstatus
-             * @description Filter data product tasks by their most recent run status.
+             * @description Data product tasks whose latest run has this status: `PENDING`, `STARTED`, `SUCCESS`, or `FAILURE`. `null` matches tasks that have never run.
              * @default []
              */
             latestRunStatus: (string | "null")[];
@@ -2670,7 +2675,7 @@ export interface components {
             limit: number;
             /**
              * Monitoringsiteid
-             * @description Filter data product tasks by monitoring_site ID.
+             * @description Data product tasks for this monitoring site. Matches `id` in `monitoring-sites`.
              * @default []
              */
             monitoringSiteId: string[];
@@ -2682,7 +2687,7 @@ export interface components {
             offset: number | null;
             /**
              * Outputdatastreamid
-             * @description Filter data product tasks by output datastream ID.
+             * @description Data product tasks with a transformation that outputs to this datastream. Matches `id` in `datastreams`.
              * @default []
              */
             outputDatastreamId: string[];
@@ -2698,7 +2703,7 @@ export interface components {
             q?: string | null;
             /**
              * Ratingcurveid
-             * @description Filter data product tasks by rating curve ID.
+             * @description Data product tasks with a transformation that uses this rating curve. Matches `id` in `data-product-rating-curves`. `null` matches tasks with a transformation that doesn't use a rating curve, and tasks with no transformations.
              * @default []
              */
             ratingCurveId: (string | "null")[];
@@ -2710,13 +2715,13 @@ export interface components {
             sortby: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "+id" | "+name" | "+monitoringSiteId" | "+monitoringSiteName" | "+workspaceId" | "+workspaceName" | "+latestRunStatus" | "+latestRunStartedAt" | "+latestRunFinishedAt")[];
             /**
              * Transformationtype
-             * @description Filter data product tasks by transformation type.
+             * @description Data product tasks with a transformation of this type: `aggregation`, `derivation`, or `rating_curve`.
              * @default []
              */
             transformationType: string[];
             /**
              * Workspaceid
-             * @description Filter data product tasks by workspace ID.
+             * @description Data product tasks in this workspace. Matches `id` in `workspaces`.
              * @default []
              */
             workspaceId: string[];
@@ -2861,7 +2866,7 @@ export interface components {
             include?: ("outputDatastream" | "ratingCurve")[];
             /**
              * Inputdatastreamid
-             * @description Filter transformations by input datastream ID.
+             * @description Transformations that use this datastream as an input. Matches `id` in `datastreams`.
              * @default []
              */
             inputDatastreamId: string[];
@@ -2879,7 +2884,7 @@ export interface components {
             offset: number | null;
             /**
              * Outputdatastreamid
-             * @description Filter transformations by output datastream ID.
+             * @description The transformation that outputs to this datastream. Matches `id` in `datastreams`.
              * @default []
              */
             outputDatastreamId: string[];
@@ -2896,19 +2901,19 @@ export interface components {
             sortby: ("id" | "outputDatastreamId" | "transformationType" | "-id" | "-outputDatastreamId" | "-transformationType" | "+id" | "+outputDatastreamId" | "+transformationType")[];
             /**
              * Taskid
-             * @description Filter transformations by data product task ID.
+             * @description Transformations of this data product task. Matches `id` in `data-product-tasks`.
              * @default []
              */
             taskId: string[];
             /**
              * Transformationtype
-             * @description Filter transformations by type.
+             * @description Transformations of this type: `aggregation`, `derivation`, or `rating_curve`.
              * @default []
              */
             transformationType: string[];
             /**
              * Workspaceid
-             * @description Filter transformations by workspace ID.
+             * @description Transformations of data product tasks in this workspace. Matches `id` in `workspaces`.
              * @default []
              */
             workspaceId: string[];
@@ -3223,7 +3228,7 @@ export interface components {
             include?: ("workspace" | "monitoringSite" | "method" | "observedProperty" | "processingLevel" | "unit" | "sampledMedium" | "aggregationStatistic" | "status")[];
             /**
              * Isprivate
-             * @description Controls whether the datastreams should be private or public.
+             * @description `false` returns only datastreams that are public at every level: the datastream, its monitoring site, and its workspace. `true` returns only datastreams that are private at every level.
              */
             isPrivate?: boolean | null;
             /**
@@ -3234,25 +3239,25 @@ export interface components {
             limit: number;
             /**
              * Methodid
-             * @description Filter datastreams by method ID.
+             * @description Datastreams produced by this method. Matches `id` in `methods`.
              * @default []
              */
             methodId: string[];
             /**
              * Monitoringsiteid
-             * @description Filter datastreams by monitoring_site ID.
+             * @description Datastreams at this monitoring site. Matches `id` in `monitoring-sites`.
              * @default []
              */
             monitoringSiteId: string[];
             /**
              * Observationtype
-             * @description Filter monitoring_sites by observation type.
+             * @description Datastreams with this observation type. Matches exactly, including case.
              * @default []
              */
             observationType: string[];
             /**
              * Observedpropertyid
-             * @description Filter datastreams by observed property ID.
+             * @description Datastreams that observe this observed property. Matches `id` in `observed-properties`.
              * @default []
              */
             observedPropertyId: string[];
@@ -3264,7 +3269,7 @@ export interface components {
             offset: number | null;
             /**
              * Processinglevelid
-             * @description Filter datastreams by processing level ID.
+             * @description Datastreams at this processing level. Matches `id` in `processing-levels`.
              * @default []
              */
             processingLevelId: string[];
@@ -3280,19 +3285,19 @@ export interface components {
             q?: string | null;
             /**
              * Resultqualifier
-             * @description Filter datastreams by observation result qualifier ID.
+             * @description Not supported yet. Any value returns no datastreams.
              * @default []
              */
             resultQualifier: string[];
             /**
              * Resulttype
-             * @description Filter monitoring_sites by result type.
+             * @description Datastreams with this result type. Matches exactly, including case.
              * @default []
              */
             resultType: string[];
             /**
              * Sampledmedium
-             * @description Filter monitoring_sites by sampled medium.
+             * @description Datastreams with this sampled medium. Matches `name` in `sampled-mediums`.
              * @default []
              */
             sampledMedium: string[];
@@ -3304,35 +3309,35 @@ export interface components {
             sortby: ("name" | "observationType" | "sampledMedium" | "status" | "resultType" | "isPrivate" | "isVisible" | "aggregationStatistic" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "-name" | "-observationType" | "-sampledMedium" | "-status" | "-resultType" | "-isPrivate" | "-isVisible" | "-aggregationStatistic" | "-valueCount" | "-phenomenonBeginTime" | "-phenomenonEndTime" | "-resultBeginTime" | "-resultEndTime" | "+name" | "+observationType" | "+sampledMedium" | "+status" | "+resultType" | "+isPrivate" | "+isVisible" | "+aggregationStatistic" | "+valueCount" | "+phenomenonBeginTime" | "+phenomenonEndTime" | "+resultBeginTime" | "+resultEndTime")[];
             /**
              * Status
-             * @description Filter datastreams by status.
+             * @description Datastreams with this status. Matches `name` in `datastream-statuses`. `null` matches datastreams without a status.
              * @default []
              */
             status: (string | "null")[];
             /**
              * Tag
-             * @description Filter datastreams by tag. Format tag filters as {key}:{value}. Repeat the parameter to require several tags.
+             * @description Datastreams with this tag, as `{key}:{value}`. Repeat the parameter to require several tags.
              * @default []
              */
             tag: string[];
             /**
              * Unitid
-             * @description Filter datastreams by unit ID.
+             * @description Datastreams in this unit. Matches `id` in `units`.
              * @default []
              */
             unitId: string[];
             /**
              * Valuecountmax
-             * @description Sets the maximum value count of filtered datastreams.
+             * @description Datastreams with at most this many observations.
              */
             valueCountMax?: number | null;
             /**
              * Valuecountmin
-             * @description Sets the minimum value count of filtered datastreams.
+             * @description Datastreams with at least this many observations.
              */
             valueCountMin?: number | null;
             /**
              * Workspaceid
-             * @description Filter datastreams by workspace ID.
+             * @description Datastreams in this workspace. Matches `id` in `workspaces`.
              * @default []
              */
             workspaceId: string[];
@@ -3468,7 +3473,7 @@ export interface components {
         DatastreamVisualizationBootstrapQueryParameters: {
             /**
              * Workspaceid
-             * @description Filter visualization bootstrap datastreams by workspace ID.
+             * @description Datastreams in this workspace. Matches `id` in `workspaces`.
              * @default []
              */
             workspaceId: string[];
@@ -3535,7 +3540,7 @@ export interface components {
             datetime?: string;
             /**
              * Etltaskid
-             * @description Filter mappings by ETL task ID.
+             * @description Mappings of this ETL task. Matches `id` in `etl-tasks`.
              * @default []
              */
             etlTaskId: string[];
@@ -3569,19 +3574,19 @@ export interface components {
             sortby: ("id" | "sourceIdentifier" | "targetDatastreamId" | "-id" | "-sourceIdentifier" | "-targetDatastreamId" | "+id" | "+sourceIdentifier" | "+targetDatastreamId")[];
             /**
              * Sourceidentifier
-             * @description Filter mappings by source identifier.
+             * @description Mappings for this source identifier, such as a CSV column name. Matches exactly, including case.
              * @default []
              */
             sourceIdentifier: string[];
             /**
              * Targetdatastreamid
-             * @description Filter mappings by target datastream ID.
+             * @description Mappings that load data into this datastream. Matches `id` in `datastreams`.
              * @default []
              */
             targetDatastreamId: string[];
             /**
              * Workspaceid
-             * @description Filter mappings by workspace ID.
+             * @description Mappings of ETL tasks in this workspace. Matches `id` in `workspaces`.
              * @default []
              */
             workspaceId: string[];
@@ -3664,7 +3669,7 @@ export interface components {
             bbox?: number[] & (unknown | unknown);
             /**
              * Dataconnectionid
-             * @description Filter ETL tasks by data connection ID.
+             * @description ETL tasks that use this data connection. Matches `id` in `etl-data-connections`.
              * @default []
              */
             dataConnectionId: string[];
@@ -3677,27 +3682,27 @@ export interface components {
             include?: "dataConnection"[];
             /**
              * Latestrunfinishedatmax
-             * @description Filter tasks whose latest run finished on or before this datetime.
+             * @description ETL tasks whose latest run finished at or before this RFC 3339 date-time.
              */
             latestRunFinishedAtMax?: string | null;
             /**
              * Latestrunfinishedatmin
-             * @description Filter tasks whose latest run finished on or after this datetime.
+             * @description ETL tasks whose latest run finished at or after this RFC 3339 date-time.
              */
             latestRunFinishedAtMin?: string | null;
             /**
              * Latestrunstartedatmax
-             * @description Filter tasks whose latest run started on or before this datetime.
+             * @description ETL tasks whose latest run started at or before this RFC 3339 date-time.
              */
             latestRunStartedAtMax?: string | null;
             /**
              * Latestrunstartedatmin
-             * @description Filter tasks whose latest run started on or after this datetime.
+             * @description ETL tasks whose latest run started at or after this RFC 3339 date-time.
              */
             latestRunStartedAtMin?: string | null;
             /**
              * Latestrunstatus
-             * @description Filter ETL tasks by their most recent run status.
+             * @description ETL tasks whose latest run has this status: `PENDING`, `STARTED`, `SUCCESS`, or `FAILURE`. `null` matches tasks that have never run.
              * @default []
              */
             latestRunStatus: (string | "null")[];
@@ -3709,7 +3714,7 @@ export interface components {
             limit: number;
             /**
              * Monitoringsiteid
-             * @description Filter ETL tasks by monitoring_site ID.
+             * @description ETL tasks with a mapping that loads data into a datastream at this monitoring site. Matches `id` in `monitoring-sites`.
              * @default []
              */
             monitoringSiteId: string[];
@@ -3737,7 +3742,7 @@ export interface components {
             sortby: ("id" | "name" | "dataConnectionId" | "dataConnectionName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-dataConnectionId" | "-dataConnectionName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "+id" | "+name" | "+dataConnectionId" | "+dataConnectionName" | "+workspaceId" | "+workspaceName" | "+latestRunStatus" | "+latestRunStartedAt" | "+latestRunFinishedAt")[];
             /**
              * Workspaceid
-             * @description Filter ETL tasks by workspace ID.
+             * @description ETL tasks in this workspace. Matches `id` in `workspaces`.
              * @default []
              */
             workspaceId: string[];
@@ -4536,7 +4541,7 @@ export interface components {
             properties?: string | null;
             /**
              * Type
-             * @description Filter by linked resource type.
+             * @description Linked resources of this type. Matches `name` in `linked-resource-types`.
              * @default []
              */
             type: string[];
@@ -4637,7 +4642,7 @@ export interface components {
             bbox?: number[] & (unknown | unknown);
             /**
              * Datastreamid
-             * @description Filter methods by datastream ID.
+             * @description Methods used by this datastream. Matches `id` in `datastreams`. `null` matches methods that no datastream uses.
              * @default []
              */
             datastreamId: (string | "null")[];
@@ -4656,7 +4661,7 @@ export interface components {
             limit: number;
             /**
              * Monitoringsiteid
-             * @description Filter methods by monitoring_site ID.
+             * @description Methods used by datastreams at this monitoring site. Matches `id` in `monitoring-sites`. `null` matches methods that no datastream uses.
              * @default []
              */
             monitoringSiteId: (string | "null")[];
@@ -4678,13 +4683,13 @@ export interface components {
             q?: string | null;
             /**
              * Sensormodel
-             * @description Filter methods by sensor model
+             * @description Methods with this sensor model. `null` matches methods without one.
              * @default []
              */
             sensorModel: (string | "null")[];
             /**
              * Sensormodelmanufacturer
-             * @description Filter methods by sensor model manufacturer
+             * @description Methods with this sensor manufacturer. `null` matches methods without one.
              * @default []
              */
             sensorModelManufacturer: (string | "null")[];
@@ -4696,13 +4701,13 @@ export interface components {
             sortby: ("name" | "code" | "type" | "sensorModel" | "sensorModelManufacturer" | "definition" | "sensorModelDefinition" | "-name" | "-code" | "-type" | "-sensorModel" | "-sensorModelManufacturer" | "-definition" | "-sensorModelDefinition" | "+name" | "+code" | "+type" | "+sensorModel" | "+sensorModelManufacturer" | "+definition" | "+sensorModelDefinition")[];
             /**
              * Type
-             * @description Filter methods by type
+             * @description Methods of this type. Matches `name` in `method-types`.
              * @default []
              */
             type: string[];
             /**
              * Workspaceid
-             * @description Filter methods by workspace ID.
+             * @description Methods that belong to this workspace. Matches `id` in `workspaces`. `null` matches methods shared by every workspace.
              * @default []
              */
             workspaceId: (string | "null")[];
@@ -4827,7 +4832,7 @@ export interface components {
             bbox?: number[] & (unknown | unknown);
             /**
              * Datastreamid
-             * @description Filter rules by datastream ID.
+             * @description Rules that check this datastream. Matches `id` in `datastreams`.
              * @default []
              */
             datastreamId: string[];
@@ -4857,7 +4862,7 @@ export interface components {
             properties?: ("id" | "taskId" | "datastreamId" | "ruleType" | "lastCheckedAt" | "minValue" | "maxValue" | "windowInterval" | "windowIntervalUnits")[];
             /**
              * Ruletype
-             * @description Filter rules by rule type.
+             * @description Rules of this type: `range`, `rate_of_change`, `persistence`, or `missing_data`.
              * @default []
              */
             ruleType: string[];
@@ -4869,13 +4874,13 @@ export interface components {
             sortby: ("id" | "ruleType" | "datastreamId" | "lastCheckedAt" | "-id" | "-ruleType" | "-datastreamId" | "-lastCheckedAt" | "+id" | "+ruleType" | "+datastreamId" | "+lastCheckedAt")[];
             /**
              * Taskid
-             * @description Filter rules by monitoring task ID.
+             * @description Rules of this monitoring task. Matches `id` in `monitoring-tasks`.
              * @default []
              */
             taskId: string[];
             /**
              * Workspaceid
-             * @description Filter rules by workspace ID.
+             * @description Rules of monitoring tasks in this workspace. Matches `id` in `workspaces`.
              * @default []
              */
             workspaceId: string[];
@@ -4931,13 +4936,13 @@ export interface components {
         MonitoringSiteMapSummaryQueryParameters: {
             /**
              * Type
-             * @description Filter summaries by monitoring site type.
+             * @description Summaries of monitoring sites of this type. Matches `name` in `monitoring-site-types`.
              * @default []
              */
             type: string[];
             /**
              * Workspaceid
-             * @description Filter site summaries by workspace ID.
+             * @description Summaries of monitoring sites in this workspace. Matches `id` in `workspaces`.
              * @default []
              */
             workspaceId: string[];
@@ -4978,13 +4983,13 @@ export interface components {
             bbox?: number[] & (unknown | unknown);
             /**
              * Type
-             * @description Filter markers by monitoring site type.
+             * @description Markers for monitoring sites of this type. Matches `name` in `monitoring-site-types`.
              * @default []
              */
             type: string[];
             /**
              * Workspaceid
-             * @description Filter markers by workspace ID.
+             * @description Markers for monitoring sites in this workspace. Matches `id` in `workspaces`.
              * @default []
              */
             workspaceId: string[];
@@ -5135,13 +5140,13 @@ export interface components {
         MonitoringSiteQueryParameters: {
             /**
              * Adminarea1
-             * @description Filter monitoring sites by admin area 1.
+             * @description Monitoring sites in this first-level administrative area, such as a state or province. `null` matches sites without one.
              * @default []
              */
             adminArea1: (string | "null")[];
             /**
              * Adminarea2
-             * @description Filter monitoring sites by admin area 2.
+             * @description Monitoring sites in this second-level administrative area, such as a county. `null` matches sites without one.
              * @default []
              */
             adminArea2: (string | "null")[];
@@ -5149,7 +5154,7 @@ export interface components {
             bbox?: number[] & (unknown | unknown);
             /**
              * Country
-             * @description Filter monitoring sites by country.
+             * @description Monitoring sites in this country, as an ISO 3166-1 alpha-2 code such as `US`. `null` matches sites without one.
              * @default []
              */
             country: (string | "null")[];
@@ -5162,7 +5167,7 @@ export interface components {
             include?: ("workspace" | "type")[];
             /**
              * Isprivate
-             * @description Controls whether the returned monitoring sites should be private or public.
+             * @description `false` returns only monitoring sites that are public, in public workspaces. `true` returns only private monitoring sites in private workspaces.
              */
             isPrivate?: boolean | null;
             /**
@@ -5195,19 +5200,19 @@ export interface components {
             sortby: ("name" | "code" | "type" | "isPrivate" | "latitude" | "longitude" | "elevationM" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "-name" | "-code" | "-type" | "-isPrivate" | "-latitude" | "-longitude" | "-elevationM" | "-elevationDatum" | "-adminArea1" | "-adminArea2" | "-country" | "+name" | "+code" | "+type" | "+isPrivate" | "+latitude" | "+longitude" | "+elevationM" | "+elevationDatum" | "+adminArea1" | "+adminArea2" | "+country")[];
             /**
              * Tag
-             * @description Filter monitoring sites by tag. Format tag filters as {key}:{value}. Repeat the parameter to require several tags.
+             * @description Monitoring sites with this tag, as `{key}:{value}`. Repeat the parameter to require several tags.
              * @default []
              */
             tag: string[];
             /**
              * Type
-             * @description Filter monitoring sites by type.
+             * @description Monitoring sites of this type. Matches `name` in `monitoring-site-types`.
              * @default []
              */
             type: string[];
             /**
              * Workspaceid
-             * @description Filter monitoring sites by workspace ID.
+             * @description Monitoring sites in this workspace. Matches `id` in `workspaces`.
              * @default []
              */
             workspaceId: string[];
@@ -5265,13 +5270,13 @@ export interface components {
         MonitoringSiteTaskSummaryQueryParameters: {
             /**
              * Type
-             * @description Filter summaries by monitoring site type.
+             * @description Task summaries for monitoring sites of this type. Matches `name` in `monitoring-site-types`.
              * @default []
              */
             type: string[];
             /**
              * Workspaceid
-             * @description Filter task summaries by workspace ID.
+             * @description Task summaries for monitoring sites in this workspace. Matches `id` in `workspaces`.
              * @default []
              */
             workspaceId: string[];
@@ -5394,7 +5399,7 @@ export interface components {
             bbox?: number[] & (unknown | unknown);
             /**
              * Datastreamid
-             * @description Filter monitoring tasks by datastream ID.
+             * @description Monitoring tasks with a rule that checks this datastream. Matches `id` in `datastreams`.
              * @default []
              */
             datastreamId: string[];
@@ -5407,7 +5412,7 @@ export interface components {
             include?: "monitoringSite"[];
             /**
              * Latestrunstatus
-             * @description Filter monitoring tasks by their most recent run status.
+             * @description Monitoring tasks whose latest run has this status: `PENDING`, `STARTED`, `SUCCESS`, or `FAILURE`. `null` matches tasks that have never run.
              * @default []
              */
             latestRunStatus: (string | "null")[];
@@ -5419,7 +5424,7 @@ export interface components {
             limit: number;
             /**
              * Monitoringsiteid
-             * @description Filter monitoring tasks by monitoring_site ID.
+             * @description Monitoring tasks for this monitoring site. Matches `id` in `monitoring-sites`.
              * @default []
              */
             monitoringSiteId: string[];
@@ -5441,7 +5446,7 @@ export interface components {
             q?: string | null;
             /**
              * Ruletype
-             * @description Filter monitoring tasks by rule type.
+             * @description Monitoring tasks with a rule of this type: `range`, `rate_of_change`, `persistence`, or `missing_data`.
              * @default []
              */
             ruleType: string[];
@@ -5453,7 +5458,7 @@ export interface components {
             sortby: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "+id" | "+name" | "+monitoringSiteId" | "+monitoringSiteName" | "+workspaceId" | "+workspaceName" | "+latestRunStatus" | "+latestRunStartedAt" | "+latestRunFinishedAt")[];
             /**
              * Workspaceid
-             * @description Filter monitoring tasks by workspace ID.
+             * @description Monitoring tasks in this workspace. Matches `id` in `workspaces`.
              * @default []
              */
             workspaceId: string[];
@@ -5661,7 +5666,7 @@ export interface components {
             bbox?: number[] & (unknown | unknown);
             /**
              * Datastreamid
-             * @description Filter observations by datastream ID.
+             * @description Observations in this datastream. Matches `id` in `datastreams`.
              * @default []
              */
             datastreamId: string[];
@@ -5691,7 +5696,7 @@ export interface components {
             properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "result" | "resultQualifiers")[];
             /**
              * Resultqualifiers
-             * @description Filter observations by result qualifier.
+             * @description Observations with this result qualifier. Matches `name` in `result-qualifiers`.
              * @default []
              */
             resultQualifiers: string[];
@@ -5799,7 +5804,7 @@ export interface components {
             bbox?: number[] & (unknown | unknown);
             /**
              * Datastreamid
-             * @description Filter observed properties by datastream ID.
+             * @description Observed properties used by this datastream. Matches `id` in `datastreams`. `null` matches observed properties that no datastream uses.
              * @default []
              */
             datastreamId: (string | "null")[];
@@ -5818,7 +5823,7 @@ export interface components {
             limit: number;
             /**
              * Monitoringsiteid
-             * @description Filter observed properties by monitoring_site ID.
+             * @description Observed properties used by datastreams at this monitoring site. Matches `id` in `monitoring-sites`. `null` matches observed properties that no datastream uses.
              * @default []
              */
             monitoringSiteId: (string | "null")[];
@@ -5846,13 +5851,13 @@ export interface components {
             sortby: ("name" | "type" | "code" | "-name" | "-type" | "-code" | "+name" | "+type" | "+code")[];
             /**
              * Type
-             * @description Filter observed properties by type
+             * @description Observed properties of this type. Matches `name` in `observed-property-types`.
              * @default []
              */
             type: string[];
             /**
              * Workspaceid
-             * @description Filter observed properties by workspace ID.
+             * @description Observed properties that belong to this workspace. Matches `id` in `workspaces`. `null` matches observed properties shared by every workspace.
              * @default []
              */
             workspaceId: (string | "null")[];
@@ -6556,7 +6561,7 @@ export interface components {
             bbox?: number[] & (unknown | unknown);
             /**
              * Datastreamid
-             * @description Filter processing levels by datastream ID.
+             * @description Processing levels used by this datastream. Matches `id` in `datastreams`. `null` matches processing levels that no datastream uses.
              * @default []
              */
             datastreamId: (string | "null")[];
@@ -6575,7 +6580,7 @@ export interface components {
             limit: number;
             /**
              * Monitoringsiteid
-             * @description Filter processing levels by monitoring_site ID.
+             * @description Processing levels used by datastreams at this monitoring site. Matches `id` in `monitoring-sites`. `null` matches processing levels that no datastream uses.
              * @default []
              */
             monitoringSiteId: (string | "null")[];
@@ -6603,7 +6608,7 @@ export interface components {
             sortby: ("code" | "name" | "-code" | "-name" | "+code" | "+name")[];
             /**
              * Workspaceid
-             * @description Filter processing levels by workspace ID.
+             * @description Processing levels that belong to this workspace. Matches `id` in `workspaces`. `null` matches processing levels shared by every workspace.
              * @default []
              */
             workspaceId: (string | "null")[];
@@ -6672,7 +6677,7 @@ export interface components {
             limit: number;
             /**
              * Manageddatastreamid
-             * @description Filter histories by managed datastream ID.
+             * @description The history whose managed datastream is this datastream. Matches `id` in `datastreams`.
              * @default []
              */
             managedDatastreamId: string[];
@@ -6695,7 +6700,7 @@ export interface components {
             sortby: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd" | "+id" | "+createdAt" | "+phenomenonTimeStart" | "+phenomenonTimeEnd")[];
             /**
              * Sourcedatastreamid
-             * @description Filter histories by source datastream ID.
+             * @description Histories whose source datastream is this datastream. Matches `id` in `datastreams`. `null` matches histories without a source datastream.
              * @default []
              */
             sourceDatastreamId: (string | "null")[];
@@ -6852,7 +6857,7 @@ export interface components {
         QualityControlSessionQueryParameters: {
             /**
              * Ancestorof
-             * @description Return all transitive ancestors of the given session ID.
+             * @description Returns the sessions that this session depends on, directly or through other sessions. Matches `id` of a session in this history.
              */
             ancestorOf?: string | null;
             /**
@@ -6862,7 +6867,7 @@ export interface components {
             include?: string | null;
             /**
              * Includeancestors
-             * @description Also return transitive ancestors of all sessions matched by other filters.
+             * @description `true` also returns the sessions that the matched sessions depend on, directly or through other sessions.
              * @default false
              */
             includeAncestors: boolean;
@@ -6885,12 +6890,12 @@ export interface components {
             properties?: ("id" | "historyId" | "createdBy" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "status" | "committedAt" | "description" | "sourceChecksum" | "managedChecksum" | "dependencyIds")[];
             /**
              * Rangeend
-             * @description Return sessions overlapping with this range end.
+             * @description Sessions whose time range starts before this RFC 3339 date-time. Use with `rangeStart` to find the sessions that overlap a time range.
              */
             rangeEnd?: string | null;
             /**
              * Rangestart
-             * @description Return sessions overlapping with this range start.
+             * @description Sessions whose time range ends after this RFC 3339 date-time. Use with `rangeEnd` to find the sessions that overlap a time range.
              */
             rangeStart?: string | null;
             /**
@@ -6899,7 +6904,10 @@ export interface components {
              * @default []
              */
             sortby: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "status" | "committedAt" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd" | "-status" | "-committedAt" | "+id" | "+createdAt" | "+phenomenonTimeStart" | "+phenomenonTimeEnd" | "+status" | "+committedAt")[];
-            /** Status */
+            /**
+             * Status
+             * @description Sessions with this status: `in_progress` or `committed`.
+             */
             status?: ("in_progress" | "committed") | null;
         };
         /** QualityControlSessionResponse */
@@ -7026,7 +7034,7 @@ export interface components {
             limit: number;
             /**
              * Monitoringsiteid
-             * @description Filter rating curves by monitoring site ID.
+             * @description Rating curves that belong to this monitoring site. Matches `id` in `monitoring-sites`.
              * @default []
              */
             monitoringSiteId: string[];
@@ -7054,7 +7062,7 @@ export interface components {
             sortby: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "fittingMethod" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-fittingMethod" | "+id" | "+name" | "+monitoringSiteId" | "+monitoringSiteName" | "+workspaceId" | "+workspaceName" | "+fittingMethod")[];
             /**
              * Workspaceid
-             * @description Filter rating curves by workspace ID.
+             * @description Rating curves at monitoring sites in this workspace. Matches `id` in `workspaces`.
              * @default []
              */
             workspaceId: string[];
@@ -7165,7 +7173,7 @@ export interface components {
             sortby: ("name" | "-name" | "+name")[];
             /**
              * Workspaceid
-             * @description Filter terms by workspace ID.
+             * @description Result qualifiers that belong to this workspace. Matches `id` in `workspaces`. `null` matches result qualifiers shared by every workspace.
              * @default []
              */
             workspaceId: (string | "null")[];
@@ -7229,7 +7237,7 @@ export interface components {
             sortby: ("name" | "-name" | "+name")[];
             /**
              * Workspaceid
-             * @description Filter roles by workspace ID.
+             * @description Roles that belong to this workspace. Matches `id` in `workspaces`. `null` matches HydroServer's built-in roles, which are available in every workspace.
              * @default []
              */
             workspaceId: (string | "null")[];
@@ -7458,12 +7466,12 @@ export interface components {
         TaskRunQueryParameters: {
             /**
              * Finishedatmax
-             * @description Filters for task runs finished on or before this date and time.
+             * @description Task runs that finished at or before this RFC 3339 date-time.
              */
             finishedAtMax?: string | null;
             /**
              * Finishedatmin
-             * @description Filters for task runs finished on or after this date and time.
+             * @description Task runs that finished at or after this RFC 3339 date-time.
              */
             finishedAtMin?: string | null;
             /**
@@ -7496,17 +7504,17 @@ export interface components {
             sortby: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt" | "+id" | "+status" | "+startedAt" | "+finishedAt")[];
             /**
              * Startedatmax
-             * @description Filters for task runs started on or before this date and time.
+             * @description Task runs that started at or before this RFC 3339 date-time.
              */
             startedAtMax?: string | null;
             /**
              * Startedatmin
-             * @description Filters for task runs started on or after this date and time.
+             * @description Task runs that started at or after this RFC 3339 date-time.
              */
             startedAtMin?: string | null;
             /**
              * Status
-             * @description Filters task runs by their status.
+             * @description Task runs with this status. `PENDING` and `STARTED` runs haven't finished yet.
              * @default []
              */
             status: ("PENDING" | "STARTED" | "SUCCESS" | "FAILURE")[];
@@ -7606,7 +7614,7 @@ export interface components {
             bbox?: number[] & (unknown | unknown);
             /**
              * Datastreamid
-             * @description Filter units by datastream ID.
+             * @description Units used by this datastream. Matches `id` in `datastreams`. `null` matches units that no datastream uses.
              * @default []
              */
             datastreamId: (string | "null")[];
@@ -7625,7 +7633,7 @@ export interface components {
             limit: number;
             /**
              * Monitoringsiteid
-             * @description Filter units by monitoring_site ID.
+             * @description Units used by datastreams at this monitoring site. Matches `id` in `monitoring-sites`. `null` matches units that no datastream uses.
              * @default []
              */
             monitoringSiteId: (string | "null")[];
@@ -7653,13 +7661,13 @@ export interface components {
             sortby: ("name" | "symbol" | "type" | "-name" | "-symbol" | "-type" | "+name" | "+symbol" | "+type")[];
             /**
              * Type
-             * @description Filter units by type
+             * @description Units of this type. Matches `name` in `unit-types`.
              * @default []
              */
             type: string[];
             /**
              * Workspaceid
-             * @description Filter units by workspace ID.
+             * @description Units that belong to this workspace. Matches `id` in `workspaces`. `null` matches units shared by every workspace.
              * @default []
              */
             workspaceId: (string | "null")[];
@@ -7946,12 +7954,12 @@ export interface components {
             include?: ("owner" | "pendingTransferTo" | "collaboratorRole")[];
             /**
              * Isassociated
-             * @description Whether the workspace is associated with the authenticated user
+             * @description `true` returns only the workspaces you own, collaborate on, or have a pending transfer to. For a service account, that's its own workspace. `false` doesn't filter.
              */
             isAssociated?: boolean | null;
             /**
              * Isprivate
-             * @description Whether the returned workspaces should be private or public.
+             * @description `true` returns only private workspaces, and `false` only public ones.
              */
             isPrivate?: boolean | null;
             /**
@@ -8330,9 +8338,9 @@ export interface operations {
                 sortby?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "fittingMethod" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-fittingMethod" | "+id" | "+name" | "+monitoringSiteId" | "+monitoringSiteName" | "+workspaceId" | "+workspaceName" | "+fittingMethod")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
-                /** @description Filter rating curves by monitoring site ID. */
+                /** @description Rating curves that belong to this monitoring site. Matches `id` in `monitoring-sites`. */
                 monitoringSiteId?: string[];
-                /** @description Filter rating curves by workspace ID. */
+                /** @description Rating curves at monitoring sites in this workspace. Matches `id` in `workspaces`. */
                 workspaceId?: string[];
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json";
@@ -8624,19 +8632,19 @@ export interface operations {
                 sortby?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "+id" | "+name" | "+monitoringSiteId" | "+monitoringSiteName" | "+workspaceId" | "+workspaceName" | "+latestRunStatus" | "+latestRunStartedAt" | "+latestRunFinishedAt")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
-                /** @description Filter data product tasks by monitoring_site ID. */
+                /** @description Data product tasks for this monitoring site. Matches `id` in `monitoring-sites`. */
                 monitoringSiteId?: string[];
-                /** @description Filter data product tasks by workspace ID. */
+                /** @description Data product tasks in this workspace. Matches `id` in `workspaces`. */
                 workspaceId?: string[];
-                /** @description Filter data product tasks by their most recent run status. */
+                /** @description Data product tasks whose latest run has this status: `PENDING`, `STARTED`, `SUCCESS`, or `FAILURE`. `null` matches tasks that have never run. */
                 latestRunStatus?: (string | "null")[];
-                /** @description Filter data product tasks by transformation type. */
+                /** @description Data product tasks with a transformation of this type: `aggregation`, `derivation`, or `rating_curve`. */
                 transformationType?: string[];
-                /** @description Filter data product tasks by output datastream ID. */
+                /** @description Data product tasks with a transformation that outputs to this datastream. Matches `id` in `datastreams`. */
                 outputDatastreamId?: string[];
-                /** @description Filter data product tasks by input datastream ID. */
+                /** @description Data product tasks with a transformation that uses this datastream as an input. Matches `id` in `datastreams`. */
                 inputDatastreamId?: string[];
-                /** @description Filter data product tasks by rating curve ID. */
+                /** @description Data product tasks with a transformation that uses this rating curve. Matches `id` in `data-product-rating-curves`. `null` matches tasks with a transformation that doesn't use a rating curve, and tasks with no transformations. */
                 ratingCurveId?: (string | "null")[];
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json";
@@ -8904,15 +8912,15 @@ export interface operations {
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt" | "+id" | "+status" | "+startedAt" | "+finishedAt")[];
-                /** @description Filters task runs by their status. */
+                /** @description Task runs with this status. `PENDING` and `STARTED` runs haven't finished yet. */
                 status?: ("PENDING" | "STARTED" | "SUCCESS" | "FAILURE")[];
-                /** @description Filters for task runs started on or before this date and time. */
+                /** @description Task runs that started at or before this RFC 3339 date-time. */
                 startedAtMax?: string | null;
-                /** @description Filters for task runs started on or after this date and time. */
+                /** @description Task runs that started at or after this RFC 3339 date-time. */
                 startedAtMin?: string | null;
-                /** @description Filters for task runs finished on or before this date and time. */
+                /** @description Task runs that finished at or before this RFC 3339 date-time. */
                 finishedAtMax?: string | null;
-                /** @description Filters for task runs finished on or after this date and time. */
+                /** @description Task runs that finished at or after this RFC 3339 date-time. */
                 finishedAtMin?: string | null;
             };
             header?: never;
@@ -9077,15 +9085,15 @@ export interface operations {
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("id" | "outputDatastreamId" | "transformationType" | "-id" | "-outputDatastreamId" | "-transformationType" | "+id" | "+outputDatastreamId" | "+transformationType")[];
-                /** @description Filter transformations by type. */
+                /** @description Transformations of this type: `aggregation`, `derivation`, or `rating_curve`. */
                 transformationType?: string[];
-                /** @description Filter transformations by output datastream ID. */
+                /** @description The transformation that outputs to this datastream. Matches `id` in `datastreams`. */
                 outputDatastreamId?: string[];
-                /** @description Filter transformations by input datastream ID. */
+                /** @description Transformations that use this datastream as an input. Matches `id` in `datastreams`. */
                 inputDatastreamId?: string[];
-                /** @description Filter transformations by data product task ID. */
+                /** @description Transformations of this data product task. Matches `id` in `data-product-tasks`. */
                 taskId?: string[];
-                /** @description Filter transformations by workspace ID. */
+                /** @description Transformations of data product tasks in this workspace. Matches `id` in `workspaces`. */
                 workspaceId?: string[];
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json";
@@ -9647,35 +9655,35 @@ export interface operations {
                 sortby?: ("name" | "observationType" | "sampledMedium" | "status" | "resultType" | "isPrivate" | "isVisible" | "aggregationStatistic" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "-name" | "-observationType" | "-sampledMedium" | "-status" | "-resultType" | "-isPrivate" | "-isVisible" | "-aggregationStatistic" | "-valueCount" | "-phenomenonBeginTime" | "-phenomenonEndTime" | "-resultBeginTime" | "-resultEndTime" | "+name" | "+observationType" | "+sampledMedium" | "+status" | "+resultType" | "+isPrivate" | "+isVisible" | "+aggregationStatistic" | "+valueCount" | "+phenomenonBeginTime" | "+phenomenonEndTime" | "+resultBeginTime" | "+resultEndTime")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
-                /** @description Filter datastreams by workspace ID. */
+                /** @description Datastreams in this workspace. Matches `id` in `workspaces`. */
                 workspaceId?: string[];
-                /** @description Filter datastreams by monitoring_site ID. */
+                /** @description Datastreams at this monitoring site. Matches `id` in `monitoring-sites`. */
                 monitoringSiteId?: string[];
-                /** @description Filter datastreams by method ID. */
+                /** @description Datastreams produced by this method. Matches `id` in `methods`. */
                 methodId?: string[];
-                /** @description Filter datastreams by observed property ID. */
+                /** @description Datastreams that observe this observed property. Matches `id` in `observed-properties`. */
                 observedPropertyId?: string[];
-                /** @description Filter datastreams by processing level ID. */
+                /** @description Datastreams at this processing level. Matches `id` in `processing-levels`. */
                 processingLevelId?: string[];
-                /** @description Filter datastreams by unit ID. */
+                /** @description Datastreams in this unit. Matches `id` in `units`. */
                 unitId?: string[];
-                /** @description Filter datastreams by observation result qualifier ID. */
+                /** @description Not supported yet. Any value returns no datastreams. */
                 resultQualifier?: string[];
-                /** @description Filter monitoring_sites by observation type. */
+                /** @description Datastreams with this observation type. Matches exactly, including case. */
                 observationType?: string[];
-                /** @description Filter monitoring_sites by sampled medium. */
+                /** @description Datastreams with this sampled medium. Matches `name` in `sampled-mediums`. */
                 sampledMedium?: string[];
-                /** @description Filter datastreams by status. */
+                /** @description Datastreams with this status. Matches `name` in `datastream-statuses`. `null` matches datastreams without a status. */
                 status?: (string | "null")[];
-                /** @description Filter monitoring_sites by result type. */
+                /** @description Datastreams with this result type. Matches exactly, including case. */
                 resultType?: string[];
-                /** @description Filter datastreams by tag. Format tag filters as {key}:{value}. Repeat the parameter to require several tags. */
+                /** @description Datastreams with this tag, as `{key}:{value}`. Repeat the parameter to require several tags. */
                 tag?: string[];
-                /** @description Controls whether the datastreams should be private or public. */
+                /** @description `false` returns only datastreams that are public at every level: the datastream, its monitoring site, and its workspace. `true` returns only datastreams that are private at every level. */
                 isPrivate?: boolean | null;
-                /** @description Sets the maximum value count of filtered datastreams. */
+                /** @description Datastreams with at most this many observations. */
                 valueCountMax?: number | null;
-                /** @description Sets the minimum value count of filtered datastreams. */
+                /** @description Datastreams with at least this many observations. */
                 valueCountMin?: number | null;
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json" | "geojson";
@@ -9952,7 +9960,7 @@ export interface operations {
                 offset?: number | null;
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
-                /** @description Filter by linked resource type. */
+                /** @description Linked resources of this type. Matches `name` in `linked-resource-types`. */
                 type?: string[];
             };
             header?: never;
@@ -10265,7 +10273,9 @@ export interface operations {
     interfaces_api_views_sta_datastream_get_datastream_tag_keys: {
         parameters: {
             query?: {
+                /** @description Only tags of datastreams in this workspace. */
                 workspaceId?: string | null;
+                /** @description Only the tags of this datastream. */
                 datastreamId?: string | null;
             };
             header?: never;
@@ -10299,7 +10309,7 @@ export interface operations {
     interfaces_api_views_sta_datastream_get_datastream_visualization_bootstrap: {
         parameters: {
             query?: {
-                /** @description Filter visualization bootstrap datastreams by workspace ID. */
+                /** @description Datastreams in this workspace. Matches `id` in `workspaces`. */
                 workspaceId?: string[];
             };
             header?: never;
@@ -10347,9 +10357,9 @@ export interface operations {
                 sortby?: ("id" | "name" | "timestampKey" | "timestampFormat" | "timezoneType" | "timezone" | "workspaceId" | "workspaceName" | "-id" | "-name" | "-timestampKey" | "-timestampFormat" | "-timezoneType" | "-timezone" | "-workspaceId" | "-workspaceName" | "+id" | "+name" | "+timestampKey" | "+timestampFormat" | "+timezoneType" | "+timezone" | "+workspaceId" | "+workspaceName")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
-                /** @description Filter data connections by workspace ID. */
+                /** @description Data connections in this workspace. Matches `id` in `workspaces`. */
                 workspaceId?: string[];
-                /** @description Filter data connections by payload type. */
+                /** @description Data connections whose payload is in this format: `CSV` or `JSON`. */
                 payloadType?: string[];
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json";
@@ -10621,13 +10631,13 @@ export interface operations {
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("id" | "sourceIdentifier" | "targetDatastreamId" | "-id" | "-sourceIdentifier" | "-targetDatastreamId" | "+id" | "+sourceIdentifier" | "+targetDatastreamId")[];
-                /** @description Filter mappings by source identifier. */
+                /** @description Mappings for this source identifier, such as a CSV column name. Matches exactly, including case. */
                 sourceIdentifier?: string[];
-                /** @description Filter mappings by target datastream ID. */
+                /** @description Mappings that load data into this datastream. Matches `id` in `datastreams`. */
                 targetDatastreamId?: string[];
-                /** @description Filter mappings by ETL task ID. */
+                /** @description Mappings of this ETL task. Matches `id` in `etl-tasks`. */
                 etlTaskId?: string[];
-                /** @description Filter mappings by workspace ID. */
+                /** @description Mappings of ETL tasks in this workspace. Matches `id` in `workspaces`. */
                 workspaceId?: string[];
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json";
@@ -10937,21 +10947,21 @@ export interface operations {
                 sortby?: ("id" | "name" | "dataConnectionId" | "dataConnectionName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-dataConnectionId" | "-dataConnectionName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "+id" | "+name" | "+dataConnectionId" | "+dataConnectionName" | "+workspaceId" | "+workspaceName" | "+latestRunStatus" | "+latestRunStartedAt" | "+latestRunFinishedAt")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
-                /** @description Filter ETL tasks by monitoring_site ID. */
+                /** @description ETL tasks with a mapping that loads data into a datastream at this monitoring site. Matches `id` in `monitoring-sites`. */
                 monitoringSiteId?: string[];
-                /** @description Filter ETL tasks by workspace ID. */
+                /** @description ETL tasks in this workspace. Matches `id` in `workspaces`. */
                 workspaceId?: string[];
-                /** @description Filter ETL tasks by data connection ID. */
+                /** @description ETL tasks that use this data connection. Matches `id` in `etl-data-connections`. */
                 dataConnectionId?: string[];
-                /** @description Filter ETL tasks by their most recent run status. */
+                /** @description ETL tasks whose latest run has this status: `PENDING`, `STARTED`, `SUCCESS`, or `FAILURE`. `null` matches tasks that have never run. */
                 latestRunStatus?: (string | "null")[];
-                /** @description Filter tasks whose latest run started on or after this datetime. */
+                /** @description ETL tasks whose latest run started at or after this RFC 3339 date-time. */
                 latestRunStartedAtMin?: string | null;
-                /** @description Filter tasks whose latest run started on or before this datetime. */
+                /** @description ETL tasks whose latest run started at or before this RFC 3339 date-time. */
                 latestRunStartedAtMax?: string | null;
-                /** @description Filter tasks whose latest run finished on or after this datetime. */
+                /** @description ETL tasks whose latest run finished at or after this RFC 3339 date-time. */
                 latestRunFinishedAtMin?: string | null;
-                /** @description Filter tasks whose latest run finished on or before this datetime. */
+                /** @description ETL tasks whose latest run finished at or before this RFC 3339 date-time. */
                 latestRunFinishedAtMax?: string | null;
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json";
@@ -11219,15 +11229,15 @@ export interface operations {
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt" | "+id" | "+status" | "+startedAt" | "+finishedAt")[];
-                /** @description Filters task runs by their status. */
+                /** @description Task runs with this status. `PENDING` and `STARTED` runs haven't finished yet. */
                 status?: ("PENDING" | "STARTED" | "SUCCESS" | "FAILURE")[];
-                /** @description Filters for task runs started on or before this date and time. */
+                /** @description Task runs that started at or before this RFC 3339 date-time. */
                 startedAtMax?: string | null;
-                /** @description Filters for task runs started on or after this date and time. */
+                /** @description Task runs that started at or after this RFC 3339 date-time. */
                 startedAtMin?: string | null;
-                /** @description Filters for task runs finished on or before this date and time. */
+                /** @description Task runs that finished at or before this RFC 3339 date-time. */
                 finishedAtMax?: string | null;
-                /** @description Filters for task runs finished on or after this date and time. */
+                /** @description Task runs that finished at or after this RFC 3339 date-time. */
                 finishedAtMin?: string | null;
             };
             header?: never;
@@ -11898,17 +11908,17 @@ export interface operations {
                 sortby?: ("name" | "code" | "type" | "sensorModel" | "sensorModelManufacturer" | "definition" | "sensorModelDefinition" | "-name" | "-code" | "-type" | "-sensorModel" | "-sensorModelManufacturer" | "-definition" | "-sensorModelDefinition" | "+name" | "+code" | "+type" | "+sensorModel" | "+sensorModelManufacturer" | "+definition" | "+sensorModelDefinition")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
-                /** @description Filter methods by workspace ID. */
+                /** @description Methods that belong to this workspace. Matches `id` in `workspaces`. `null` matches methods shared by every workspace. */
                 workspaceId?: (string | "null")[];
-                /** @description Filter methods by monitoring_site ID. */
+                /** @description Methods used by datastreams at this monitoring site. Matches `id` in `monitoring-sites`. `null` matches methods that no datastream uses. */
                 monitoringSiteId?: (string | "null")[];
-                /** @description Filter methods by datastream ID. */
+                /** @description Methods used by this datastream. Matches `id` in `datastreams`. `null` matches methods that no datastream uses. */
                 datastreamId?: (string | "null")[];
-                /** @description Filter methods by type */
+                /** @description Methods of this type. Matches `name` in `method-types`. */
                 type?: string[];
-                /** @description Filter methods by sensor model */
+                /** @description Methods with this sensor model. `null` matches methods without one. */
                 sensorModel?: (string | "null")[];
-                /** @description Filter methods by sensor model manufacturer */
+                /** @description Methods with this sensor manufacturer. `null` matches methods without one. */
                 sensorModelManufacturer?: (string | "null")[];
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json";
@@ -12180,13 +12190,13 @@ export interface operations {
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("id" | "ruleType" | "datastreamId" | "lastCheckedAt" | "-id" | "-ruleType" | "-datastreamId" | "-lastCheckedAt" | "+id" | "+ruleType" | "+datastreamId" | "+lastCheckedAt")[];
-                /** @description Filter rules by datastream ID. */
+                /** @description Rules that check this datastream. Matches `id` in `datastreams`. */
                 datastreamId?: string[];
-                /** @description Filter rules by rule type. */
+                /** @description Rules of this type: `range`, `rate_of_change`, `persistence`, or `missing_data`. */
                 ruleType?: string[];
-                /** @description Filter rules by monitoring task ID. */
+                /** @description Rules of this monitoring task. Matches `id` in `monitoring-tasks`. */
                 taskId?: string[];
-                /** @description Filter rules by workspace ID. */
+                /** @description Rules of monitoring tasks in this workspace. Matches `id` in `workspaces`. */
                 workspaceId?: string[];
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json";
@@ -12748,19 +12758,19 @@ export interface operations {
                 sortby?: ("name" | "code" | "type" | "isPrivate" | "latitude" | "longitude" | "elevationM" | "elevationDatum" | "adminArea1" | "adminArea2" | "country" | "-name" | "-code" | "-type" | "-isPrivate" | "-latitude" | "-longitude" | "-elevationM" | "-elevationDatum" | "-adminArea1" | "-adminArea2" | "-country" | "+name" | "+code" | "+type" | "+isPrivate" | "+latitude" | "+longitude" | "+elevationM" | "+elevationDatum" | "+adminArea1" | "+adminArea2" | "+country")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
-                /** @description Filter monitoring sites by workspace ID. */
+                /** @description Monitoring sites in this workspace. Matches `id` in `workspaces`. */
                 workspaceId?: string[];
-                /** @description Filter monitoring sites by admin area 1. */
+                /** @description Monitoring sites in this first-level administrative area, such as a state or province. `null` matches sites without one. */
                 adminArea1?: (string | "null")[];
-                /** @description Filter monitoring sites by admin area 2. */
+                /** @description Monitoring sites in this second-level administrative area, such as a county. `null` matches sites without one. */
                 adminArea2?: (string | "null")[];
-                /** @description Filter monitoring sites by country. */
+                /** @description Monitoring sites in this country, as an ISO 3166-1 alpha-2 code such as `US`. `null` matches sites without one. */
                 country?: (string | "null")[];
-                /** @description Filter monitoring sites by type. */
+                /** @description Monitoring sites of this type. Matches `name` in `monitoring-site-types`. */
                 type?: string[];
-                /** @description Filter monitoring sites by tag. Format tag filters as {key}:{value}. Repeat the parameter to require several tags. */
+                /** @description Monitoring sites with this tag, as `{key}:{value}`. Repeat the parameter to require several tags. */
                 tag?: string[];
-                /** @description Controls whether the returned monitoring sites should be private or public. */
+                /** @description `false` returns only monitoring sites that are public, in public workspaces. `true` returns only private monitoring sites in private workspaces. */
                 isPrivate?: boolean | null;
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json" | "geojson";
@@ -12990,7 +13000,7 @@ export interface operations {
                 offset?: number | null;
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
-                /** @description Filter by linked resource type. */
+                /** @description Linked resources of this type. Matches `name` in `linked-resource-types`. */
                 type?: string[];
             };
             header?: never;
@@ -13303,11 +13313,11 @@ export interface operations {
     interfaces_api_views_sta_monitoring_site_get_monitoring_site_markers: {
         parameters: {
             query?: {
-                /** @description Filter markers by workspace ID. */
+                /** @description Markers for monitoring sites in this workspace. Matches `id` in `workspaces`. */
                 workspaceId?: string[];
                 /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
                 bbox?: number[] & (unknown | unknown);
-                /** @description Filter markers by monitoring site type. */
+                /** @description Markers for monitoring sites of this type. Matches `name` in `monitoring-site-types`. */
                 type?: string[];
             };
             header?: never;
@@ -13339,9 +13349,9 @@ export interface operations {
     interfaces_api_views_sta_monitoring_site_get_monitoring_site_summaries: {
         parameters: {
             query?: {
-                /** @description Filter site summaries by workspace ID. */
+                /** @description Summaries of monitoring sites in this workspace. Matches `id` in `workspaces`. */
                 workspaceId?: string[];
-                /** @description Filter summaries by monitoring site type. */
+                /** @description Summaries of monitoring sites of this type. Matches `name` in `monitoring-site-types`. */
                 type?: string[];
             };
             header?: never;
@@ -13393,7 +13403,9 @@ export interface operations {
     interfaces_api_views_sta_monitoring_site_get_monitoring_site_tag_keys: {
         parameters: {
             query?: {
+                /** @description Only tags of monitoring sites in this workspace. */
                 workspaceId?: string | null;
+                /** @description Only the tags of this monitoring site. */
                 monitoringSiteId?: string | null;
             };
             header?: never;
@@ -13427,9 +13439,9 @@ export interface operations {
     interfaces_api_views_sta_monitoring_site_get_monitoring_site_task_summaries: {
         parameters: {
             query?: {
-                /** @description Filter task summaries by workspace ID. */
+                /** @description Task summaries for monitoring sites in this workspace. Matches `id` in `workspaces`. */
                 workspaceId?: string[];
-                /** @description Filter summaries by monitoring site type. */
+                /** @description Task summaries for monitoring sites of this type. Matches `name` in `monitoring-site-types`. */
                 type?: string[];
             };
             header?: never;
@@ -13477,15 +13489,15 @@ export interface operations {
                 sortby?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "+id" | "+name" | "+monitoringSiteId" | "+monitoringSiteName" | "+workspaceId" | "+workspaceName" | "+latestRunStatus" | "+latestRunStartedAt" | "+latestRunFinishedAt")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
-                /** @description Filter monitoring tasks by monitoring_site ID. */
+                /** @description Monitoring tasks for this monitoring site. Matches `id` in `monitoring-sites`. */
                 monitoringSiteId?: string[];
-                /** @description Filter monitoring tasks by workspace ID. */
+                /** @description Monitoring tasks in this workspace. Matches `id` in `workspaces`. */
                 workspaceId?: string[];
-                /** @description Filter monitoring tasks by their most recent run status. */
+                /** @description Monitoring tasks whose latest run has this status: `PENDING`, `STARTED`, `SUCCESS`, or `FAILURE`. `null` matches tasks that have never run. */
                 latestRunStatus?: (string | "null")[];
-                /** @description Filter monitoring tasks by datastream ID. */
+                /** @description Monitoring tasks with a rule that checks this datastream. Matches `id` in `datastreams`. */
                 datastreamId?: string[];
-                /** @description Filter monitoring tasks by rule type. */
+                /** @description Monitoring tasks with a rule of this type: `range`, `rate_of_change`, `persistence`, or `missing_data`. */
                 ruleType?: string[];
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json";
@@ -13753,15 +13765,15 @@ export interface operations {
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt" | "+id" | "+status" | "+startedAt" | "+finishedAt")[];
-                /** @description Filters task runs by their status. */
+                /** @description Task runs with this status. `PENDING` and `STARTED` runs haven't finished yet. */
                 status?: ("PENDING" | "STARTED" | "SUCCESS" | "FAILURE")[];
-                /** @description Filters for task runs started on or before this date and time. */
+                /** @description Task runs that started at or before this RFC 3339 date-time. */
                 startedAtMax?: string | null;
-                /** @description Filters for task runs started on or after this date and time. */
+                /** @description Task runs that started at or after this RFC 3339 date-time. */
                 startedAtMin?: string | null;
-                /** @description Filters for task runs finished on or before this date and time. */
+                /** @description Task runs that finished at or before this RFC 3339 date-time. */
                 finishedAtMax?: string | null;
-                /** @description Filters for task runs finished on or after this date and time. */
+                /** @description Task runs that finished at or after this RFC 3339 date-time. */
                 finishedAtMin?: string | null;
             };
             header?: never;
@@ -14029,11 +14041,11 @@ export interface operations {
                 offset?: number | null;
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
-                /** @description Filter observations by datastream ID. */
+                /** @description Observations in this datastream. Matches `id` in `datastreams`. */
                 datastreamId?: string[];
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("phenomenonTime" | "datastreamId" | "-phenomenonTime" | "-datastreamId" | "+phenomenonTime" | "+datastreamId")[];
-                /** @description Filter observations by result qualifier. */
+                /** @description Observations with this result qualifier. Matches `name` in `result-qualifiers`. */
                 resultQualifiers?: string[];
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json" | "geojson";
@@ -14259,13 +14271,13 @@ export interface operations {
                 sortby?: ("name" | "type" | "code" | "-name" | "-type" | "-code" | "+name" | "+type" | "+code")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
-                /** @description Filter observed properties by workspace ID. */
+                /** @description Observed properties that belong to this workspace. Matches `id` in `workspaces`. `null` matches observed properties shared by every workspace. */
                 workspaceId?: (string | "null")[];
-                /** @description Filter observed properties by monitoring_site ID. */
+                /** @description Observed properties used by datastreams at this monitoring site. Matches `id` in `monitoring-sites`. `null` matches observed properties that no datastream uses. */
                 monitoringSiteId?: (string | "null")[];
-                /** @description Filter observed properties by datastream ID. */
+                /** @description Observed properties used by this datastream. Matches `id` in `datastreams`. `null` matches observed properties that no datastream uses. */
                 datastreamId?: (string | "null")[];
-                /** @description Filter observed properties by type */
+                /** @description Observed properties of this type. Matches `name` in `observed-property-types`. */
                 type?: string[];
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json";
@@ -14791,11 +14803,11 @@ export interface operations {
                 sortby?: ("code" | "name" | "-code" | "-name" | "+code" | "+name")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
-                /** @description Filter processing levels by workspace ID. */
+                /** @description Processing levels that belong to this workspace. Matches `id` in `workspaces`. `null` matches processing levels shared by every workspace. */
                 workspaceId?: (string | "null")[];
-                /** @description Filter processing levels by monitoring_site ID. */
+                /** @description Processing levels used by datastreams at this monitoring site. Matches `id` in `monitoring-sites`. `null` matches processing levels that no datastream uses. */
                 monitoringSiteId?: (string | "null")[];
-                /** @description Filter processing levels by datastream ID. */
+                /** @description Processing levels used by this datastream. Matches `id` in `datastreams`. `null` matches processing levels that no datastream uses. */
                 datastreamId?: (string | "null")[];
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json";
@@ -15067,9 +15079,9 @@ export interface operations {
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd" | "+id" | "+createdAt" | "+phenomenonTimeStart" | "+phenomenonTimeEnd")[];
-                /** @description Filter histories by managed datastream ID. */
+                /** @description The history whose managed datastream is this datastream. Matches `id` in `datastreams`. */
                 managedDatastreamId?: string[];
-                /** @description Filter histories by source datastream ID. */
+                /** @description Histories whose source datastream is this datastream. Matches `id` in `datastreams`. `null` matches histories without a source datastream. */
                 sourceDatastreamId?: (string | "null")[];
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json";
@@ -15294,14 +15306,15 @@ export interface operations {
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("id" | "createdAt" | "phenomenonTimeStart" | "phenomenonTimeEnd" | "status" | "committedAt" | "-id" | "-createdAt" | "-phenomenonTimeStart" | "-phenomenonTimeEnd" | "-status" | "-committedAt" | "+id" | "+createdAt" | "+phenomenonTimeStart" | "+phenomenonTimeEnd" | "+status" | "+committedAt")[];
+                /** @description Sessions with this status: `in_progress` or `committed`. */
                 status?: ("in_progress" | "committed") | null;
-                /** @description Return sessions overlapping with this range start. */
+                /** @description Sessions whose time range ends after this RFC 3339 date-time. Use with `rangeEnd` to find the sessions that overlap a time range. */
                 rangeStart?: string | null;
-                /** @description Return sessions overlapping with this range end. */
+                /** @description Sessions whose time range starts before this RFC 3339 date-time. Use with `rangeStart` to find the sessions that overlap a time range. */
                 rangeEnd?: string | null;
-                /** @description Return all transitive ancestors of the given session ID. */
+                /** @description Returns the sessions that this session depends on, directly or through other sessions. Matches `id` of a session in this history. */
                 ancestorOf?: string | null;
-                /** @description Also return transitive ancestors of all sessions matched by other filters. */
+                /** @description `true` also returns the sessions that the matched sessions depend on, directly or through other sessions. */
                 includeAncestors?: boolean;
             };
             header?: never;
@@ -15977,7 +15990,7 @@ export interface operations {
                 sortby?: ("name" | "-name" | "+name")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
-                /** @description Filter terms by workspace ID. */
+                /** @description Result qualifiers that belong to this workspace. Matches `id` in `workspaces`. `null` matches result qualifiers shared by every workspace. */
                 workspaceId?: (string | "null")[];
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json";
@@ -16231,7 +16244,7 @@ export interface operations {
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("name" | "-name" | "+name")[];
-                /** @description Filter roles by workspace ID. */
+                /** @description Roles that belong to this workspace. Matches `id` in `workspaces`. `null` matches HydroServer's built-in roles, which are available in every workspace. */
                 workspaceId?: (string | "null")[];
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json";
@@ -16830,13 +16843,13 @@ export interface operations {
                 sortby?: ("name" | "symbol" | "type" | "-name" | "-symbol" | "-type" | "+name" | "+symbol" | "+type")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
-                /** @description Filter units by workspace ID. */
+                /** @description Units that belong to this workspace. Matches `id` in `workspaces`. `null` matches units shared by every workspace. */
                 workspaceId?: (string | "null")[];
-                /** @description Filter units by monitoring_site ID. */
+                /** @description Units used by datastreams at this monitoring site. Matches `id` in `monitoring-sites`. `null` matches units that no datastream uses. */
                 monitoringSiteId?: (string | "null")[];
-                /** @description Filter units by datastream ID. */
+                /** @description Units used by this datastream. Matches `id` in `datastreams`. `null` matches units that no datastream uses. */
                 datastreamId?: (string | "null")[];
-                /** @description Filter units by type */
+                /** @description Units of this type. Matches `name` in `unit-types`. */
                 type?: string[];
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json";
@@ -17101,9 +17114,9 @@ export interface operations {
                 sortby?: ("name" | "isPrivate" | "-name" | "-isPrivate" | "+name" | "+isPrivate")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
-                /** @description Whether the workspace is associated with the authenticated user */
+                /** @description `true` returns only the workspaces you own, collaborate on, or have a pending transfer to. For a service account, that's its own workspace. `false` doesn't filter. */
                 isAssociated?: boolean | null;
-                /** @description Whether the returned workspaces should be private or public. */
+                /** @description `true` returns only private workspaces, and `false` only public ones. */
                 isPrivate?: boolean | null;
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json" | "geojson";
@@ -17362,7 +17375,7 @@ export interface operations {
                 offset?: number | null;
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
-                /** @description Filter collaborators by role ID. */
+                /** @description Collaborators with this role. Matches `id` in `roles`. */
                 roleId?: string[];
                 /** @description Select one or more fields to sort the response by. */
                 sortby?: ("id" | "roleId" | "-id" | "-roleId" | "+id" | "+roleId")[];

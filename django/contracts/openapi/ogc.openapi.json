@@ -334,7 +334,7 @@
           },
           "roleId": {
             "default": [],
-            "description": "Filter collaborators by role ID.",
+            "description": "Collaborators with this role. Matches `id` in `roles`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -814,7 +814,7 @@
           },
           "payloadType": {
             "default": [],
-            "description": "Filter data connections by payload type.",
+            "description": "Data connections whose payload is in this format: `CSV` or `JSON`.",
             "items": {
               "type": "string"
             },
@@ -894,7 +894,7 @@
           },
           "workspaceId": {
             "default": [],
-            "description": "Filter data connections by workspace ID.",
+            "description": "Data connections in this workspace. Matches `id` in `workspaces`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -1359,7 +1359,7 @@
           },
           "inputDatastreamId": {
             "default": [],
-            "description": "Filter data product tasks by input datastream ID.",
+            "description": "Data product tasks with a transformation that uses this datastream as an input. Matches `id` in `datastreams`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -1369,7 +1369,7 @@
           },
           "latestRunStatus": {
             "default": [],
-            "description": "Filter data product tasks by their most recent run status.",
+            "description": "Data product tasks whose latest run has this status: `PENDING`, `STARTED`, `SUCCESS`, or `FAILURE`. `null` matches tasks that have never run.",
             "items": {
               "anyOf": [
                 {
@@ -1394,7 +1394,7 @@
           },
           "monitoringSiteId": {
             "default": [],
-            "description": "Filter data product tasks by monitoring_site ID.",
+            "description": "Data product tasks for this monitoring site. Matches `id` in `monitoring-sites`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -1418,7 +1418,7 @@
           },
           "outputDatastreamId": {
             "default": [],
-            "description": "Filter data product tasks by output datastream ID.",
+            "description": "Data product tasks with a transformation that outputs to this datastream. Matches `id` in `datastreams`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -1458,7 +1458,7 @@
           },
           "ratingCurveId": {
             "default": [],
-            "description": "Filter data product tasks by rating curve ID.",
+            "description": "Data product tasks with a transformation that uses this rating curve. Matches `id` in `data-product-rating-curves`. `null` matches tasks with a transformation that doesn't use a rating curve, and tasks with no transformations.",
             "items": {
               "anyOf": [
                 {
@@ -1514,7 +1514,7 @@
           },
           "transformationType": {
             "default": [],
-            "description": "Filter data product tasks by transformation type.",
+            "description": "Data product tasks with a transformation of this type: `aggregation`, `derivation`, or `rating_curve`.",
             "items": {
               "type": "string"
             },
@@ -1523,7 +1523,7 @@
           },
           "workspaceId": {
             "default": [],
-            "description": "Filter data product tasks by workspace ID.",
+            "description": "Data product tasks in this workspace. Matches `id` in `workspaces`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -1991,7 +1991,7 @@
           },
           "inputDatastreamId": {
             "default": [],
-            "description": "Filter transformations by input datastream ID.",
+            "description": "Transformations that use this datastream as an input. Matches `id` in `datastreams`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -2023,7 +2023,7 @@
           },
           "outputDatastreamId": {
             "default": [],
-            "description": "Filter transformations by output datastream ID.",
+            "description": "The transformation that outputs to this datastream. Matches `id` in `datastreams`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -2078,7 +2078,7 @@
           },
           "taskId": {
             "default": [],
-            "description": "Filter transformations by data product task ID.",
+            "description": "Transformations of this data product task. Matches `id` in `data-product-tasks`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -2088,7 +2088,7 @@
           },
           "transformationType": {
             "default": [],
-            "description": "Filter transformations by type.",
+            "description": "Transformations of this type: `aggregation`, `derivation`, or `rating_curve`.",
             "items": {
               "type": "string"
             },
@@ -2097,7 +2097,7 @@
           },
           "workspaceId": {
             "default": [],
-            "description": "Filter transformations by workspace ID.",
+            "description": "Transformations of data product tasks in this workspace. Matches `id` in `workspaces`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -2918,7 +2918,7 @@
                 "type": "null"
               }
             ],
-            "description": "Controls whether the datastreams should be private or public.",
+            "description": "`false` returns only datastreams that are public at every level: the datastream, its monitoring site, and its workspace. `true` returns only datastreams that are private at every level.",
             "title": "Isprivate"
           },
           "limit": {
@@ -2931,7 +2931,7 @@
           },
           "methodId": {
             "default": [],
-            "description": "Filter datastreams by method ID.",
+            "description": "Datastreams produced by this method. Matches `id` in `methods`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -2941,7 +2941,7 @@
           },
           "monitoringSiteId": {
             "default": [],
-            "description": "Filter datastreams by monitoring_site ID.",
+            "description": "Datastreams at this monitoring site. Matches `id` in `monitoring-sites`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -2951,7 +2951,7 @@
           },
           "observationType": {
             "default": [],
-            "description": "Filter monitoring_sites by observation type.",
+            "description": "Datastreams with this observation type. Matches exactly, including case.",
             "items": {
               "type": "string"
             },
@@ -2960,7 +2960,7 @@
           },
           "observedPropertyId": {
             "default": [],
-            "description": "Filter datastreams by observed property ID.",
+            "description": "Datastreams that observe this observed property. Matches `id` in `observed-properties`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -2984,7 +2984,7 @@
           },
           "processingLevelId": {
             "default": [],
-            "description": "Filter datastreams by processing level ID.",
+            "description": "Datastreams at this processing level. Matches `id` in `processing-levels`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -3044,7 +3044,7 @@
           },
           "resultQualifier": {
             "default": [],
-            "description": "Filter datastreams by observation result qualifier ID.",
+            "description": "Not supported yet. Any value returns no datastreams.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -3054,7 +3054,7 @@
           },
           "resultType": {
             "default": [],
-            "description": "Filter monitoring_sites by result type.",
+            "description": "Datastreams with this result type. Matches exactly, including case.",
             "items": {
               "type": "string"
             },
@@ -3063,7 +3063,7 @@
           },
           "sampledMedium": {
             "default": [],
-            "description": "Filter monitoring_sites by sampled medium.",
+            "description": "Datastreams with this sampled medium. Matches `name` in `sampled-mediums`.",
             "items": {
               "type": "string"
             },
@@ -3122,7 +3122,7 @@
           },
           "status": {
             "default": [],
-            "description": "Filter datastreams by status.",
+            "description": "Datastreams with this status. Matches `name` in `datastream-statuses`. `null` matches datastreams without a status.",
             "items": {
               "anyOf": [
                 {
@@ -3139,7 +3139,7 @@
           },
           "tag": {
             "default": [],
-            "description": "Filter datastreams by tag. Format tag filters as {key}:{value}. Repeat the parameter to require several tags.",
+            "description": "Datastreams with this tag, as `{key}:{value}`. Repeat the parameter to require several tags.",
             "items": {
               "type": "string"
             },
@@ -3148,7 +3148,7 @@
           },
           "unitId": {
             "default": [],
-            "description": "Filter datastreams by unit ID.",
+            "description": "Datastreams in this unit. Matches `id` in `units`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -3165,7 +3165,7 @@
                 "type": "null"
               }
             ],
-            "description": "Sets the maximum value count of filtered datastreams.",
+            "description": "Datastreams with at most this many observations.",
             "title": "Valuecountmax"
           },
           "valueCountMin": {
@@ -3177,12 +3177,12 @@
                 "type": "null"
               }
             ],
-            "description": "Sets the minimum value count of filtered datastreams.",
+            "description": "Datastreams with at least this many observations.",
             "title": "Valuecountmin"
           },
           "workspaceId": {
             "default": [],
-            "description": "Filter datastreams by workspace ID.",
+            "description": "Datastreams in this workspace. Matches `id` in `workspaces`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -3523,7 +3523,7 @@
         "properties": {
           "workspaceId": {
             "default": [],
-            "description": "Filter visualization bootstrap datastreams by workspace ID.",
+            "description": "Datastreams in this workspace. Matches `id` in `workspaces`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -3684,7 +3684,7 @@
           },
           "etlTaskId": {
             "default": [],
-            "description": "Filter mappings by ETL task ID.",
+            "description": "Mappings of this ETL task. Matches `id` in `etl-tasks`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -3761,7 +3761,7 @@
           },
           "sourceIdentifier": {
             "default": [],
-            "description": "Filter mappings by source identifier.",
+            "description": "Mappings for this source identifier, such as a CSV column name. Matches exactly, including case.",
             "items": {
               "type": "string"
             },
@@ -3770,7 +3770,7 @@
           },
           "targetDatastreamId": {
             "default": [],
-            "description": "Filter mappings by target datastream ID.",
+            "description": "Mappings that load data into this datastream. Matches `id` in `datastreams`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -3780,7 +3780,7 @@
           },
           "workspaceId": {
             "default": [],
-            "description": "Filter mappings by workspace ID.",
+            "description": "Mappings of ETL tasks in this workspace. Matches `id` in `workspaces`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -3969,7 +3969,7 @@
           },
           "dataConnectionId": {
             "default": [],
-            "description": "Filter ETL tasks by data connection ID.",
+            "description": "ETL tasks that use this data connection. Matches `id` in `etl-data-connections`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -4005,7 +4005,7 @@
                 "type": "null"
               }
             ],
-            "description": "Filter tasks whose latest run finished on or before this datetime.",
+            "description": "ETL tasks whose latest run finished at or before this RFC 3339 date-time.",
             "title": "Latestrunfinishedatmax"
           },
           "latestRunFinishedAtMin": {
@@ -4021,7 +4021,7 @@
                 "type": "null"
               }
             ],
-            "description": "Filter tasks whose latest run finished on or after this datetime.",
+            "description": "ETL tasks whose latest run finished at or after this RFC 3339 date-time.",
             "title": "Latestrunfinishedatmin"
           },
           "latestRunStartedAtMax": {
@@ -4037,7 +4037,7 @@
                 "type": "null"
               }
             ],
-            "description": "Filter tasks whose latest run started on or before this datetime.",
+            "description": "ETL tasks whose latest run started at or before this RFC 3339 date-time.",
             "title": "Latestrunstartedatmax"
           },
           "latestRunStartedAtMin": {
@@ -4053,12 +4053,12 @@
                 "type": "null"
               }
             ],
-            "description": "Filter tasks whose latest run started on or after this datetime.",
+            "description": "ETL tasks whose latest run started at or after this RFC 3339 date-time.",
             "title": "Latestrunstartedatmin"
           },
           "latestRunStatus": {
             "default": [],
-            "description": "Filter ETL tasks by their most recent run status.",
+            "description": "ETL tasks whose latest run has this status: `PENDING`, `STARTED`, `SUCCESS`, or `FAILURE`. `null` matches tasks that have never run.",
             "items": {
               "anyOf": [
                 {
@@ -4083,7 +4083,7 @@
           },
           "monitoringSiteId": {
             "default": [],
-            "description": "Filter ETL tasks by monitoring_site ID.",
+            "description": "ETL tasks with a mapping that loads data into a datastream at this monitoring site. Matches `id` in `monitoring-sites`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -4176,7 +4176,7 @@
           },
           "workspaceId": {
             "default": [],
-            "description": "Filter ETL tasks by workspace ID.",
+            "description": "ETL tasks in this workspace. Matches `id` in `workspaces`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -6558,7 +6558,7 @@
           },
           "type": {
             "default": [],
-            "description": "Filter by linked resource type.",
+            "description": "Linked resources of this type. Matches `name` in `linked-resource-types`.",
             "items": {
               "type": "string"
             },
@@ -6910,7 +6910,7 @@
           },
           "datastreamId": {
             "default": [],
-            "description": "Filter methods by datastream ID.",
+            "description": "Methods used by this datastream. Matches `id` in `datastreams`. `null` matches methods that no datastream uses.",
             "items": {
               "anyOf": [
                 {
@@ -6952,7 +6952,7 @@
           },
           "monitoringSiteId": {
             "default": [],
-            "description": "Filter methods by monitoring_site ID.",
+            "description": "Methods used by datastreams at this monitoring site. Matches `id` in `monitoring-sites`. `null` matches methods that no datastream uses.",
             "items": {
               "anyOf": [
                 {
@@ -7016,7 +7016,7 @@
           },
           "sensorModel": {
             "default": [],
-            "description": "Filter methods by sensor model",
+            "description": "Methods with this sensor model. `null` matches methods without one.",
             "items": {
               "anyOf": [
                 {
@@ -7033,7 +7033,7 @@
           },
           "sensorModelManufacturer": {
             "default": [],
-            "description": "Filter methods by sensor model manufacturer",
+            "description": "Methods with this sensor manufacturer. `null` matches methods without one.",
             "items": {
               "anyOf": [
                 {
@@ -7082,7 +7082,7 @@
           },
           "type": {
             "default": [],
-            "description": "Filter methods by type",
+            "description": "Methods of this type. Matches `name` in `method-types`.",
             "items": {
               "type": "string"
             },
@@ -7091,7 +7091,7 @@
           },
           "workspaceId": {
             "default": [],
-            "description": "Filter methods by workspace ID.",
+            "description": "Methods that belong to this workspace. Matches `id` in `workspaces`. `null` matches methods shared by every workspace.",
             "items": {
               "anyOf": [
                 {
@@ -7513,7 +7513,7 @@
           },
           "datastreamId": {
             "default": [],
-            "description": "Filter rules by datastream ID.",
+            "description": "Rules that check this datastream. Matches `id` in `datastreams`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -7579,7 +7579,7 @@
           },
           "ruleType": {
             "default": [],
-            "description": "Filter rules by rule type.",
+            "description": "Rules of this type: `range`, `rate_of_change`, `persistence`, or `missing_data`.",
             "items": {
               "type": "string"
             },
@@ -7611,7 +7611,7 @@
           },
           "taskId": {
             "default": [],
-            "description": "Filter rules by monitoring task ID.",
+            "description": "Rules of this monitoring task. Matches `id` in `monitoring-tasks`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -7621,7 +7621,7 @@
           },
           "workspaceId": {
             "default": [],
-            "description": "Filter rules by workspace ID.",
+            "description": "Rules of monitoring tasks in this workspace. Matches `id` in `workspaces`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -7781,7 +7781,7 @@
         "properties": {
           "type": {
             "default": [],
-            "description": "Filter summaries by monitoring site type.",
+            "description": "Summaries of monitoring sites of this type. Matches `name` in `monitoring-site-types`.",
             "items": {
               "type": "string"
             },
@@ -7790,7 +7790,7 @@
           },
           "workspaceId": {
             "default": [],
-            "description": "Filter site summaries by workspace ID.",
+            "description": "Summaries of monitoring sites in this workspace. Matches `id` in `workspaces`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -7885,7 +7885,7 @@
           },
           "type": {
             "default": [],
-            "description": "Filter markers by monitoring site type.",
+            "description": "Markers for monitoring sites of this type. Matches `name` in `monitoring-site-types`.",
             "items": {
               "type": "string"
             },
@@ -7894,7 +7894,7 @@
           },
           "workspaceId": {
             "default": [],
-            "description": "Filter markers by workspace ID.",
+            "description": "Markers for monitoring sites in this workspace. Matches `id` in `workspaces`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -8404,7 +8404,7 @@
         "properties": {
           "adminArea1": {
             "default": [],
-            "description": "Filter monitoring sites by admin area 1.",
+            "description": "Monitoring sites in this first-level administrative area, such as a state or province. `null` matches sites without one.",
             "items": {
               "anyOf": [
                 {
@@ -8421,7 +8421,7 @@
           },
           "adminArea2": {
             "default": [],
-            "description": "Filter monitoring sites by admin area 2.",
+            "description": "Monitoring sites in this second-level administrative area, such as a county. `null` matches sites without one.",
             "items": {
               "anyOf": [
                 {
@@ -8455,7 +8455,7 @@
           },
           "country": {
             "default": [],
-            "description": "Filter monitoring sites by country.",
+            "description": "Monitoring sites in this country, as an ISO 3166-1 alpha-2 code such as `US`. `null` matches sites without one.",
             "items": {
               "anyOf": [
                 {
@@ -8495,7 +8495,7 @@
                 "type": "null"
               }
             ],
-            "description": "Controls whether the returned monitoring sites should be private or public.",
+            "description": "`false` returns only monitoring sites that are public, in public workspaces. `true` returns only private monitoring sites in private workspaces.",
             "title": "Isprivate"
           },
           "limit": {
@@ -8605,7 +8605,7 @@
           },
           "tag": {
             "default": [],
-            "description": "Filter monitoring sites by tag. Format tag filters as {key}:{value}. Repeat the parameter to require several tags.",
+            "description": "Monitoring sites with this tag, as `{key}:{value}`. Repeat the parameter to require several tags.",
             "items": {
               "type": "string"
             },
@@ -8614,7 +8614,7 @@
           },
           "type": {
             "default": [],
-            "description": "Filter monitoring sites by type.",
+            "description": "Monitoring sites of this type. Matches `name` in `monitoring-site-types`.",
             "items": {
               "type": "string"
             },
@@ -8623,7 +8623,7 @@
           },
           "workspaceId": {
             "default": [],
-            "description": "Filter monitoring sites by workspace ID.",
+            "description": "Monitoring sites in this workspace. Matches `id` in `workspaces`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -8790,7 +8790,7 @@
         "properties": {
           "type": {
             "default": [],
-            "description": "Filter summaries by monitoring site type.",
+            "description": "Task summaries for monitoring sites of this type. Matches `name` in `monitoring-site-types`.",
             "items": {
               "type": "string"
             },
@@ -8799,7 +8799,7 @@
           },
           "workspaceId": {
             "default": [],
-            "description": "Filter task summaries by workspace ID.",
+            "description": "Task summaries for monitoring sites in this workspace. Matches `id` in `workspaces`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -9097,7 +9097,7 @@
           },
           "datastreamId": {
             "default": [],
-            "description": "Filter monitoring tasks by datastream ID.",
+            "description": "Monitoring tasks with a rule that checks this datastream. Matches `id` in `datastreams`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -9122,7 +9122,7 @@
           },
           "latestRunStatus": {
             "default": [],
-            "description": "Filter monitoring tasks by their most recent run status.",
+            "description": "Monitoring tasks whose latest run has this status: `PENDING`, `STARTED`, `SUCCESS`, or `FAILURE`. `null` matches tasks that have never run.",
             "items": {
               "anyOf": [
                 {
@@ -9147,7 +9147,7 @@
           },
           "monitoringSiteId": {
             "default": [],
-            "description": "Filter monitoring tasks by monitoring_site ID.",
+            "description": "Monitoring tasks for this monitoring site. Matches `id` in `monitoring-sites`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -9202,7 +9202,7 @@
           },
           "ruleType": {
             "default": [],
-            "description": "Filter monitoring tasks by rule type.",
+            "description": "Monitoring tasks with a rule of this type: `range`, `rate_of_change`, `persistence`, or `missing_data`.",
             "items": {
               "type": "string"
             },
@@ -9249,7 +9249,7 @@
           },
           "workspaceId": {
             "default": [],
-            "description": "Filter monitoring tasks by workspace ID.",
+            "description": "Monitoring tasks in this workspace. Matches `id` in `workspaces`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -9840,7 +9840,7 @@
           },
           "datastreamId": {
             "default": [],
-            "description": "Filter observations by datastream ID.",
+            "description": "Observations in this datastream. Matches `id` in `datastreams`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -9905,7 +9905,7 @@
           },
           "resultQualifiers": {
             "default": [],
-            "description": "Filter observations by result qualifier.",
+            "description": "Observations with this result qualifier. Matches `name` in `result-qualifiers`.",
             "items": {
               "type": "string"
             },
@@ -10203,7 +10203,7 @@
           },
           "datastreamId": {
             "default": [],
-            "description": "Filter observed properties by datastream ID.",
+            "description": "Observed properties used by this datastream. Matches `id` in `datastreams`. `null` matches observed properties that no datastream uses.",
             "items": {
               "anyOf": [
                 {
@@ -10245,7 +10245,7 @@
           },
           "monitoringSiteId": {
             "default": [],
-            "description": "Filter observed properties by monitoring_site ID.",
+            "description": "Observed properties used by datastreams at this monitoring site. Matches `id` in `monitoring-sites`. `null` matches observed properties that no datastream uses.",
             "items": {
               "anyOf": [
                 {
@@ -10326,7 +10326,7 @@
           },
           "type": {
             "default": [],
-            "description": "Filter observed properties by type",
+            "description": "Observed properties of this type. Matches `name` in `observed-property-types`.",
             "items": {
               "type": "string"
             },
@@ -10335,7 +10335,7 @@
           },
           "workspaceId": {
             "default": [],
-            "description": "Filter observed properties by workspace ID.",
+            "description": "Observed properties that belong to this workspace. Matches `id` in `workspaces`. `null` matches observed properties shared by every workspace.",
             "items": {
               "anyOf": [
                 {
@@ -12444,7 +12444,7 @@
           },
           "datastreamId": {
             "default": [],
-            "description": "Filter processing levels by datastream ID.",
+            "description": "Processing levels used by this datastream. Matches `id` in `datastreams`. `null` matches processing levels that no datastream uses.",
             "items": {
               "anyOf": [
                 {
@@ -12485,7 +12485,7 @@
           },
           "monitoringSiteId": {
             "default": [],
-            "description": "Filter processing levels by monitoring_site ID.",
+            "description": "Processing levels used by datastreams at this monitoring site. Matches `id` in `monitoring-sites`. `null` matches processing levels that no datastream uses.",
             "items": {
               "anyOf": [
                 {
@@ -12562,7 +12562,7 @@
           },
           "workspaceId": {
             "default": [],
-            "description": "Filter processing levels by workspace ID.",
+            "description": "Processing levels that belong to this workspace. Matches `id` in `workspaces`. `null` matches processing levels shared by every workspace.",
             "items": {
               "anyOf": [
                 {
@@ -12746,7 +12746,7 @@
           },
           "managedDatastreamId": {
             "default": [],
-            "description": "Filter histories by managed datastream ID.",
+            "description": "The history whose managed datastream is this datastream. Matches `id` in `datastreams`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -12811,7 +12811,7 @@
           },
           "sourceDatastreamId": {
             "default": [],
-            "description": "Filter histories by source datastream ID.",
+            "description": "Histories whose source datastream is this datastream. Matches `id` in `datastreams`. `null` matches histories without a source datastream.",
             "items": {
               "anyOf": [
                 {
@@ -13295,7 +13295,7 @@
                 "type": "null"
               }
             ],
-            "description": "Return all transitive ancestors of the given session ID.",
+            "description": "Returns the sessions that this session depends on, directly or through other sessions. Matches `id` of a session in this history.",
             "title": "Ancestorof"
           },
           "include": {
@@ -13312,7 +13312,7 @@
           },
           "includeAncestors": {
             "default": false,
-            "description": "Also return transitive ancestors of all sessions matched by other filters.",
+            "description": "`true` also returns the sessions that the matched sessions depend on, directly or through other sessions.",
             "title": "Includeancestors",
             "type": "boolean"
           },
@@ -13373,7 +13373,7 @@
                 "type": "null"
               }
             ],
-            "description": "Return sessions overlapping with this range end.",
+            "description": "Sessions whose time range starts before this RFC 3339 date-time. Use with `rangeStart` to find the sessions that overlap a time range.",
             "title": "Rangeend"
           },
           "rangeStart": {
@@ -13389,7 +13389,7 @@
                 "type": "null"
               }
             ],
-            "description": "Return sessions overlapping with this range start.",
+            "description": "Sessions whose time range ends after this RFC 3339 date-time. Use with `rangeEnd` to find the sessions that overlap a time range.",
             "title": "Rangestart"
           },
           "sortby": {
@@ -13434,6 +13434,7 @@
                 "type": "null"
               }
             ],
+            "description": "Sessions with this status: `in_progress` or `committed`.",
             "title": "Status"
           }
         },
@@ -13735,7 +13736,7 @@
           },
           "monitoringSiteId": {
             "default": [],
-            "description": "Filter rating curves by monitoring site ID.",
+            "description": "Rating curves that belong to this monitoring site. Matches `id` in `monitoring-sites`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -13819,7 +13820,7 @@
           },
           "workspaceId": {
             "default": [],
-            "description": "Filter rating curves by workspace ID.",
+            "description": "Rating curves at monitoring sites in this workspace. Matches `id` in `workspaces`.",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -14097,7 +14098,7 @@
           },
           "workspaceId": {
             "default": [],
-            "description": "Filter terms by workspace ID.",
+            "description": "Result qualifiers that belong to this workspace. Matches `id` in `workspaces`. `null` matches result qualifiers shared by every workspace.",
             "items": {
               "anyOf": [
                 {
@@ -14271,7 +14272,7 @@
           },
           "workspaceId": {
             "default": [],
-            "description": "Filter roles by workspace ID.",
+            "description": "Roles that belong to this workspace. Matches `id` in `workspaces`. `null` matches HydroServer's built-in roles, which are available in every workspace.",
             "items": {
               "anyOf": [
                 {
@@ -15015,7 +15016,7 @@
                 "type": "null"
               }
             ],
-            "description": "Filters for task runs finished on or before this date and time.",
+            "description": "Task runs that finished at or before this RFC 3339 date-time.",
             "title": "Finishedatmax"
           },
           "finishedAtMin": {
@@ -15031,7 +15032,7 @@
                 "type": "null"
               }
             ],
-            "description": "Filters for task runs finished on or after this date and time.",
+            "description": "Task runs that finished at or after this RFC 3339 date-time.",
             "title": "Finishedatmin"
           },
           "include": {
@@ -15120,7 +15121,7 @@
                 "type": "null"
               }
             ],
-            "description": "Filters for task runs started on or before this date and time.",
+            "description": "Task runs that started at or before this RFC 3339 date-time.",
             "title": "Startedatmax"
           },
           "startedAtMin": {
@@ -15136,12 +15137,12 @@
                 "type": "null"
               }
             ],
-            "description": "Filters for task runs started on or after this date and time.",
+            "description": "Task runs that started at or after this RFC 3339 date-time.",
             "title": "Startedatmin"
           },
           "status": {
             "default": [],
-            "description": "Filters task runs by their status.",
+            "description": "Task runs with this status. `PENDING` and `STARTED` runs haven't finished yet.",
             "items": {
               "enum": [
                 "PENDING",
@@ -15426,7 +15427,7 @@
           },
           "datastreamId": {
             "default": [],
-            "description": "Filter units by datastream ID.",
+            "description": "Units used by this datastream. Matches `id` in `datastreams`. `null` matches units that no datastream uses.",
             "items": {
               "anyOf": [
                 {
@@ -15468,7 +15469,7 @@
           },
           "monitoringSiteId": {
             "default": [],
-            "description": "Filter units by monitoring_site ID.",
+            "description": "Units used by datastreams at this monitoring site. Matches `id` in `monitoring-sites`. `null` matches units that no datastream uses.",
             "items": {
               "anyOf": [
                 {
@@ -15548,7 +15549,7 @@
           },
           "type": {
             "default": [],
-            "description": "Filter units by type",
+            "description": "Units of this type. Matches `name` in `unit-types`.",
             "items": {
               "type": "string"
             },
@@ -15557,7 +15558,7 @@
           },
           "workspaceId": {
             "default": [],
-            "description": "Filter units by workspace ID.",
+            "description": "Units that belong to this workspace. Matches `id` in `workspaces`. `null` matches units shared by every workspace.",
             "items": {
               "anyOf": [
                 {
@@ -16340,7 +16341,7 @@
                 "type": "null"
               }
             ],
-            "description": "Whether the workspace is associated with the authenticated user",
+            "description": "`true` returns only the workspaces you own, collaborate on, or have a pending transfer to. For a service account, that's its own workspace. `false` doesn't filter.",
             "title": "Isassociated"
           },
           "isPrivate": {
@@ -16352,7 +16353,7 @@
                 "type": "null"
               }
             ],
-            "description": "Whether the returned workspaces should be private or public.",
+            "description": "`true` returns only private workspaces, and `false` only public ones.",
             "title": "Isprivate"
           },
           "limit": {
@@ -16516,7 +16517,7 @@
     }
   },
   "info": {
-    "description": "Provides access to hydrologic monitoring sites, datastreams, and observations managed in HydroServer.",
+    "description": "HydroServer's primary API for creating, managing, and retrieving hydrologic data and metadata: workspaces and\ntheir access control, monitoring sites, datastreams, and observations, the metadata and controlled vocabularies\nthat describe them, and the Job Orchestration System tasks that load, derive, and monitor data.\n\nThe API implements [OGC API - Features](https://ogcapi.ogc.org/features/). Each type of resource is a\ncollection listed at `/collections`, with its items at `/collections/{collectionId}/items`, and `/conformance`\nlists the standards the API conforms to.\n\n## Additional Documentation\n\n- [Using the Data Management API](https://hydroserver.org/user-guides/how-to/using-the-data-management-api): paging,\n  filtering, response formats, creating, updating, and deleting items, and errors, with examples\n- [Authenticating](https://hydroserver.org/references/hydroserver-apis#authenticating) with API keys, OIDC access tokens,\n  email and password, or browser sessions\n- [Data model](https://hydroserver.org/references/data-model) and [data dictionary](https://hydroserver.org/references/data-dictionary)\n- [HydroServer APIs](https://hydroserver.org/references/hydroserver-apis), including HydroServer's SensorThings API",
     "title": "HydroServer Data Management API",
     "version": "2.0.0b7"
   },
@@ -16547,7 +16548,7 @@
     },
     "/api/ogc/collections": {
       "get": {
-        "description": "Get the collections the API serves.",
+        "description": "Get the collections the API serves, with links to each collection's items in the formats\nthey're available in.",
         "operationId": "interfaces_api_views_ogc_get_collections",
         "parameters": [],
         "responses": {
@@ -16570,7 +16571,7 @@
     },
     "/api/ogc/collections/aggregation-statistics/items": {
       "get": {
-        "description": "Get Aggregation Statistics.",
+        "description": "Get aggregation statistics.",
         "operationId": "interfaces_api_views_sta_aggregation_statistic_get_aggregation_statistics",
         "parameters": [
           {
@@ -16791,7 +16792,7 @@
         ]
       },
       "post": {
-        "description": "Create a new Aggregation Statistic.",
+        "description": "Create a new aggregation statistic.",
         "operationId": "interfaces_api_views_sta_aggregation_statistic_create_aggregation_statistic",
         "parameters": [],
         "requestBody": {
@@ -16871,7 +16872,7 @@
     },
     "/api/ogc/collections/aggregation-statistics/items/{aggregation_statistic_id}": {
       "delete": {
-        "description": "Delete an Aggregation Statistic.",
+        "description": "Delete an aggregation statistic.",
         "operationId": "interfaces_api_views_sta_aggregation_statistic_delete_aggregation_statistic",
         "parameters": [
           {
@@ -16932,7 +16933,7 @@
         ]
       },
       "get": {
-        "description": "Get an Aggregation Statistic.",
+        "description": "Get an aggregation statistic.",
         "operationId": "interfaces_api_views_sta_aggregation_statistic_get_aggregation_statistic",
         "parameters": [
           {
@@ -17045,7 +17046,7 @@
         ]
       },
       "patch": {
-        "description": "Update an Aggregation Statistic.",
+        "description": "Update an aggregation statistic.",
         "operationId": "interfaces_api_views_sta_aggregation_statistic_update_aggregation_statistic",
         "parameters": [
           {
@@ -17310,13 +17311,13 @@
             }
           },
           {
-            "description": "Filter rating curves by monitoring site ID.",
+            "description": "Rating curves that belong to this monitoring site. Matches `id` in `monitoring-sites`.",
             "in": "query",
             "name": "monitoringSiteId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter rating curves by monitoring site ID.",
+              "description": "Rating curves that belong to this monitoring site. Matches `id` in `monitoring-sites`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -17326,13 +17327,13 @@
             }
           },
           {
-            "description": "Filter rating curves by workspace ID.",
+            "description": "Rating curves at monitoring sites in this workspace. Matches `id` in `workspaces`.",
             "in": "query",
             "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter rating curves by workspace ID.",
+              "description": "Rating curves at monitoring sites in this workspace. Matches `id` in `workspaces`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -18002,13 +18003,13 @@
             }
           },
           {
-            "description": "Filter data product tasks by monitoring_site ID.",
+            "description": "Data product tasks for this monitoring site. Matches `id` in `monitoring-sites`.",
             "in": "query",
             "name": "monitoringSiteId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter data product tasks by monitoring_site ID.",
+              "description": "Data product tasks for this monitoring site. Matches `id` in `monitoring-sites`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -18018,13 +18019,13 @@
             }
           },
           {
-            "description": "Filter data product tasks by workspace ID.",
+            "description": "Data product tasks in this workspace. Matches `id` in `workspaces`.",
             "in": "query",
             "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter data product tasks by workspace ID.",
+              "description": "Data product tasks in this workspace. Matches `id` in `workspaces`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -18034,13 +18035,13 @@
             }
           },
           {
-            "description": "Filter data product tasks by their most recent run status.",
+            "description": "Data product tasks whose latest run has this status: `PENDING`, `STARTED`, `SUCCESS`, or `FAILURE`. `null` matches tasks that have never run.",
             "in": "query",
             "name": "latestRunStatus",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter data product tasks by their most recent run status.",
+              "description": "Data product tasks whose latest run has this status: `PENDING`, `STARTED`, `SUCCESS`, or `FAILURE`. `null` matches tasks that have never run.",
               "items": {
                 "anyOf": [
                   {
@@ -18057,13 +18058,13 @@
             }
           },
           {
-            "description": "Filter data product tasks by transformation type.",
+            "description": "Data product tasks with a transformation of this type: `aggregation`, `derivation`, or `rating_curve`.",
             "in": "query",
             "name": "transformationType",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter data product tasks by transformation type.",
+              "description": "Data product tasks with a transformation of this type: `aggregation`, `derivation`, or `rating_curve`.",
               "items": {
                 "type": "string"
               },
@@ -18072,13 +18073,13 @@
             }
           },
           {
-            "description": "Filter data product tasks by output datastream ID.",
+            "description": "Data product tasks with a transformation that outputs to this datastream. Matches `id` in `datastreams`.",
             "in": "query",
             "name": "outputDatastreamId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter data product tasks by output datastream ID.",
+              "description": "Data product tasks with a transformation that outputs to this datastream. Matches `id` in `datastreams`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -18088,13 +18089,13 @@
             }
           },
           {
-            "description": "Filter data product tasks by input datastream ID.",
+            "description": "Data product tasks with a transformation that uses this datastream as an input. Matches `id` in `datastreams`.",
             "in": "query",
             "name": "inputDatastreamId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter data product tasks by input datastream ID.",
+              "description": "Data product tasks with a transformation that uses this datastream as an input. Matches `id` in `datastreams`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -18104,13 +18105,13 @@
             }
           },
           {
-            "description": "Filter data product tasks by rating curve ID.",
+            "description": "Data product tasks with a transformation that uses this rating curve. Matches `id` in `data-product-rating-curves`. `null` matches tasks with a transformation that doesn't use a rating curve, and tasks with no transformations.",
             "in": "query",
             "name": "ratingCurveId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter data product tasks by rating curve ID.",
+              "description": "Data product tasks with a transformation that uses this rating curve. Matches `id` in `data-product-rating-curves`. `null` matches tasks with a transformation that doesn't use a rating curve, and tasks with no transformations.",
               "items": {
                 "anyOf": [
                   {
@@ -18584,7 +18585,7 @@
     },
     "/api/ogc/collections/data-product-tasks/items/{task_id}/runs": {
       "get": {
-        "description": "Get runs for a data product task.",
+        "description": "Get the runs of a data product task, each with its status, start and finish times, and\noutcome message.",
         "operationId": "interfaces_api_views_products_task_get_data_product_task_runs",
         "parameters": [
           {
@@ -18705,13 +18706,13 @@
             "style": "form"
           },
           {
-            "description": "Filters task runs by their status.",
+            "description": "Task runs with this status. `PENDING` and `STARTED` runs haven't finished yet.",
             "in": "query",
             "name": "status",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filters task runs by their status.",
+              "description": "Task runs with this status. `PENDING` and `STARTED` runs haven't finished yet.",
               "items": {
                 "enum": [
                   "PENDING",
@@ -18726,7 +18727,7 @@
             }
           },
           {
-            "description": "Filters for task runs started on or before this date and time.",
+            "description": "Task runs that started at or before this RFC 3339 date-time.",
             "in": "query",
             "name": "startedAtMax",
             "required": false,
@@ -18743,12 +18744,12 @@
                   "type": "null"
                 }
               ],
-              "description": "Filters for task runs started on or before this date and time.",
+              "description": "Task runs that started at or before this RFC 3339 date-time.",
               "title": "Startedatmax"
             }
           },
           {
-            "description": "Filters for task runs started on or after this date and time.",
+            "description": "Task runs that started at or after this RFC 3339 date-time.",
             "in": "query",
             "name": "startedAtMin",
             "required": false,
@@ -18765,12 +18766,12 @@
                   "type": "null"
                 }
               ],
-              "description": "Filters for task runs started on or after this date and time.",
+              "description": "Task runs that started at or after this RFC 3339 date-time.",
               "title": "Startedatmin"
             }
           },
           {
-            "description": "Filters for task runs finished on or before this date and time.",
+            "description": "Task runs that finished at or before this RFC 3339 date-time.",
             "in": "query",
             "name": "finishedAtMax",
             "required": false,
@@ -18787,12 +18788,12 @@
                   "type": "null"
                 }
               ],
-              "description": "Filters for task runs finished on or before this date and time.",
+              "description": "Task runs that finished at or before this RFC 3339 date-time.",
               "title": "Finishedatmax"
             }
           },
           {
-            "description": "Filters for task runs finished on or after this date and time.",
+            "description": "Task runs that finished at or after this RFC 3339 date-time.",
             "in": "query",
             "name": "finishedAtMin",
             "required": false,
@@ -18809,7 +18810,7 @@
                   "type": "null"
                 }
               ],
-              "description": "Filters for task runs finished on or after this date and time.",
+              "description": "Task runs that finished at or after this RFC 3339 date-time.",
               "title": "Finishedatmin"
             }
           }
@@ -18881,7 +18882,7 @@
     },
     "/api/ogc/collections/data-product-tasks/items/{task_id}/runs/{run_id}": {
       "get": {
-        "description": "Get a single run for a data product task.",
+        "description": "Get one run of a data product task, with its status, start and finish times, outcome\nmessage, and `result` details.",
         "operationId": "interfaces_api_views_products_task_get_data_product_task_run",
         "parameters": [
           {
@@ -18972,7 +18973,7 @@
     },
     "/api/ogc/collections/data-product-tasks/items/{task_id}/trigger": {
       "post": {
-        "description": "Trigger an immediate run of a data product task on a Celery worker.",
+        "description": "Run a data product task now and return the new task run.",
         "operationId": "interfaces_api_views_products_task_trigger_data_product_task",
         "parameters": [
           {
@@ -19209,13 +19210,13 @@
             "style": "form"
           },
           {
-            "description": "Filter transformations by type.",
+            "description": "Transformations of this type: `aggregation`, `derivation`, or `rating_curve`.",
             "in": "query",
             "name": "transformationType",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter transformations by type.",
+              "description": "Transformations of this type: `aggregation`, `derivation`, or `rating_curve`.",
               "items": {
                 "type": "string"
               },
@@ -19224,13 +19225,13 @@
             }
           },
           {
-            "description": "Filter transformations by output datastream ID.",
+            "description": "The transformation that outputs to this datastream. Matches `id` in `datastreams`.",
             "in": "query",
             "name": "outputDatastreamId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter transformations by output datastream ID.",
+              "description": "The transformation that outputs to this datastream. Matches `id` in `datastreams`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -19240,13 +19241,13 @@
             }
           },
           {
-            "description": "Filter transformations by input datastream ID.",
+            "description": "Transformations that use this datastream as an input. Matches `id` in `datastreams`.",
             "in": "query",
             "name": "inputDatastreamId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter transformations by input datastream ID.",
+              "description": "Transformations that use this datastream as an input. Matches `id` in `datastreams`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -19256,13 +19257,13 @@
             }
           },
           {
-            "description": "Filter transformations by data product task ID.",
+            "description": "Transformations of this data product task. Matches `id` in `data-product-tasks`.",
             "in": "query",
             "name": "taskId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter transformations by data product task ID.",
+              "description": "Transformations of this data product task. Matches `id` in `data-product-tasks`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -19272,13 +19273,13 @@
             }
           },
           {
-            "description": "Filter transformations by workspace ID.",
+            "description": "Transformations of data product tasks in this workspace. Matches `id` in `workspaces`.",
             "in": "query",
             "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter transformations by workspace ID.",
+              "description": "Transformations of data product tasks in this workspace. Matches `id` in `workspaces`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -19796,7 +19797,7 @@
     },
     "/api/ogc/collections/datastream-statuses/items": {
       "get": {
-        "description": "Get Datastream Statuses.",
+        "description": "Get datastream statuses.",
         "operationId": "interfaces_api_views_sta_datastream_status_get_datastream_statuses",
         "parameters": [
           {
@@ -20017,7 +20018,7 @@
         ]
       },
       "post": {
-        "description": "Create a new Datastream Status.",
+        "description": "Create a new datastream status.",
         "operationId": "interfaces_api_views_sta_datastream_status_create_datastream_status",
         "parameters": [],
         "requestBody": {
@@ -20097,7 +20098,7 @@
     },
     "/api/ogc/collections/datastream-statuses/items/{datastream_status_id}": {
       "delete": {
-        "description": "Delete a Datastream Status.",
+        "description": "Delete a datastream status.",
         "operationId": "interfaces_api_views_sta_datastream_status_delete_datastream_status",
         "parameters": [
           {
@@ -20158,7 +20159,7 @@
         ]
       },
       "get": {
-        "description": "Get a Datastream Status.",
+        "description": "Get a datastream status.",
         "operationId": "interfaces_api_views_sta_datastream_status_get_datastream_status",
         "parameters": [
           {
@@ -20271,7 +20272,7 @@
         ]
       },
       "patch": {
-        "description": "Update a Datastream Status.",
+        "description": "Update a datastream status.",
         "operationId": "interfaces_api_views_sta_datastream_status_update_datastream_status",
         "parameters": [
           {
@@ -20360,7 +20361,7 @@
     },
     "/api/ogc/collections/datastreams/items": {
       "get": {
-        "description": "Get public Datastreams and Datastreams associated with the authenticated user.",
+        "description": "Get public datastreams and datastreams associated with the authenticated user.",
         "operationId": "interfaces_api_views_sta_datastream_get_datastreams",
         "parameters": [
           {
@@ -20584,13 +20585,13 @@
             }
           },
           {
-            "description": "Filter datastreams by workspace ID.",
+            "description": "Datastreams in this workspace. Matches `id` in `workspaces`.",
             "in": "query",
             "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter datastreams by workspace ID.",
+              "description": "Datastreams in this workspace. Matches `id` in `workspaces`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -20600,13 +20601,13 @@
             }
           },
           {
-            "description": "Filter datastreams by monitoring_site ID.",
+            "description": "Datastreams at this monitoring site. Matches `id` in `monitoring-sites`.",
             "in": "query",
             "name": "monitoringSiteId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter datastreams by monitoring_site ID.",
+              "description": "Datastreams at this monitoring site. Matches `id` in `monitoring-sites`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -20616,13 +20617,13 @@
             }
           },
           {
-            "description": "Filter datastreams by method ID.",
+            "description": "Datastreams produced by this method. Matches `id` in `methods`.",
             "in": "query",
             "name": "methodId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter datastreams by method ID.",
+              "description": "Datastreams produced by this method. Matches `id` in `methods`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -20632,13 +20633,13 @@
             }
           },
           {
-            "description": "Filter datastreams by observed property ID.",
+            "description": "Datastreams that observe this observed property. Matches `id` in `observed-properties`.",
             "in": "query",
             "name": "observedPropertyId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter datastreams by observed property ID.",
+              "description": "Datastreams that observe this observed property. Matches `id` in `observed-properties`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -20648,13 +20649,13 @@
             }
           },
           {
-            "description": "Filter datastreams by processing level ID.",
+            "description": "Datastreams at this processing level. Matches `id` in `processing-levels`.",
             "in": "query",
             "name": "processingLevelId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter datastreams by processing level ID.",
+              "description": "Datastreams at this processing level. Matches `id` in `processing-levels`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -20664,13 +20665,13 @@
             }
           },
           {
-            "description": "Filter datastreams by unit ID.",
+            "description": "Datastreams in this unit. Matches `id` in `units`.",
             "in": "query",
             "name": "unitId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter datastreams by unit ID.",
+              "description": "Datastreams in this unit. Matches `id` in `units`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -20680,13 +20681,13 @@
             }
           },
           {
-            "description": "Filter datastreams by observation result qualifier ID.",
+            "description": "Not supported yet. Any value returns no datastreams.",
             "in": "query",
             "name": "resultQualifier",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter datastreams by observation result qualifier ID.",
+              "description": "Not supported yet. Any value returns no datastreams.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -20696,13 +20697,13 @@
             }
           },
           {
-            "description": "Filter monitoring_sites by observation type.",
+            "description": "Datastreams with this observation type. Matches exactly, including case.",
             "in": "query",
             "name": "observationType",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter monitoring_sites by observation type.",
+              "description": "Datastreams with this observation type. Matches exactly, including case.",
               "items": {
                 "type": "string"
               },
@@ -20711,13 +20712,13 @@
             }
           },
           {
-            "description": "Filter monitoring_sites by sampled medium.",
+            "description": "Datastreams with this sampled medium. Matches `name` in `sampled-mediums`.",
             "in": "query",
             "name": "sampledMedium",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter monitoring_sites by sampled medium.",
+              "description": "Datastreams with this sampled medium. Matches `name` in `sampled-mediums`.",
               "items": {
                 "type": "string"
               },
@@ -20726,13 +20727,13 @@
             }
           },
           {
-            "description": "Filter datastreams by status.",
+            "description": "Datastreams with this status. Matches `name` in `datastream-statuses`. `null` matches datastreams without a status.",
             "in": "query",
             "name": "status",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter datastreams by status.",
+              "description": "Datastreams with this status. Matches `name` in `datastream-statuses`. `null` matches datastreams without a status.",
               "items": {
                 "anyOf": [
                   {
@@ -20749,13 +20750,13 @@
             }
           },
           {
-            "description": "Filter monitoring_sites by result type.",
+            "description": "Datastreams with this result type. Matches exactly, including case.",
             "in": "query",
             "name": "resultType",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter monitoring_sites by result type.",
+              "description": "Datastreams with this result type. Matches exactly, including case.",
               "items": {
                 "type": "string"
               },
@@ -20764,13 +20765,13 @@
             }
           },
           {
-            "description": "Filter datastreams by tag. Format tag filters as {key}:{value}. Repeat the parameter to require several tags.",
+            "description": "Datastreams with this tag, as `{key}:{value}`. Repeat the parameter to require several tags.",
             "in": "query",
             "name": "tag",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter datastreams by tag. Format tag filters as {key}:{value}. Repeat the parameter to require several tags.",
+              "description": "Datastreams with this tag, as `{key}:{value}`. Repeat the parameter to require several tags.",
               "items": {
                 "type": "string"
               },
@@ -20779,7 +20780,7 @@
             }
           },
           {
-            "description": "Controls whether the datastreams should be private or public.",
+            "description": "`false` returns only datastreams that are public at every level: the datastream, its monitoring site, and its workspace. `true` returns only datastreams that are private at every level.",
             "in": "query",
             "name": "isPrivate",
             "required": false,
@@ -20792,12 +20793,12 @@
                   "type": "null"
                 }
               ],
-              "description": "Controls whether the datastreams should be private or public.",
+              "description": "`false` returns only datastreams that are public at every level: the datastream, its monitoring site, and its workspace. `true` returns only datastreams that are private at every level.",
               "title": "Isprivate"
             }
           },
           {
-            "description": "Sets the maximum value count of filtered datastreams.",
+            "description": "Datastreams with at most this many observations.",
             "in": "query",
             "name": "valueCountMax",
             "required": false,
@@ -20810,12 +20811,12 @@
                   "type": "null"
                 }
               ],
-              "description": "Sets the maximum value count of filtered datastreams.",
+              "description": "Datastreams with at most this many observations.",
               "title": "Valuecountmax"
             }
           },
           {
-            "description": "Sets the minimum value count of filtered datastreams.",
+            "description": "Datastreams with at least this many observations.",
             "in": "query",
             "name": "valueCountMin",
             "required": false,
@@ -20828,7 +20829,7 @@
                   "type": "null"
                 }
               ],
-              "description": "Sets the minimum value count of filtered datastreams.",
+              "description": "Datastreams with at least this many observations.",
               "title": "Valuecountmin"
             }
           },
@@ -20895,7 +20896,7 @@
         ]
       },
       "post": {
-        "description": "Create a new Datastream.",
+        "description": "Create a new datastream.",
         "operationId": "interfaces_api_views_sta_datastream_create_datastream",
         "parameters": [],
         "requestBody": {
@@ -20986,7 +20987,7 @@
     },
     "/api/ogc/collections/datastreams/items/{datastream_id}": {
       "delete": {
-        "description": "Delete a Datastream.",
+        "description": "Delete a datastream.",
         "operationId": "interfaces_api_views_sta_datastream_delete_datastream",
         "parameters": [
           {
@@ -21047,7 +21048,7 @@
         ]
       },
       "get": {
-        "description": "Get a Datastream.",
+        "description": "Get a datastream.",
         "operationId": "interfaces_api_views_sta_datastream_get_datastream",
         "parameters": [
           {
@@ -21207,7 +21208,7 @@
         ]
       },
       "patch": {
-        "description": "Update a Datastream.",
+        "description": "Update a datastream.",
         "operationId": "interfaces_api_views_sta_datastream_update_datastream",
         "parameters": [
           {
@@ -21296,7 +21297,7 @@
     },
     "/api/ogc/collections/datastreams/items/{datastream_id}/csv": {
       "get": {
-        "description": "Get a CSV representation of the Datastream.",
+        "description": "Download a datastream's observations and metadata as a CSV file.",
         "operationId": "interfaces_api_views_sta_datastream_get_datastream_csv",
         "parameters": [
           {
@@ -21359,7 +21360,7 @@
     },
     "/api/ogc/collections/datastreams/items/{datastream_id}/linked-resources": {
       "get": {
-        "description": "Get all linked resources associated with a Datastream.",
+        "description": "Get the files and links attached to a datastream.",
         "operationId": "interfaces_api_views_sta_datastream_get_datastream_linked_resources",
         "parameters": [
           {
@@ -21425,13 +21426,13 @@
             }
           },
           {
-            "description": "Filter by linked resource type.",
+            "description": "Linked resources of this type. Matches `name` in `linked-resource-types`.",
             "in": "query",
             "name": "type",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter by linked resource type.",
+              "description": "Linked resources of this type. Matches `name` in `linked-resource-types`.",
               "items": {
                 "type": "string"
               },
@@ -21494,7 +21495,7 @@
         ]
       },
       "post": {
-        "description": "Add a linked resource to a datastream.",
+        "description": "Add a file or link to a datastream as multipart form data.",
         "operationId": "interfaces_api_views_sta_datastream_add_datastream_linked_resource",
         "parameters": [
           {
@@ -21658,7 +21659,7 @@
     },
     "/api/ogc/collections/datastreams/items/{datastream_id}/linked-resources/{linked_resource_id}": {
       "delete": {
-        "description": "Remove a linked resource from a datastream.",
+        "description": "Remove a file or link from a datastream.",
         "operationId": "interfaces_api_views_sta_datastream_remove_datastream_linked_resource",
         "parameters": [
           {
@@ -21740,7 +21741,7 @@
         ]
       },
       "get": {
-        "description": "Get a linked resource associated with a Datastream.",
+        "description": "Get a file or link attached to a datastream.",
         "operationId": "interfaces_api_views_sta_datastream_get_datastream_linked_resource",
         "parameters": [
           {
@@ -21829,7 +21830,7 @@
         ]
       },
       "patch": {
-        "description": "Update a linked resource for a datastream. A linked resource's mode (hosted file vs.\nexternal URL) cannot be changed in place \u2014 delete it and create a new one instead.",
+        "description": "Update a datastream's linked resource as multipart form data.",
         "operationId": "interfaces_api_views_sta_datastream_update_datastream_linked_resource",
         "parameters": [
           {
@@ -22015,10 +22016,11 @@
     },
     "/api/ogc/collections/datastreams/tags/keys": {
       "get": {
-        "description": "Get all existing unique datastream tag keys.",
+        "description": "Get the tag keys and values used by datastreams, for HydroServer's web apps.",
         "operationId": "interfaces_api_views_sta_datastream_get_datastream_tag_keys",
         "parameters": [
           {
+            "description": "Only tags of datastreams in this workspace.",
             "in": "query",
             "name": "workspaceId",
             "required": false,
@@ -22032,10 +22034,12 @@
                   "type": "null"
                 }
               ],
+              "description": "Only tags of datastreams in this workspace.",
               "title": "Workspaceid"
             }
           },
           {
+            "description": "Only the tags of this datastream.",
             "in": "query",
             "name": "datastreamId",
             "required": false,
@@ -22049,6 +22053,7 @@
                   "type": "null"
                 }
               ],
+              "description": "Only the tags of this datastream.",
               "title": "Datastreamid"
             }
           }
@@ -22105,17 +22110,17 @@
     },
     "/api/ogc/collections/datastreams/visualization-bootstrap": {
       "get": {
-        "description": "Get the lean metadata required to bootstrap the visualization page.",
+        "description": "Get datastream metadata for HydroServer's data visualization page.",
         "operationId": "interfaces_api_views_sta_datastream_get_datastream_visualization_bootstrap",
         "parameters": [
           {
-            "description": "Filter visualization bootstrap datastreams by workspace ID.",
+            "description": "Datastreams in this workspace. Matches `id` in `workspaces`.",
             "in": "query",
             "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter visualization bootstrap datastreams by workspace ID.",
+              "description": "Datastreams in this workspace. Matches `id` in `workspaces`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -22170,7 +22175,7 @@
     },
     "/api/ogc/collections/etl-data-connections/items": {
       "get": {
-        "description": "Get ETL Data Connections associated with the authenticated user.",
+        "description": "Get ETL data connections associated with the authenticated user.",
         "operationId": "interfaces_api_views_etl_data_connection_get_data_connections",
         "parameters": [
           {
@@ -22357,13 +22362,13 @@
             }
           },
           {
-            "description": "Filter data connections by workspace ID.",
+            "description": "Data connections in this workspace. Matches `id` in `workspaces`.",
             "in": "query",
             "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter data connections by workspace ID.",
+              "description": "Data connections in this workspace. Matches `id` in `workspaces`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -22373,13 +22378,13 @@
             }
           },
           {
-            "description": "Filter data connections by payload type.",
+            "description": "Data connections whose payload is in this format: `CSV` or `JSON`.",
             "in": "query",
             "name": "payloadType",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter data connections by payload type.",
+              "description": "Data connections whose payload is in this format: `CSV` or `JSON`.",
               "items": {
                 "type": "string"
               },
@@ -22444,7 +22449,7 @@
         ]
       },
       "post": {
-        "description": "Create a new ETL Data Connection.",
+        "description": "Create a new ETL data connection.",
         "operationId": "interfaces_api_views_etl_data_connection_create_data_connection",
         "parameters": [],
         "requestBody": {
@@ -22535,7 +22540,7 @@
     },
     "/api/ogc/collections/etl-data-connections/items/{data_connection_id}": {
       "delete": {
-        "description": "Delete an ETL Data Connection.",
+        "description": "Delete an ETL data connection.",
         "operationId": "interfaces_api_views_etl_data_connection_delete_data_connection",
         "parameters": [
           {
@@ -22607,7 +22612,7 @@
         ]
       },
       "get": {
-        "description": "Get an ETL Data Connection.",
+        "description": "Get an ETL data connection.",
         "operationId": "interfaces_api_views_etl_data_connection_get_data_connection",
         "parameters": [
           {
@@ -22750,7 +22755,7 @@
         ]
       },
       "patch": {
-        "description": "Update an ETL Data Connection.",
+        "description": "Update an ETL data connection.",
         "operationId": "interfaces_api_views_etl_data_connection_update_data_connection",
         "parameters": [
           {
@@ -22994,13 +22999,13 @@
             "style": "form"
           },
           {
-            "description": "Filter mappings by source identifier.",
+            "description": "Mappings for this source identifier, such as a CSV column name. Matches exactly, including case.",
             "in": "query",
             "name": "sourceIdentifier",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter mappings by source identifier.",
+              "description": "Mappings for this source identifier, such as a CSV column name. Matches exactly, including case.",
               "items": {
                 "type": "string"
               },
@@ -23009,13 +23014,13 @@
             }
           },
           {
-            "description": "Filter mappings by target datastream ID.",
+            "description": "Mappings that load data into this datastream. Matches `id` in `datastreams`.",
             "in": "query",
             "name": "targetDatastreamId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter mappings by target datastream ID.",
+              "description": "Mappings that load data into this datastream. Matches `id` in `datastreams`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -23025,13 +23030,13 @@
             }
           },
           {
-            "description": "Filter mappings by ETL task ID.",
+            "description": "Mappings of this ETL task. Matches `id` in `etl-tasks`.",
             "in": "query",
             "name": "etlTaskId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter mappings by ETL task ID.",
+              "description": "Mappings of this ETL task. Matches `id` in `etl-tasks`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -23041,13 +23046,13 @@
             }
           },
           {
-            "description": "Filter mappings by workspace ID.",
+            "description": "Mappings of ETL tasks in this workspace. Matches `id` in `workspaces`.",
             "in": "query",
             "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter mappings by workspace ID.",
+              "description": "Mappings of ETL tasks in this workspace. Matches `id` in `workspaces`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -23553,7 +23558,7 @@
     },
     "/api/ogc/collections/etl-tasks/items": {
       "get": {
-        "description": "Get ETL Tasks accessible to the authenticated user.",
+        "description": "Get ETL tasks accessible to the authenticated user.",
         "operationId": "interfaces_api_views_etl_task_get_etl_tasks",
         "parameters": [
           {
@@ -23738,13 +23743,13 @@
             }
           },
           {
-            "description": "Filter ETL tasks by monitoring_site ID.",
+            "description": "ETL tasks with a mapping that loads data into a datastream at this monitoring site. Matches `id` in `monitoring-sites`.",
             "in": "query",
             "name": "monitoringSiteId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter ETL tasks by monitoring_site ID.",
+              "description": "ETL tasks with a mapping that loads data into a datastream at this monitoring site. Matches `id` in `monitoring-sites`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -23754,13 +23759,13 @@
             }
           },
           {
-            "description": "Filter ETL tasks by workspace ID.",
+            "description": "ETL tasks in this workspace. Matches `id` in `workspaces`.",
             "in": "query",
             "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter ETL tasks by workspace ID.",
+              "description": "ETL tasks in this workspace. Matches `id` in `workspaces`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -23770,13 +23775,13 @@
             }
           },
           {
-            "description": "Filter ETL tasks by data connection ID.",
+            "description": "ETL tasks that use this data connection. Matches `id` in `etl-data-connections`.",
             "in": "query",
             "name": "dataConnectionId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter ETL tasks by data connection ID.",
+              "description": "ETL tasks that use this data connection. Matches `id` in `etl-data-connections`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -23786,13 +23791,13 @@
             }
           },
           {
-            "description": "Filter ETL tasks by their most recent run status.",
+            "description": "ETL tasks whose latest run has this status: `PENDING`, `STARTED`, `SUCCESS`, or `FAILURE`. `null` matches tasks that have never run.",
             "in": "query",
             "name": "latestRunStatus",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter ETL tasks by their most recent run status.",
+              "description": "ETL tasks whose latest run has this status: `PENDING`, `STARTED`, `SUCCESS`, or `FAILURE`. `null` matches tasks that have never run.",
               "items": {
                 "anyOf": [
                   {
@@ -23809,7 +23814,7 @@
             }
           },
           {
-            "description": "Filter tasks whose latest run started on or after this datetime.",
+            "description": "ETL tasks whose latest run started at or after this RFC 3339 date-time.",
             "in": "query",
             "name": "latestRunStartedAtMin",
             "required": false,
@@ -23826,12 +23831,12 @@
                   "type": "null"
                 }
               ],
-              "description": "Filter tasks whose latest run started on or after this datetime.",
+              "description": "ETL tasks whose latest run started at or after this RFC 3339 date-time.",
               "title": "Latestrunstartedatmin"
             }
           },
           {
-            "description": "Filter tasks whose latest run started on or before this datetime.",
+            "description": "ETL tasks whose latest run started at or before this RFC 3339 date-time.",
             "in": "query",
             "name": "latestRunStartedAtMax",
             "required": false,
@@ -23848,12 +23853,12 @@
                   "type": "null"
                 }
               ],
-              "description": "Filter tasks whose latest run started on or before this datetime.",
+              "description": "ETL tasks whose latest run started at or before this RFC 3339 date-time.",
               "title": "Latestrunstartedatmax"
             }
           },
           {
-            "description": "Filter tasks whose latest run finished on or after this datetime.",
+            "description": "ETL tasks whose latest run finished at or after this RFC 3339 date-time.",
             "in": "query",
             "name": "latestRunFinishedAtMin",
             "required": false,
@@ -23870,12 +23875,12 @@
                   "type": "null"
                 }
               ],
-              "description": "Filter tasks whose latest run finished on or after this datetime.",
+              "description": "ETL tasks whose latest run finished at or after this RFC 3339 date-time.",
               "title": "Latestrunfinishedatmin"
             }
           },
           {
-            "description": "Filter tasks whose latest run finished on or before this datetime.",
+            "description": "ETL tasks whose latest run finished at or before this RFC 3339 date-time.",
             "in": "query",
             "name": "latestRunFinishedAtMax",
             "required": false,
@@ -23892,7 +23897,7 @@
                   "type": "null"
                 }
               ],
-              "description": "Filter tasks whose latest run finished on or before this datetime.",
+              "description": "ETL tasks whose latest run finished at or before this RFC 3339 date-time.",
               "title": "Latestrunfinishedatmax"
             }
           },
@@ -23953,7 +23958,7 @@
         ]
       },
       "post": {
-        "description": "Create a new ETL Task.",
+        "description": "Create a new ETL task.",
         "operationId": "interfaces_api_views_etl_task_create_etl_task",
         "parameters": [],
         "requestBody": {
@@ -24044,7 +24049,7 @@
     },
     "/api/ogc/collections/etl-tasks/items/{task_id}": {
       "delete": {
-        "description": "Delete an ETL Task.",
+        "description": "Delete an ETL task.",
         "operationId": "interfaces_api_views_etl_task_delete_etl_task",
         "parameters": [
           {
@@ -24116,7 +24121,7 @@
         ]
       },
       "get": {
-        "description": "Get an ETL Task.",
+        "description": "Get an ETL task.",
         "operationId": "interfaces_api_views_etl_task_get_etl_task",
         "parameters": [
           {
@@ -24254,7 +24259,7 @@
         ]
       },
       "patch": {
-        "description": "Update an ETL Task.",
+        "description": "Update an ETL task.",
         "operationId": "interfaces_api_views_etl_task_update_etl_task",
         "parameters": [
           {
@@ -24354,7 +24359,7 @@
     },
     "/api/ogc/collections/etl-tasks/items/{task_id}/runs": {
       "get": {
-        "description": "Get runs for an ETL Task.",
+        "description": "Get the runs of an ETL task, each with its status, start and finish times, and outcome\nmessage.",
         "operationId": "interfaces_api_views_etl_task_get_etl_task_runs",
         "parameters": [
           {
@@ -24475,13 +24480,13 @@
             "style": "form"
           },
           {
-            "description": "Filters task runs by their status.",
+            "description": "Task runs with this status. `PENDING` and `STARTED` runs haven't finished yet.",
             "in": "query",
             "name": "status",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filters task runs by their status.",
+              "description": "Task runs with this status. `PENDING` and `STARTED` runs haven't finished yet.",
               "items": {
                 "enum": [
                   "PENDING",
@@ -24496,7 +24501,7 @@
             }
           },
           {
-            "description": "Filters for task runs started on or before this date and time.",
+            "description": "Task runs that started at or before this RFC 3339 date-time.",
             "in": "query",
             "name": "startedAtMax",
             "required": false,
@@ -24513,12 +24518,12 @@
                   "type": "null"
                 }
               ],
-              "description": "Filters for task runs started on or before this date and time.",
+              "description": "Task runs that started at or before this RFC 3339 date-time.",
               "title": "Startedatmax"
             }
           },
           {
-            "description": "Filters for task runs started on or after this date and time.",
+            "description": "Task runs that started at or after this RFC 3339 date-time.",
             "in": "query",
             "name": "startedAtMin",
             "required": false,
@@ -24535,12 +24540,12 @@
                   "type": "null"
                 }
               ],
-              "description": "Filters for task runs started on or after this date and time.",
+              "description": "Task runs that started at or after this RFC 3339 date-time.",
               "title": "Startedatmin"
             }
           },
           {
-            "description": "Filters for task runs finished on or before this date and time.",
+            "description": "Task runs that finished at or before this RFC 3339 date-time.",
             "in": "query",
             "name": "finishedAtMax",
             "required": false,
@@ -24557,12 +24562,12 @@
                   "type": "null"
                 }
               ],
-              "description": "Filters for task runs finished on or before this date and time.",
+              "description": "Task runs that finished at or before this RFC 3339 date-time.",
               "title": "Finishedatmax"
             }
           },
           {
-            "description": "Filters for task runs finished on or after this date and time.",
+            "description": "Task runs that finished at or after this RFC 3339 date-time.",
             "in": "query",
             "name": "finishedAtMin",
             "required": false,
@@ -24579,7 +24584,7 @@
                   "type": "null"
                 }
               ],
-              "description": "Filters for task runs finished on or after this date and time.",
+              "description": "Task runs that finished at or after this RFC 3339 date-time.",
               "title": "Finishedatmin"
             }
           }
@@ -24651,7 +24656,7 @@
     },
     "/api/ogc/collections/etl-tasks/items/{task_id}/runs/{run_id}": {
       "get": {
-        "description": "Get a single run for an ETL Task.",
+        "description": "Get one run of an ETL task, with its status, start and finish times, outcome message, and\n`result` details.",
         "operationId": "interfaces_api_views_etl_task_get_etl_task_run",
         "parameters": [
           {
@@ -24742,7 +24747,7 @@
     },
     "/api/ogc/collections/etl-tasks/items/{task_id}/trigger": {
       "post": {
-        "description": "Trigger an immediate run of an ETL Task on a Celery worker.",
+        "description": "Run an ETL task now and return the new task run.",
         "operationId": "interfaces_api_views_etl_task_trigger_etl_task",
         "parameters": [
           {
@@ -24823,7 +24828,7 @@
     },
     "/api/ogc/collections/linked-resource-types/items": {
       "get": {
-        "description": "Get Linked Resource Types.",
+        "description": "Get linked resource types.",
         "operationId": "interfaces_api_views_sta_linked_resource_type_get_linked_resource_types",
         "parameters": [
           {
@@ -25044,7 +25049,7 @@
         ]
       },
       "post": {
-        "description": "Create a new Linked Resource Type.",
+        "description": "Create a new linked resource type.",
         "operationId": "interfaces_api_views_sta_linked_resource_type_create_linked_resource_type",
         "parameters": [],
         "requestBody": {
@@ -25124,7 +25129,7 @@
     },
     "/api/ogc/collections/linked-resource-types/items/{linked_resource_type_id}": {
       "delete": {
-        "description": "Delete a Linked Resource Type.",
+        "description": "Delete a linked resource type.",
         "operationId": "interfaces_api_views_sta_linked_resource_type_delete_linked_resource_type",
         "parameters": [
           {
@@ -25185,7 +25190,7 @@
         ]
       },
       "get": {
-        "description": "Get a Linked Resource Type.",
+        "description": "Get a linked resource type.",
         "operationId": "interfaces_api_views_sta_linked_resource_type_get_linked_resource_type",
         "parameters": [
           {
@@ -25298,7 +25303,7 @@
         ]
       },
       "patch": {
-        "description": "Update a Linked Resource Type.",
+        "description": "Update a linked resource type.",
         "operationId": "interfaces_api_views_sta_linked_resource_type_update_linked_resource_type",
         "parameters": [
           {
@@ -25387,7 +25392,7 @@
     },
     "/api/ogc/collections/method-types/items": {
       "get": {
-        "description": "Get Method Types.",
+        "description": "Get method types.",
         "operationId": "interfaces_api_views_sta_method_type_get_method_types",
         "parameters": [
           {
@@ -25608,7 +25613,7 @@
         ]
       },
       "post": {
-        "description": "Create a new Method Type.",
+        "description": "Create a new method type.",
         "operationId": "interfaces_api_views_sta_method_type_create_method_type",
         "parameters": [],
         "requestBody": {
@@ -25688,7 +25693,7 @@
     },
     "/api/ogc/collections/method-types/items/{method_type_id}": {
       "delete": {
-        "description": "Delete a Method Type.",
+        "description": "Delete a method type.",
         "operationId": "interfaces_api_views_sta_method_type_delete_method_type",
         "parameters": [
           {
@@ -25749,7 +25754,7 @@
         ]
       },
       "get": {
-        "description": "Get a Method Type.",
+        "description": "Get a method type.",
         "operationId": "interfaces_api_views_sta_method_type_get_method_type",
         "parameters": [
           {
@@ -25862,7 +25867,7 @@
         ]
       },
       "patch": {
-        "description": "Update a Method Type.",
+        "description": "Update a method type.",
         "operationId": "interfaces_api_views_sta_method_type_update_method_type",
         "parameters": [
           {
@@ -25951,7 +25956,7 @@
     },
     "/api/ogc/collections/methods/items": {
       "get": {
-        "description": "Get public Methods and Methods associated with the authenticated user.",
+        "description": "Get public methods and methods associated with the authenticated user.",
         "operationId": "interfaces_api_views_sta_method_get_methods",
         "parameters": [
           {
@@ -26132,13 +26137,13 @@
             }
           },
           {
-            "description": "Filter methods by workspace ID.",
+            "description": "Methods that belong to this workspace. Matches `id` in `workspaces`. `null` matches methods shared by every workspace.",
             "in": "query",
             "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter methods by workspace ID.",
+              "description": "Methods that belong to this workspace. Matches `id` in `workspaces`. `null` matches methods shared by every workspace.",
               "items": {
                 "anyOf": [
                   {
@@ -26156,13 +26161,13 @@
             }
           },
           {
-            "description": "Filter methods by monitoring_site ID.",
+            "description": "Methods used by datastreams at this monitoring site. Matches `id` in `monitoring-sites`. `null` matches methods that no datastream uses.",
             "in": "query",
             "name": "monitoringSiteId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter methods by monitoring_site ID.",
+              "description": "Methods used by datastreams at this monitoring site. Matches `id` in `monitoring-sites`. `null` matches methods that no datastream uses.",
               "items": {
                 "anyOf": [
                   {
@@ -26180,13 +26185,13 @@
             }
           },
           {
-            "description": "Filter methods by datastream ID.",
+            "description": "Methods used by this datastream. Matches `id` in `datastreams`. `null` matches methods that no datastream uses.",
             "in": "query",
             "name": "datastreamId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter methods by datastream ID.",
+              "description": "Methods used by this datastream. Matches `id` in `datastreams`. `null` matches methods that no datastream uses.",
               "items": {
                 "anyOf": [
                   {
@@ -26204,13 +26209,13 @@
             }
           },
           {
-            "description": "Filter methods by type",
+            "description": "Methods of this type. Matches `name` in `method-types`.",
             "in": "query",
             "name": "type",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter methods by type",
+              "description": "Methods of this type. Matches `name` in `method-types`.",
               "items": {
                 "type": "string"
               },
@@ -26219,13 +26224,13 @@
             }
           },
           {
-            "description": "Filter methods by sensor model",
+            "description": "Methods with this sensor model. `null` matches methods without one.",
             "in": "query",
             "name": "sensorModel",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter methods by sensor model",
+              "description": "Methods with this sensor model. `null` matches methods without one.",
               "items": {
                 "anyOf": [
                   {
@@ -26242,13 +26247,13 @@
             }
           },
           {
-            "description": "Filter methods by sensor model manufacturer",
+            "description": "Methods with this sensor manufacturer. `null` matches methods without one.",
             "in": "query",
             "name": "sensorModelManufacturer",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter methods by sensor model manufacturer",
+              "description": "Methods with this sensor manufacturer. `null` matches methods without one.",
               "items": {
                 "anyOf": [
                   {
@@ -26332,7 +26337,7 @@
         ]
       },
       "post": {
-        "description": "Create a new Method.",
+        "description": "Create a new method.",
         "operationId": "interfaces_api_views_sta_method_create_method",
         "parameters": [],
         "requestBody": {
@@ -26423,7 +26428,7 @@
     },
     "/api/ogc/collections/methods/items/{method_id}": {
       "delete": {
-        "description": "Delete a Method.",
+        "description": "Delete a method.",
         "operationId": "interfaces_api_views_sta_method_delete_method",
         "parameters": [
           {
@@ -26495,7 +26500,7 @@
         ]
       },
       "get": {
-        "description": "Get a Method.",
+        "description": "Get a method.",
         "operationId": "interfaces_api_views_sta_method_get_method",
         "parameters": [
           {
@@ -26635,7 +26640,7 @@
         ]
       },
       "patch": {
-        "description": "Update a Method.",
+        "description": "Update a method.",
         "operationId": "interfaces_api_views_sta_method_update_method",
         "parameters": [
           {
@@ -26876,13 +26881,13 @@
             "style": "form"
           },
           {
-            "description": "Filter rules by datastream ID.",
+            "description": "Rules that check this datastream. Matches `id` in `datastreams`.",
             "in": "query",
             "name": "datastreamId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter rules by datastream ID.",
+              "description": "Rules that check this datastream. Matches `id` in `datastreams`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -26892,13 +26897,13 @@
             }
           },
           {
-            "description": "Filter rules by rule type.",
+            "description": "Rules of this type: `range`, `rate_of_change`, `persistence`, or `missing_data`.",
             "in": "query",
             "name": "ruleType",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter rules by rule type.",
+              "description": "Rules of this type: `range`, `rate_of_change`, `persistence`, or `missing_data`.",
               "items": {
                 "type": "string"
               },
@@ -26907,13 +26912,13 @@
             }
           },
           {
-            "description": "Filter rules by monitoring task ID.",
+            "description": "Rules of this monitoring task. Matches `id` in `monitoring-tasks`.",
             "in": "query",
             "name": "taskId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter rules by monitoring task ID.",
+              "description": "Rules of this monitoring task. Matches `id` in `monitoring-tasks`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -26923,13 +26928,13 @@
             }
           },
           {
-            "description": "Filter rules by workspace ID.",
+            "description": "Rules of monitoring tasks in this workspace. Matches `id` in `workspaces`.",
             "in": "query",
             "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter rules by workspace ID.",
+              "description": "Rules of monitoring tasks in this workspace. Matches `id` in `workspaces`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -27440,7 +27445,7 @@
     },
     "/api/ogc/collections/monitoring-site-types/items": {
       "get": {
-        "description": "Get Monitoring Site Types.",
+        "description": "Get monitoring site types.",
         "operationId": "interfaces_api_views_sta_monitoring_site_type_get_monitoring_site_types",
         "parameters": [
           {
@@ -27661,7 +27666,7 @@
         ]
       },
       "post": {
-        "description": "Create a new Monitoring Site Type.",
+        "description": "Create a new monitoring site type.",
         "operationId": "interfaces_api_views_sta_monitoring_site_type_create_monitoring_site_type",
         "parameters": [],
         "requestBody": {
@@ -27741,7 +27746,7 @@
     },
     "/api/ogc/collections/monitoring-site-types/items/{monitoring_site_type_id}": {
       "delete": {
-        "description": "Delete a Monitoring Site Type.",
+        "description": "Delete a monitoring site type.",
         "operationId": "interfaces_api_views_sta_monitoring_site_type_delete_monitoring_site_type",
         "parameters": [
           {
@@ -27802,7 +27807,7 @@
         ]
       },
       "get": {
-        "description": "Get a Monitoring Site Type.",
+        "description": "Get a monitoring site type.",
         "operationId": "interfaces_api_views_sta_monitoring_site_type_get_monitoring_site_type",
         "parameters": [
           {
@@ -27915,7 +27920,7 @@
         ]
       },
       "patch": {
-        "description": "Update a Monitoring Site Type.",
+        "description": "Update a monitoring site type.",
         "operationId": "interfaces_api_views_sta_monitoring_site_type_update_monitoring_site_type",
         "parameters": [
           {
@@ -28004,7 +28009,7 @@
     },
     "/api/ogc/collections/monitoring-sites/items": {
       "get": {
-        "description": "Get public MonitoringSites and MonitoringSites associated with the authenticated user.",
+        "description": "Get public monitoring sites and monitoring sites associated with the authenticated user.",
         "operationId": "interfaces_api_views_sta_monitoring_site_get_monitoring_sites",
         "parameters": [
           {
@@ -28204,13 +28209,13 @@
             }
           },
           {
-            "description": "Filter monitoring sites by workspace ID.",
+            "description": "Monitoring sites in this workspace. Matches `id` in `workspaces`.",
             "in": "query",
             "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter monitoring sites by workspace ID.",
+              "description": "Monitoring sites in this workspace. Matches `id` in `workspaces`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -28220,13 +28225,13 @@
             }
           },
           {
-            "description": "Filter monitoring sites by admin area 1.",
+            "description": "Monitoring sites in this first-level administrative area, such as a state or province. `null` matches sites without one.",
             "in": "query",
             "name": "adminArea1",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter monitoring sites by admin area 1.",
+              "description": "Monitoring sites in this first-level administrative area, such as a state or province. `null` matches sites without one.",
               "items": {
                 "anyOf": [
                   {
@@ -28243,13 +28248,13 @@
             }
           },
           {
-            "description": "Filter monitoring sites by admin area 2.",
+            "description": "Monitoring sites in this second-level administrative area, such as a county. `null` matches sites without one.",
             "in": "query",
             "name": "adminArea2",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter monitoring sites by admin area 2.",
+              "description": "Monitoring sites in this second-level administrative area, such as a county. `null` matches sites without one.",
               "items": {
                 "anyOf": [
                   {
@@ -28266,13 +28271,13 @@
             }
           },
           {
-            "description": "Filter monitoring sites by country.",
+            "description": "Monitoring sites in this country, as an ISO 3166-1 alpha-2 code such as `US`. `null` matches sites without one.",
             "in": "query",
             "name": "country",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter monitoring sites by country.",
+              "description": "Monitoring sites in this country, as an ISO 3166-1 alpha-2 code such as `US`. `null` matches sites without one.",
               "items": {
                 "anyOf": [
                   {
@@ -28289,13 +28294,13 @@
             }
           },
           {
-            "description": "Filter monitoring sites by type.",
+            "description": "Monitoring sites of this type. Matches `name` in `monitoring-site-types`.",
             "in": "query",
             "name": "type",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter monitoring sites by type.",
+              "description": "Monitoring sites of this type. Matches `name` in `monitoring-site-types`.",
               "items": {
                 "type": "string"
               },
@@ -28304,13 +28309,13 @@
             }
           },
           {
-            "description": "Filter monitoring sites by tag. Format tag filters as {key}:{value}. Repeat the parameter to require several tags.",
+            "description": "Monitoring sites with this tag, as `{key}:{value}`. Repeat the parameter to require several tags.",
             "in": "query",
             "name": "tag",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter monitoring sites by tag. Format tag filters as {key}:{value}. Repeat the parameter to require several tags.",
+              "description": "Monitoring sites with this tag, as `{key}:{value}`. Repeat the parameter to require several tags.",
               "items": {
                 "type": "string"
               },
@@ -28319,7 +28324,7 @@
             }
           },
           {
-            "description": "Controls whether the returned monitoring sites should be private or public.",
+            "description": "`false` returns only monitoring sites that are public, in public workspaces. `true` returns only private monitoring sites in private workspaces.",
             "in": "query",
             "name": "isPrivate",
             "required": false,
@@ -28332,7 +28337,7 @@
                   "type": "null"
                 }
               ],
-              "description": "Controls whether the returned monitoring sites should be private or public.",
+              "description": "`false` returns only monitoring sites that are public, in public workspaces. `true` returns only private monitoring sites in private workspaces.",
               "title": "Isprivate"
             }
           },
@@ -28399,7 +28404,7 @@
         ]
       },
       "post": {
-        "description": "Create a new MonitoringSite.",
+        "description": "Create a new monitoring site.",
         "operationId": "interfaces_api_views_sta_monitoring_site_create_monitoring_site",
         "parameters": [],
         "requestBody": {
@@ -28479,7 +28484,7 @@
     },
     "/api/ogc/collections/monitoring-sites/items/{monitoring_site_id}": {
       "delete": {
-        "description": "Delete a MonitoringSite.",
+        "description": "Delete a monitoring site.",
         "operationId": "interfaces_api_views_sta_monitoring_site_delete_monitoring_site",
         "parameters": [
           {
@@ -28540,7 +28545,7 @@
         ]
       },
       "get": {
-        "description": "Get a MonitoringSite.",
+        "description": "Get a monitoring site.",
         "operationId": "interfaces_api_views_sta_monitoring_site_get_monitoring_site",
         "parameters": [
           {
@@ -28682,7 +28687,7 @@
         ]
       },
       "patch": {
-        "description": "Update a MonitoringSite.",
+        "description": "Update a monitoring site.",
         "operationId": "interfaces_api_views_sta_monitoring_site_update_monitoring_site",
         "parameters": [
           {
@@ -28771,7 +28776,7 @@
     },
     "/api/ogc/collections/monitoring-sites/items/{monitoring_site_id}/linked-resources": {
       "get": {
-        "description": "Get all linked resources associated with a MonitoringSite.",
+        "description": "Get the files and links attached to a monitoring site.",
         "operationId": "interfaces_api_views_sta_monitoring_site_get_monitoring_site_linked_resources",
         "parameters": [
           {
@@ -28837,13 +28842,13 @@
             }
           },
           {
-            "description": "Filter by linked resource type.",
+            "description": "Linked resources of this type. Matches `name` in `linked-resource-types`.",
             "in": "query",
             "name": "type",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter by linked resource type.",
+              "description": "Linked resources of this type. Matches `name` in `linked-resource-types`.",
               "items": {
                 "type": "string"
               },
@@ -28906,7 +28911,7 @@
         ]
       },
       "post": {
-        "description": "Add a linked resource to a monitoring_site.",
+        "description": "Add a file or link to a monitoring site as multipart form data.",
         "operationId": "interfaces_api_views_sta_monitoring_site_add_monitoring_site_linked_resource",
         "parameters": [
           {
@@ -29070,7 +29075,7 @@
     },
     "/api/ogc/collections/monitoring-sites/items/{monitoring_site_id}/linked-resources/{linked_resource_id}": {
       "delete": {
-        "description": "Remove a linked resource from a monitoring_site.",
+        "description": "Remove a file or link from a monitoring site.",
         "operationId": "interfaces_api_views_sta_monitoring_site_remove_monitoring_site_linked_resource",
         "parameters": [
           {
@@ -29152,7 +29157,7 @@
         ]
       },
       "get": {
-        "description": "Get a linked resource associated with a MonitoringSite.",
+        "description": "Get a file or link attached to a monitoring site.",
         "operationId": "interfaces_api_views_sta_monitoring_site_get_monitoring_site_linked_resource",
         "parameters": [
           {
@@ -29241,7 +29246,7 @@
         ]
       },
       "patch": {
-        "description": "Update a linked resource for a monitoring_site. A linked resource's mode (hosted file vs.\nexternal URL) cannot be changed in place \u2014 delete it and create a new one instead.",
+        "description": "Update a monitoring site's linked resource as multipart form data.",
         "operationId": "interfaces_api_views_sta_monitoring_site_update_monitoring_site_linked_resource",
         "parameters": [
           {
@@ -29427,17 +29432,17 @@
     },
     "/api/ogc/collections/monitoring-sites/markers": {
       "get": {
-        "description": "Get lean marker data for public MonitoringSites plus private MonitoringSites visible to the authenticated user.",
+        "description": "Get map marker data for monitoring sites, for HydroServer's web apps.",
         "operationId": "interfaces_api_views_sta_monitoring_site_get_monitoring_site_markers",
         "parameters": [
           {
-            "description": "Filter markers by workspace ID.",
+            "description": "Markers for monitoring sites in this workspace. Matches `id` in `workspaces`.",
             "in": "query",
             "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter markers by workspace ID.",
+              "description": "Markers for monitoring sites in this workspace. Matches `id` in `workspaces`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -29472,13 +29477,13 @@
             "style": "form"
           },
           {
-            "description": "Filter markers by monitoring site type.",
+            "description": "Markers for monitoring sites of this type. Matches `name` in `monitoring-site-types`.",
             "in": "query",
             "name": "type",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter markers by monitoring site type.",
+              "description": "Markers for monitoring sites of this type. Matches `name` in `monitoring-site-types`.",
               "items": {
                 "type": "string"
               },
@@ -29536,17 +29541,17 @@
     },
     "/api/ogc/collections/monitoring-sites/site-summaries": {
       "get": {
-        "description": "Get lean site summary data for public MonitoringSites and MonitoringSites associated with the authenticated user.",
+        "description": "Get summary data for monitoring sites, for HydroServer's web apps.",
         "operationId": "interfaces_api_views_sta_monitoring_site_get_monitoring_site_summaries",
         "parameters": [
           {
-            "description": "Filter site summaries by workspace ID.",
+            "description": "Summaries of monitoring sites in this workspace. Matches `id` in `workspaces`.",
             "in": "query",
             "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter site summaries by workspace ID.",
+              "description": "Summaries of monitoring sites in this workspace. Matches `id` in `workspaces`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -29556,13 +29561,13 @@
             }
           },
           {
-            "description": "Filter summaries by monitoring site type.",
+            "description": "Summaries of monitoring sites of this type. Matches `name` in `monitoring-site-types`.",
             "in": "query",
             "name": "type",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter summaries by monitoring site type.",
+              "description": "Summaries of monitoring sites of this type. Matches `name` in `monitoring-site-types`.",
               "items": {
                 "type": "string"
               },
@@ -29620,7 +29625,7 @@
     },
     "/api/ogc/collections/monitoring-sites/site-type-icons": {
       "get": {
-        "description": "Get the configured site type icon mappings.",
+        "description": "Get the icon for each monitoring site type, for HydroServer's web apps.",
         "operationId": "interfaces_api_views_sta_monitoring_site_get_site_type_icons",
         "parameters": [],
         "responses": {
@@ -29647,10 +29652,11 @@
     },
     "/api/ogc/collections/monitoring-sites/tags/keys": {
       "get": {
-        "description": "Get all existing unique monitoring_site tag keys.",
+        "description": "Get the tag keys and values used by monitoring sites, for HydroServer's web apps.",
         "operationId": "interfaces_api_views_sta_monitoring_site_get_monitoring_site_tag_keys",
         "parameters": [
           {
+            "description": "Only tags of monitoring sites in this workspace.",
             "in": "query",
             "name": "workspaceId",
             "required": false,
@@ -29664,10 +29670,12 @@
                   "type": "null"
                 }
               ],
+              "description": "Only tags of monitoring sites in this workspace.",
               "title": "Workspaceid"
             }
           },
           {
+            "description": "Only the tags of this monitoring site.",
             "in": "query",
             "name": "monitoringSiteId",
             "required": false,
@@ -29681,6 +29689,7 @@
                   "type": "null"
                 }
               ],
+              "description": "Only the tags of this monitoring site.",
               "title": "Monitoringsiteid"
             }
           }
@@ -29737,17 +29746,17 @@
     },
     "/api/ogc/collections/monitoring-sites/task-summaries": {
       "get": {
-        "description": "Get task count summaries for MonitoringSites associated with the authenticated user.",
+        "description": "Get task counts for monitoring sites, for HydroServer's web apps.",
         "operationId": "interfaces_api_views_sta_monitoring_site_get_monitoring_site_task_summaries",
         "parameters": [
           {
-            "description": "Filter task summaries by workspace ID.",
+            "description": "Task summaries for monitoring sites in this workspace. Matches `id` in `workspaces`.",
             "in": "query",
             "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter task summaries by workspace ID.",
+              "description": "Task summaries for monitoring sites in this workspace. Matches `id` in `workspaces`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -29757,13 +29766,13 @@
             }
           },
           {
-            "description": "Filter summaries by monitoring site type.",
+            "description": "Task summaries for monitoring sites of this type. Matches `name` in `monitoring-site-types`.",
             "in": "query",
             "name": "type",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter summaries by monitoring site type.",
+              "description": "Task summaries for monitoring sites of this type. Matches `name` in `monitoring-site-types`.",
               "items": {
                 "type": "string"
               },
@@ -30006,13 +30015,13 @@
             }
           },
           {
-            "description": "Filter monitoring tasks by monitoring_site ID.",
+            "description": "Monitoring tasks for this monitoring site. Matches `id` in `monitoring-sites`.",
             "in": "query",
             "name": "monitoringSiteId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter monitoring tasks by monitoring_site ID.",
+              "description": "Monitoring tasks for this monitoring site. Matches `id` in `monitoring-sites`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -30022,13 +30031,13 @@
             }
           },
           {
-            "description": "Filter monitoring tasks by workspace ID.",
+            "description": "Monitoring tasks in this workspace. Matches `id` in `workspaces`.",
             "in": "query",
             "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter monitoring tasks by workspace ID.",
+              "description": "Monitoring tasks in this workspace. Matches `id` in `workspaces`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -30038,13 +30047,13 @@
             }
           },
           {
-            "description": "Filter monitoring tasks by their most recent run status.",
+            "description": "Monitoring tasks whose latest run has this status: `PENDING`, `STARTED`, `SUCCESS`, or `FAILURE`. `null` matches tasks that have never run.",
             "in": "query",
             "name": "latestRunStatus",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter monitoring tasks by their most recent run status.",
+              "description": "Monitoring tasks whose latest run has this status: `PENDING`, `STARTED`, `SUCCESS`, or `FAILURE`. `null` matches tasks that have never run.",
               "items": {
                 "anyOf": [
                   {
@@ -30061,13 +30070,13 @@
             }
           },
           {
-            "description": "Filter monitoring tasks by datastream ID.",
+            "description": "Monitoring tasks with a rule that checks this datastream. Matches `id` in `datastreams`.",
             "in": "query",
             "name": "datastreamId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter monitoring tasks by datastream ID.",
+              "description": "Monitoring tasks with a rule that checks this datastream. Matches `id` in `datastreams`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -30077,13 +30086,13 @@
             }
           },
           {
-            "description": "Filter monitoring tasks by rule type.",
+            "description": "Monitoring tasks with a rule of this type: `range`, `rate_of_change`, `persistence`, or `missing_data`.",
             "in": "query",
             "name": "ruleType",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter monitoring tasks by rule type.",
+              "description": "Monitoring tasks with a rule of this type: `range`, `rate_of_change`, `persistence`, or `missing_data`.",
               "items": {
                 "type": "string"
               },
@@ -30549,7 +30558,7 @@
     },
     "/api/ogc/collections/monitoring-tasks/items/{task_id}/runs": {
       "get": {
-        "description": "Get runs for a monitoring task.",
+        "description": "Get the runs of a monitoring task, each with its status, start and finish times, and outcome\nmessage.",
         "operationId": "interfaces_api_views_monitoring_task_get_monitoring_task_runs",
         "parameters": [
           {
@@ -30670,13 +30679,13 @@
             "style": "form"
           },
           {
-            "description": "Filters task runs by their status.",
+            "description": "Task runs with this status. `PENDING` and `STARTED` runs haven't finished yet.",
             "in": "query",
             "name": "status",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filters task runs by their status.",
+              "description": "Task runs with this status. `PENDING` and `STARTED` runs haven't finished yet.",
               "items": {
                 "enum": [
                   "PENDING",
@@ -30691,7 +30700,7 @@
             }
           },
           {
-            "description": "Filters for task runs started on or before this date and time.",
+            "description": "Task runs that started at or before this RFC 3339 date-time.",
             "in": "query",
             "name": "startedAtMax",
             "required": false,
@@ -30708,12 +30717,12 @@
                   "type": "null"
                 }
               ],
-              "description": "Filters for task runs started on or before this date and time.",
+              "description": "Task runs that started at or before this RFC 3339 date-time.",
               "title": "Startedatmax"
             }
           },
           {
-            "description": "Filters for task runs started on or after this date and time.",
+            "description": "Task runs that started at or after this RFC 3339 date-time.",
             "in": "query",
             "name": "startedAtMin",
             "required": false,
@@ -30730,12 +30739,12 @@
                   "type": "null"
                 }
               ],
-              "description": "Filters for task runs started on or after this date and time.",
+              "description": "Task runs that started at or after this RFC 3339 date-time.",
               "title": "Startedatmin"
             }
           },
           {
-            "description": "Filters for task runs finished on or before this date and time.",
+            "description": "Task runs that finished at or before this RFC 3339 date-time.",
             "in": "query",
             "name": "finishedAtMax",
             "required": false,
@@ -30752,12 +30761,12 @@
                   "type": "null"
                 }
               ],
-              "description": "Filters for task runs finished on or before this date and time.",
+              "description": "Task runs that finished at or before this RFC 3339 date-time.",
               "title": "Finishedatmax"
             }
           },
           {
-            "description": "Filters for task runs finished on or after this date and time.",
+            "description": "Task runs that finished at or after this RFC 3339 date-time.",
             "in": "query",
             "name": "finishedAtMin",
             "required": false,
@@ -30774,7 +30783,7 @@
                   "type": "null"
                 }
               ],
-              "description": "Filters for task runs finished on or after this date and time.",
+              "description": "Task runs that finished at or after this RFC 3339 date-time.",
               "title": "Finishedatmin"
             }
           }
@@ -30846,7 +30855,7 @@
     },
     "/api/ogc/collections/monitoring-tasks/items/{task_id}/runs/{run_id}": {
       "get": {
-        "description": "Get a single run for a monitoring task.",
+        "description": "Get one run of a monitoring task, with its status, start and finish times, outcome message,\nand `result` details.",
         "operationId": "interfaces_api_views_monitoring_task_get_monitoring_task_run",
         "parameters": [
           {
@@ -30937,7 +30946,7 @@
     },
     "/api/ogc/collections/monitoring-tasks/items/{task_id}/trigger": {
       "post": {
-        "description": "Trigger an immediate run of a monitoring task on a Celery worker.",
+        "description": "Run a monitoring task now and return the new task run.",
         "operationId": "interfaces_api_views_monitoring_task_trigger_monitoring_task",
         "parameters": [
           {
@@ -31018,7 +31027,7 @@
     },
     "/api/ogc/collections/observations/bulk-create": {
       "post": {
-        "description": "Insert Observations.",
+        "description": "Create many observations in a datastream at once.",
         "operationId": "interfaces_api_views_sta_observation_insert_observations",
         "parameters": [
           {
@@ -31179,7 +31188,7 @@
     },
     "/api/ogc/collections/observations/bulk-delete": {
       "post": {
-        "description": "Delete Observations between the given phenomenon start and end times.",
+        "description": "Delete a datastream's observations between the given phenomenon start and end times.",
         "operationId": "interfaces_api_views_sta_observation_delete_observations",
         "parameters": [],
         "requestBody": {
@@ -31241,7 +31250,7 @@
     },
     "/api/ogc/collections/observations/items": {
       "get": {
-        "description": "Get Observations.",
+        "description": "Get public observations and observations associated with the authenticated user.",
         "operationId": "interfaces_api_views_sta_observation_get_observations",
         "parameters": [
           {
@@ -31361,13 +31370,13 @@
             }
           },
           {
-            "description": "Filter observations by datastream ID.",
+            "description": "Observations in this datastream. Matches `id` in `datastreams`.",
             "in": "query",
             "name": "datastreamId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter observations by datastream ID.",
+              "description": "Observations in this datastream. Matches `id` in `datastreams`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -31402,13 +31411,13 @@
             "style": "form"
           },
           {
-            "description": "Filter observations by result qualifier.",
+            "description": "Observations with this result qualifier. Matches `name` in `result-qualifiers`.",
             "in": "query",
             "name": "resultQualifiers",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter observations by result qualifier.",
+              "description": "Observations with this result qualifier. Matches `name` in `result-qualifiers`.",
               "items": {
                 "type": "string"
               },
@@ -31530,7 +31539,7 @@
         ]
       },
       "post": {
-        "description": "Create a new Observation.",
+        "description": "Create a new observation.",
         "operationId": "interfaces_api_views_sta_observation_create_observation",
         "parameters": [],
         "requestBody": {
@@ -31621,7 +31630,7 @@
     },
     "/api/ogc/collections/observations/items/{observation_id}": {
       "delete": {
-        "description": "Delete an Observation.",
+        "description": "Delete an observation.",
         "operationId": "interfaces_api_views_sta_observation_delete_observation",
         "parameters": [
           {
@@ -31693,7 +31702,7 @@
         ]
       },
       "get": {
-        "description": "Get an Observation.",
+        "description": "Get an observation.",
         "operationId": "interfaces_api_views_sta_observation_get_observation",
         "parameters": [
           {
@@ -31827,7 +31836,7 @@
     },
     "/api/ogc/collections/observed-properties/items": {
       "get": {
-        "description": "Get public Observed Properties and Observed Properties associated with the authenticated user.",
+        "description": "Get public observed properties and observed properties associated with the authenticated user.",
         "operationId": "interfaces_api_views_sta_observed_property_get_observed_properties",
         "parameters": [
           {
@@ -31993,13 +32002,13 @@
             }
           },
           {
-            "description": "Filter observed properties by workspace ID.",
+            "description": "Observed properties that belong to this workspace. Matches `id` in `workspaces`. `null` matches observed properties shared by every workspace.",
             "in": "query",
             "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter observed properties by workspace ID.",
+              "description": "Observed properties that belong to this workspace. Matches `id` in `workspaces`. `null` matches observed properties shared by every workspace.",
               "items": {
                 "anyOf": [
                   {
@@ -32017,13 +32026,13 @@
             }
           },
           {
-            "description": "Filter observed properties by monitoring_site ID.",
+            "description": "Observed properties used by datastreams at this monitoring site. Matches `id` in `monitoring-sites`. `null` matches observed properties that no datastream uses.",
             "in": "query",
             "name": "monitoringSiteId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter observed properties by monitoring_site ID.",
+              "description": "Observed properties used by datastreams at this monitoring site. Matches `id` in `monitoring-sites`. `null` matches observed properties that no datastream uses.",
               "items": {
                 "anyOf": [
                   {
@@ -32041,13 +32050,13 @@
             }
           },
           {
-            "description": "Filter observed properties by datastream ID.",
+            "description": "Observed properties used by this datastream. Matches `id` in `datastreams`. `null` matches observed properties that no datastream uses.",
             "in": "query",
             "name": "datastreamId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter observed properties by datastream ID.",
+              "description": "Observed properties used by this datastream. Matches `id` in `datastreams`. `null` matches observed properties that no datastream uses.",
               "items": {
                 "anyOf": [
                   {
@@ -32065,13 +32074,13 @@
             }
           },
           {
-            "description": "Filter observed properties by type",
+            "description": "Observed properties of this type. Matches `name` in `observed-property-types`.",
             "in": "query",
             "name": "type",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter observed properties by type",
+              "description": "Observed properties of this type. Matches `name` in `observed-property-types`.",
               "items": {
                 "type": "string"
               },
@@ -32147,7 +32156,7 @@
         ]
       },
       "post": {
-        "description": "Create a new Observed Property.",
+        "description": "Create a new observed property.",
         "operationId": "interfaces_api_views_sta_observed_property_create_observed_property",
         "parameters": [],
         "requestBody": {
@@ -32238,7 +32247,7 @@
     },
     "/api/ogc/collections/observed-properties/items/{observed_property_id}": {
       "delete": {
-        "description": "Delete an Observed Property.",
+        "description": "Delete an observed property.",
         "operationId": "interfaces_api_views_sta_observed_property_delete_observed_property",
         "parameters": [
           {
@@ -32310,7 +32319,7 @@
         ]
       },
       "get": {
-        "description": "Get an Observed Property.",
+        "description": "Get an observed property.",
         "operationId": "interfaces_api_views_sta_observed_property_get_observed_property",
         "parameters": [
           {
@@ -32447,7 +32456,7 @@
         ]
       },
       "patch": {
-        "description": "Update an Observed Property.",
+        "description": "Update an observed property.",
         "operationId": "interfaces_api_views_sta_observed_property_update_observed_property",
         "parameters": [
           {
@@ -32536,7 +32545,7 @@
     },
     "/api/ogc/collections/observed-property-types/items": {
       "get": {
-        "description": "Get Observed Property Types.",
+        "description": "Get observed property types.",
         "operationId": "interfaces_api_views_sta_observed_property_type_get_observed_property_types",
         "parameters": [
           {
@@ -32757,7 +32766,7 @@
         ]
       },
       "post": {
-        "description": "Create a new Observed Property Type.",
+        "description": "Create a new observed property type.",
         "operationId": "interfaces_api_views_sta_observed_property_type_create_observed_property_type",
         "parameters": [],
         "requestBody": {
@@ -32837,7 +32846,7 @@
     },
     "/api/ogc/collections/observed-property-types/items/{observed_property_type_id}": {
       "delete": {
-        "description": "Delete an Observed Property Type.",
+        "description": "Delete an observed property type.",
         "operationId": "interfaces_api_views_sta_observed_property_type_delete_observed_property_type",
         "parameters": [
           {
@@ -32898,7 +32907,7 @@
         ]
       },
       "get": {
-        "description": "Get an Observed Property Type.",
+        "description": "Get an observed property type.",
         "operationId": "interfaces_api_views_sta_observed_property_type_get_observed_property_type",
         "parameters": [
           {
@@ -33011,7 +33020,7 @@
         ]
       },
       "patch": {
-        "description": "Update an Observed Property Type.",
+        "description": "Update an observed property type.",
         "operationId": "interfaces_api_views_sta_observed_property_type_update_observed_property_type",
         "parameters": [
           {
@@ -33100,7 +33109,7 @@
     },
     "/api/ogc/collections/processing-levels/items": {
       "get": {
-        "description": "Get public Processing Levels and Processing Levels associated with the authenticated user.",
+        "description": "Get public processing levels and processing levels associated with the authenticated user.",
         "operationId": "interfaces_api_views_sta_processing_level_get_processing_levels",
         "parameters": [
           {
@@ -33261,13 +33270,13 @@
             }
           },
           {
-            "description": "Filter processing levels by workspace ID.",
+            "description": "Processing levels that belong to this workspace. Matches `id` in `workspaces`. `null` matches processing levels shared by every workspace.",
             "in": "query",
             "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter processing levels by workspace ID.",
+              "description": "Processing levels that belong to this workspace. Matches `id` in `workspaces`. `null` matches processing levels shared by every workspace.",
               "items": {
                 "anyOf": [
                   {
@@ -33285,13 +33294,13 @@
             }
           },
           {
-            "description": "Filter processing levels by monitoring_site ID.",
+            "description": "Processing levels used by datastreams at this monitoring site. Matches `id` in `monitoring-sites`. `null` matches processing levels that no datastream uses.",
             "in": "query",
             "name": "monitoringSiteId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter processing levels by monitoring_site ID.",
+              "description": "Processing levels used by datastreams at this monitoring site. Matches `id` in `monitoring-sites`. `null` matches processing levels that no datastream uses.",
               "items": {
                 "anyOf": [
                   {
@@ -33309,13 +33318,13 @@
             }
           },
           {
-            "description": "Filter processing levels by datastream ID.",
+            "description": "Processing levels used by this datastream. Matches `id` in `datastreams`. `null` matches processing levels that no datastream uses.",
             "in": "query",
             "name": "datastreamId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter processing levels by datastream ID.",
+              "description": "Processing levels used by this datastream. Matches `id` in `datastreams`. `null` matches processing levels that no datastream uses.",
               "items": {
                 "anyOf": [
                   {
@@ -33400,7 +33409,7 @@
         ]
       },
       "post": {
-        "description": "Create a new Processing Level.",
+        "description": "Create a new processing level.",
         "operationId": "interfaces_api_views_sta_processing_level_create_processing_level",
         "parameters": [],
         "requestBody": {
@@ -33491,7 +33500,7 @@
     },
     "/api/ogc/collections/processing-levels/items/{processing_level_id}": {
       "delete": {
-        "description": "Delete a Processing Level.",
+        "description": "Delete a processing level.",
         "operationId": "interfaces_api_views_sta_processing_level_delete_processing_level",
         "parameters": [
           {
@@ -33563,7 +33572,7 @@
         ]
       },
       "get": {
-        "description": "Get a Processing Level.",
+        "description": "Get a processing level.",
         "operationId": "interfaces_api_views_sta_processing_level_get_processing_level",
         "parameters": [
           {
@@ -33698,7 +33707,7 @@
         ]
       },
       "patch": {
-        "description": "Update a Processing Level.",
+        "description": "Update a processing level.",
         "operationId": "interfaces_api_views_sta_processing_level_update_processing_level",
         "parameters": [
           {
@@ -33939,13 +33948,13 @@
             "style": "form"
           },
           {
-            "description": "Filter histories by managed datastream ID.",
+            "description": "The history whose managed datastream is this datastream. Matches `id` in `datastreams`.",
             "in": "query",
             "name": "managedDatastreamId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter histories by managed datastream ID.",
+              "description": "The history whose managed datastream is this datastream. Matches `id` in `datastreams`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -33955,13 +33964,13 @@
             }
           },
           {
-            "description": "Filter histories by source datastream ID.",
+            "description": "Histories whose source datastream is this datastream. Matches `id` in `datastreams`. `null` matches histories without a source datastream.",
             "in": "query",
             "name": "sourceDatastreamId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter histories by source datastream ID.",
+              "description": "Histories whose source datastream is this datastream. Matches `id` in `datastreams`. `null` matches histories without a source datastream.",
               "items": {
                 "anyOf": [
                   {
@@ -34493,6 +34502,7 @@
             "style": "form"
           },
           {
+            "description": "Sessions with this status: `in_progress` or `committed`.",
             "in": "query",
             "name": "status",
             "required": false,
@@ -34509,11 +34519,12 @@
                   "type": "null"
                 }
               ],
+              "description": "Sessions with this status: `in_progress` or `committed`.",
               "title": "Status"
             }
           },
           {
-            "description": "Return sessions overlapping with this range start.",
+            "description": "Sessions whose time range ends after this RFC 3339 date-time. Use with `rangeEnd` to find the sessions that overlap a time range.",
             "in": "query",
             "name": "rangeStart",
             "required": false,
@@ -34530,12 +34541,12 @@
                   "type": "null"
                 }
               ],
-              "description": "Return sessions overlapping with this range start.",
+              "description": "Sessions whose time range ends after this RFC 3339 date-time. Use with `rangeEnd` to find the sessions that overlap a time range.",
               "title": "Rangestart"
             }
           },
           {
-            "description": "Return sessions overlapping with this range end.",
+            "description": "Sessions whose time range starts before this RFC 3339 date-time. Use with `rangeStart` to find the sessions that overlap a time range.",
             "in": "query",
             "name": "rangeEnd",
             "required": false,
@@ -34552,12 +34563,12 @@
                   "type": "null"
                 }
               ],
-              "description": "Return sessions overlapping with this range end.",
+              "description": "Sessions whose time range starts before this RFC 3339 date-time. Use with `rangeStart` to find the sessions that overlap a time range.",
               "title": "Rangeend"
             }
           },
           {
-            "description": "Return all transitive ancestors of the given session ID.",
+            "description": "Returns the sessions that this session depends on, directly or through other sessions. Matches `id` of a session in this history.",
             "in": "query",
             "name": "ancestorOf",
             "required": false,
@@ -34571,18 +34582,18 @@
                   "type": "null"
                 }
               ],
-              "description": "Return all transitive ancestors of the given session ID.",
+              "description": "Returns the sessions that this session depends on, directly or through other sessions. Matches `id` of a session in this history.",
               "title": "Ancestorof"
             }
           },
           {
-            "description": "Also return transitive ancestors of all sessions matched by other filters.",
+            "description": "`true` also returns the sessions that the matched sessions depend on, directly or through other sessions.",
             "in": "query",
             "name": "includeAncestors",
             "required": false,
             "schema": {
               "default": false,
-              "description": "Also return transitive ancestors of all sessions matched by other filters.",
+              "description": "`true` also returns the sessions that the matched sessions depend on, directly or through other sessions.",
               "title": "Includeancestors",
               "type": "boolean"
             }
@@ -35858,7 +35869,7 @@
     },
     "/api/ogc/collections/result-qualifiers/items": {
       "get": {
-        "description": "Get public Result Qualifiers and Result Qualifiers associated with the authenticated user.",
+        "description": "Get public result qualifiers and result qualifiers associated with the authenticated user.",
         "operationId": "interfaces_api_views_sta_result_qualifier_get_result_qualifiers",
         "parameters": [
           {
@@ -36014,13 +36025,13 @@
             }
           },
           {
-            "description": "Filter terms by workspace ID.",
+            "description": "Result qualifiers that belong to this workspace. Matches `id` in `workspaces`. `null` matches result qualifiers shared by every workspace.",
             "in": "query",
             "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter terms by workspace ID.",
+              "description": "Result qualifiers that belong to this workspace. Matches `id` in `workspaces`. `null` matches result qualifiers shared by every workspace.",
               "items": {
                 "anyOf": [
                   {
@@ -36105,7 +36116,7 @@
         ]
       },
       "post": {
-        "description": "Create a new Result Qualifier.",
+        "description": "Create a new result qualifier.",
         "operationId": "interfaces_api_views_sta_result_qualifier_create_result_qualifier",
         "parameters": [],
         "requestBody": {
@@ -36185,7 +36196,7 @@
     },
     "/api/ogc/collections/result-qualifiers/items/{result_qualifier_id}": {
       "delete": {
-        "description": "Delete a Result Qualifier.",
+        "description": "Delete a result qualifier.",
         "operationId": "interfaces_api_views_sta_result_qualifier_delete_result_qualifier",
         "parameters": [
           {
@@ -36246,7 +36257,7 @@
         ]
       },
       "get": {
-        "description": "Get a Result Qualifier.",
+        "description": "Get a result qualifier.",
         "operationId": "interfaces_api_views_sta_result_qualifier_get_result_qualifier",
         "parameters": [
           {
@@ -36379,7 +36390,7 @@
         ]
       },
       "patch": {
-        "description": "Update a Result Qualifier.",
+        "description": "Update a result qualifier.",
         "operationId": "interfaces_api_views_sta_result_qualifier_update_result_qualifier",
         "parameters": [
           {
@@ -36468,7 +36479,7 @@
     },
     "/api/ogc/collections/roles/items": {
       "get": {
-        "description": "Get public Roles and Roles associated with the authenticated user.",
+        "description": "Get public roles and roles associated with the authenticated user.",
         "operationId": "interfaces_api_views_iam_role_get_roles",
         "parameters": [
           {
@@ -36606,13 +36617,13 @@
             "style": "form"
           },
           {
-            "description": "Filter roles by workspace ID.",
+            "description": "Roles that belong to this workspace. Matches `id` in `workspaces`. `null` matches HydroServer's built-in roles, which are available in every workspace.",
             "in": "query",
             "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter roles by workspace ID.",
+              "description": "Roles that belong to this workspace. Matches `id` in `workspaces`. `null` matches HydroServer's built-in roles, which are available in every workspace.",
               "items": {
                 "anyOf": [
                   {
@@ -36688,7 +36699,7 @@
     },
     "/api/ogc/collections/roles/items/{role_id}": {
       "get": {
-        "description": "Get a Role.",
+        "description": "Get a role.",
         "operationId": "interfaces_api_views_iam_role_get_role",
         "parameters": [
           {
@@ -36794,7 +36805,7 @@
     },
     "/api/ogc/collections/sampled-mediums/items": {
       "get": {
-        "description": "Get Sampled Mediums.",
+        "description": "Get sampled mediums.",
         "operationId": "interfaces_api_views_sta_sampled_medium_get_sampled_mediums",
         "parameters": [
           {
@@ -37015,7 +37026,7 @@
         ]
       },
       "post": {
-        "description": "Create a new Sampled Medium.",
+        "description": "Create a new sampled medium.",
         "operationId": "interfaces_api_views_sta_sampled_medium_create_sampled_medium",
         "parameters": [],
         "requestBody": {
@@ -37095,7 +37106,7 @@
     },
     "/api/ogc/collections/sampled-mediums/items/{sampled_medium_id}": {
       "delete": {
-        "description": "Delete a Sampled Medium.",
+        "description": "Delete a sampled medium.",
         "operationId": "interfaces_api_views_sta_sampled_medium_delete_sampled_medium",
         "parameters": [
           {
@@ -37156,7 +37167,7 @@
         ]
       },
       "get": {
-        "description": "Get a Sampled Medium.",
+        "description": "Get a sampled medium.",
         "operationId": "interfaces_api_views_sta_sampled_medium_get_sampled_medium",
         "parameters": [
           {
@@ -37269,7 +37280,7 @@
         ]
       },
       "patch": {
-        "description": "Update a Sampled Medium.",
+        "description": "Update a sampled medium.",
         "operationId": "interfaces_api_views_sta_sampled_medium_update_sampled_medium",
         "parameters": [
           {
@@ -37358,7 +37369,7 @@
     },
     "/api/ogc/collections/unit-types/items": {
       "get": {
-        "description": "Get Unit Types.",
+        "description": "Get unit types.",
         "operationId": "interfaces_api_views_sta_unit_type_get_unit_types",
         "parameters": [
           {
@@ -37579,7 +37590,7 @@
         ]
       },
       "post": {
-        "description": "Create a new Unit Type.",
+        "description": "Create a new unit type.",
         "operationId": "interfaces_api_views_sta_unit_type_create_unit_type",
         "parameters": [],
         "requestBody": {
@@ -37659,7 +37670,7 @@
     },
     "/api/ogc/collections/unit-types/items/{unit_type_id}": {
       "delete": {
-        "description": "Delete a Unit Type.",
+        "description": "Delete a unit type.",
         "operationId": "interfaces_api_views_sta_unit_type_delete_unit_type",
         "parameters": [
           {
@@ -37720,7 +37731,7 @@
         ]
       },
       "get": {
-        "description": "Get a Unit Type.",
+        "description": "Get a unit type.",
         "operationId": "interfaces_api_views_sta_unit_type_get_unit_type",
         "parameters": [
           {
@@ -37833,7 +37844,7 @@
         ]
       },
       "patch": {
-        "description": "Update a Unit Type.",
+        "description": "Update a unit type.",
         "operationId": "interfaces_api_views_sta_unit_type_update_unit_type",
         "parameters": [
           {
@@ -37922,7 +37933,7 @@
     },
     "/api/ogc/collections/units/items": {
       "get": {
-        "description": "Get public Units and Units associated with the authenticated user.",
+        "description": "Get public units and units associated with the authenticated user.",
         "operationId": "interfaces_api_views_sta_unit_get_units",
         "parameters": [
           {
@@ -38087,13 +38098,13 @@
             }
           },
           {
-            "description": "Filter units by workspace ID.",
+            "description": "Units that belong to this workspace. Matches `id` in `workspaces`. `null` matches units shared by every workspace.",
             "in": "query",
             "name": "workspaceId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter units by workspace ID.",
+              "description": "Units that belong to this workspace. Matches `id` in `workspaces`. `null` matches units shared by every workspace.",
               "items": {
                 "anyOf": [
                   {
@@ -38111,13 +38122,13 @@
             }
           },
           {
-            "description": "Filter units by monitoring_site ID.",
+            "description": "Units used by datastreams at this monitoring site. Matches `id` in `monitoring-sites`. `null` matches units that no datastream uses.",
             "in": "query",
             "name": "monitoringSiteId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter units by monitoring_site ID.",
+              "description": "Units used by datastreams at this monitoring site. Matches `id` in `monitoring-sites`. `null` matches units that no datastream uses.",
               "items": {
                 "anyOf": [
                   {
@@ -38135,13 +38146,13 @@
             }
           },
           {
-            "description": "Filter units by datastream ID.",
+            "description": "Units used by this datastream. Matches `id` in `datastreams`. `null` matches units that no datastream uses.",
             "in": "query",
             "name": "datastreamId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter units by datastream ID.",
+              "description": "Units used by this datastream. Matches `id` in `datastreams`. `null` matches units that no datastream uses.",
               "items": {
                 "anyOf": [
                   {
@@ -38159,13 +38170,13 @@
             }
           },
           {
-            "description": "Filter units by type",
+            "description": "Units of this type. Matches `name` in `unit-types`.",
             "in": "query",
             "name": "type",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter units by type",
+              "description": "Units of this type. Matches `name` in `unit-types`.",
               "items": {
                 "type": "string"
               },
@@ -38241,7 +38252,7 @@
         ]
       },
       "post": {
-        "description": "Create a new Unit.",
+        "description": "Create a new unit.",
         "operationId": "interfaces_api_views_sta_unit_create_unit",
         "parameters": [],
         "requestBody": {
@@ -38321,7 +38332,7 @@
     },
     "/api/ogc/collections/units/items/{unit_id}": {
       "delete": {
-        "description": "Delete a Unit.",
+        "description": "Delete a unit.",
         "operationId": "interfaces_api_views_sta_unit_delete_unit",
         "parameters": [
           {
@@ -38393,7 +38404,7 @@
         ]
       },
       "get": {
-        "description": "Get a Unit.",
+        "description": "Get a unit.",
         "operationId": "interfaces_api_views_sta_unit_get_unit",
         "parameters": [
           {
@@ -38529,7 +38540,7 @@
         ]
       },
       "patch": {
-        "description": "Update a Unit.",
+        "description": "Update a unit.",
         "operationId": "interfaces_api_views_sta_unit_update_unit",
         "parameters": [
           {
@@ -38781,7 +38792,7 @@
             }
           },
           {
-            "description": "Whether the workspace is associated with the authenticated user",
+            "description": "`true` returns only the workspaces you own, collaborate on, or have a pending transfer to. For a service account, that's its own workspace. `false` doesn't filter.",
             "in": "query",
             "name": "isAssociated",
             "required": false,
@@ -38794,12 +38805,12 @@
                   "type": "null"
                 }
               ],
-              "description": "Whether the workspace is associated with the authenticated user",
+              "description": "`true` returns only the workspaces you own, collaborate on, or have a pending transfer to. For a service account, that's its own workspace. `false` doesn't filter.",
               "title": "Isassociated"
             }
           },
           {
-            "description": "Whether the returned workspaces should be private or public.",
+            "description": "`true` returns only private workspaces, and `false` only public ones.",
             "in": "query",
             "name": "isPrivate",
             "required": false,
@@ -38812,7 +38823,7 @@
                   "type": "null"
                 }
               ],
-              "description": "Whether the returned workspaces should be private or public.",
+              "description": "`true` returns only private workspaces, and `false` only public ones.",
               "title": "Isprivate"
             }
           },
@@ -38890,7 +38901,7 @@
         ]
       },
       "post": {
-        "description": "Create a new workspace owned by the authenticated user.",
+        "description": "Create a workspace owned by you.",
         "operationId": "interfaces_api_views_iam_workspace_create_workspace",
         "parameters": [],
         "requestBody": {
@@ -39347,7 +39358,7 @@
         ]
       },
       "get": {
-        "description": "Get all collaborators associated with a workspace.",
+        "description": "Get a workspace's collaborators and their roles.",
         "operationId": "interfaces_api_views_iam_collaborator_get_collaborators",
         "parameters": [
           {
@@ -39437,13 +39448,13 @@
             }
           },
           {
-            "description": "Filter collaborators by role ID.",
+            "description": "Collaborators with this role. Matches `id` in `roles`.",
             "in": "query",
             "name": "roleId",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Filter collaborators by role ID.",
+              "description": "Collaborators with this role. Matches `id` in `roles`.",
               "items": {
                 "format": "uuid",
                 "type": "string"
@@ -39532,7 +39543,7 @@
         ]
       },
       "post": {
-        "description": "Add a collaborator to a workspace.",
+        "description": "Give a user or service account a role in a workspace.",
         "operationId": "interfaces_api_views_iam_collaborator_add_collaborator",
         "parameters": [
           {
@@ -39629,7 +39640,7 @@
         ]
       },
       "put": {
-        "description": "Edit a collaborator's role in a workspace.",
+        "description": "Change a collaborator's role in a workspace.",
         "operationId": "interfaces_api_views_iam_collaborator_edit_collaborator_role",
         "parameters": [
           {
@@ -39710,7 +39721,7 @@
     },
     "/api/ogc/collections/workspaces/items/{workspace_id}/service-accounts": {
       "get": {
-        "description": "Get service accounts associated with the authenticated user.",
+        "description": "Get a workspace's service accounts.",
         "operationId": "interfaces_api_views_iam_service_account_get_service_accounts",
         "parameters": [
           {
@@ -39881,7 +39892,7 @@
         ]
       },
       "post": {
-        "description": "Create a new service account for the workspace.",
+        "description": "Create a service account and return its API key.",
         "operationId": "interfaces_api_views_iam_service_account_create_service_account",
         "parameters": [
           {
@@ -40026,7 +40037,7 @@
         ]
       },
       "get": {
-        "description": "Get service account details.",
+        "description": "Get a service account.",
         "operationId": "interfaces_api_views_iam_service_account_get_service_account",
         "parameters": [
           {
@@ -40235,7 +40246,7 @@
     },
     "/api/ogc/collections/workspaces/items/{workspace_id}/service-accounts/{service_account_id}/regenerate": {
       "put": {
-        "description": "Regenerate a service account's key using existing settings.",
+        "description": "Replace a service account's API key and return the new key.",
         "operationId": "interfaces_api_views_iam_service_account_regenerate_service_account_key",
         "parameters": [
           {
@@ -40323,7 +40334,7 @@
     },
     "/api/ogc/collections/workspaces/items/{workspace_id}/transfer": {
       "delete": {
-        "description": "Reject a pending workspace transfer.",
+        "description": "Reject or cancel a pending workspace transfer.",
         "operationId": "interfaces_api_views_iam_workspace_reject_workspace_transfer",
         "parameters": [
           {
@@ -40400,7 +40411,7 @@
         ]
       },
       "post": {
-        "description": "Transfer a workspace owned by the authenticated user to another HydroServer user.",
+        "description": "Start transferring a workspace you own to another HydroServer user.",
         "operationId": "interfaces_api_views_iam_workspace_transfer_workspace",
         "parameters": [
           {
@@ -40487,7 +40498,7 @@
         ]
       },
       "put": {
-        "description": "Accept a pending workspace transfer.",
+        "description": "Accept a pending transfer of a workspace to you.",
         "operationId": "interfaces_api_views_iam_workspace_accept_workspace_transfer",
         "parameters": [
           {
@@ -40566,7 +40577,7 @@
     },
     "/api/ogc/collections/{collection_id}": {
       "get": {
-        "description": "Get a collection.",
+        "description": "Get a collection's description and links.",
         "operationId": "interfaces_api_views_ogc_get_collection_metadata",
         "parameters": [
           {
@@ -40632,5 +40643,271 @@
       }
     }
   },
-  "servers": []
+  "servers": [],
+  "tags": [
+    {
+      "description": "The API's landing page and conformance declaration.",
+      "externalDocs": {
+        "description": "HydroServer documentation",
+        "url": "https://hydroserver.org/user-guides/how-to/using-the-data-management-api#exploring-the-api"
+      },
+      "name": "Capabilities"
+    },
+    {
+      "description": "The collections the API serves, one for each type of resource.",
+      "externalDocs": {
+        "description": "HydroServer documentation",
+        "url": "https://hydroserver.org/user-guides/how-to/using-the-data-management-api#exploring-the-api"
+      },
+      "name": "Collections"
+    },
+    {
+      "description": "Workspaces that own monitoring sites, datastreams, and other data, and control who can access them.",
+      "externalDocs": {
+        "description": "HydroServer documentation",
+        "url": "https://hydroserver.org/introduction/key-concepts/workspaces-and-access-control#workspaces"
+      },
+      "name": "Workspaces"
+    },
+    {
+      "description": "Users and service accounts that hold a role in a workspace.",
+      "externalDocs": {
+        "description": "HydroServer documentation",
+        "url": "https://hydroserver.org/user-guides/how-to/managing-access-control#adding-collaborators-to-a-workspace"
+      },
+      "name": "Collaborators"
+    },
+    {
+      "description": "Accounts that let automated clients authenticate to a workspace with an API key.",
+      "externalDocs": {
+        "description": "HydroServer documentation",
+        "url": "https://hydroserver.org/user-guides/how-to/managing-access-control#service-accounts-and-api-keys"
+      },
+      "name": "Service Accounts"
+    },
+    {
+      "description": "Roles that grant collaborators and service accounts permissions within a workspace.",
+      "externalDocs": {
+        "description": "HydroServer documentation",
+        "url": "https://hydroserver.org/introduction/key-concepts/workspaces-and-access-control#user-roles"
+      },
+      "name": "Roles"
+    },
+    {
+      "description": "Locations where observations are collected, with WGS 84 coordinates.",
+      "externalDocs": {
+        "description": "HydroServer documentation",
+        "url": "https://hydroserver.org/introduction/key-concepts/monitoring-sites"
+      },
+      "name": "Monitoring Sites"
+    },
+    {
+      "description": "Controlled vocabulary of monitoring site types.",
+      "externalDocs": {
+        "description": "HydroServer documentation",
+        "url": "https://hydroserver.org/references/data-dictionary#controlled-vocabulary-tables"
+      },
+      "name": "Monitoring Site Types"
+    },
+    {
+      "description": "Controlled vocabulary of types for files and links attached to monitoring sites and datastreams.",
+      "externalDocs": {
+        "description": "HydroServer documentation",
+        "url": "https://hydroserver.org/references/data-dictionary#controlled-vocabulary-tables"
+      },
+      "name": "Linked Resource Types"
+    },
+    {
+      "description": "Time series of observations of one observed property at a monitoring site.",
+      "externalDocs": {
+        "description": "HydroServer documentation",
+        "url": "https://hydroserver.org/introduction/key-concepts/datastreams"
+      },
+      "name": "Datastreams"
+    },
+    {
+      "description": "Controlled vocabulary of datastream statuses.",
+      "externalDocs": {
+        "description": "HydroServer documentation",
+        "url": "https://hydroserver.org/references/data-dictionary#controlled-vocabulary-tables"
+      },
+      "name": "Datastream Statuses"
+    },
+    {
+      "description": "Controlled vocabulary of statistics used to aggregate datastream results.",
+      "externalDocs": {
+        "description": "HydroServer documentation",
+        "url": "https://hydroserver.org/references/data-dictionary#controlled-vocabulary-tables"
+      },
+      "name": "Aggregation Statistics"
+    },
+    {
+      "description": "Individual timestamped results recorded in datastreams.",
+      "externalDocs": {
+        "description": "HydroServer documentation",
+        "url": "https://hydroserver.org/introduction/key-concepts/observations"
+      },
+      "name": "Observations"
+    },
+    {
+      "description": "Phenomena that datastreams observe, such as discharge or water temperature.",
+      "externalDocs": {
+        "description": "HydroServer documentation",
+        "url": "https://hydroserver.org/introduction/key-concepts/datastreams#metadata-types"
+      },
+      "name": "Observed Properties"
+    },
+    {
+      "description": "Controlled vocabulary of observed property types.",
+      "externalDocs": {
+        "description": "HydroServer documentation",
+        "url": "https://hydroserver.org/references/data-dictionary#controlled-vocabulary-tables"
+      },
+      "name": "Observed Property Types"
+    },
+    {
+      "description": "Units of measure for datastream results.",
+      "externalDocs": {
+        "description": "HydroServer documentation",
+        "url": "https://hydroserver.org/introduction/key-concepts/datastreams#metadata-types"
+      },
+      "name": "Units"
+    },
+    {
+      "description": "Controlled vocabulary of unit types.",
+      "externalDocs": {
+        "description": "HydroServer documentation",
+        "url": "https://hydroserver.org/references/data-dictionary#controlled-vocabulary-tables"
+      },
+      "name": "Unit Types"
+    },
+    {
+      "description": "Sensors and procedures used to produce datastream results.",
+      "externalDocs": {
+        "description": "HydroServer documentation",
+        "url": "https://hydroserver.org/introduction/key-concepts/datastreams#metadata-types"
+      },
+      "name": "Methods"
+    },
+    {
+      "description": "Controlled vocabulary of method types.",
+      "externalDocs": {
+        "description": "HydroServer documentation",
+        "url": "https://hydroserver.org/references/data-dictionary#controlled-vocabulary-tables"
+      },
+      "name": "Method Types"
+    },
+    {
+      "description": "Levels of quality control and processing applied to datastream results.",
+      "externalDocs": {
+        "description": "HydroServer documentation",
+        "url": "https://hydroserver.org/introduction/key-concepts/datastreams#metadata-types"
+      },
+      "name": "Processing Levels"
+    },
+    {
+      "description": "Codes that qualify individual observation results.",
+      "externalDocs": {
+        "description": "HydroServer documentation",
+        "url": "https://hydroserver.org/introduction/key-concepts/datastreams#metadata-types"
+      },
+      "name": "Result Qualifiers"
+    },
+    {
+      "description": "Controlled vocabulary of the media that datastreams sample, such as surface water or air.",
+      "externalDocs": {
+        "description": "HydroServer documentation",
+        "url": "https://hydroserver.org/references/data-dictionary#controlled-vocabulary-tables"
+      },
+      "name": "Sampled Mediums"
+    },
+    {
+      "description": "Sources that ETL tasks extract data from.",
+      "externalDocs": {
+        "description": "HydroServer documentation",
+        "url": "https://hydroserver.org/user-guides/how-to/job-orchestration-ingestion"
+      },
+      "name": "ETL Data Connections"
+    },
+    {
+      "description": "Scheduled jobs that load observations from data connections into datastreams.",
+      "externalDocs": {
+        "description": "HydroServer documentation",
+        "url": "https://hydroserver.org/user-guides/how-to/job-orchestration-ingestion"
+      },
+      "name": "ETL Tasks"
+    },
+    {
+      "description": "Mappings from source identifiers in extracted data to target datastreams.",
+      "externalDocs": {
+        "description": "HydroServer documentation",
+        "url": "https://hydroserver.org/user-guides/how-to/job-orchestration-ingestion"
+      },
+      "name": "ETL Mappings"
+    },
+    {
+      "description": "Rating curves used by data product transformations.",
+      "externalDocs": {
+        "description": "HydroServer documentation",
+        "url": "https://hydroserver.org/user-guides/how-to/job-orchestration-aggregation"
+      },
+      "name": "Data Product Rating Curves"
+    },
+    {
+      "description": "Scheduled jobs that derive datastreams from other datastreams.",
+      "externalDocs": {
+        "description": "HydroServer documentation",
+        "url": "https://hydroserver.org/user-guides/how-to/job-orchestration-aggregation"
+      },
+      "name": "Data Product Tasks"
+    },
+    {
+      "description": "Transformations that data product tasks apply to input datastreams.",
+      "externalDocs": {
+        "description": "HydroServer documentation",
+        "url": "https://hydroserver.org/user-guides/how-to/job-orchestration-aggregation"
+      },
+      "name": "Data Product Transformations"
+    },
+    {
+      "description": "Scheduled jobs that check datastreams against monitoring rules.",
+      "externalDocs": {
+        "description": "HydroServer documentation",
+        "url": "https://hydroserver.org/user-guides/how-to/job-orchestration-quality"
+      },
+      "name": "Monitoring Tasks"
+    },
+    {
+      "description": "Conditions that monitoring tasks check datastreams against.",
+      "externalDocs": {
+        "description": "HydroServer documentation",
+        "url": "https://hydroserver.org/user-guides/how-to/job-orchestration-quality"
+      },
+      "name": "Monitoring Rules"
+    },
+    {
+      "description": "Records of quality control sessions applied to datastreams.",
+      "externalDocs": {
+        "description": "HydroServer documentation",
+        "url": "https://hydroserver.org/user-guides/how-to/quality-controlling-data"
+      },
+      "name": "Quality Control Histories"
+    },
+    {
+      "description": "Rounds of quality control edits to a datastream over a time range.",
+      "externalDocs": {
+        "description": "HydroServer documentation",
+        "url": "https://hydroserver.org/user-guides/how-to/quality-controlling-data#the-edit-history-panel"
+      },
+      "name": "Quality Control Sessions"
+    },
+    {
+      "description": "The ordered quality control steps in a session.",
+      "externalDocs": {
+        "description": "HydroServer documentation",
+        "url": "https://hydroserver.org/user-guides/how-to/quality-controlling-data#the-qc-operations-panel-by-panel"
+      },
+      "name": "Quality Control Operations"
+    }
+  ]
 }

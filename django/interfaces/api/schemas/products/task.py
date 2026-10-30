@@ -106,25 +106,43 @@ class DataProductTaskQueryParameters(DataProductTaskFilterFields, CollectionQuer
         "whitespace-separated words within a term are combined with AND.",
     )
     monitoring_site: list[uuid.UUID] = Query(
-        [], description="Filter data product tasks by monitoring_site ID.", alias="monitoringSiteId"
+        [],
+        description="Data product tasks for this monitoring site. Matches `id` in `monitoring-sites`.",
+        alias="monitoringSiteId",
     )
     workspace: list[uuid.UUID] = Query(
-        [], description="Filter data product tasks by workspace ID.", alias="workspaceId"
+        [],
+        description="Data product tasks in this workspace. Matches `id` in `workspaces`.",
+        alias="workspaceId",
     )
     latest_run_status: list[str | Literal["null"]] = Query(
-        [], description="Filter data product tasks by their most recent run status."
+        [],
+        description="Data product tasks whose latest run has this status: `PENDING`, `STARTED`, `SUCCESS`, or "
+        "`FAILURE`. `null` matches tasks that have never run.",
     )
     transformation_type: list[str] = Query(
-        [], description="Filter data product tasks by transformation type."
+        [],
+        description="Data product tasks with a transformation of this type: `aggregation`, `derivation`, or "
+        "`rating_curve`.",
     )
     output_datastream: list[uuid.UUID] = Query(
-        [], description="Filter data product tasks by output datastream ID.", alias="outputDatastreamId"
+        [],
+        description="Data product tasks with a transformation that outputs to this datastream. Matches `id` "
+        "in `datastreams`.",
+        alias="outputDatastreamId",
     )
     input_datastream: list[uuid.UUID] = Query(
-        [], description="Filter data product tasks by input datastream ID.", alias="inputDatastreamId"
+        [],
+        description="Data product tasks with a transformation that uses this datastream as an input. Matches "
+        "`id` in `datastreams`.",
+        alias="inputDatastreamId",
     )
     rating_curve: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter data product tasks by rating curve ID.", alias="ratingCurveId"
+        [],
+        description="Data product tasks with a transformation that uses this rating curve. Matches `id` in "
+        "`data-product-rating-curves`. `null` matches tasks with a transformation that doesn't "
+        "use a rating curve, and tasks with no transformations.",
+        alias="ratingCurveId",
     )
 
 

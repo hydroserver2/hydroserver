@@ -36,7 +36,7 @@ def get_unit_types(
     query: Query[VocabularyQueryParameters],
 ):
     """
-    Get Unit Types.
+    Get unit types.
     """
 
     return 200, unit_type_service.list(
@@ -65,7 +65,7 @@ def create_unit_type(
     data: UnitTypePostBody,
 ):
     """
-    Create a new Unit Type.
+    Create a new unit type.
     """
 
     return 201, unit_type_service.create(
@@ -92,7 +92,7 @@ def get_unit_type(
     query: Query[VocabularyItemQueryParameters],
 ):
     """
-    Get a Unit Type.
+    Get a unit type.
     """
 
     return 200, unit_type_service.get(
@@ -119,7 +119,7 @@ def update_unit_type(
     data: UnitTypePatchBody,
 ):
     """
-    Update a Unit Type.
+    Update a unit type.
     """
 
     unit_type_service.update(
@@ -145,7 +145,7 @@ def delete_unit_type(
     request: HydroServerHttpRequest, unit_type_id: Path[uuid.UUID]
 ):
     """
-    Delete a Unit Type.
+    Delete a unit type.
     """
 
     return 204, unit_type_service.delete(

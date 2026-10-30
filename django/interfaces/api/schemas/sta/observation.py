@@ -91,7 +91,7 @@ class ObservationItemQueryParameters(ObservationFilterFields, BaseQueryParameter
 
 class ObservationQueryParameters(ObservationFilterFields, CollectionQueryParameters, ExtentQueryParameters):
     datastream_id: list[uuid.UUID] = Query(
-        [], description="Filter observations by datastream ID."
+        [], description="Observations in this datastream. Matches `id` in `datastreams`."
     )
     sortby: Annotated[
         Optional[list[ObservationSortByFields]],
@@ -99,7 +99,7 @@ class ObservationQueryParameters(ObservationFilterFields, CollectionQueryParamet
         WithJsonSchema(sortby_array_schema(ObservationSortByFields)),
     ] = Query([], description="Select one or more fields to sort the response by.")
     result_qualifiers: list[str] = Query(
-        [], description="Filter observations by result qualifier."
+        [], description="Observations with this result qualifier. Matches `name` in `result-qualifiers`."
     )
 
 

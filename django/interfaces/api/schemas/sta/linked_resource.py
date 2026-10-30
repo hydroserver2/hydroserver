@@ -9,7 +9,10 @@ from interfaces.api.schemas.base import ItemId
 
 
 class LinkedResourceQueryParameters(PaginatedQueryParameters):
-    type: list[str] = Query([], description="Filter by linked resource type.")
+    type: list[str] = Query(
+        [],
+        description="Linked resources of this type. Matches `name` in `linked-resource-types`.",
+    )
 
 
 class LinkedResourceGetResponse(BaseGetResponse, ItemId):

@@ -118,19 +118,22 @@ class DataProductTransformationQueryParameters(
         WithJsonSchema(sortby_array_schema(DataProductTransformationSortByFields)),
     ] = Query([], description="Select one or more fields to sort the response by.")
     transformation_type: list[str] = Query(
-        [], description="Filter transformations by type."
+        [], description="Transformations of this type: `aggregation`, `derivation`, or `rating_curve`."
     )
     output_datastream_id: list[uuid.UUID] = Query(
-        [], description="Filter transformations by output datastream ID."
+        [], description="The transformation that outputs to this datastream. Matches `id` in `datastreams`."
     )
     input_datastreams__datastream_id: list[uuid.UUID] = Query(
-        [], description="Filter transformations by input datastream ID.", alias="inputDatastreamId"
+        [],
+        description="Transformations that use this datastream as an input. Matches `id` in `datastreams`.",
+        alias="inputDatastreamId",
     )
     task_id: list[uuid.UUID] = Query(
-        [], description="Filter transformations by data product task ID."
+        [], description="Transformations of this data product task. Matches `id` in `data-product-tasks`."
     )
     workspace_id: list[uuid.UUID] = Query(
-        [], description="Filter transformations by workspace ID."
+        [],
+        description="Transformations of data product tasks in this workspace. Matches `id` in `workspaces`.",
     )
 
 
