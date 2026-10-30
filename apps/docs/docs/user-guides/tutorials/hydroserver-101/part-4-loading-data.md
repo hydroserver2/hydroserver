@@ -42,7 +42,7 @@ Once the file is selected, the application will attempt to detect the start row 
 
 <img src="/hydroserver-101/sdl-import-csv.png" alt="streaming data loader" class="img-white-bg">
 
-The next screen acts as a sort of connect-the-dots interface that will let you map the source CSV columns to their related target datastreams. Notice our two CSV columns max_temp_c and min_temp_c on the left. For now, we only care about loading max_temp_c. Select the list item with that label, then select the single 'Temperature' datastream we created in part 2 of this tutorial. When properly selected, the source and target will share the same color and number like the image below. Click 'Create' to finish creating this data source.
+The next screen acts as a sort of connect-the-dots interface that will let you map the source CSV columns to their related target datastreams. Notice our two CSV columns max_temp_c and min_temp_c on the left. For now, we only care about loading max_temp_c. Select the list item with that label, then select the `Air Temperature - Daily Max, RAW` datastream we created in part 2 of this tutorial. When properly selected, the source and target will share the same color and number like the image below. Click 'Create' to finish creating this data source.
 
 <img src="/hydroserver-101/sdl-map.png" alt="streaming data loader" class="img-white-bg">
 
@@ -52,7 +52,9 @@ Clicking the 'create' button will bring you to the main dashboard where you'll s
 
 ## Visualizing Your Data
 
-Congrats! You've completed this tutorial! To visualize your newly pushed data, click 'Visualize data' on the main navigation bar in the Data Management App. This will take you to a page where you'll see all the public data on the playground instance and your data regardless of if it's public or private (don't worry, private data still can't be seen by others). Use the 'Workspace' filter on the left to make it easier to find your datastream in the list. Select your datastream in the Datastreams table and you should see something like this:
+Congrats! You've completed this tutorial! To visualize your newly pushed data, click **Visualize data** in the main navigation bar in the Data Management App. This page lets you explore public data on the playground instance as well as your own public and private data. Your private data remain accessible only to you and your workspace collaborators.
+
+Find the **Datastreams** table at the bottom of the page. Open its **Workspaces** filter and select your workspace to narrow the list. Then check the box next to your datastream to plot it. You should see something like this:
 
 <img src="/hydroserver-101/data-visualization.png" alt="Data connection" class="img-white-bg">
 

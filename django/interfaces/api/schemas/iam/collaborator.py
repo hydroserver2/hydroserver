@@ -75,7 +75,10 @@ class CollaboratorFilterFields(Schema):
 
 
 class CollaboratorQueryParameters(CollaboratorFilterFields, CollectionQueryParameters):
-    role_id: list[uuid.UUID] = Query([], description="Filter collaborators by role ID.")
+    role_id: list[uuid.UUID] = Query(
+        [],
+        description="Collaborators with this role. Matches `id` in `roles`.",
+    )
     sortby: Annotated[
         Optional[list[CollaboratorSortByFields]],
         BeforeValidator(split_sortby),

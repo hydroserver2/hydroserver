@@ -84,14 +84,20 @@ class ProcessingLevelQueryParameters(ProcessingLevelFilterFields, CollectionQuer
         "whitespace-separated words within a term are combined with AND.",
     )
     workspace_id: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter processing levels by workspace ID."
+        [],
+        description="Processing levels that belong to this workspace. Matches `id` in `workspaces`. `null` "
+        "matches processing levels shared by every workspace.",
     )
     datastreams__monitoring_site_id: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter processing levels by monitoring_site ID.", alias="monitoringSiteId"
+        [],
+        description="Processing levels used by datastreams at this monitoring site. Matches `id` in "
+        "`monitoring-sites`. `null` matches processing levels that no datastream uses.",
+        alias="monitoringSiteId",
     )
     datastreams__id: list[uuid.UUID | Literal["null"]] = Query(
         [],
-        description="Filter processing levels by datastream ID.",
+        description="Processing levels used by this datastream. Matches `id` in `datastreams`. `null` matches "
+        "processing levels that no datastream uses.",
         alias="datastreamId",
     )
 

@@ -42,7 +42,7 @@ def get_datastreams(
     query: Query[DatastreamQueryParameters],
 ):
     """
-    Get public Datastreams and Datastreams associated with the authenticated user.
+    Get public datastreams and datastreams associated with the authenticated user.
     """
 
     return 200, datastream_service.list(
@@ -71,7 +71,7 @@ def get_datastream_visualization_bootstrap(
     query: Query[DatastreamVisualizationBootstrapQueryParameters],
 ):
     """
-    Get the lean metadata required to bootstrap the visualization page.
+    Get datastream metadata for HydroServer's data visualization page.
     """
 
     return 200, datastream_service.list_visualization_bootstrap(
@@ -98,7 +98,7 @@ def create_datastream(
     data: DatastreamPostBody,
 ):
     """
-    Create a new Datastream.
+    Create a new datastream.
     """
 
     return 201, datastream_service.create(principal=request.principal, data=data)
@@ -114,11 +114,15 @@ def create_datastream(
 )
 def get_datastream_tag_keys(
     request: HydroServerHttpRequest,
-    workspace_id: Optional[uuid.UUID] = Query(None, alias="workspaceId"),
-    datastream_id: Optional[uuid.UUID] = Query(None, alias="datastreamId"),
+    workspace_id: Optional[uuid.UUID] = Query(
+        None, alias="workspaceId", description="Only tags of datastreams in this workspace."
+    ),
+    datastream_id: Optional[uuid.UUID] = Query(
+        None, alias="datastreamId", description="Only the tags of this datastream."
+    ),
 ):
     """
-    Get all existing unique datastream tag keys.
+    Get the tag keys and values used by datastreams, for HydroServer's web apps.
     """
 
     return 200, datastream_service.get_tag_keys(
@@ -144,7 +148,7 @@ def get_datastream(
     query: Query[DatastreamItemQueryParameters],
 ):
     """
-    Get a Datastream.
+    Get a datastream.
     """
 
     return 200, datastream_service.get(
@@ -170,7 +174,7 @@ def update_datastream(
     data: DatastreamPatchBody,
 ):
     """
-    Update a Datastream.
+    Update a datastream.
     """
 
     datastream_service.update(
@@ -195,7 +199,7 @@ def update_datastream(
 @transaction.atomic
 def delete_datastream(request: HydroServerHttpRequest, datastream_id: Path[uuid.UUID]):
     """
-    Delete a Datastream.
+    Delete a datastream.
     """
 
     return 204, datastream_service.delete(
@@ -219,7 +223,7 @@ def get_datastream_linked_resources(
     query: Query[LinkedResourceQueryParameters],
 ):
     """
-    Get all linked resources associated with a Datastream.
+    Get the files and links attached to a datastream.
     """
 
     return 200, datastream_service.get_linked_resources(
@@ -254,7 +258,7 @@ def add_datastream_linked_resource(
     link: Optional[str] = Form(None),
 ):
     """
-    Add a linked resource to a datastream.
+    Add a file or link to a datastream as multipart form data.
     """
 
     return 201, datastream_service.add_linked_resource(
@@ -287,7 +291,7 @@ def get_datastream_linked_resource(
     linked_resource_id: Path[uuid.UUID],
 ):
     """
-    Get a linked resource associated with a Datastream.
+    Get a file or link attached to a datastream.
     """
 
     return 200, {
@@ -324,8 +328,7 @@ def update_datastream_linked_resource(
     link: Optional[str] = Form(None),
 ):
     """
-    Update a linked resource for a datastream. A linked resource's mode (hosted file vs.
-    external URL) cannot be changed in place — delete it and create a new one instead.
+    Update a datastream's linked resource as multipart form data.
     """
 
     datastream_service.update_linked_resource(
@@ -359,7 +362,7 @@ def remove_datastream_linked_resource(
     linked_resource_id: Path[uuid.UUID],
 ):
     """
-    Remove a linked resource from a datastream.
+    Remove a file or link from a datastream.
     """
 
     return 204, datastream_service.remove_linked_resource(
@@ -376,7 +379,7 @@ def remove_datastream_linked_resource(
 )
 def get_datastream_csv(request: HydroServerHttpRequest, datastream_id: Path[uuid.UUID]):
     """
-    Get a CSV representation of the Datastream.
+    Download a datastream's observations and metadata as a CSV file.
     """
 
     return datastream_service.get_csv(principal=request.principal, uid=datastream_id)

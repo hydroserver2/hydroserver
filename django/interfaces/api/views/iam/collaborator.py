@@ -35,7 +35,7 @@ def get_collaborators(
     query: Query[CollaboratorQueryParameters],
 ):
     """
-    Get all collaborators associated with a workspace.
+    Get a workspace's collaborators and their roles.
     """
 
     return 200, collaborator_service.list(
@@ -68,7 +68,7 @@ def add_collaborator(
     data: CollaboratorPostBody,
 ):
     """
-    Add a collaborator to a workspace.
+    Give a user or service account a role in a workspace.
     """
 
     return 201, collaborator_service.create(
@@ -96,7 +96,7 @@ def edit_collaborator_role(
     data: CollaboratorPostBody,
 ):
     """
-    Edit a collaborator's role in a workspace.
+    Change a collaborator's role in a workspace.
     """
 
     collaborator_service.update(

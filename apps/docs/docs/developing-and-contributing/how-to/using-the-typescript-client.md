@@ -22,7 +22,8 @@ The TypeScript client exposes these services:
 | --- | --- |
 | Authentication and account | `session`, `user` |
 | Data management | `workspaces`, `monitoringSites`, `datastreams`, `methods`, `units`, `processingLevels`, `observedProperties`, `resultQualifiers` |
-| Ingestion and orchestration | `dataConnections`, `tasks`, `monitoringTasks`, `dataProductTasks`, `ratingCurves` |
+| Controlled vocabularies | `monitoringSiteTypes`, `methodTypes`, `observedPropertyTypes`, `unitTypes`, `sampledMediums`, `aggregationStatistics`, `datastreamStatuses`, `linkedResourceTypes` |
+| Ingestion and orchestration | `dataConnections`, `tasks`, `etlMappings`, `monitoringTasks`, `monitoringRules`, `dataProductTasks`, `dataProductTransformations`, `ratingCurves` |
 | Quality control | `qualityControlHistories`, `qualityControlSessions`, `qualityControlOperations` |
 
 Services are created lazily, so reading a service property does not make a request.
@@ -122,33 +123,71 @@ const yourPrivateWorkspaces = await hs.workspaces.listAllItems({
 
 ## Authentication and session
 
+HydroServer provides pages for signing in, signing up, and editing account details. Your app can open these pages
+using the client methods below.
+
+### Sign in and sign out
+
+Call `hs.session.login()` when the user clicks your app's sign-in button. This opens HydroServer's sign-in page.
+The user enters their email and password there.
+
 ```ts
-const loginRes = await hs.session.login("user@example.com", "password");
-if (!loginRes.ok) {
-  console.error(loginRes.message);
+async function signIn() {
+  await hs.session.login("/");
 }
 
-if (hs.session.isAuthenticated) {
-  console.log("Logged in");
+async function signOut() {
+  await hs.session.logout("/");
 }
-
-hs.on("session:expired", () => {
-  console.log("Session expired");
-});
-
-await hs.session.logout();
 ```
 
-`createHydroServer` initializes the session snapshot before it resolves. Account operations are available through `hs.user`:
+The `"/"` tells HydroServer to send the user back to your app's home page afterwards. You can replace it with another
+path in your app, such as `"/workspaces"`. If you leave it out, signing in returns to the current page and signing out
+returns to the home page.
+
+### Check who is signed in
+
+After setting up the client with `await createHydroServer(...)`, you can check whether the user is signed in.
+Check again when the user returns from the sign-in page:
+
+```ts
+if (hs.session.isAuthenticated) {
+  console.log("You are signed in.");
+} else {
+  console.log("Please sign in.");
+}
+```
+
+Use `hs.user.get()` to read the signed-in user's details. Check `ok` before using the returned data:
 
 ```ts
 const accountRes = await hs.user.get();
 if (accountRes.ok) {
-  const account = accountRes.data;
-  account.firstName = "Updated";
-  await hs.user.update(account);
+  console.log(accountRes.data.firstName);
+} else {
+  console.log(accountRes.message);
 }
 ```
+
+### Edit an account or sign up
+
+To let the user edit their profile, open HydroServer's account page:
+
+```ts
+window.location.assign(hs.session.getAccountProfileUrl("/"));
+```
+
+Here, `getAccountProfileUrl()` builds the account page's address, and `window.location.assign()` opens it in the browser.
+Use `getAccountSignupUrl()` in the same way to open the sign-up page. The `"/"` sets the return page, just as it does
+for signing in. If you leave it out, the return page is your current page.
+
+See [Managing Your Account](/user-guides/how-to/creating-user-accounts.md#managing-your-account)
+for the changes a user can make on the account page.
+
+::: details If your app uses OpenID Connect (OIDC)
+If you set the client's `oidc` option, your app needs a page to handle the user's return from signing in.
+On that page, call `await hs.session.completeLogin()` to finish signing in. It returns the path your app should open next.
+:::
 
 ### Tokens managed by your app
 
@@ -496,6 +535,21 @@ await hs.resultQualifiers.update(created);
 await hs.resultQualifiers.delete("00000000-0000-0000-0000-000000000000");
 ```
 
+## Controlled Vocabularies
+
+Metadata forms choose some values from controlled vocabularies: monitoring site types, method types, observed property types, unit types, sampled mediums, aggregation statistics, datastream statuses, and linked resource types. Each vocabulary has its own service with the standard collection helpers. Every term has an `id`, a `name`, and an optional `description`. Monitoring sites, datastreams, and other records store the term's `name`.
+
+### Example: List vocabulary terms
+
+```ts
+const siteTypes = await hs.monitoringSiteTypes.listAllItems();
+const siteTypeNames = siteTypes.map((term) => term.name);
+
+const statuses = await hs.datastreamStatuses.listAllItems({ q: "complete" });
+```
+
+Anyone can read vocabulary terms. Only HydroServer administrators can create, update, or delete them, using the same `create`, `update`, and `delete` helpers as other services.
+
 ## Datastreams
 
 Datastreams group observations for one observed property, produced by one method, at one monitoring site.
@@ -778,6 +832,23 @@ created.name = "Updated Task";
 await hs.tasks.update(created);
 ```
 
+### Example: Manage a task's mappings
+
+A task's `mappings` are also available as a top-level resource through `hs.etlMappings`, which is useful when you need to find which tasks load a datastream or change one mapping without updating the whole task.
+
+```ts
+const mappings = await hs.etlMappings.listAllItems({
+  targetDatastreamId: ["33333333-3333-3333-3333-333333333333"],
+  include: ["targetDatastream"],
+});
+
+await hs.etlMappings.create({
+  etlTaskId: "00000000-0000-0000-0000-000000000000",
+  sourceIdentifier: "humidity",
+  targetDatastreamId: "44444444-4444-4444-4444-444444444444",
+});
+```
+
 ### Example: Trigger a task run
 
 ```ts
@@ -861,15 +932,21 @@ const task = await hs.dataProductTasks.createItem(
 
 if (!task) throw new Error("Unable to create data product task");
 
-await hs.dataProductTasks.createDerivationTransformation(task.id, {
-  inputDatastreamId: "11111111-1111-1111-1111-111111111111",
+await hs.dataProductTransformations.create({
+  taskId: task.id,
+  transformationType: "derivation",
   outputDatastreamId: "22222222-2222-2222-2222-222222222222",
-  variableName: "temperature",
+  inputDatastreams: [
+    {
+      datastreamId: "11111111-1111-1111-1111-111111111111",
+      variableName: "temperature",
+    },
+  ],
   formula: "temperature * 9 / 5 + 32",
 });
 ```
 
-Each transformation type has matching `create`, `list`, `update`, and `delete` helpers. Rating curves themselves are managed through `hs.ratingCurves`:
+Transformations are a top-level resource: use `hs.dataProductTransformations`' `list` (filtered with `{ taskId: task.id }`), `get`, `create`, `update`, and `delete` methods for every transformation type. Set `transformationType` to `derivation`, `rating_curve`, or `aggregation` and supply that type's fields. Rating curves themselves are managed through `hs.ratingCurves`:
 
 ```ts
 import { RatingCurve } from "@hydroserver/client";
@@ -908,7 +985,7 @@ const history = await hs.qualityControlHistories.getItem(historyRes.data.id);
 if (!history) throw new Error("Quality control history not found");
 
 const historiesRes = await hs.qualityControlHistories.list({
-  managed_datastream_id: [history.managedDatastreamId],
+  managedDatastreamId: [history.managedDatastreamId],
   include: ["sourceDatastream", "managedDatastream"],
 });
 ```

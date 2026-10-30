@@ -36,7 +36,7 @@ def get_observed_properties(
     query: Query[ObservedPropertyQueryParameters],
 ):
     """
-    Get public Observed Properties and Observed Properties associated with the authenticated user.
+    Get public observed properties and observed properties associated with the authenticated user.
     """
 
     return 200, observed_property_service.list(
@@ -67,7 +67,7 @@ def create_observed_property(
     data: ObservedPropertyPostBody,
 ):
     """
-    Create a new Observed Property.
+    Create a new observed property.
     """
 
     return 201, observed_property_service.create(
@@ -94,7 +94,7 @@ def get_observed_property(
     query: Query[ObservedPropertyItemQueryParameters],
 ):
     """
-    Get an Observed Property.
+    Get an observed property.
     """
 
     return 200, observed_property_service.get(
@@ -122,7 +122,7 @@ def update_observed_property(
     data: ObservedPropertyPatchBody,
 ):
     """
-    Update an Observed Property.
+    Update an observed property.
     """
 
     observed_property_service.update(
@@ -150,7 +150,7 @@ def delete_observed_property(
     request: HydroServerHttpRequest, observed_property_id: Path[uuid.UUID]
 ):
     """
-    Delete an Observed Property.
+    Delete an observed property.
     """
 
     return 204, observed_property_service.delete(

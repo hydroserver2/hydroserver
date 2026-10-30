@@ -31,7 +31,7 @@ def get_roles(
     query: Query[RoleQueryParameters],
 ):
     """
-    Get public Roles and Roles associated with the authenticated user.
+    Get public roles and roles associated with the authenticated user.
     """
 
     return 200, role_service.list(
@@ -59,7 +59,7 @@ def get_role(
     query: Query[RoleItemQueryParameters],
 ):
     """
-    Get a Role.
+    Get a role.
     """
 
     return 200, role_service.get(principal=request.principal, uid=role_id)

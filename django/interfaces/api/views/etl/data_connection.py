@@ -35,7 +35,7 @@ def get_data_connections(
     query: Query[DataConnectionQueryParameters],
 ):
     """
-    Get ETL Data Connections associated with the authenticated user.
+    Get ETL data connections associated with the authenticated user.
     """
 
     return 200, data_connection_service.list(
@@ -65,7 +65,7 @@ def create_data_connection(
     data: DataConnectionPostBody,
 ):
     """
-    Create a new ETL Data Connection.
+    Create a new ETL data connection.
     """
 
     return 201, data_connection_service.create(
@@ -103,7 +103,7 @@ def get_data_connection(
     query: Query[DataConnectionItemQueryParameters],
 ):
     """
-    Get an ETL Data Connection.
+    Get an ETL data connection.
     """
 
     return 200, data_connection_service.get_item(
@@ -131,7 +131,7 @@ def update_data_connection(
     data: DataConnectionPatchBody,
 ):
     """
-    Update an ETL Data Connection.
+    Update an ETL data connection.
     """
 
     data_connection_service.update(
@@ -174,7 +174,7 @@ def delete_data_connection(
     data_connection_id: Path[uuid.UUID],
 ):
     """
-    Delete an ETL Data Connection.
+    Delete an ETL data connection.
     """
 
     data_connection_service.delete(

@@ -3,6 +3,7 @@ import pytest
 from django.urls import reverse
 
 from interfaces.api.urls import api
+from interfaces.api.views.ogc import API_DESCRIPTION
 from tests.interfaces.api.helpers import BASE_URL, links_by_rel
 
 pytestmark = [pytest.mark.django_db, pytest.mark.usefixtures("proxy_base_url")]
@@ -30,7 +31,7 @@ def test_landing_page_describes_the_api(client):
 
     assert response.status_code == 200
     assert response.json()["title"] == api.title
-    assert response.json()["description"] == api.description
+    assert response.json()["description"] == API_DESCRIPTION
 
 
 def test_landing_page_links(client):

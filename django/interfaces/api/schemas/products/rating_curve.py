@@ -97,10 +97,13 @@ class RatingCurveQueryParameters(RatingCurveFilterFields, CollectionQueryParamet
         "whitespace-separated words within a term are combined with AND.",
     )
     monitoring_site_id: list[uuid.UUID] = Query(
-        [], description="Filter rating curves by monitoring site ID."
+        [],
+        description="Rating curves that belong to this monitoring site. Matches `id` in `monitoring-sites`.",
     )
     monitoring_site__workspace_id: list[uuid.UUID] = Query(
-        [], description="Filter rating curves by workspace ID.", alias="workspaceId"
+        [],
+        description="Rating curves at monitoring sites in this workspace. Matches `id` in `workspaces`.",
+        alias="workspaceId",
     )
 
 

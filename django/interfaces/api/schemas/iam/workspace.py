@@ -102,10 +102,11 @@ class WorkspaceQueryParameters(WorkspaceFilterFields, CollectionQueryParameters,
     )
     is_associated: Optional[QueryBool] = Query(
         None,
-        description="Whether the workspace is associated with the authenticated user",
+        description="`true` returns only the workspaces you own, collaborate on, or have a pending transfer "
+        "to. For a service account, that's its own workspace. `false` doesn't filter.",
     )
     is_private: Optional[QueryBool] = Query(
-        None, description="Whether the returned workspaces should be private or public."
+        None, description="`true` returns only private workspaces, and `false` only public ones."
     )
 
 

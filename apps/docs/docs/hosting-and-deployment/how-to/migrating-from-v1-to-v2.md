@@ -1,8 +1,13 @@
 # Migrating from HydroServer v1 to v2
 
 HydroServer v2 restructures much of the v1 data model. Upgrading runs a set of database migrations that convert your
-v1 data to the v2 schema. This guide covers what you need to do to your data **before** upgrading, and what the
-migrations will change, drop, or transform along the way.
+v1 data to the v2 schema. This guide covers what you need to do to your data **before** upgrading, what the
+migrations will change, drop, or transform along the way, and the configuration and infrastructure changes your
+deployment needs.
+
+Users don't need to do anything to their own data. If your users have scripts, apps, or other tools that use
+HydroServer's APIs or client libraries, point them to
+[Migrating Apps and Scripts from v1 to v2](/user-guides/how-to/migrating-apps-and-scripts-from-v1-to-v2.md).
 
 These migrations apply to deployments running **HydroServer v1.12**. If you are on an earlier v1 release, upgrade to
 v1.12 first.
@@ -21,7 +26,16 @@ only way to roll back to v1.
    (`https://<your-hydroserver-domain>/admin`), which you can still access before you upgrade.
 3. Review [Data Loss and Transformations](#data-loss-and-transformations) and save copies of anything listed there
    that you need to keep.
-4. Upgrade to v2 and run the migrations.
+4. Update your environment variables as described in [Configuration Changes](#configuration-changes). In particular,
+   set `DEBUG`, generate an OIDC signing key, and replace v1's storage settings.
+5. Make the infrastructure changes in [Infrastructure Changes](#infrastructure-changes).
+6. Deploy the v2 image for your web server, Celery worker, and Celery scheduler, then run the migrations and collect
+   static files:
+
+   ```bash
+   python manage.py migrate
+   python manage.py collectstatic
+   ```
 
 The first v2 migration checks your v1 data for every blocking problem listed below before it changes anything. If it
 finds problems, the upgrade stops with an error that lists each problem, the affected table and field, and up to ten
@@ -277,3 +291,71 @@ and all superusers, get an unlimited limit. All other users get a limit of `0`.
 HydroServer v2 no longer includes the Django Easy Audit package. Its tables and data are left in your database, but
 HydroServer no longer reads or writes them. Export any audit history you need before upgrading. You can drop these
 tables after upgrading.
+
+### Job Orchestration System tasks are kept
+
+**Tables:** `orchestration_*`, `etl_*`, `products_*`, and `monitoring_*`
+
+ETL, data product, and monitoring tasks, their schedules, and their run history are migrated as they are, and they
+keep running on their existing schedules after the upgrade. Only the blocking changes above affect these tables, and
+users don't need to change their tasks.
+
+## Configuration Changes
+
+v2 changes how HydroServer reads its settings. Review your environment variables against the tables below before you
+start the v2 containers. For the full list of v2 settings, see
+[HydroServer Production Environment Variables](/hosting-and-deployment/how-to/setting-up-a-production-deployment.md#hydroserver-production-environment-variables).
+
+### Settings to Check First
+
+These settings behave differently in v2, and getting them wrong can stop HydroServer from starting or leave it running
+in debug mode.
+
+| Variable | What to do |
+| --- | --- |
+| `DEBUG` | Set to `False`. In v1, `DEBUG` defaulted to `False` unless `DEPLOYMENT_BACKEND` was `dev`. In v2, it defaults to `True`. |
+| `STRICT_SECURITY` | New. Must be `True` in production. The published Docker image already sets it. |
+| `IDP_OIDC_PRIVATE_KEY` or `IDP_OIDC_PRIVATE_KEY_FILE` | New. Generate an RSA key for HydroServer's OIDC identity provider and keep it the same across restarts. HydroServer doesn't start without it while `STRICT_SECURITY` and `IDP_OIDC_ENABLED` (the default) are `True`. |
+| `MEDIA_STORAGE_ENABLED` | New, defaults to `False`. Set it to `True` if your v1 instance has uploaded file attachments. Otherwise, HydroServer rejects new uploads and, with local storage, stops serving existing files. |
+| `SERVICE_ACCOUNT_EMAIL_DOMAIN` | New. The migrations use it to build an email address for each service account created from a v1 API key, so set it before running the migrations if you don't want the default, `hydroserver.local`. |
+
+### Replaced Settings
+
+| v1 variable | v2 replacement |
+| --- | --- |
+| `DEPLOYMENT_BACKEND` | Removed. Configure storage with `MEDIA_STORAGE_BACKEND`, `MEDIA_STORAGE_OPTIONS`, `STATIC_STORAGE_BACKEND`, and `STATIC_STORAGE_OPTIONS`, and set `DEBUG` and `STRICT_SECURITY` explicitly. If you relied on the JSON logs v1 wrote on GCP, set `LOG_FORMAT` to `json`. |
+| `MEDIA_BUCKET_NAME`, `STATIC_BUCKET_NAME`, `GS_PROJECT_ID` | The `bucket_name` and `project_id` options in `MEDIA_STORAGE_OPTIONS` and `STATIC_STORAGE_OPTIONS`. |
+| `AWS_CLOUDFRONT_KEY`, `AWS_CLOUDFRONT_KEY_ID` | Removed. Configure media storage through `MEDIA_STORAGE_BACKEND` and `MEDIA_STORAGE_OPTIONS`, and use `STATIC_HOST` to serve static files through a CDN. See [Serving Static and Media Files](/hosting-and-deployment/how-to/setting-up-a-production-deployment.md#serving-static-and-media-files). |
+| `TRUSTED_ORIGINS` | `CSRF_TRUSTED_ORIGINS`. Whether browsers may send cookies with cross-origin requests is now set separately, by `CORS_ALLOW_CREDENTIALS`. See [Hosts, Origins, and Cookies](/hosting-and-deployment/how-to/setting-up-a-production-deployment.md#hosts-origins-and-cookies). |
+| `APP_CLIENT_URL` | `WEB_CLIENT_URL`. You can leave it unset with the published Docker image, which serves the Data Management App from the same origin. |
+| `ANON_THROTTLE_RATE`, `AUTH_THROTTLE_RATE` | `API_RATE_LIMITS`. v1 limited both to `20/s` by default, but v2 doesn't limit API requests unless you set it, for example to `{"anonymous": "20/s", "authenticated": "20/s"}`. See [Rate Limiting](/hosting-and-deployment/how-to/setting-up-a-production-deployment.md#rate-limiting). |
+| `ACCOUNT_RATE_LIMITS_DISABLED` | `ACCOUNT_RATE_LIMITS`. Set it to `false` to turn off account rate limits. |
+| `DEFAULT_SUPERUSER_EMAIL`, `DEFAULT_SUPERUSER_PASSWORD` | Removed. Existing admin accounts are migrated. To create a new one, run `python manage.py createsuperuser`. |
+| `LOAD_DEFAULT_DATA` | Removed. Load default vocabularies and roles from the admin dashboard. See [Default Data](/hosting-and-deployment/how-to/using-the-administrator-dashboard.md#default-data). |
+| `ENABLE_AUDITS` | Removed, along with the audit log. See [Audit log tables are no longer used](#audit-log-tables-are-no-longer-used). |
+| `DATA_CONNECTION_NOTIFICATION_CRONTAB` | Removed. Each data connection's notification emails follow that connection's own schedule. |
+
+### Other New Settings
+
+v2 also adds optional settings for caching, OIDC token lifetimes, task run retention, cookies, and log format. Their
+defaults suit most deployments. If you don't set `CACHE_URL`, HydroServer uses a cache table in your database, which
+the migrations create. See
+[Preparing for Production Deployment](/hosting-and-deployment/how-to/setting-up-a-production-deployment.md#preparing-for-production-deployment)
+for each setting.
+
+## Infrastructure Changes
+
+- **Reverse proxy routes:** HydroServer's OIDC identity provider serves pages under `/identity/` and
+  `/.well-known/`. If your reverse proxy only forwards some paths to HydroServer, add these two, and make sure it sends
+  the `X-Forwarded-Proto` header.
+- **Container commands:** the Gunicorn, Celery worker, and Celery scheduler commands are unchanged. Run all three on
+  the v2 image, and set `CELERY_ENABLED` to the same value on each. See
+  [Enabling Celery for HydroServer](/hosting-and-deployment/how-to/setting-up-a-production-deployment.md#enabling-celery-for-hydroserver).
+- **Setup commands:** the `setup_admin_user` and `load_default_data` management commands are removed. Use
+  `createsuperuser` and the admin dashboard instead, as described in
+  [HydroServer Management Commands](/hosting-and-deployment/how-to/setting-up-a-production-deployment.md#hydroserver-management-commands).
+- **Python version:** the image now runs Python 3.14 instead of 3.11. This only matters if you
+  [build the image from source](/hosting-and-deployment/how-to/building-the-docker-image-from-source.md) or extend it.
+- **Apps that sign users in:** apps that sign users in to HydroServer now use OIDC, so an admin must register each one
+  as an OIDC client. See
+  [Registering OIDC Clients](/hosting-and-deployment/how-to/using-the-administrator-dashboard.md#registering-oidc-clients).

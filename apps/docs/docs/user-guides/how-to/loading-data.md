@@ -22,7 +22,7 @@ The SDL provides a user interface for configuring connections to CSV file, speci
 
 ## Via a Script or Client Program
 
-You can write your own scripts or full on job orchestration systems that use HydroServer's API directly to load data. To make this significantly easier, HydroServer provides client applications such as hydroserverpy: a Python client package that wraps the API so it can be used in straightforward Python one liners: `hydroserver.login()`, `hydroserver.load_data()`, etc. 
+You can write your own scripts or full on job orchestration systems that use HydroServer's API directly to load data. To make this significantly easier, HydroServer provides client applications such as hydroserverpy: a Python client package that wraps the API so it can be used in straightforward Python one liners, such as connecting with a service account's API key (`hs_api = HydroServer(host, apikey=key)`) and loading a pandas DataFrame of observations into a datastream (`hs_api.datastreams.load_observations(datastream_id, df)`).
 
 [Learn how to use hydroserverpy](/user-guides/how-to/using-the-python-client.md)
 
@@ -66,4 +66,4 @@ SDL is ideal if you want a lightweight scheduler without additional infrastructu
 
 ## When the Job Orchestration System is the right fit
 
-The Job Orchestration System is the right choice when you need an always-on orchestration system that lives with HydroServer. If your deployment supports multiple users, has many data connections, or requires centralized scheduling and monitoring, Celery is the better long-term option. It also fits well when data sources are network-accessible and your HydroServer instance is already running in a server environment.
+The Job Orchestration System is the right choice when you need an always-on orchestration system that lives with HydroServer. If your deployment supports multiple users, has many data connections, or requires centralized scheduling and monitoring, the Job Orchestration System is the better long-term option. It also fits well when data sources are network-accessible and your HydroServer instance is already running in a server environment.

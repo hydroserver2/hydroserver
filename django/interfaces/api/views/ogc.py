@@ -1,6 +1,6 @@
 from ninja import Router, Path
 
-from interfaces.api.collections import COLLECTIONS, CollectionDefinition, get_collection
+from interfaces.api.collections import DOCS_URL, COLLECTIONS, CollectionDefinition, get_collection, openapi_tag
 from interfaces.api.http.errors import NotFoundError
 from interfaces.api.formats import collection_formats, formats_conformance
 from interfaces.api.formats.profiles import profiles_conformance
@@ -24,6 +24,40 @@ from interfaces.api.schemas.ogc import (
 API_TITLE = "HydroServer Data Management API"
 API_DESCRIPTION = (
     "Provides access to hydrologic monitoring sites, datastreams, and observations managed in HydroServer."
+)
+
+# The OpenAPI document's description, in Markdown. The landing page keeps the short API_DESCRIPTION.
+API_DOCUMENTATION = f"""
+HydroServer's primary API for creating, managing, and retrieving hydrologic data and metadata: workspaces and
+their access control, monitoring sites, datastreams, and observations, the metadata and controlled vocabularies
+that describe them, and the Job Orchestration System tasks that load, derive, and monitor data.
+
+The API implements [OGC API - Features](https://ogcapi.ogc.org/features/). Each type of resource is a
+collection listed at `/collections`, with its items at `/collections/{{collectionId}}/items`, and `/conformance`
+lists the standards the API conforms to.
+
+## Additional Documentation
+
+- [Using the Data Management API]({DOCS_URL}/user-guides/how-to/using-the-data-management-api): paging,
+  filtering, response formats, creating, updating, and deleting items, and errors, with examples
+- [Authenticating]({DOCS_URL}/references/hydroserver-apis#authenticating) with API keys, OIDC access tokens,
+  email and password, or browser sessions
+- [Data model]({DOCS_URL}/references/data-model) and [data dictionary]({DOCS_URL}/references/data-dictionary)
+- [HydroServer APIs]({DOCS_URL}/references/hydroserver-apis), including HydroServer's SensorThings API
+""".strip()
+
+# Tags of the operations that describe the API itself, which come before the collections' tags.
+CAPABILITY_TAGS = (
+    openapi_tag(
+        "Capabilities",
+        "The API's landing page and conformance declaration.",
+        "/user-guides/how-to/using-the-data-management-api#exploring-the-api",
+    ),
+    openapi_tag(
+        "Collections",
+        "The collections the API serves, one for each type of resource.",
+        "/user-guides/how-to/using-the-data-management-api#exploring-the-api",
+    ),
 )
 
 CORE_CONFORMANCE_CLASSES = (
@@ -157,7 +191,8 @@ def build_items_links(collection: CollectionDefinition, collection_url: str) -> 
 )
 def get_collections(request: HydroServerHttpRequest):
     """
-    Get the collections the API serves.
+    Get the collections the API serves, with links to each collection's items in the formats
+    they're available in.
     """
 
     return 200, CollectionsResponse(
@@ -174,7 +209,7 @@ def get_collections(request: HydroServerHttpRequest):
 )
 def get_collection_metadata(request: HydroServerHttpRequest, collection_id: Path[str]):
     """
-    Get a collection.
+    Get a collection's description and links.
     """
 
     collection = get_collection(collection_id)
