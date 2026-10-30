@@ -37,6 +37,20 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   const summaryStatisticsArray = ref<SummaryStatistics[]>([])
 
   const graphSeriesArray = ref<GraphSeries[]>([])
+  const plotLabelItems = computed(() =>
+    plottedDatastreams.value.map((ds) => {
+      const siteName =
+        monitoringSiteById.value.get(ds.monitoringSiteId)?.name ||
+        ds.monitoringSiteId
+      return {
+        id: ds.id,
+        name: ds.name,
+        siteName,
+        label: `${ds.name}\n@ ${siteName}`,
+      }
+    })
+  )
+
   const plotlyOptions = ref<PlotlyOptions | undefined>()
   const loadingStates = ref(new Map<string, boolean>()) // State to track loading status of individual datasets
   const prevIds = ref<string[]>([])
@@ -556,6 +570,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     yAxisRanges,
     dateOptions,
     graphSeriesArray,
+    plotLabelItems,
     plotlyOptions,
     prevIds,
     loadingStates,

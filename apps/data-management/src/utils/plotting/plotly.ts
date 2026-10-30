@@ -208,14 +208,16 @@ const getExportConfig = (gd: any) => {
   }
 }
 
-const downloadPlotlyImage = async (
+export const downloadPlotlyImage = async (
   gd: any,
   {
     filename,
     format = 'png',
+    scale: requestedScale,
   }: {
     filename: string
     format?: 'png' | 'jpeg' | 'svg'
+    scale?: number
   }
 ) => {
   const { width, height, scale } = getExportConfig(gd)
@@ -225,7 +227,7 @@ const downloadPlotlyImage = async (
     format,
     width,
     height,
-    scale,
+    scale: requestedScale ?? scale,
   })
   const response = await fetch(dataUrl)
   const blob = await response.blob()
