@@ -144,7 +144,7 @@ What you can do here:
 - **Edit timestamps inline.** Click a `Datetime` cell to open a `datetime-local` picker; the same edit-then-commit flow applies.
 - **Bulk-select for an operation.** The leading checkbox column toggles a row in or out of the selection. Selected rows match the selection on the plot, so you can stage a Delete points / Change values / Interpolate edit from the table just as you would from a box-select on the chart.
 - **Track pending edits.** The toolbar chip `N unsaved` lights up whenever the table has uncommitted edits. **Discard** rolls every pending edit back; **Save changes** flushes them through the same history machinery as a Change-values or Shift-datetimes operation (one history entry per cell type).
-- **Inspect qualifiers.** The `Qualifiers` column shows the qualifier codes attached to each observation (set via the
+- **Inspect qualifiers.** The `Qualifiers` column shows the names of the qualifiers attached to each observation (set via the
   Qualifying comments panel). Hover a chip for its description.
 
 The table is the fastest path for a small number of targeted edits. For anything wider (a hundred points, a window of bad values, a drift correction) the plot's box-select gestures + Edit drawer are faster.
@@ -374,9 +374,9 @@ Attach qualifier flags (e.g., "Ice affected", "Estimated") to the selected point
 
 <img src="/qc-app/panel-qualifyingComments.png" alt="Qualifying comments panel" class="img-white-bg">
 
-The **New qualifier** button opens a small dialog where you can register a new data qualifier code + description against the workspace.
+The **New qualifier** button opens a small dialog where you can register a new result qualifier, with a name and description, in the workspace.
 
-> **Note:** qualifier codes are tracked locally in your browser and are POSTed to the workspace's qualifier list, but the per-point qualifier applications themselves are not yet serialized to the backend on Save. See the QC App [QUALITY](https://github.com/hydroserver2/hydroserver/blob/main/packages/qc-utils/docs/QUALITY.md) documentation for the status.
+> **Note:** new qualifiers are saved to the workspace's qualifier list right away, but the per-point qualifier applications themselves are not yet serialized to the backend on Save. See the QC App [QUALITY](https://github.com/hydroserver2/hydroserver/blob/main/packages/qc-utils/docs/QUALITY.md) documentation for the status.
 
 #### Add points
 
@@ -452,7 +452,7 @@ Click the tray-arrow-up icon ("Load QC history") and pick a JSON file. The app w
 2. Replay each operation in order.
 3. Show a Snackbar with `Loaded N operations`, plus a warning if any ops failed.
 
-Per-op failures do not abort the replay. The app keeps going. If your QC history targets columns that don't exist in the new datastream (e.g., a qualifier code that isn't registered), that specific op fails and shows a red `!` badge on its history row, but the rest still run.
+Per-op failures do not abort the replay. The app keeps going. If your QC history targets columns that don't exist in the new datastream (e.g., a qualifier that isn't registered), that specific op fails and shows a red `!` badge on its history row, but the rest still run.
 
 ### When to use it
 

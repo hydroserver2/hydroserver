@@ -42,7 +42,7 @@ Once the file is selected, the application will attempt to detect the start row 
 
 <img src="/hydroserver-101/sdl-import-csv.png" alt="streaming data loader" class="img-white-bg">
 
-The next screen acts as a sort of connect-the-dots interface that will let you map the source CSV columns to their related target datastreams. Notice our two CSV columns max_temp_c and min_temp_c on the left. For now, we only care about loading max_temp_c. Select the list item with that label, then select the single 'Temperature' datastream we created in part 2 of this tutorial. When properly selected, the source and target will share the same color and number like the image below. Click 'Create' to finish creating this data source.
+The next screen acts as a sort of connect-the-dots interface that will let you map the source CSV columns to their related target datastreams. Notice our two CSV columns max_temp_c and min_temp_c on the left. For now, we only care about loading max_temp_c. Select the list item with that label, then select the `Air Temperature - Daily Max, RAW` datastream we created in part 2 of this tutorial. When properly selected, the source and target will share the same color and number like the image below. Click 'Create' to finish creating this data source.
 
 <img src="/hydroserver-101/sdl-map.png" alt="streaming data loader" class="img-white-bg">
 

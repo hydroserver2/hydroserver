@@ -54,7 +54,7 @@ Below is a brief definition of each available linked metadata group a datastream
 
 **- Method** describes how observations are produced by an instrument, technician, laboratory procedure, simulation, or computation. Instrument methods can optionally record the sensor model, manufacturer, and a model definition link. The SensorThings API maps Method records to the standard Sensor entity for interoperability.
 
-**- Result Qualifier** provides additional information about the result of an observation, like its accuracy, reliability, or field conditions that may have impacted the observation result. Each result qualifier has a code and a description to clarify its meaning. For instance, if ice affects a sensor, impacting the observation's reliability, a user can add a result qualifier with the code 'ICE' to denote this specific condition. This helps in understanding and interpreting the data accurately, especially when external factors influence the measurements.
+**- Result Qualifier** provides additional information about the result of an observation, like its accuracy, reliability, or field conditions that may have impacted the observation result. Each result qualifier has a name and an optional description to clarify its meaning. For instance, if ice affects a sensor, impacting the observation's reliability, a user can add a result qualifier named 'Ice affected' to denote this specific condition. This helps in understanding and interpreting the data accurately, especially when external factors influence the measurements.
 
 ## Data Support and Spacing
 
