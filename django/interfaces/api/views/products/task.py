@@ -5,6 +5,7 @@ from ninja import Router, Path, Query
 
 from interfaces.api.http.links import build_self_link
 from interfaces.api.http.request import HydroServerHttpRequest
+from interfaces.api.services.orchestration import require_orchestration_enabled
 from interfaces.auth.security import session_auth, oidc_task_read_auth, oidc_task_write_auth, oidc_task_run_auth, apikey_auth, basic_auth
 from processing.orchestration.models import TaskRun
 from interfaces.api.services.products.task import DataProductTaskAPIService
@@ -60,6 +61,7 @@ def get_data_product_tasks(
         401: str,
         403: str,
         404: str,
+        501: str,
     },
     by_alias=True,
 )
@@ -162,6 +164,7 @@ def delete_data_product_task(
         401: str,
         403: str,
         404: str,
+        501: str,
     },
     by_alias=True,
 )
@@ -173,6 +176,8 @@ def trigger_data_product_task(
     """
     Trigger an immediate run of a data product task on a Celery worker.
     """
+
+    require_orchestration_enabled()
 
     task = data_product_task_service.get_task_for_action(
         principal=request.principal, uid=task_id, action="edit"

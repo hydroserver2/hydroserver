@@ -94,6 +94,7 @@ def get_app_settings_context():
         },
         "extensionsConfiguration": {
             "fileUploadEnabled": settings.MEDIA_STORAGE_ENABLED,
+            "orchestrationEnabled": settings.CELERY_ENABLED,
         },
         "legalInformation": {
             "termsOfUseLink": instance_configuration.terms_of_use_link,

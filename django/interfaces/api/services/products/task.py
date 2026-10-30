@@ -14,6 +14,7 @@ from processing.orchestration.services import TaskService
 from processing.products.models import DataProductTask, DataProductTransformation
 from interfaces.api.http.errors import PermissionDeniedError, NotFoundError
 from interfaces.api.service import APIService
+from interfaces.api.services.orchestration import require_orchestration_enabled
 from interfaces.api.schemas.products.task import (
     DataProductTaskSortByFields,
     DataProductTaskResponse,
@@ -217,6 +218,8 @@ class DataProductTaskAPIService(TaskService[DataProductTask], APIService):
         principal: User | ServiceAccount | AnonymousPrincipal,
         data: DataProductTaskPostBody,
     ):
+        require_orchestration_enabled()
+
         try:
             monitoring_site = MonitoringSite.objects.select_related("workspace").get(
                 pk=data.monitoring_site_id

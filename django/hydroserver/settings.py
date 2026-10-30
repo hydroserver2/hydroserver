@@ -383,7 +383,7 @@ WHITENOISE_IMMUTABLE_FILE_TEST = r"^/static/(web|qc)/assets/"
 
 CELERY_ENABLED = env.bool("CELERY_ENABLED", default=True)
 CELERY_BROKER_URL = env.str("CELERY_BROKER_URL", default="redis://127.0.0.1:6379/0")
-CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+CELERY_BEAT_SCHEDULER = "processing.orchestration.scheduler:OrchestrationScheduler"
 CELERY_WORKER_HIJACK_ROOT_LOGGER = False
 
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True

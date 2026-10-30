@@ -37,3 +37,8 @@ class ConflictError(HttpError):
 class ServerError(HttpError):
     def __init__(self, message="Server Error"):
         super().__init__(500, message)
+
+
+class NotImplementedHttpError(HttpError):
+    def __init__(self, message="Not Implemented"):
+        super().__init__(501, message)

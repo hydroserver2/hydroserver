@@ -65,6 +65,7 @@ interface AnalyticsConfiguration {
 
 interface ExtensionsConfiguration {
   fileUploadEnabled: boolean
+  orchestrationEnabled: boolean
 }
 
 interface LegalInformation {

@@ -86,15 +86,22 @@
             />
           </v-dialog>
 
-          <button
-            type="button"
-            class="header-btn header-btn--neutral hs-text-sm font-weight-semibold"
-            :disabled="!!runNowDisabledReason"
-            @click="runNow"
-          >
-            <v-icon :icon="mdiPlay" size="16" />
-            <span>{{ runNowRequested ? 'Run requested' : 'Run now' }}</span>
-          </button>
+          <v-tooltip location="top" :disabled="!runNowDisabledReason">
+            <template #activator="{ props: tooltipProps }">
+              <span v-bind="tooltipProps" class="inline-flex">
+                <button
+                  type="button"
+                  class="header-btn header-btn--neutral hs-text-sm font-weight-semibold"
+                  :disabled="!!runNowDisabledReason"
+                  @click="runNow"
+                >
+                  <v-icon :icon="mdiPlay" size="16" />
+                  <span>{{ runNowRequested ? 'Run requested' : 'Run now' }}</span>
+                </button>
+              </span>
+            </template>
+            <span>{{ runNowDisabledReason }}</span>
+          </v-tooltip>
         </div>
       </div>
     </header>

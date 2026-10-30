@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime
 
 import pytest
+from django.test import override_settings
 
 from tests.core.iam.factories import (
     CollaboratorFactory,
@@ -827,3 +828,21 @@ def test_update_notification_null_schedule_is_rejected_not_ignored(client):
     assert "schedule is required" in response.json()["message"]
     notification = client.get(url).json()["data"]["notification"]
     assert notification["schedule"]["interval"] == 5
+
+
+# --- CELERY_ENABLED=False ------------------------------------------------------------------
+
+
+@override_settings(CELERY_ENABLED=False)
+def test_create_data_connection_still_succeeds_when_orchestration_disabled(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    client.force_login(owner)
+
+    response = client.post(
+        DATA_CONNECTIONS_URL,
+        data=_data_connection_body(workspace.id, payload=_csv_payload_body()),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
