@@ -1,7 +1,7 @@
 # Loading Data with the SensorThings API
 
 The HydroServer SensorThings API currently only supports posting Observations data. Other metadata can be posted or
-modified using the [HydroServer Data Management API](/references/hydroserver-apis.md#data-management-api) at `/api/ogc`.
+modified using the [HydroServer Data Management API](/user-guides/how-to/using-the-data-management-api.md) at `/api/ogc`.
 
 ## Observations
 

@@ -179,6 +179,10 @@ export default defineConfig({
                 link: "/user-guides/how-to/using-the-python-client",
               },
               {
+                text: "Using the Data Management API",
+                link: "/user-guides/how-to/using-the-data-management-api",
+              },
+              {
                 text: "Configuring Python ETL Pipelines",
                 link: "/user-guides/how-to/configuring-python-etl-pipelines",
               },

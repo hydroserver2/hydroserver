@@ -26,6 +26,8 @@ In this section, we provide detailed documentation for all HydroServer functiona
 
 * **[Using the Python Client](/user-guides/how-to/using-the-python-client.md)**: Reference for hydroserverpy, HydroServer's Python client package, covering the classes and methods for managing workspaces, metadata, observations, ETL, data products, and monitoring from Python.
 
+* **[Using the Data Management API](/user-guides/how-to/using-the-data-management-api.md)**: Learn how to read, filter, create, and update HydroServer data and metadata directly through the Data Management API, HydroServer's OGC API.
+
 * **[Configuring Python ETL Pipelines](/user-guides/how-to/configuring-python-etl-pipelines.md)**: Learn how to configure Python ETL pipelines to load data into HydroServer.
 
 * **[Loading Data with the SensorThings API](/user-guides/how-to/loading-data-with-sensorthings.md)**: Learn how to load data into HydroServer through HydroServer's SensorThings API – for Python or other programming languages.

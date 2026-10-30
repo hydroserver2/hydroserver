@@ -12,7 +12,7 @@ https://playground.hydroserver.org/api/ogc/docs
 
 The HydroServer Data Management API is HydroServer's primary API for creating, managing, and retrieving data and metadata. It is an OGC-compliant API that currently implements [OGC API - Features](https://ogcapi.ogc.org/features/). Its landing page is at `/api/ogc/`, its conformance declaration is at `/api/ogc/conformance`, and each type of resource is a collection listed at `/api/ogc/collections`. Items in a collection are available at `/api/ogc/collections/{collectionId}/items`.
 
-The API covers everything you can manage in HydroServer: workspaces, roles, collaborators, and service accounts; monitoring sites, datastreams, and observations; metadata such as methods, units, processing levels, observed properties, result qualifiers, and controlled vocabularies; tags and linked resources; and Job Orchestration System tasks for data ingestion, data products, and quality monitoring. It returns your own data along with data that others have shared with you or made public.
+The API covers everything you can manage in HydroServer: workspaces, roles, collaborators, and service accounts; monitoring sites, datastreams, and observations; metadata such as methods, units, processing levels, observed properties, result qualifiers, and controlled vocabularies; tags and linked resources; and Job Orchestration System tasks for data ingestion, data products, and quality monitoring. It returns your own data along with data that others have shared with you or made public. See [Using the Data Management API](/user-guides/how-to/using-the-data-management-api.md) for how to page, filter, and change data through it.
 
 ## SensorThings API
 
