@@ -26,7 +26,8 @@ function recordInitializationError(message: string, error: unknown) {
 
 async function initializeAuthenticatedState() {
   const { user } = storeToRefs(useUserStore())
-  const { setWorkspaces } = useWorkspaceStore()
+  const workspaceStore = useWorkspaceStore()
+  const { setWorkspaces } = workspaceStore
 
   user.value = new User()
   if (!hs.session.isAuthenticated) return
@@ -55,9 +56,31 @@ async function initializeAuthenticatedState() {
         : new User()
   }
 
+  const previousWorkspaceId = workspaceStore.selectedWorkspace?.id
   if (workspacesResponse) {
     setWorkspaces(workspacesResponse)
     hasBootstrappedWorkspaces.value = true
+  }
+
+  if (user.value.isSuperuser === true) {
+    // Keep personal workspaces available while the instance-wide list loads.
+    const personalWorkspaceId = workspaceStore.selectedWorkspace?.id
+    const allWorkspaces = await hs.workspaces
+      .listAllItems({})
+      .catch((error) => {
+        recordInitializationError('Error fetching all workspaces', error)
+        return null
+      })
+    if (allWorkspaces) {
+      const restoreSelection =
+        workspaceStore.selectedWorkspace?.id === personalWorkspaceId &&
+        allWorkspaces.some((workspace) => workspace.id === previousWorkspaceId)
+      setWorkspaces(allWorkspaces)
+      if (restoreSelection && previousWorkspaceId) {
+        workspaceStore.setSelectedWorkspaceById(previousWorkspaceId)
+      }
+      hasBootstrappedWorkspaces.value = true
+    }
   }
 }
 
