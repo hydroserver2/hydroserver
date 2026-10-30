@@ -28,6 +28,8 @@ In this section, we provide detailed documentation for all HydroServer functiona
 
 * **[Using the Data Management API](/user-guides/how-to/using-the-data-management-api.md)**: Learn how to read, filter, create, and update HydroServer data and metadata directly through the Data Management API, HydroServer's OGC API.
 
+* **[Migrating Apps and Scripts from v1 to v2](/user-guides/how-to/migrating-apps-and-scripts-from-v1-to-v2.md)**: Learn what to update in scripts, apps, and other tools that use HydroServer's APIs, hydroserverpy, or hydroserver-ts when upgrading from HydroServer v1 to v2.
+
 * **[Configuring Python ETL Pipelines](/user-guides/how-to/configuring-python-etl-pipelines.md)**: Learn how to configure Python ETL pipelines to load data into HydroServer.
 
 * **[Loading Data with the SensorThings API](/user-guides/how-to/loading-data-with-sensorthings.md)**: Learn how to load data into HydroServer through HydroServer's SensorThings API – for Python or other programming languages.
