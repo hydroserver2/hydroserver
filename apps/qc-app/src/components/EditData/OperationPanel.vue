@@ -122,6 +122,30 @@
           </v-btn>
         </div>
       </section>
+      <section
+        v-if="isFilter && (within || selectedCount)"
+        class="operation-panel__section rounded border bg-surface overflow-hidden"
+        data-testid="filter-within-section"
+      >
+        <h3 class="operation-panel__section-title">Selected points</h3>
+        <div class="px-3 pb-2">
+          <v-switch
+            v-model="within"
+            color="primary"
+            density="compact"
+            hide-details
+            data-testid="filter-within-switch"
+            :label="`Search only the ${(within ? baseCount : selectedCount).toLocaleString()} selected points`"
+          />
+          <p class="text-body-small text-medium-emphasis mb-0">
+            {{
+              within
+                ? 'The filter keeps only matches among these points. Select other points on the plot to search those instead.'
+                : 'Narrow the current selection instead of searching the whole datastream.'
+            }}
+          </p>
+        </div>
+      </section>
       <section class="operation-panel__section operation-panel__section--op rounded border bg-surface overflow-hidden">
         <component :is="op.component" @close="close" />
       </section>
@@ -137,10 +161,12 @@ import { useDataVisStore } from '@/store/dataVisualization'
 import { operationsById } from './operations'
 import FilterRangePanel from '@/components/FilterPoints/FilterRangePanel.vue'
 import { useEditLock } from '@/composables/useEditLock'
+import { useFilterWithinSelection } from '@/composables/useFilterWithinSelection'
 
 const { selectedOperation, filterRangeActive } = storeToRefs(useUIStore())
 const { selectedData } = storeToRefs(useDataVisStore())
 const { editLock } = useEditLock()
+const { within, baseCount, selectedCount } = useFilterWithinSelection()
 
 const op = computed(() =>
   selectedOperation.value ? operationsById[selectedOperation.value] : null
@@ -149,9 +175,10 @@ const op = computed(() =>
 // datetimeRange has its own picker that would duplicate the shared range UI.
 const OPS_WITH_OWN_RANGE = new Set(['datetimeRange'])
 
+const isFilter = computed(() => op.value?.group === 'filter')
+
 const filterRangeToggleVisible = computed(
-  () =>
-    op.value?.group === 'filter' && !OPS_WITH_OWN_RANGE.has(op.value.id)
+  () => isFilter.value && !OPS_WITH_OWN_RANGE.has(op.value!.id)
 )
 
 function close() {

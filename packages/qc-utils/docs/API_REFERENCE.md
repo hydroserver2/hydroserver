@@ -98,6 +98,7 @@ that holds it. Omitted or `null`, every value is treated as a measurement.
 | `dispatchStep(step)`                         | `Promise<number[]>` | Run one recorded step (`method`, `args`) and carry its `comment` and `performedBy` onto the entry it produces. Every replay goes through it, so these survive undo, redo, removal and `applyHistory` even when replay merges entries. |
 | `dispatchAction(op: EnumEditOperations, ...args)` | `Promise<number[]>` | Run one edit op. Returns the selection it leaves.                                  |
 | `dispatchFilter(op: EnumFilterOperations, ...args)` | `Promise<number[]>` | Run one filter op. Returns its selection.                                        |
+| `dispatchFilterWithin(within, op, ...args)`         | `Promise<number[]>` | Run a filter over `within` only. Records the matches as a SELECTION, so replay is exact.|
 | `undo()`                                     | `Promise<number[]>` | Pop the last history entry; replay the rest from a fresh `reload()`. Returns the selection left. |
 | `redo()`                                     | `Promise<number[]>` | Replay the most recently undone entry. Returns its selection.                           |
 | `applyWindow(begin, end, rawData?)`          | `Promise<void>`  | Materialize the inclusive epoch-ms window `[begin, end]` of `rawData` into `dataX`/`dataY`. A passed `rawData` replaces the full series first (e.g. after a cache filled a gap). Clears history on a real change; no-op when neither the window nor the data changed. |
