@@ -1310,11 +1310,15 @@ export class ObservationRecord {
     fillValue: number,
     range?: [number, number],
   ): Promise<number[]> {
+    const fillDelta = fill[0] * timeUnitMultipliers[fill[1]] * 1000;
+    // A cadence of zero or less would never step past the gap.
+    if (!(fillDelta > 0)) {
+      throw new Error("Fill gaps: the fill cadence must be greater than zero.");
+    }
     const len = this.dataX.length;
     if (len === 0) return [];
 
     const gapThresholdMs = gap[0] * timeUnitMultipliers[gap[1]] * 1000;
-    const fillDelta = fill[0] * timeUnitMultipliers[fill[1]] * 1000;
 
     // `rangeStart` and `rangeEnd` are inclusive index bounds for the
     // detection loop below. Convert datetime bounds via binary search
