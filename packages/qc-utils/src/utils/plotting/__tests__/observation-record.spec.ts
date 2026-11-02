@@ -693,6 +693,76 @@ describe('ObservationRecord', () => {
       expect(Array.from(local.dataX)).toEqual(before);
     });
 
+    describe('duplicate timestamps', () => {
+      const QUARTER = 15 * 60 * 1000;
+      const fresh = async () => {
+        const local = new ObservationRecord(buildUniformData(5));
+        await local.reload();
+        return local;
+      };
+      const lastStatus = (r: ObservationRecord) =>
+        r.history[r.history.length - 1].execution.status;
+
+      it('ADD_POINTS fails when a point lands on an existing timestamp', async () => {
+        const local = await fresh();
+        const before = Array.from(local.dataX);
+        await local.dispatch(EnumEditOperations.ADD_POINTS, [[local.dataX[2], 7]]);
+        expect(lastStatus(local)).toBe('failed');
+        expect(Array.from(local.dataX)).toEqual(before);
+      });
+
+      it('ADD_POINTS fails when two new points share a timestamp', async () => {
+        const local = await fresh();
+        const t = local.dataX[4] + QUARTER;
+        await local.dispatch(EnumEditOperations.ADD_POINTS, [[t, 1], [t, 2]]);
+        expect(lastStatus(local)).toBe('failed');
+        expect(local.dataX.length).toBe(5);
+      });
+
+      it('SHIFT_DATETIMES fails when a point lands on one that did not move', async () => {
+        const local = await fresh();
+        const before = Array.from(local.dataX);
+        const beforeY = Array.from(local.dataY);
+        await local.dispatch([
+          [EnumFilterOperations.SELECTION, [1, 2]],
+          [EnumEditOperations.SHIFT_DATETIMES, 15, TimeUnit.MINUTE, 'UTC'],
+        ]);
+        expect(lastStatus(local)).toBe('failed');
+        expect(Array.from(local.dataX)).toEqual(before);
+        expect(Array.from(local.dataY)).toEqual(beforeY);
+      });
+
+      it('SHIFT_DATETIMES lets points move into slots other selected points leave', async () => {
+        const local = await fresh();
+        await local.dispatch([
+          [EnumFilterOperations.SELECTION, [2, 3, 4]],
+          [EnumEditOperations.SHIFT_DATETIMES, 15, TimeUnit.MINUTE, 'UTC'],
+        ]);
+        expect(lastStatus(local)).toBe('success');
+        expect(local.dataX.length).toBe(5);
+      });
+
+      it('findTimeCollision names the first taken timestamp', async () => {
+        const local = await fresh();
+        const free = local.dataX[4] + QUARTER;
+        expect(local.findTimeCollision([free])).toBeNull();
+        expect(local.findTimeCollision([free, local.dataX[1]])).toBe(local.dataX[1]);
+        expect(local.findTimeCollision([free, free])).toBe(free);
+        // A point the edit removes frees its timestamp.
+        expect(local.findTimeCollision([local.dataX[1]], [1])).toBeNull();
+      });
+
+      it('findShiftCollision checks a shift before it runs', async () => {
+        const local = await fresh();
+        expect(
+          local.findShiftCollision([1, 2], 15, TimeUnit.MINUTE, 'UTC'),
+        ).toBe(local.dataX[3]);
+        expect(
+          local.findShiftCollision([2, 3, 4], 15, TimeUnit.MINUTE, 'UTC'),
+        ).toBeNull();
+      });
+    });
+
     it('FILL_GAPS inserts points in detected gaps (with interpolation)', async () => {
       // Build a dataset with a single 4-hour gap in an otherwise 15-min grid.
       const spacingMs = 15 * 60 * 1000;
