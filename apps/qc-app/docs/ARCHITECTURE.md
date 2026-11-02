@@ -99,7 +99,8 @@ src/
 │  ├─ EditData/                 One panel per edit op (FillGaps, ChangeValues, Interpolate, …),
 │  │                            EditHistory and its session list, the Start editing chooser,
 │  │                            the session window and leave dialogs, and the operation registry.
-│  └─ base/                     Generic Vuetify wrappers (FullScreenLoader, Notifications).
+│  └─ base/                     Generic Vuetify wrappers (FullScreenLoader, Notifications,
+│                               SessionExpiredNotice).
 ├─ composables/
 │  ├─ useDataSelection.ts       Bridges Plotly's selectedpoints into the Pinia store.
 │  ├─ useFilterDispatch.ts      Shared "open panel → dispatch op → highlight result" flow.

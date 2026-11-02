@@ -8,6 +8,7 @@
     <Notifications />
     <!-- One dialog for every exit from an edit session, wherever it starts. -->
     <LeaveSessionDialog />
+    <SessionExpiredNotice />
   </v-app>
 </template>
 
@@ -15,6 +16,7 @@
 import Notifications from '@/components/base/Notifications.vue'
 import LeaveSessionDialog from '@/components/EditData/LeaveSessionDialog.vue'
 import FullScreenLoader from '@/components/base/FullScreenLoader.vue'
+import SessionExpiredNotice from '@/components/base/SessionExpiredNotice.vue'
 
 import { setupRouteGuards } from '@/router/router'
 import { ref, watch, onMounted } from 'vue'
