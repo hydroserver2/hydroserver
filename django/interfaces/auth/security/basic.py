@@ -1,6 +1,6 @@
 from ninja.security import HttpBasicAuth
-from ninja.errors import HttpError
 from django.contrib.auth import authenticate
+from interfaces.api.http.errors import UnauthorizedError
 
 
 class BasicAuth(HttpBasicAuth):
@@ -11,6 +11,6 @@ class BasicAuth(HttpBasicAuth):
             request.principal = user
             return user
         elif username or password:
-            raise HttpError(401, "Invalid username or password")
+            raise UnauthorizedError("Invalid username or password")
 
         return None
