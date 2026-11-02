@@ -391,6 +391,17 @@ opens rather than with the workspace catalog in `App.vue`, since nothing else
 needs it. Neither request throws: a list that fails to load stays empty and
 the form falls back to the source datastream's own value.
 
+### `useWorkspaceCatalog()`
+
+```ts
+const { load, clear } = useWorkspaceCatalog()
+await load(workspaceId)
+```
+
+Loads every page of the workspace's sites, datastreams, processing levels
+and observed properties, plus all QC histories, into `useDataVisStore()`. A
+list that fails to load is left empty and named in a snackbar.
+
 ### `useWorkspacePermissions()`
 
 Synchronous, reactive role/permission checks for gating UI. The role
