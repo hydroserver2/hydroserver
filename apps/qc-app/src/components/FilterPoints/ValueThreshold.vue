@@ -77,12 +77,21 @@
       <v-spacer />
       <v-btn
         color="primary"
-        variant="flat"
+        variant="tonal"
         prepend-icon="mdi-plus"
         :disabled="isUpdating || !canAdd"
         @click="onAddFilter"
       >
         Add filter
+      </v-btn>
+      <v-btn
+        color="primary"
+        variant="flat"
+        data-testid="value-threshold-apply"
+        :disabled="isUpdating || !appliedFilters.length"
+        @click="reapply"
+      >
+        Apply
       </v-btn>
     </v-card-actions>
   </v-card>

@@ -447,7 +447,7 @@ Flag any point whose value satisfies a chosen comparator (`>=`, `>`, `==`, `!=`,
 
 ![Value thresholds panel](./images/panel-valueThreshold.png)
 
-Typing a number and pressing Enter (or clicking **Add filter**) runs the filter. The selection on the plot updates live. Use **Clear all** on the applied chips row to remove every filter at once.
+Typing a number and pressing Enter (or clicking **Add filter**) runs the filter. The selection on the plot updates live. Use **Clear all** on the applied chips row to remove every filter at once. **Apply** runs the applied filters again, for example after the selection was cleared.
 
 Once two or more filters are applied, choose how they combine:
 
