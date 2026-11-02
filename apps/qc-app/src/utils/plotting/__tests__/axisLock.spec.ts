@@ -141,4 +141,111 @@ describe('axis lock', () => {
       'yaxis2.autorange': false,
     })
   })
+
+  it('uses the first series as the primary one outside the editor', () => {
+    qcDatastream.value = null
+    expect(canLockAxis('qc')).toBe(false)
+    expect(sharesPrimaryVariable('flow2')).toBe(true)
+    graphSeriesArray.value = [series[0], { id: 'flow2' }]
+    expect(sharesPrimaryVariable('flow2')).toBe(false)
+  })
+
+  it('unlocks on a second toggle, with or without a plot', () => {
+    toggleAxisLock('flow2')
+    expect(lockedAxisIds.value.has('flow2')).toBe(true)
+    const { handlers } = makePlot()
+    toggleAxisLock('flow2')
+    expect(lockedAxisIds.value.has('flow2')).toBe(false)
+    handlers.plotly_relayout!({ 'yaxis.range': [5, 15] })
+    expect(relayout).not.toHaveBeenCalled()
+  })
+
+  it('reads a range set one end at a time', () => {
+    const { handlers } = makePlot()
+    toggleAxisLock('flow2')
+    handlers.plotly_relayout!({ 'yaxis.range[0]': 5, 'yaxis.range[1]': 15 })
+    expect(relayout).toHaveBeenCalledWith(expect.anything(), {
+      'yaxis2.range': [150, 250],
+      'yaxis2.autorange': false,
+    })
+  })
+
+  it('ignores changes that leave the primary axis alone', () => {
+    const { handlers } = makePlot()
+    toggleAxisLock('flow2')
+    handlers.plotly_relayout!({ 'xaxis.range': [0, 1] })
+    handlers.plotly_relayout!({ 'yaxis.range': [5, 'x'] })
+    handlers.plotly_relayouting!({ 'xaxis.range': [0, 1] })
+    handlers.plotly_relayouting!({ 'yaxis.range': [5, 15] })
+    expect(relayout).not.toHaveBeenCalled()
+  })
+
+  it('skips locks it cannot place', () => {
+    const { gd, handlers } = makePlot()
+    lockedAxisIds.value = new Set(['qc', 'gone', 'flow2'])
+    gd.layout.yaxis2 = {}
+    gd.layout.yaxis3.range = [7, NaN]
+    toggleAxisLock('ph')
+    handlers.plotly_relayout!({ 'yaxis.range': [5, 15] })
+    expect(relayout).not.toHaveBeenCalled()
+
+    gd.layout.yaxis = { range: [3, 3] }
+    handlers.plotly_relayout!({ 'yaxis.range': [5, 15] })
+    expect(relayout).not.toHaveBeenCalled()
+  })
+
+  it('settles a drag from where it began', () => {
+    const { gd, handlers } = makePlot()
+    toggleAxisLock('flow2')
+    strip(gd, 'xy').dispatchEvent(
+      new MouseEvent('mousedown', { bubbles: true })
+    )
+    // Zooming from an end of the axis changes the range in place.
+    handlers.plotly_relayouting!({ 'yaxis.range': [5, 15] })
+    expect(gd._fullLayout.yaxis2.range).toEqual([150, 250])
+    document.dispatchEvent(new MouseEvent('mouseup'))
+    handlers.plotly_relayout!({
+      'yaxis.range[0]': 5,
+      'yaxis.range[1]': 15,
+      'yaxis2.range[0]': 140,
+      'yaxis2.range[1]': 240,
+    })
+    expect(relayout).toHaveBeenCalledWith(expect.anything(), {
+      'yaxis2.range': [150, 250],
+      'yaxis2.autorange': false,
+    })
+  })
+
+  it('only links drags that start on the primary axis', () => {
+    const { gd } = makePlot()
+    toggleAxisLock('flow2')
+    strip(gd, 'xy2').dispatchEvent(
+      new MouseEvent('mousedown', { bubbles: true })
+    )
+    expect(gd._fullLayout._axisConstraintGroups).toEqual([])
+
+    toggleAxisLock('flow2')
+    strip(gd, 'xy').dispatchEvent(
+      new MouseEvent('mousedown', { bubbles: true })
+    )
+    expect(gd._fullLayout._axisConstraintGroups).toEqual([])
+
+    plotlyRef.value = null
+    strip(gd, 'xy').dispatchEvent(
+      new MouseEvent('mousedown', { bubbles: true })
+    )
+    expect(gd._fullLayout._axisConstraintGroups).toEqual([])
+  })
+
+  it('matches only on a double-click of another axis strip', () => {
+    const { gd } = makePlot()
+    const click = (el: Element, detail: number) =>
+      el.dispatchEvent(new MouseEvent('click', { bubbles: true, detail }))
+    click(strip(gd, 'xy2'), 1)
+    click(gd.querySelector('g.draglayer')!, 2)
+    click(strip(gd, 'xy'), 2)
+    plotlyRef.value = null
+    click(strip(gd, 'xy2'), 2)
+    expect(relayout).not.toHaveBeenCalled()
+  })
 })

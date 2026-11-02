@@ -416,13 +416,19 @@ describe('PlottedDatastreams row kinds', () => {
   it('offers a lock on rows whose axis can lock, and shows it locked', async () => {
     lockable.add('ctx2')
     lockedAxisIds.value = new Set(['ctx2'])
-    const wrapper = mountIt()
+    let wrapper = mountIt()
 
     expect(row(wrapper, 'ctx').find('[data-testid="axis-lock-ctx"]').exists()).toBe(false)
-    const lock = row(wrapper, 'ctx2').find('[data-testid="axis-lock-ctx2"]')
+    let lock = row(wrapper, 'ctx2').find('[data-testid="axis-lock-ctx2"]')
     expect(lock.attributes('aria-pressed')).toBe('true')
     await lock.trigger('click')
     expect(toggleAxisLock).toHaveBeenCalledWith('ctx2')
+
+    lockedAxisIds.value = new Set()
+    wrapper = mountIt()
+    lock = row(wrapper, 'ctx2').find('[data-testid="axis-lock-ctx2"]')
+    expect(lock.attributes('aria-pressed')).toBe('false')
+    expect(lock.attributes('title')).toBe('Lock Y axis to move with the primary axis')
     lockable.clear()
     lockedAxisIds.value = new Set()
   })
