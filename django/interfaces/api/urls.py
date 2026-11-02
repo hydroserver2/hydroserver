@@ -12,7 +12,7 @@ from interfaces.api.http.renderer import ORJSONRenderer
 
 from interfaces.api.collections import COLLECTIONS
 from interfaces.api.views import qc_history_router, qc_session_router, qc_operation_router
-from interfaces.api.views.ogc import API_DESCRIPTION, API_TITLE, ogc_router
+from interfaces.api.views.ogc import API_DOCUMENTATION, API_TITLE, CAPABILITY_TAGS, ogc_router
 
 
 rate_limits = settings.API_RATE_LIMITS or {}
@@ -20,8 +20,11 @@ throttle_classes = {"anonymous": AnonRateThrottle, "authenticated": AuthRateThro
 
 api = HydroServerNinjaAPI(
     title=API_TITLE,
-    description=API_DESCRIPTION,
+    description=API_DOCUMENTATION,
     version=__version__,
+    openapi_extra={
+        "tags": [*CAPABILITY_TAGS, *(tag for collection in COLLECTIONS for tag in collection.openapi_tags)],
+    },
     urls_namespace="ogc",
     docs_decorator=ensure_csrf_cookie,
     renderer=ORJSONRenderer(),

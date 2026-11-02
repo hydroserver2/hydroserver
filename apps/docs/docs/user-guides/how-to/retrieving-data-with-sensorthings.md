@@ -35,7 +35,7 @@ You can limit the number of fields included in a SensorThings response using the
 following endpoint will return a list of Things with only the Thing name included in the response.
 
 ```
-/Things?&select=name
+/Things?$select=name
 ```
 
 ## Ordering
@@ -47,7 +47,7 @@ order the fields are entered. For example the following endpoint will return a l
 Datastream name, then by Sensor name.
 
 ```
-/Datastrams?&expand=Sensor&$orderby=name asc,Sensor/name asc
+/Datastreams?$expand=Sensor&$orderby=name asc,Sensor/name asc
 ```
 
 ## Pagination
@@ -99,7 +99,7 @@ The following is an example of a data array response:
 {
   "values": [
     {
-      "Datastream@iot.navigationLink": "https://www.hydroserver.org/api/sensorthings/v1.1/Datastreams('00000000-0000-0000-0000-000000000000')",
+      "Datastream@iot.navigationLink": "https://playground.hydroserver.org/api/sensorthings/v1.1/Datastreams('00000000-0000-0000-0000-000000000000')",
       "components": ["resultTime", "result"],
       "dataArray": [
         ["2022-02-01T10:10:10Z", 32.2],
@@ -107,7 +107,7 @@ The following is an example of a data array response:
       ]
     }
   ],
-  "@iot.nextLink": "https://www.hydroserver.org/api/sensorthings/v1.1/Observations?$top=2&$skip=2"
+  "@iot.nextLink": "https://playground.hydroserver.org/api/sensorthings/v1.1/Observations?$top=2&$skip=2"
 }
 ```
 
@@ -122,7 +122,7 @@ This section contains several examples showing how to retrieve data from the Sen
 import requests
 import json
 
-hydroserver_sensorthings_api_url = 'https://www.hydroserver.com/api/sensorthings/v1.1'
+hydroserver_sensorthings_api_url = 'https://playground.hydroserver.org/api/sensorthings/v1.1'
 request_url = f'{hydroserver_sensorthings_api_url}/Things'
 
 page_length = 50
@@ -151,7 +151,7 @@ if response.status_code == 200:
 import requests
 import json
 
-hydroserver_sensorthings_api_url = 'https://www.hydroserver.com/api/sensorthings/v1.1'
+hydroserver_sensorthings_api_url = 'https://playground.hydroserver.org/api/sensorthings/v1.1'
 request_url = f'{hydroserver_sensorthings_api_url}/Datastreams'
 
 query_parameters = {
@@ -173,7 +173,7 @@ if response.status_code == 200:
 import requests
 import json
 
-hydroserver_sensorthings_api_url = 'https://www.hydroserver.com/api/sensorthings/v1.1'
+hydroserver_sensorthings_api_url = 'https://playground.hydroserver.org/api/sensorthings/v1.1'
 datastream_id = ''
 request_url = f"{hydroserver_sensorthings_api_url}/Datastreams('{datastream_id}')/Observations"
 

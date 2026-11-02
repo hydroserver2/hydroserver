@@ -68,7 +68,9 @@ class RoleQueryParameters(RoleFilterFields, CollectionQueryParameters, ExtentQue
         WithJsonSchema(sortby_array_schema(RoleSortByFields)),
     ] = Query([], description="Select one or more fields to sort the response by.")
     workspace_id: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter roles by workspace ID."
+        [],
+        description="Roles that belong to this workspace. Matches `id` in `workspaces`. `null` matches "
+        "HydroServer's built-in roles, which are available in every workspace.",
     )
 
 

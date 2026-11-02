@@ -76,7 +76,8 @@ Open `http://127.0.0.1:5173`.
 ## Optional: Background Task Processing (Celery + Redis)
 
 Only needed if you're working on orchestration (ETL tasks, monitoring tasks, data product tasks) —
-everything else (auth, core API/CRUD, the SPAs) works without this.
+everything else (auth, core API/CRUD, the SPAs) works without this. If you skip it, set `CELERY_ENABLED=False` in
+`django/.env`. Creating and running tasks are then disabled, instead of **Run now** failing against a missing broker.
 
 1. Start Redis:
    ```bash

@@ -31,7 +31,7 @@ email—may not be required.
 
 ## Preparing for Production Deployment
 
-The example configurations provided in the previous section are intended for demonstration and evaluation purposes only.
+The example configurations provided in the [deployment tutorials](/hosting-and-deployment/tutorials/) are intended for demonstration and evaluation purposes only.
 For production use, additional configuration and infrastructure are strongly recommended.
 
 ### HydroServer Production Environment Variables
@@ -81,8 +81,9 @@ HydroServer’s Docker image supports the following environment variables for co
   Example: `postgresql://hsdbadmin:securepassword123@127.0.0.1:5432/hydroserver`
 
 - **CACHE_URL**  
-  Connection string for Django's cache backend. If unset, HydroServer defaults to a database-backed cache table in
-  `DATABASE_URL` shared across worker processes and replicas. Set this to use a dedicated cache service instead,
+  Connection string for Django's cache backend. If unset and `STRICT_SECURITY` is `True` (as in production),
+  HydroServer defaults to a database-backed cache table in `DATABASE_URL` shared across worker processes and replicas.
+  If unset and `STRICT_SECURITY` is `False`, it uses a per-process in-memory cache. Set this to use a dedicated cache service instead,
   such as Redis.  
   Example: `redis://127.0.0.1:6379/1`
 
@@ -146,6 +147,121 @@ HydroServer’s Docker image supports the following environment variables for co
 - **WHITENOISE_MAX_AGE**  
   `Cache-Control` max-age, in seconds, that WhiteNoise sets on locally served static files. Defaults to `86400` (1 day).  
   Example: `86400`
+
+- **WHITENOISE_USE_FINDERS** / **WHITENOISE_AUTOREFRESH**  
+  Development conveniences that let WhiteNoise serve static files without running `collectstatic` and pick up changes
+  without a restart. Both default to the value of `DEBUG` and should be `False` in production.  
+  Example: `False`
+
+#### Hosts, Origins, and Cookies
+
+- **ALLOWED_HOSTS**  
+  Additional host names this instance responds to, as a comma-separated list. The host in `PROXY_BASE_URL` is always
+  allowed, so set this only if HydroServer is also reached through other host names.  
+  Example: `hydroserver.your-domain.com,www.hydroserver.your-domain.com`
+
+- **CSRF_TRUSTED_ORIGINS**  
+  Comma-separated list of origins trusted to make unsafe (e.g. `POST`) requests with a session cookie. Defaults to
+  `PROXY_BASE_URL`. Add the origin of any separately hosted frontend that uses session authentication.  
+  Example: `https://hydroserver.your-domain.com,https://app.your-domain.com`
+
+- **SAME_ORIGIN_FRONTEND**  
+  Whether the Data Management App is served from the same origin as HydroServer, as it is in the published Docker
+  image. When `True`, `WEB_CLIENT_URL` defaults to `PROXY_BASE_URL`. Defaults to `False`.  
+  Example: `True`
+
+- **WEB_CLIENT_URL**  
+  The URL of the Data Management App, where users are sent after signing in or out of HydroServer's account pages.
+  Defaults to `PROXY_BASE_URL` when `SAME_ORIGIN_FRONTEND` is `True`, otherwise to the local development frontend.  
+  Example: `https://hydroserver.your-domain.com`
+
+- **ACCOUNT_RETURN_URL_ALLOWED_HOSTS**  
+  Comma-separated list of additional hosts (with ports, if needed) that the account pages may send users back to
+  after signing in, signing up, or signing out. Set this for separately hosted apps that link users to HydroServer's
+  account pages.  
+  Example: `app.your-domain.com`
+
+- **CORS_ALLOW_CREDENTIALS**  
+  Whether browsers may send cookies with cross-origin requests to HydroServer's APIs. Defaults to `False` when
+  `STRICT_SECURITY` is `True`. Cross-origin apps should normally authenticate with OIDC access tokens instead.  
+  Example: `False`
+
+- **SESSION_COOKIE_NAME** / **CSRF_COOKIE_NAME**  
+  Names of the session and CSRF cookies. Default to `hs_session` and `csrftoken`. Change them only if they conflict with
+  another application on the same domain.  
+  Example: `hs_session`
+
+- **SESSION_COOKIE_AGE**  
+  How long, in seconds, a sign-in session lasts. Defaults to `86400` (1 day).  
+  Example: `86400`
+
+- **NOINDEX**  
+  If `True`, adds an `X-Robots-Tag: noindex` header to every response so search engines don't index the instance.
+  Useful for staging and demo instances. Defaults to `False`.  
+  Example: `True`
+
+#### Database Connections
+
+- **SSL_REQUIRED**  
+  If `True`, requires SSL for the database connection (`sslmode=require`). Defaults to `False`.  
+  Example: `True`
+
+- **DB_POOL_MIN_SIZE** / **DB_POOL_MAX_SIZE** / **DB_POOL_TIMEOUT**  
+  Size of each HydroServer process's database connection pool, and how many seconds a request waits for a free
+  connection. Default to `5`, `10`, and `60`. Make sure the total across all processes and replicas stays below your
+  database's connection limit.  
+  Example: `5` / `10` / `60`
+
+- **CONN_MAX_AGE** / **CONN_HEALTH_CHECKS**  
+  Django's persistent connection lifetime in seconds and whether to check connections before reuse. Default to `0` and
+  `True`.  
+  Example: `0` / `True`
+
+#### Rate Limiting
+
+- **API_RATE_LIMITS**  
+  JSON object setting request rate limits for the Data Management API, with `anonymous` and `authenticated` rates. Leave
+  unset to disable API rate limiting.  
+  Example: `{"anonymous": "20/s", "authenticated": "50/s"}`
+
+- **ACCOUNT_RATE_LIMITS**  
+  JSON object of [django-allauth rate limits](https://docs.allauth.org/en/latest/account/rate_limits.html) for account
+  actions such as sign-in, sign-up, and password reset. When `STRICT_SECURITY` is `True`, allauth's default limits apply
+  unless you override them here.  
+  Example: `{"login_failed": "10/m/ip,5/5m/key"}`
+
+#### OIDC Tokens and Service Accounts
+
+- **IDP_OIDC_ACCESS_TOKEN_EXPIRES_IN**  
+  Lifetime, in seconds, of access tokens issued by HydroServer's OIDC identity provider. Defaults to `3600` (1 hour).  
+  Example: `3600`
+
+- **IDP_OIDC_ROTATE_REFRESH_TOKEN**  
+  Whether a new refresh token is issued each time a refresh token is used. Defaults to `True`.  
+  Example: `True`
+
+- **SERVICE_ACCOUNT_EMAIL_DOMAIN**  
+  Domain used for the generated email address that identifies each service account. Defaults to `hydroserver.local`.  
+  Example: `hydroserver.your-domain.com`
+
+#### Task Runs and Logging
+
+- **TASK_RUN_RETENTION_DAYS**  
+  Number of days of Job Orchestration System task run history to keep. Older runs are deleted by a scheduled cleanup
+  task, which requires a Celery worker and scheduler and keeps running when `CELERY_ENABLED` is `False`. Defaults to
+  `7`.  
+  Example: `30`
+
+- **TASK_RUN_CLEANUP_CRONTAB**  
+  Crontab schedule (minute, hour, day of month, month, day of week) for the task run cleanup. Defaults to `0 3 * * *`
+  (daily at 03:00).  
+  Example: `0 3 * * *`
+
+- **LOG_FORMAT**  
+  `standard` for plain-text logs or `json` for structured JSON logs. Defaults to `standard`.  
+  Example: `json`
+
+#### Storing Secrets
 
 Store sensitive environment variables (database credentials, API keys, etc.) securely, using a secret manager such as 
 [AWS Systems Manager Parameter Store](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html), 
@@ -254,15 +370,26 @@ When deploying HydroServer in production, you should implement multiple layers o
 
 ### Enabling Celery for HydroServer
 
-HydroServer optionally supports Celery for scheduling background tasks. To run Celery, you must set up several 
-additional services, including at least one worker instance, a scheduler, and a broker such as
-[Redis](https://redis.io/docs/latest/).
+HydroServer's Job Orchestration System uses Celery to run data ingestion, data product, and quality monitoring tasks
+in the background. To use it, you must set up several additional services, including at least one worker instance, a
+scheduler, and a broker such as [Redis](https://redis.io/docs/latest/). The rest of HydroServer works without these
+services.
 
 The following HydroServer settings can be used to configure Celery:
 
 - **CELERY_ENABLED**  
-  Controls whether Celery scheduling is enabled. If not enabled, all data processing will be handled by HydroServer's
-  web server.
+  Controls whether the Job Orchestration System is enabled. Defaults to `True`. Set it to `False` if you don't run
+  the Celery services, or to turn off orchestration on an instance that does. When `False`:
+  - Users can't create new tasks or run existing tasks. The API returns `501 Not Implemented` for these requests, and
+    the Job Orchestration page in the Data Management App disables these buttons.
+  - Users can still view, edit, and delete existing tasks, and can create, edit, and delete data connections.
+  - The scheduler stops sending scheduled tasks, and workers skip any tasks they receive, including ones that were
+    queued before the setting changed. Data connection notification emails are not sent. The task run cleanup
+    (see [`TASK_RUN_RETENTION_DAYS`](#task-runs-and-logging)) keeps running if able.
+  - Task schedules are left unchanged, so they resume as they were when you set `CELERY_ENABLED` back to `True`.
+
+  Set `CELERY_ENABLED` to the same value on the web server, worker, and scheduler containers, and restart all of them
+  after changing it.  
   Example: `True` / `False`
 
 - **CELERY_BROKER_URL** 
@@ -286,8 +413,8 @@ celery -A hydroserver beat --loglevel=INFO
 ### HydroServer Management Commands
 
 After provisioning your infrastructure, but before starting HydroServer’s web server, you must run several management 
-commands to complete setup. In the demo deployments from the previous section, these steps are bundled into the 
-convenience command:
+commands to complete setup. In the demo deployments from the [deployment tutorials](/hosting-and-deployment/tutorials/),
+these steps are bundled into the convenience command:
 
 ```bash
 python manage.py run_demo

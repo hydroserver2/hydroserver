@@ -1,12 +1,12 @@
 # Quality Controlling Data with the QC App
 
 :::warning
-The HydroServer Quality Control (QC) App is currently under active development. We hope to make a first public release during the summer of 2026. The user documentation provided here is intended to be a description of what the QC App can do. Some of this functionality is still under construction and may not work correctly yet. A demo of the QC App is available for the HydroServer Playground instance at [https://playground.hydroserver.org/quality-control-demo/](https://playground.hydroserver.org/quality-control-demo/). If you want to try it out, you should create a workspace on the Playground instance, load some data, and then select that workspace with the QC App. We update the Playground instance periodically with the latest functionality, but the version deployed there might not match the latest functionality under development.
+The HydroServer Quality Control (QC) App is under active development. It is included with HydroServer v2.0 and served at `/qc/` on your HydroServer instance, but some of the functionality described here is still under construction and may not work correctly yet. You can try it on the HydroServer Playground instance at [https://playground.hydroserver.org/qc/](https://playground.hydroserver.org/qc/): create a workspace on the Playground instance, load some data, and then select that workspace in the QC App.
 :::
 
 This guide is for the operator of the QC App: Usually a hydrologist or data technician who picks a datastream, flags, edits, and/or corrects the bad or erroneous points, and then submits the cleaned datastream back to HydroServer. It walks through every feature of the QC App and the shortest path to common QC tasks.
 
-If you are looking for developer / deployment docs for the QC App, start with the QC App [ARCHITECTURE](https://github.com/hydroserver2/hydroserver-qc-app/blob/main/docs/ARCHITECTURE.md) documentation instead.
+If you are looking for developer / deployment docs for the QC App, start with the QC App [ARCHITECTURE](https://github.com/hydroserver2/hydroserver/blob/main/packages/qc-utils/docs/ARCHITECTURE.md) documentation instead.
 
 ## What this app does
 
@@ -39,14 +39,10 @@ Everything runs in your web browser. The backend never sees your edit history un
 
 ## First-time setup
 
-1. Open the app URL. You'll be redirected to the **Log in** page.
-2. Enter your HydroServer email and password, then press **Log in**. If your deployment has Google OAuth wired up an extra "Sign in with Google" button appears below the form.
+1. Open the QC App by clicking **Quality Control** in the HydroServer main navigation (shown when you are signed in), or by going to `/qc/` on your HydroServer instance.
+2. The QC App uses your HydroServer sign-in. If you are not signed in, you'll be redirected to the HydroServer **Sign in** page and returned to the QC App afterwards. The same sign-in options are available as for the rest of HydroServer (see [Creating User Accounts](/user-guides/how-to/creating-user-accounts.md)).
 
-   <img src="/qc-app/login.png" alt="Login page" class="img-white-bg">
-
-:::warning
-Log-in is currently disabled in the QC App. If you want to try the demo deployment, make sure your Workspace and its contents are publicly visible.
-:::
+   <img src="/qc-app/login.png" alt="HydroServer sign-in page" class="img-white-bg">
 
 3. On the **Workspaces** page, pick the workspace you want to work in. The choice is remembered locally, so next time you sign in you'll land directly on Home.
 
@@ -54,7 +50,7 @@ Log-in is currently disabled in the QC App. If you want to try the demo deployme
 
 4. On **Home**, the left filter drawer is open. Pick a time range and filter the datastream list by site / observed property / processing level. Click a row to plot it.
 
-If the screen ever stays blank with a console error like `Failed to fetch app settings`, ask your administrator to check the API URL and COOP/COEP configuration (the QC App [DEPLOYMENT](https://github.com/hydroserver2/hydroserver-qc-app/blob/main/docs/DEPLOYMENT.md) documentation covers this).
+If the screen ever stays blank with a console error like `Failed to fetch app settings`, ask your administrator to check the API URL and COOP/COEP configuration (the QC App [DEPLOYMENT](https://github.com/hydroserver2/hydroserver/blob/main/packages/qc-utils/docs/DEPLOYMENT.md) documentation covers this).
 
 ## The QC App user interface, top to bottom
 
@@ -148,7 +144,7 @@ What you can do here:
 - **Edit timestamps inline.** Click a `Datetime` cell to open a `datetime-local` picker; the same edit-then-commit flow applies.
 - **Bulk-select for an operation.** The leading checkbox column toggles a row in or out of the selection. Selected rows match the selection on the plot, so you can stage a Delete points / Change values / Interpolate edit from the table just as you would from a box-select on the chart.
 - **Track pending edits.** The toolbar chip `N unsaved` lights up whenever the table has uncommitted edits. **Discard** rolls every pending edit back; **Save changes** flushes them through the same history machinery as a Change-values or Shift-datetimes operation (one history entry per cell type).
-- **Inspect qualifiers.** The `Qualifiers` column shows the qualifier codes attached to each observation (set via the
+- **Inspect qualifiers.** The `Qualifiers` column shows the names of the qualifiers attached to each observation (set via the
   Qualifying comments panel). Hover a chip for its description.
 
 The table is the fastest path for a small number of targeted edits. For anything wider (a hundred points, a window of bad values, a drift correction) the plot's box-select gestures + Edit drawer are faster.
@@ -185,7 +181,7 @@ The URL encodes everything needed to reproduce what the sender is looking at - q
 - **Plot zoom**: X zoom (`z`) plus optional per-Y-axis zoom (`yz`) for axes that aren't at their default fit.
 - **Data points mode** (`dp`) and **threshold** (`th`) when they differ from the app defaults.
 
-Defaults are elided to keep URLs short. Sidebar filters (things / observed properties / processing levels) are kept in the
+Defaults are elided to keep URLs short. Sidebar filters (monitoring sites / observed properties / processing levels) are kept in the
 URL only on the Select view, because they drive the datastreams table rather than the plot.
 
 ### Plotted datastreams list
@@ -378,9 +374,9 @@ Attach qualifier flags (e.g., "Ice affected", "Estimated") to the selected point
 
 <img src="/qc-app/panel-qualifyingComments.png" alt="Qualifying comments panel" class="img-white-bg">
 
-The **New qualifier** button opens a small dialog where you can register a new data qualifier code + description against the workspace.
+The **New qualifier** button opens a small dialog where you can register a new result qualifier, with a name and description, in the workspace.
 
-> **Note:** qualifier codes are tracked locally in your browser and are POSTed to the workspace's qualifier list, but the per-point qualifier applications themselves are not yet serialized to the backend on Save. See the QC App [QUALITY](https://github.com/hydroserver2/hydroserver-qc-app/blob/main/docs/QUALITY.md) documentation for the status.
+> **Note:** new qualifiers are saved to the workspace's qualifier list right away, but the per-point qualifier applications themselves are not yet serialized to the backend on Save. See the QC App [QUALITY](https://github.com/hydroserver2/hydroserver/blob/main/packages/qc-utils/docs/QUALITY.md) documentation for the status.
 
 #### Add points
 
@@ -456,7 +452,7 @@ Click the tray-arrow-up icon ("Load QC history") and pick a JSON file. The app w
 2. Replay each operation in order.
 3. Show a Snackbar with `Loaded N operations`, plus a warning if any ops failed.
 
-Per-op failures do not abort the replay. The app keeps going. If your QC history targets columns that don't exist in the new datastream (e.g., a qualifier code that isn't registered), that specific op fails and shows a red `!` badge on its history row, but the rest still run.
+Per-op failures do not abort the replay. The app keeps going. If your QC history targets columns that don't exist in the new datastream (e.g., a qualifier that isn't registered), that specific op fails and shows a red `!` badge on its history row, but the rest still run.
 
 ### When to use it
 
@@ -490,7 +486,7 @@ For datastreams with hundreds of thousands of points:
   `SharedArrayBuffer` (or the deployment dropped the COOP/COEP headers), operations run inline and a particularly large edit may freeze the UI for a moment. The result is identical either way.
 - The **Performance Calibration** dialog (stopwatch icon in the nav rail) shows the measured worker / inline throughput on your device and lets you re-benchmark on demand. If big edits feel slower than they used to (e.g., after you upgraded your OS), re-benchmark.
 
-See the QC App [PERFORMANCE](https://github.com/hydroserver2/hydroserver-qc-app/blob/main/docs/PERFORMANCE.md) documentation for the envelope details.
+See the QC App [PERFORMANCE](https://github.com/hydroserver2/hydroserver/blob/main/packages/qc-utils/docs/PERFORMANCE.md) documentation for the envelope details.
 
 ## Common tasks
 
@@ -526,7 +522,7 @@ Click the grid icon in the nav rail → pick another. If you have unsaved edits,
 
 | Symptom | Likely cause | Fix |
 |---------|--------------|-----|
-| Blank page on load | Wrong API URL or `localhost` vs `127.0.0.1` mismatch. | See the QC App [DEPLOYMENT](https://github.com/hydroserver2/hydroserver-qc-app/blob/main/docs/DEPLOYMENT.md) documentation. |
+| Blank page on load | Wrong API URL or `localhost` vs `127.0.0.1` mismatch. | See the QC App [DEPLOYMENT](https://github.com/hydroserver2/hydroserver/blob/main/packages/qc-utils/docs/DEPLOYMENT.md) documentation. |
 | Plot stays empty after picking a datastream | Time range falls outside the datastream's observations. The plotted row shows a database-off icon and the subtitle reads `0 pts loaded`. | Click **All** in Time range. |
 | Pencil ("Edit") icon is greyed out | No QC datastream selected. | Plot at least one datastream. The first becomes the QC target. |
 | Big edits freeze the page | `SharedArrayBuffer` not available; running inline. | Have your admin re-enable COOP/COEP headers, or accept the slower fallback. |
@@ -535,5 +531,5 @@ Click the grid icon in the nav rail → pick another. If you have unsaved edits,
 
 ## See also
 
-- [HydroServer QC App GitHub repository](https://github.com/hydroserver2/hydroserver-qc-app)
-- [QC App ARCHITECTURE](https://github.com/hydroserver2/hydroserver-qc-app/blob/main/docs/ARCHITECTURE.md): what's running behind the screen
+- [HydroServer QC App source code](https://github.com/hydroserver2/hydroserver/tree/main/apps/qc-app)
+- [QC App ARCHITECTURE](https://github.com/hydroserver2/hydroserver/blob/main/packages/qc-utils/docs/ARCHITECTURE.md): what's running behind the screen

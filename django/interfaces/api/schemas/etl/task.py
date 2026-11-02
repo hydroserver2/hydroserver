@@ -105,28 +105,32 @@ class EtlTaskQueryParameters(EtlTaskFilterFields, CollectionQueryParameters, Ext
         "whitespace-separated words within a term are combined with AND.",
     )
     monitoring_site_id: list[uuid.UUID] = Query(
-        [], description="Filter ETL tasks by monitoring_site ID."
+        [],
+        description="ETL tasks with a mapping that loads data into a datastream at this monitoring site. "
+        "Matches `id` in `monitoring-sites`.",
     )
     workspace_id: list[uuid.UUID] = Query(
-        [], description="Filter ETL tasks by workspace ID."
+        [], description="ETL tasks in this workspace. Matches `id` in `workspaces`."
     )
     data_connection_id: list[uuid.UUID] = Query(
-        [], description="Filter ETL tasks by data connection ID."
+        [], description="ETL tasks that use this data connection. Matches `id` in `etl-data-connections`."
     )
     latest_run_status: list[str | Literal["null"]] = Query(
-        [], description="Filter ETL tasks by their most recent run status."
+        [],
+        description="ETL tasks whose latest run has this status: `PENDING`, `STARTED`, `SUCCESS`, or "
+        "`FAILURE`. `null` matches tasks that have never run.",
     )
     latest_run_started_at_min: ISODatetime | None = Query(
-        None, description="Filter tasks whose latest run started on or after this datetime."
+        None, description="ETL tasks whose latest run started at or after this RFC 3339 date-time."
     )
     latest_run_started_at_max: ISODatetime | None = Query(
-        None, description="Filter tasks whose latest run started on or before this datetime."
+        None, description="ETL tasks whose latest run started at or before this RFC 3339 date-time."
     )
     latest_run_finished_at_min: ISODatetime | None = Query(
-        None, description="Filter tasks whose latest run finished on or after this datetime."
+        None, description="ETL tasks whose latest run finished at or after this RFC 3339 date-time."
     )
     latest_run_finished_at_max: ISODatetime | None = Query(
-        None, description="Filter tasks whose latest run finished on or before this datetime."
+        None, description="ETL tasks whose latest run finished at or before this RFC 3339 date-time."
     )
 
 

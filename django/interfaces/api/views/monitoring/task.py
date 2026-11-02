@@ -172,7 +172,7 @@ def trigger_monitoring_task(
     task_id: Path[uuid.UUID],
 ):
     """
-    Trigger an immediate run of a monitoring task on a Celery worker.
+    Run a monitoring task now and return the new task run.
     """
 
     require_orchestration_enabled()
@@ -207,7 +207,8 @@ def get_monitoring_task_runs(
     query: Query[TaskRunQueryParameters],
 ):
     """
-    Get runs for a monitoring task.
+    Get the runs of a monitoring task, each with its status, start and finish times, and outcome
+    message.
     """
 
     run_kwargs = query.model_dump(
@@ -249,7 +250,8 @@ def get_monitoring_task_run(
     run_id: Path[uuid.UUID],
 ):
     """
-    Get a single run for a monitoring task.
+    Get one run of a monitoring task, with its status, start and finish times, outcome message,
+    and `result` details.
     """
 
     run = monitoring_task_service.get_run(

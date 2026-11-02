@@ -174,7 +174,7 @@ def trigger_data_product_task(
     task_id: Path[uuid.UUID],
 ):
     """
-    Trigger an immediate run of a data product task on a Celery worker.
+    Run a data product task now and return the new task run.
     """
 
     require_orchestration_enabled()
@@ -209,7 +209,8 @@ def get_data_product_task_runs(
     query: Query[TaskRunQueryParameters],
 ):
     """
-    Get runs for a data product task.
+    Get the runs of a data product task, each with its status, start and finish times, and
+    outcome message.
     """
 
     run_kwargs = query.model_dump(
@@ -251,7 +252,8 @@ def get_data_product_task_run(
     run_id: Path[uuid.UUID],
 ):
     """
-    Get a single run for a data product task.
+    Get one run of a data product task, with its status, start and finish times, outcome
+    message, and `result` details.
     """
 
     run = data_product_task_service.get_run(

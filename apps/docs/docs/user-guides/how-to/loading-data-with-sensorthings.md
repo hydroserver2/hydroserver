@@ -1,7 +1,7 @@
 # Loading Data with the SensorThings API
 
 The HydroServer SensorThings API currently only supports posting Observations data. Other metadata can be posted or
-modified using the Data Management API.
+modified using the [HydroServer Data Management API](/user-guides/how-to/using-the-data-management-api.md) at `/api/ogc`.
 
 ## Observations
 
@@ -57,12 +57,16 @@ Observations for two different Datastreams.
 This section contains several examples showing how to post data to the SensorThings API using the Python
 "requests" module.
 
+These examples authenticate with an email and password (HTTP Basic). For automated data loading, we recommend a
+service account's API key instead: replace `auth=auth` with `headers={'X-Api-Key': '<your API key>'}`. See
+[Authenticating](/references/hydroserver-apis.md#authenticating).
+
 ### Post a single Observation to the SensorThings API
 
 ```python
 import requests
 
-hydroserver_sensorthings_api_url = 'https://www.hydroserver.com/api/sensorthings/v1.1'
+hydroserver_sensorthings_api_url = 'https://playground.hydroserver.org/api/sensorthings/v1.1'
 request_url = f'{hydroserver_sensorthings_api_url}/Observations'
 auth = ('john@example.com', '********')
 
@@ -89,7 +93,7 @@ if response.status_code == 201:
 ```python
 import requests
 
-hydroserver_sensorthings_api_url = 'https://www.hydroserver.com/api/sensorthings/v1.1'
+hydroserver_sensorthings_api_url = 'https://playground.hydroserver.org/api/sensorthings/v1.1'
 request_url = f'{hydroserver_sensorthings_api_url}/CreateObservations'
 auth = ('john@example.com', '********')
 

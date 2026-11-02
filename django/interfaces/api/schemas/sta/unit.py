@@ -92,15 +92,23 @@ class UnitQueryParameters(UnitFilterFields, CollectionQueryParameters, ExtentQue
         "whitespace-separated words within a term are combined with AND.",
     )
     workspace_id: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter units by workspace ID."
+        [],
+        description="Units that belong to this workspace. Matches `id` in `workspaces`. `null` matches units "
+        "shared by every workspace.",
     )
     datastreams__monitoring_site_id: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter units by monitoring_site ID.", alias="monitoringSiteId"
+        [],
+        description="Units used by datastreams at this monitoring site. Matches `id` in `monitoring-sites`. "
+        "`null` matches units that no datastream uses.",
+        alias="monitoringSiteId",
     )
     datastreams__id: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter units by datastream ID.", alias="datastreamId"
+        [],
+        description="Units used by this datastream. Matches `id` in `datastreams`. `null` matches units that "
+        "no datastream uses.",
+        alias="datastreamId",
     )
-    type: list[str] = Query([], description="Filter units by type")
+    type: list[str] = Query([], description="Units of this type. Matches `name` in `unit-types`.")
 
 
 class UnitResponse(BaseGetResponse, UnitFields, ItemId):

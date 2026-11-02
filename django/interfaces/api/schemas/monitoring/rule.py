@@ -88,16 +88,16 @@ class MonitoringRuleQueryParameters(MonitoringRuleFilterFields, CollectionQueryP
         WithJsonSchema(sortby_array_schema(MonitoringRuleSortByFields)),
     ] = Query([], description="Select one or more fields to sort the response by.")
     datastream_id: list[uuid.UUID] = Query(
-        [], description="Filter rules by datastream ID."
+        [], description="Rules that check this datastream. Matches `id` in `datastreams`."
     )
     rule_type: list[str] = Query(
-        [], description="Filter rules by rule type."
+        [], description="Rules of this type: `range`, `rate_of_change`, `persistence`, or `missing_data`."
     )
     task_id: list[uuid.UUID] = Query(
-        [], description="Filter rules by monitoring task ID."
+        [], description="Rules of this monitoring task. Matches `id` in `monitoring-tasks`."
     )
     workspace_id: list[uuid.UUID] = Query(
-        [], description="Filter rules by workspace ID."
+        [], description="Rules of monitoring tasks in this workspace. Matches `id` in `workspaces`."
     )
 
 

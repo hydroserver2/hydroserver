@@ -48,7 +48,7 @@ def get_monitoring_sites(
     query: Query[MonitoringSiteQueryParameters],
 ):
     """
-    Get public MonitoringSites and MonitoringSites associated with the authenticated user.
+    Get public monitoring sites and monitoring sites associated with the authenticated user.
     """
 
     return 200, monitoring_site_service.list(
@@ -77,7 +77,7 @@ def get_monitoring_site_markers(
     query: Query[MonitoringSiteMarkerQueryParameters],
 ):
     """
-    Get lean marker data for public MonitoringSites plus private MonitoringSites visible to the authenticated user.
+    Get map marker data for monitoring sites, for HydroServer's web apps.
     """
 
     return 200, monitoring_site_service.list_markers(
@@ -101,7 +101,7 @@ def get_monitoring_site_summaries(
     query: Query[MonitoringSiteMapSummaryQueryParameters],
 ):
     """
-    Get lean site summary data for public MonitoringSites and MonitoringSites associated with the authenticated user.
+    Get summary data for monitoring sites, for HydroServer's web apps.
     """
 
     return 200, monitoring_site_service.list_site_summaries(
@@ -124,7 +124,7 @@ def get_monitoring_site_task_summaries(
     query: Query[MonitoringSiteTaskSummaryQueryParameters],
 ):
     """
-    Get task count summaries for MonitoringSites associated with the authenticated user.
+    Get task counts for monitoring sites, for HydroServer's web apps.
     """
 
     return 200, monitoring_site_service.list_task_summaries(
@@ -151,7 +151,7 @@ def create_monitoring_site(
     data: MonitoringSitePostBody,
 ):
     """
-    Create a new MonitoringSite.
+    Create a new monitoring site.
     """
 
     return 201, monitoring_site_service.create(principal=request.principal, data=data)
@@ -167,11 +167,15 @@ def create_monitoring_site(
 )
 def get_monitoring_site_tag_keys(
     request: HydroServerHttpRequest,
-    workspace_id: Optional[uuid.UUID] = Query(None, alias="workspaceId"),
-    monitoring_site_id: Optional[uuid.UUID] = Query(None, alias="monitoringSiteId"),
+    workspace_id: Optional[uuid.UUID] = Query(
+        None, alias="workspaceId", description="Only tags of monitoring sites in this workspace."
+    ),
+    monitoring_site_id: Optional[uuid.UUID] = Query(
+        None, alias="monitoringSiteId", description="Only the tags of this monitoring site."
+    ),
 ):
     """
-    Get all existing unique monitoring_site tag keys.
+    Get the tag keys and values used by monitoring sites, for HydroServer's web apps.
     """
 
     return 200, monitoring_site_service.get_tag_keys(
@@ -188,7 +192,7 @@ def get_monitoring_site_tag_keys(
 )
 def get_site_type_icons(request: HydroServerHttpRequest):
     """
-    Get the configured site type icon mappings.
+    Get the icon for each monitoring site type, for HydroServer's web apps.
     """
 
     return 200, SiteTypeIcon.objects.values("icon", "site_types")
@@ -210,7 +214,7 @@ def get_monitoring_site(
     query: Query[MonitoringSiteItemQueryParameters],
 ):
     """
-    Get a MonitoringSite.
+    Get a monitoring site.
     """
 
     return 200, monitoring_site_service.get(
@@ -236,7 +240,7 @@ def update_monitoring_site(
     data: MonitoringSitePatchBody,
 ):
     """
-    Update a MonitoringSite.
+    Update a monitoring site.
     """
 
     monitoring_site_service.update(
@@ -261,7 +265,7 @@ def update_monitoring_site(
 @transaction.atomic
 def delete_monitoring_site(request: HydroServerHttpRequest, monitoring_site_id: Path[uuid.UUID]):
     """
-    Delete a MonitoringSite.
+    Delete a monitoring site.
     """
 
     return 204, monitoring_site_service.delete(principal=request.principal, uid=monitoring_site_id)
@@ -283,7 +287,7 @@ def get_monitoring_site_linked_resources(
     query: Query[LinkedResourceQueryParameters],
 ):
     """
-    Get all linked resources associated with a MonitoringSite.
+    Get the files and links attached to a monitoring site.
     """
 
     return 200, monitoring_site_service.get_linked_resources(
@@ -318,7 +322,7 @@ def add_monitoring_site_linked_resource(
     link: Optional[str] = Form(None),
 ):
     """
-    Add a linked resource to a monitoring_site.
+    Add a file or link to a monitoring site as multipart form data.
     """
 
     return 201, monitoring_site_service.add_linked_resource(
@@ -351,7 +355,7 @@ def get_monitoring_site_linked_resource(
     linked_resource_id: Path[uuid.UUID],
 ):
     """
-    Get a linked resource associated with a MonitoringSite.
+    Get a file or link attached to a monitoring site.
     """
 
     return 200, {
@@ -388,8 +392,7 @@ def update_monitoring_site_linked_resource(
     link: Optional[str] = Form(None),
 ):
     """
-    Update a linked resource for a monitoring_site. A linked resource's mode (hosted file vs.
-    external URL) cannot be changed in place — delete it and create a new one instead.
+    Update a monitoring site's linked resource as multipart form data.
     """
 
     monitoring_site_service.update_linked_resource(
@@ -423,7 +426,7 @@ def remove_monitoring_site_linked_resource(
     linked_resource_id: Path[uuid.UUID],
 ):
     """
-    Remove a linked resource from a monitoring_site.
+    Remove a file or link from a monitoring site.
     """
 
     return 204, monitoring_site_service.remove_linked_resource(

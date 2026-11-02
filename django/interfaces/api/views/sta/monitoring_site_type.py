@@ -36,7 +36,7 @@ def get_monitoring_site_types(
     query: Query[VocabularyQueryParameters],
 ):
     """
-    Get Monitoring Site Types.
+    Get monitoring site types.
     """
 
     return 200, monitoring_site_type_service.list(
@@ -65,7 +65,7 @@ def create_monitoring_site_type(
     data: MonitoringSiteTypePostBody,
 ):
     """
-    Create a new Monitoring Site Type.
+    Create a new monitoring site type.
     """
 
     return 201, monitoring_site_type_service.create(
@@ -92,7 +92,7 @@ def get_monitoring_site_type(
     query: Query[VocabularyItemQueryParameters],
 ):
     """
-    Get a Monitoring Site Type.
+    Get a monitoring site type.
     """
 
     return 200, monitoring_site_type_service.get(
@@ -119,7 +119,7 @@ def update_monitoring_site_type(
     data: MonitoringSiteTypePatchBody,
 ):
     """
-    Update a Monitoring Site Type.
+    Update a monitoring site type.
     """
 
     monitoring_site_type_service.update(
@@ -145,7 +145,7 @@ def delete_monitoring_site_type(
     request: HydroServerHttpRequest, monitoring_site_type_id: Path[uuid.UUID]
 ):
     """
-    Delete a Monitoring Site Type.
+    Delete a monitoring site type.
     """
 
     return 204, monitoring_site_type_service.delete(

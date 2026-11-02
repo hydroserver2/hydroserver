@@ -38,7 +38,7 @@ features:
     details: Use HydroServer to host time series of sensor data for use as inputs to operational models for  predictions and forecasting.
   - icon: ⚙️
     title: Easy Web Configuration
-    details: Create new monitoring locations, observed variables, sensors, and data streams through our web user interface.
+    details: Create new monitoring sites, observed properties, methods, and datastreams through our web user interface.
 ---
 
 <script setup>

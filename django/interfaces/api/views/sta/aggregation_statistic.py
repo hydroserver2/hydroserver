@@ -36,7 +36,7 @@ def get_aggregation_statistics(
     query: Query[VocabularyQueryParameters],
 ):
     """
-    Get Aggregation Statistics.
+    Get aggregation statistics.
     """
 
     return 200, aggregation_statistic_service.list(
@@ -65,7 +65,7 @@ def create_aggregation_statistic(
     data: AggregationStatisticPostBody,
 ):
     """
-    Create a new Aggregation Statistic.
+    Create a new aggregation statistic.
     """
 
     return 201, aggregation_statistic_service.create(
@@ -92,7 +92,7 @@ def get_aggregation_statistic(
     query: Query[VocabularyItemQueryParameters],
 ):
     """
-    Get an Aggregation Statistic.
+    Get an aggregation statistic.
     """
 
     return 200, aggregation_statistic_service.get(
@@ -119,7 +119,7 @@ def update_aggregation_statistic(
     data: AggregationStatisticPatchBody,
 ):
     """
-    Update an Aggregation Statistic.
+    Update an aggregation statistic.
     """
 
     aggregation_statistic_service.update(
@@ -145,7 +145,7 @@ def delete_aggregation_statistic(
     request: HydroServerHttpRequest, aggregation_statistic_id: Path[uuid.UUID]
 ):
     """
-    Delete an Aggregation Statistic.
+    Delete an aggregation statistic.
     """
 
     return 204, aggregation_statistic_service.delete(

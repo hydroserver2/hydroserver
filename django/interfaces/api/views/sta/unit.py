@@ -36,7 +36,7 @@ def get_units(
     query: Query[UnitQueryParameters],
 ):
     """
-    Get public Units and Units associated with the authenticated user.
+    Get public units and units associated with the authenticated user.
     """
 
     return 200, unit_service.list(
@@ -66,7 +66,7 @@ def create_unit(
     data: UnitPostBody,
 ):
     """
-    Create a new Unit.
+    Create a new unit.
     """
 
     return 201, unit_service.create(
@@ -93,7 +93,7 @@ def get_unit(
     query: Query[UnitItemQueryParameters],
 ):
     """
-    Get a Unit.
+    Get a unit.
     """
 
     return 200, unit_service.get(
@@ -121,7 +121,7 @@ def update_unit(
     data: UnitPatchBody,
 ):
     """
-    Update a Unit.
+    Update a unit.
     """
 
     unit_service.update(
@@ -147,7 +147,7 @@ def update_unit(
 @transaction.atomic
 def delete_unit(request: HydroServerHttpRequest, unit_id: Path[uuid.UUID]):
     """
-    Delete a Unit.
+    Delete a unit.
     """
 
     return 204, unit_service.delete(principal=request.principal, uid=unit_id)

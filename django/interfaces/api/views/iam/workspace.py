@@ -71,7 +71,7 @@ def create_workspace(
     data: WorkspacePostBody,
 ):
     """
-    Create a new workspace owned by the authenticated user.
+    Create a workspace owned by you.
     """
 
     return 201, workspace_service.create(principal=request.principal, data=data)
@@ -171,7 +171,7 @@ def transfer_workspace(
     data: WorkspaceTransferBody,
 ):
     """
-    Transfer a workspace owned by the authenticated user to another HydroServer user.
+    Start transferring a workspace you own to another HydroServer user.
     """
 
     return 201, workspace_service.transfer(
@@ -195,7 +195,7 @@ def accept_workspace_transfer(
     request: HydroServerHttpRequest, workspace_id: Path[uuid.UUID]
 ):
     """
-    Accept a pending workspace transfer.
+    Accept a pending transfer of a workspace to you.
     """
 
     return 200, workspace_service.accept_transfer(
@@ -219,7 +219,7 @@ def reject_workspace_transfer(
     request: HydroServerHttpRequest, workspace_id: Path[uuid.UUID]
 ):
     """
-    Reject a pending workspace transfer.
+    Reject or cancel a pending workspace transfer.
     """
 
     return 200, workspace_service.reject_transfer(

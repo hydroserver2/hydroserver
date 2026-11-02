@@ -83,16 +83,18 @@ class EtlMappingQueryParameters(EtlMappingFilterFields, CollectionQueryParameter
         WithJsonSchema(sortby_array_schema(EtlMappingSortByFields)),
     ] = Query([], description="Select one or more fields to sort the response by.")
     source_identifier: list[str] = Query(
-        [], description="Filter mappings by source identifier."
+        [],
+        description="Mappings for this source identifier, such as a CSV column name. Matches exactly, "
+        "including case.",
     )
     target_datastream_id: list[uuid.UUID] = Query(
-        [], description="Filter mappings by target datastream ID."
+        [], description="Mappings that load data into this datastream. Matches `id` in `datastreams`."
     )
     etl_task_id: list[uuid.UUID] = Query(
-        [], description="Filter mappings by ETL task ID."
+        [], description="Mappings of this ETL task. Matches `id` in `etl-tasks`."
     )
     workspace_id: list[uuid.UUID] = Query(
-        [], description="Filter mappings by workspace ID."
+        [], description="Mappings of ETL tasks in this workspace. Matches `id` in `workspaces`."
     )
 
 

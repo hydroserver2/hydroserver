@@ -97,17 +97,26 @@ class ObservedPropertyQueryParameters(ObservedPropertyFilterFields, CollectionQu
         "whitespace-separated words within a term are combined with AND.",
     )
     workspace_id: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter observed properties by workspace ID."
+        [],
+        description="Observed properties that belong to this workspace. Matches `id` in `workspaces`. `null` "
+        "matches observed properties shared by every workspace.",
     )
     datastreams__monitoring_site_id: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter observed properties by monitoring_site ID.", alias="monitoringSiteId"
+        [],
+        description="Observed properties used by datastreams at this monitoring site. Matches `id` in "
+        "`monitoring-sites`. `null` matches observed properties that no datastream uses.",
+        alias="monitoringSiteId",
     )
     datastreams__id: list[uuid.UUID | Literal["null"]] = Query(
         [],
-        description="Filter observed properties by datastream ID.",
+        description="Observed properties used by this datastream. Matches `id` in `datastreams`. `null` "
+        "matches observed properties that no datastream uses.",
         alias="datastreamId",
     )
-    type: list[str] = Query([], description="Filter observed properties by type")
+    type: list[str] = Query(
+        [],
+        description="Observed properties of this type. Matches `name` in `observed-property-types`.",
+    )
 
 
 class ObservedPropertyResponse(BaseGetResponse, ObservedPropertyFields, ItemId):

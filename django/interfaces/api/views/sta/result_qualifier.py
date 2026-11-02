@@ -38,7 +38,7 @@ def get_result_qualifiers(
     query: Query[ResultQualifierQueryParameters],
 ):
     """
-    Get public Result Qualifiers and Result Qualifiers associated with the authenticated user.
+    Get public result qualifiers and result qualifiers associated with the authenticated user.
     """
 
     return 200, result_qualifier_service.list(
@@ -68,7 +68,7 @@ def create_result_qualifier(
     data: ResultQualifierPostBody,
 ):
     """
-    Create a new Result Qualifier.
+    Create a new result qualifier.
     """
 
     return 201, result_qualifier_service.create(
@@ -95,7 +95,7 @@ def get_result_qualifier(
     query: Query[ResultQualifierItemQueryParameters],
 ):
     """
-    Get a Result Qualifier.
+    Get a result qualifier.
     """
 
     return 200, result_qualifier_service.get(
@@ -123,7 +123,7 @@ def update_result_qualifier(
     data: ResultQualifierPatchBody,
 ):
     """
-    Update a Result Qualifier.
+    Update a result qualifier.
     """
 
     result_qualifier_service.update(
@@ -150,7 +150,7 @@ def delete_result_qualifier(
     request: HydroServerHttpRequest, result_qualifier_id: Path[uuid.UUID]
 ):
     """
-    Delete a Result Qualifier.
+    Delete a result qualifier.
     """
 
     return 204, result_qualifier_service.delete(

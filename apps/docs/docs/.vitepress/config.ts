@@ -175,12 +175,16 @@ export default defineConfig({
                 link: "/user-guides/how-to/exporting-and-downloading-data",
               },
               {
-                text: "Archiving Data to HydroShare",
-                link: "/user-guides/how-to/archiving-data-to-hydroshare",
-              },
-              {
                 text: "Using the Python Client",
                 link: "/user-guides/how-to/using-the-python-client",
+              },
+              {
+                text: "Using the Data Management API",
+                link: "/user-guides/how-to/using-the-data-management-api",
+              },
+              {
+                text: "Migrating Apps and Scripts from v1 to v2",
+                link: "/user-guides/how-to/migrating-apps-and-scripts-from-v1-to-v2",
               },
               {
                 text: "Configuring Python ETL Pipelines",

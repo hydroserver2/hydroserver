@@ -2,7 +2,7 @@
 
 Now that your site is created, we'll next define a new datastream to specify what kind of data we'll be loading in the next step. If you're not already on the site details page of your new site, open **Browse monitoring sites**, select your site in the panel, and click **View details**.
 
-Near the bottom of the site details page, there will be an empty datastreams table. Click 'Add new datastream' to open the datastream creation modal.
+Near the bottom of the site details page, there will be an empty datastreams table. Click 'Add datastream' to open the datastream creation modal.
 
 <img src="/hydroserver-101/datastream-table.png" alt="datastream table" class="img-white-bg">
 

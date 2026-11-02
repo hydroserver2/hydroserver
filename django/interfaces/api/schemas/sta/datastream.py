@@ -188,56 +188,69 @@ class DatastreamQueryParameters(DatastreamFilterFields, CollectionQueryParameter
         "whitespace-separated words within a term are combined with AND.",
     )
     monitoring_site__workspace_id: list[uuid.UUID] = Query(
-        [], description="Filter datastreams by workspace ID.", alias="workspaceId"
+        [], description="Datastreams in this workspace. Matches `id` in `workspaces`.", alias="workspaceId"
     )
-    monitoring_site_id: list[uuid.UUID] = Query([], description="Filter datastreams by monitoring_site ID.")
+    monitoring_site_id: list[uuid.UUID] = Query(
+        [],
+        description="Datastreams at this monitoring site. Matches `id` in `monitoring-sites`.",
+    )
     method_id: list[uuid.UUID] = Query(
-        [], description="Filter datastreams by method ID."
+        [], description="Datastreams produced by this method. Matches `id` in `methods`."
     )
     observed_property_id: list[uuid.UUID] = Query(
-        [], description="Filter datastreams by observed property ID."
+        [],
+        description="Datastreams that observe this observed property. Matches `id` in `observed-properties`.",
     )
     processing_level_id: list[uuid.UUID] = Query(
-        [], description="Filter datastreams by processing level ID."
+        [], description="Datastreams at this processing level. Matches `id` in `processing-levels`."
     )
-    unit_id: list[uuid.UUID] = Query([], description="Filter datastreams by unit ID.")
+    unit_id: list[uuid.UUID] = Query([], description="Datastreams in this unit. Matches `id` in `units`.")
     observations__result_qualifier_id: list[uuid.UUID] = Query(
         [],
-        description="Filter datastreams by observation result qualifier ID.",
+        description="Not supported yet. Any value returns no datastreams.",
         alias="resultQualifier",
     )
     observation_type: list[str] = Query(
-        [], description="Filter monitoring_sites by observation type."
+        [], description="Datastreams with this observation type. Matches exactly, including case."
     )
     sampled_medium: list[str] = Query(
-        [], description="Filter monitoring_sites by sampled medium."
+        [], description="Datastreams with this sampled medium. Matches `name` in `sampled-mediums`."
     )
-    status: list[str | Literal["null"]] = Query([], description="Filter datastreams by status.")
-    result_type: list[str] = Query([], description="Filter monitoring_sites by result type.")
+    status: list[str | Literal["null"]] = Query(
+        [],
+        description="Datastreams with this status. Matches `name` in `datastream-statuses`. `null` matches "
+        "datastreams without a status.",
+    )
+    result_type: list[str] = Query(
+        [],
+        description="Datastreams with this result type. Matches exactly, including case.",
+    )
     tag: list[str] = Query(
         [],
-        description="Filter datastreams by tag. Format tag filters as {key}:{value}. Repeat the "
-        "parameter to require several tags.",
+        description="Datastreams with this tag, as `{key}:{value}`. Repeat the parameter to require several "
+        "tags.",
     )
     is_private: Optional[QueryBool] = Query(
         None,
-        description="Controls whether the datastreams should be private or public.",
+        description="`false` returns only datastreams that are public at every level: the datastream, its "
+        "monitoring site, and its workspace. `true` returns only datastreams that are private at "
+        "every level.",
     )
     value_count__lte: Optional[int] = Query(
         None,
-        description="Sets the maximum value count of filtered datastreams.",
+        description="Datastreams with at most this many observations.",
         alias="valueCountMax",
     )
     value_count__gte: Optional[int] = Query(
         None,
-        description="Sets the minimum value count of filtered datastreams.",
+        description="Datastreams with at least this many observations.",
         alias="valueCountMin",
     )
 
 
 class DatastreamVisualizationBootstrapQueryParameters(BaseQueryParameters):
     monitoring_site__workspace_id: list[uuid.UUID] = Query(
-        [], description="Filter visualization bootstrap datastreams by workspace ID.", alias="workspaceId"
+        [], description="Datastreams in this workspace. Matches `id` in `workspaces`.", alias="workspaceId"
     )
 
 
