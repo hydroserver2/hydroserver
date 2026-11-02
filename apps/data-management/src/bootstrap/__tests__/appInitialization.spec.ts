@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useUserStore } from '@/store/user'
 import { useWorkspaceStore } from '@/store/workspaces'
+import type { Workspace } from '@hydroserver/client'
 
 const {
   createHydroServerMock,
@@ -157,6 +158,7 @@ describe('app initialization bootstrap', () => {
     expect(fetchAllVocabulariesMock).toHaveBeenCalledTimes(1)
     expect(userGetMock).toHaveBeenCalledTimes(1)
     expect(listAllItemsMock).toHaveBeenCalledWith({ isAssociated: true })
+    expect(listAllItemsMock).toHaveBeenCalledTimes(1)
     expect(userStore.user.email).toBe('user@example.com')
     expect(workspaceStore.workspaces.map((workspace) => workspace.id)).toEqual([
       'workspace-1',
@@ -165,6 +167,107 @@ describe('app initialization bootstrap', () => {
     expect(workspaceStore.selectedWorkspace?.id).toBe('workspace-1')
     expect(hasBootstrappedWorkspaces.value).toBe(true)
     expect(isAppInitializing.value).toBe(false)
+  })
+
+  it('starts user and personal workspace requests together, then expands the list for admins', async () => {
+    sessionState.isAuthenticated = true
+    createHydroServerMock.mockResolvedValue(undefined)
+    fetchAllVocabulariesMock.mockResolvedValue(undefined)
+    let resolveUser!: (response: unknown) => void
+    userGetMock.mockReturnValue(
+      new Promise((resolve) => {
+        resolveUser = resolve
+      })
+    )
+    const personalWorkspaces = [
+      {
+        id: 'owned-workspace',
+        name: 'Owned workspace',
+        owner: { email: 'admin@example.com' },
+      },
+    ]
+    const savedWorkspace = {
+      id: 'unaffiliated-private',
+      name: 'Private workspace',
+      owner: { email: 'other@example.com' },
+    } as Workspace
+    useWorkspaceStore().setWorkspaces([savedWorkspace])
+    let resolveAllWorkspaces!: (workspaces: unknown[]) => void
+    listAllItemsMock
+      .mockResolvedValueOnce(personalWorkspaces)
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveAllWorkspaces = resolve
+        })
+      )
+
+    const {
+      startAppInitialization,
+      hasBootstrappedWorkspaces,
+      isAppInitializing,
+    } = await import('../appInitialization')
+    const startup = startAppInitialization()
+    await vi.waitFor(() => expect(userGetMock).toHaveBeenCalled())
+    expect(listAllItemsMock).toHaveBeenCalledExactlyOnceWith({
+      isAssociated: true,
+    })
+
+    resolveUser({
+      ok: true,
+      status: 200,
+      data: { email: 'admin@example.com', isSuperuser: true },
+    })
+    await vi.waitFor(() => expect(listAllItemsMock).toHaveBeenCalledTimes(2))
+    expect(useWorkspaceStore().workspaces).toEqual(personalWorkspaces)
+    expect(useWorkspaceStore().selectedWorkspace?.id).toBe('owned-workspace')
+    expect(hasBootstrappedWorkspaces.value).toBe(true)
+    expect(isAppInitializing.value).toBe(true)
+
+    resolveAllWorkspaces([...personalWorkspaces, savedWorkspace])
+    await startup
+
+    expect(listAllItemsMock).toHaveBeenNthCalledWith(2, {})
+    expect(useWorkspaceStore().workspaces).toHaveLength(2)
+    expect(useWorkspaceStore().selectedWorkspace?.id).toBe(
+      'unaffiliated-private'
+    )
+    expect(hasBootstrappedWorkspaces.value).toBe(true)
+    expect(isAppInitializing.value).toBe(false)
+  })
+
+  it('keeps personal workspaces usable if the admin expansion fails', async () => {
+    sessionState.isAuthenticated = true
+    createHydroServerMock.mockResolvedValue(undefined)
+    fetchAllVocabulariesMock.mockResolvedValue(undefined)
+    userGetMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { email: 'admin@example.com', isSuperuser: true },
+    })
+    const personalWorkspaces = [
+      { id: 'owned-workspace', name: 'Owned workspace' },
+    ]
+    const error = new Error('Full workspace list unavailable')
+    listAllItemsMock
+      .mockResolvedValueOnce(personalWorkspaces)
+      .mockRejectedValueOnce(error)
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined)
+    try {
+      const {
+        startAppInitialization,
+        initializationError,
+        hasBootstrappedWorkspaces,
+      } = await import('../appInitialization')
+      await startAppInitialization()
+
+      expect(useWorkspaceStore().workspaces).toEqual(personalWorkspaces)
+      expect(initializationError.value).toBe(error)
+      expect(hasBootstrappedWorkspaces.value).toBe(true)
+    } finally {
+      consoleErrorSpy.mockRestore()
+    }
   })
 
   it('records initialization errors and skips background app bootstrap when HydroServer setup fails', async () => {

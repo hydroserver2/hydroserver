@@ -388,10 +388,11 @@ def test_get_monitoring_sites_empty_q_does_not_filter(client):
 # --- create_monitoring_site ------------------------------------------------------------------
 
 
-def test_create_monitoring_site_succeeds_for_workspace_owner(client):
+@pytest.mark.parametrize("as_superuser", [False, True])
+def test_create_monitoring_site_succeeds_for_owner_or_superuser(client, as_superuser):
     owner = UserFactory()
-    workspace = WorkspaceFactory(owner=owner)
-    client.force_login(owner)
+    workspace = WorkspaceFactory(owner=owner, is_private=True)
+    client.force_login(UserFactory(is_superuser=True) if as_superuser else owner)
 
     response = client.post(
         MONITORING_SITES_URL,
@@ -531,11 +532,12 @@ def test_get_monitoring_site_returns_404_for_nonexistent_monitoring_site(client)
 # --- update_monitoring_site --------------------------------------------------------------------
 
 
-def test_update_monitoring_site_succeeds_for_workspace_owner(client):
+@pytest.mark.parametrize("as_superuser", [False, True])
+def test_update_monitoring_site_succeeds_for_owner_or_superuser(client, as_superuser):
     owner = UserFactory()
-    workspace = WorkspaceFactory(owner=owner)
-    monitoring_site = MonitoringSiteFactory(workspace=workspace, name="Original Name")
-    client.force_login(owner)
+    workspace = WorkspaceFactory(owner=owner, is_private=True)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace, name="Original Name", private=True)
+    client.force_login(UserFactory(is_superuser=True) if as_superuser else owner)
 
     response = client.patch(
         _detail_url(monitoring_site.id),
@@ -586,11 +588,12 @@ def test_update_monitoring_site_returns_403_for_viewer_collaborator(client):
 # --- delete_monitoring_site --------------------------------------------------------------------
 
 
-def test_delete_monitoring_site_succeeds_for_workspace_owner(client):
+@pytest.mark.parametrize("as_superuser", [False, True])
+def test_delete_monitoring_site_succeeds_for_owner_or_superuser(client, as_superuser):
     owner = UserFactory()
-    workspace = WorkspaceFactory(owner=owner)
-    monitoring_site = MonitoringSiteFactory(workspace=workspace)
-    client.force_login(owner)
+    workspace = WorkspaceFactory(owner=owner, is_private=True)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace, private=True)
+    client.force_login(UserFactory(is_superuser=True) if as_superuser else owner)
 
     response = client.delete(_detail_url(monitoring_site.id))
 

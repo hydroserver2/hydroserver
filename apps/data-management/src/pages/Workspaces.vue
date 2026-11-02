@@ -336,6 +336,7 @@ import ManageWorkspacePrivacy from '@/components/Workspace/AccessControl/ManageW
 import TransferWorkspaceOwnership from '@/components/Workspace/AccessControl/TransferWorkspaceOwnership.vue'
 import MetadataTable from '@/components/Metadata/MetadataTable.vue'
 import { useWorkspaceStore } from '@/store/workspaces'
+import { startAppInitialization } from '@/bootstrap/appInitialization'
 import { useUserStore } from '@/store/user'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import { Snackbar } from '@/utils/notifications'
@@ -434,8 +435,10 @@ function openDialog(item: Workspace, dialog: 'edit' | 'delete') {
 
 async function loadWorkspaceList() {
   try {
+    // Wait for user/admin status and the initial workspace list before a refresh.
+    await startAppInitialization()
     const response = await hs.workspaces.list({
-      isAssociated: true,
+      ...workspaceStore.workspaceListFilters,
       fetch_all: true,
     })
     if (!response.ok) {

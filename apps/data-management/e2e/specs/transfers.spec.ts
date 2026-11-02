@@ -19,7 +19,7 @@ async function initiateTransfer(
   await page.getByRole('button', { name: 'Begin transfer' }).click()
   await expect(
     page.getByText(
-      'Once accepted, you will no longer own this workspace and may lose access to it entirely.',
+      'Once accepted, ownership moves to the new owner. The previous owner may lose access unless added as a collaborator.',
       { exact: true }
     )
   ).toBeVisible()

@@ -126,7 +126,8 @@ const desktopMapFitPadding: [number, number, number, number] = [44, 88, 96, 400]
 const compactMapFitPadding: [number, number, number, number] = [72, 48, 72, 48]
 
 const workspaceStore = useWorkspaceStore()
-const { workspaces, selectedWorkspace } = storeToRefs(workspaceStore)
+const { workspaces, selectedWorkspace, associatedWorkspaces } =
+  storeToRefs(workspaceStore)
 const { monitoringSite: storedMonitoringSite } = storeToRefs(useMonitoringSiteStore())
 const { tags, previewTags } = storeToRefs(useTagStore())
 const { photos, newPhotos, photosToDelete } = storeToRefs(usePhotosStore())
@@ -193,7 +194,7 @@ const deletableWorkspaceIds = computed(() =>
     .map((workspace) => workspace.id)
 )
 const myWorkspaceIds = computed(() =>
-  workspaces.value.map((workspace) => workspace.id)
+  associatedWorkspaces.value.map((workspace) => workspace.id)
 )
 const mapFitPadding = computed<[number, number, number, number]>(() =>
   isCompactMapViewport.value ? compactMapFitPadding : desktopMapFitPadding
@@ -221,7 +222,7 @@ const loadMonitoringSites = async () => {
   filteredMonitoringSites.value = monitoringSites.value = res.ok ? res.data : []
 }
 
-const loadAssociatedWorkspaces = async () => {
+const loadWorkspaces = async () => {
   // App startup loads them; fetch here only if it couldn't.
   await startAppInitialization()
   if (
@@ -232,12 +233,12 @@ const loadAssociatedWorkspaces = async () => {
     return
 
   try {
-    const associatedWorkspaces = await hs.workspaces.listAllItems({
-      isAssociated: true,
-    })
-    setWorkspaces(associatedWorkspaces)
+    const availableWorkspaces = await hs.workspaces.listAllItems(
+      workspaceStore.workspaceListFilters
+    )
+    setWorkspaces(availableWorkspaces)
   } catch (error) {
-    console.error('Error fetching associated workspaces', error)
+    console.error('Error fetching workspaces', error)
   }
 }
 
@@ -360,7 +361,7 @@ onMounted(async () => {
   updateCompactMapViewport()
   compactMapQuery.addEventListener('change', updateCompactMapViewport)
 
-  await Promise.all([loadMonitoringSites(), loadAssociatedWorkspaces()])
+  await Promise.all([loadMonitoringSites(), loadWorkspaces()])
 
   await new Promise((r) => setTimeout(r, 100))
   loaded.value = true

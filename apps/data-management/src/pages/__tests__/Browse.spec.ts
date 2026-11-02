@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { flushPromises, shallowMount } from '@vue/test-utils'
 import { useWorkspaceStore } from '@/store/workspaces'
+import { useUserStore } from '@/store/user'
 
 const {
   hasBootstrappedWorkspacesState,
@@ -21,8 +22,17 @@ vi.mock('@hydroserver/client', () => ({
   User: class User {
     email = ''
   },
-  PermissionAction: { Create: 'create', Edit: 'edit', Delete: 'delete' },
-  PermissionResource: { MonitoringSite: 'MonitoringSite' },
+  PermissionAction: {
+    View: 'view',
+    Create: 'create',
+    Edit: 'edit',
+    Delete: 'delete',
+  },
+  PermissionResource: {
+    MonitoringSite: 'MonitoringSite',
+    Workspace: 'Workspace',
+    Global: '*',
+  },
   default: {
     session,
     workspaces: { listAllItems: listAllItemsMock },
@@ -39,7 +49,16 @@ vi.mock('@/components/Maps/OpenLayersMap.vue', () => ({
   default: { name: 'OpenLayersMap', template: '<div />' },
 }))
 vi.mock('@/components/Browse/BrowseFilterTool.vue', () => ({
-  default: { name: 'BrowseFilterTool', template: '<div />' },
+  default: {
+    name: 'BrowseFilterTool',
+    props: [
+      'canRegisterSite',
+      'editableWorkspaceIds',
+      'deletableWorkspaceIds',
+      'myWorkspaceIds',
+    ],
+    template: '<div />',
+  },
 }))
 vi.mock('@/components/Site/SiteForm.vue', () => ({
   default: { name: 'SiteForm', template: '<div />' },
@@ -53,14 +72,11 @@ vi.mock('@/components/Site/SiteAccessControl.vue', () => ({
 vi.mock('@hydroserver/design-system/vue', () => ({
   HsFullScreenLoader: { name: 'HsFullScreenLoader', template: '<div />' },
 }))
-vi.mock('@/composables/useWorkspacePermissions', () => ({
-  useWorkspacePermissions: () => ({ hasPermission: () => true }),
-}))
-
 import Browse from '../Browse.vue'
 
 describe('Browse page', () => {
   beforeEach(() => {
+    localStorage.clear()
     setActivePinia(createPinia())
     vi.stubGlobal('matchMedia', () => ({
       matches: false,
@@ -113,6 +129,65 @@ describe('Browse page', () => {
     finishStartup()
     await flushPromises()
     expect(listAllItemsMock).not.toHaveBeenCalled()
+  })
+
+  it('lets an unaffiliated admin create, edit, and delete sites in every workspace', async () => {
+    useUserStore().user.email = 'admin@example.com'
+    useUserStore().user.isSuperuser = true
+    listAllItemsMock.mockResolvedValue([
+      {
+        id: 'ws-public',
+        name: 'Public',
+        owner: { email: 'other@example.com' },
+        isPrivate: false,
+      },
+      {
+        id: 'ws-private',
+        name: 'Private',
+        owner: { email: 'other@example.com' },
+        isPrivate: true,
+      },
+    ])
+
+    const wrapper = shallowMount(Browse)
+    await flushPromises()
+
+    expect(listAllItemsMock).toHaveBeenCalledWith({})
+    const filters = wrapper.findComponent({ name: 'BrowseFilterTool' })
+    expect(filters.props('canRegisterSite')).toBe(true)
+    expect(filters.props('editableWorkspaceIds')).toEqual([
+      'ws-private',
+      'ws-public',
+    ])
+    expect(filters.props('deletableWorkspaceIds')).toEqual([
+      'ws-private',
+      'ws-public',
+    ])
+    expect(filters.props('myWorkspaceIds')).toEqual([])
+    wrapper.unmount()
+  })
+
+  it('keeps site mutations unavailable to a read-only collaborator', async () => {
+    useUserStore().user.email = 'viewer@example.com'
+    listAllItemsMock.mockResolvedValue([
+      {
+        id: 'ws-1',
+        name: 'Workspace',
+        owner: { email: 'other@example.com' },
+        collaboratorRole: { permissions: [{ resource: '*', action: 'view' }] },
+      },
+    ])
+
+    const wrapper = shallowMount(Browse)
+    await flushPromises()
+
+    expect(listAllItemsMock).toHaveBeenCalledWith({ isAssociated: true })
+    const filters = wrapper.findComponent({ name: 'BrowseFilterTool' })
+    expect(filters.props('canRegisterSite')).toBe(false)
+    expect(filters.props('editableWorkspaceIds')).toEqual([])
+    expect(filters.props('deletableWorkspaceIds')).toEqual([])
+    expect(filters.props('myWorkspaceIds')).toEqual(['ws-1'])
+    wrapper.unmount()
   })
 
   it('does not fetch workspaces for an anonymous visitor', async () => {
