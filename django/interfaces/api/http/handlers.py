@@ -12,11 +12,15 @@ UNIQUE_ERROR_CODES = {"unique", "unique_together"}
 
 
 def http_error_handler(request, exc, api):
-    return api.create_response(
+    response = api.create_response(
         request,
         {"message": exc.message},
         status=exc.status_code,
     )
+    for header, value in getattr(exc, "headers", {}).items():
+        response[header] = value
+
+    return response
 
 
 def validation_error_handler(request, exc, api):

@@ -14,6 +14,10 @@ class UnauthorizedError(HttpError):
         super().__init__(401, message)
 
 
+class InvalidTokenError(UnauthorizedError):
+    headers = {"WWW-Authenticate": 'Bearer error="invalid_token"'}
+
+
 class PermissionDeniedError(HttpError):
     def __init__(self, message="Forbidden"):
         super().__init__(403, message)
