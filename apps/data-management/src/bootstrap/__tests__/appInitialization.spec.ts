@@ -8,13 +8,13 @@ const {
   createHydroServerMock,
   fetchAllVocabulariesMock,
   userGetMock,
-  listAllItemsMock,
+  workspaceListMock,
   sessionState,
 } = vi.hoisted(() => ({
   createHydroServerMock: vi.fn(),
   fetchAllVocabulariesMock: vi.fn(),
   userGetMock: vi.fn(),
-  listAllItemsMock: vi.fn(),
+  workspaceListMock: vi.fn(),
   sessionState: {
     isAuthenticated: false,
   },
@@ -34,7 +34,7 @@ vi.mock('@hydroserver/client', () => {
         get: userGetMock,
       },
       workspaces: {
-        listAllItems: listAllItemsMock,
+        list: workspaceListMock,
       },
     },
   }
@@ -61,7 +61,7 @@ describe('app initialization bootstrap', () => {
     createHydroServerMock.mockReset()
     fetchAllVocabulariesMock.mockReset()
     userGetMock.mockReset()
-    listAllItemsMock.mockReset()
+    workspaceListMock.mockReset()
   })
 
   it('waits for HydroServer session initialization before resolving router guards', async () => {
@@ -117,6 +117,7 @@ describe('app initialization bootstrap', () => {
 
     const {
       hasBootstrappedWorkspaces,
+      isAccessContextReady,
       startAppInitialization,
       isAppInitializing,
     } = await import('../appInitialization')
@@ -124,7 +125,8 @@ describe('app initialization bootstrap', () => {
     await startAppInitialization()
 
     expect(hasBootstrappedWorkspaces.value).toBe(false)
-    expect(listAllItemsMock).not.toHaveBeenCalled()
+    expect(isAccessContextReady.value).toBe(false)
+    expect(workspaceListMock).not.toHaveBeenCalled()
     expect(isAppInitializing.value).toBe(false)
   })
 
@@ -137,13 +139,18 @@ describe('app initialization bootstrap', () => {
       status: 200,
       data: { email: 'user@example.com' },
     })
-    listAllItemsMock.mockResolvedValue([
-      { id: 'workspace-2', name: 'Workspace 2' },
-      { id: 'workspace-1', name: 'Workspace 1' },
-    ])
+    workspaceListMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: [
+        { id: 'workspace-2', name: 'Workspace 2' },
+        { id: 'workspace-1', name: 'Workspace 1' },
+      ],
+    })
 
     const {
       hasBootstrappedWorkspaces,
+      isAccessContextReady,
       startAppInitialization,
       isAppInitializing,
     } = await import('../appInitialization')
@@ -157,8 +164,11 @@ describe('app initialization bootstrap', () => {
 
     expect(fetchAllVocabulariesMock).toHaveBeenCalledTimes(1)
     expect(userGetMock).toHaveBeenCalledTimes(1)
-    expect(listAllItemsMock).toHaveBeenCalledWith({ isAssociated: true })
-    expect(listAllItemsMock).toHaveBeenCalledTimes(1)
+    expect(workspaceListMock).toHaveBeenCalledWith({
+      isAssociated: true,
+      fetch_all: true,
+    })
+    expect(workspaceListMock).toHaveBeenCalledTimes(1)
     expect(userStore.user.email).toBe('user@example.com')
     expect(workspaceStore.workspaces.map((workspace) => workspace.id)).toEqual([
       'workspace-1',
@@ -166,6 +176,7 @@ describe('app initialization bootstrap', () => {
     ])
     expect(workspaceStore.selectedWorkspace?.id).toBe('workspace-1')
     expect(hasBootstrappedWorkspaces.value).toBe(true)
+    expect(isAccessContextReady.value).toBe(true)
     expect(isAppInitializing.value).toBe(false)
   })
 
@@ -192,9 +203,13 @@ describe('app initialization bootstrap', () => {
       owner: { email: 'other@example.com' },
     } as Workspace
     useWorkspaceStore().setWorkspaces([savedWorkspace])
-    let resolveAllWorkspaces!: (workspaces: unknown[]) => void
-    listAllItemsMock
-      .mockResolvedValueOnce(personalWorkspaces)
+    let resolveAllWorkspaces!: (response: unknown) => void
+    workspaceListMock
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        data: personalWorkspaces,
+      })
       .mockReturnValueOnce(
         new Promise((resolve) => {
           resolveAllWorkspaces = resolve
@@ -204,12 +219,14 @@ describe('app initialization bootstrap', () => {
     const {
       startAppInitialization,
       hasBootstrappedWorkspaces,
+      isAccessContextReady,
       isAppInitializing,
     } = await import('../appInitialization')
     const startup = startAppInitialization()
     await vi.waitFor(() => expect(userGetMock).toHaveBeenCalled())
-    expect(listAllItemsMock).toHaveBeenCalledExactlyOnceWith({
+    expect(workspaceListMock).toHaveBeenCalledExactlyOnceWith({
       isAssociated: true,
+      fetch_all: true,
     })
 
     resolveUser({
@@ -217,25 +234,31 @@ describe('app initialization bootstrap', () => {
       status: 200,
       data: { email: 'admin@example.com', isSuperuser: true },
     })
-    await vi.waitFor(() => expect(listAllItemsMock).toHaveBeenCalledTimes(2))
+    await vi.waitFor(() => expect(workspaceListMock).toHaveBeenCalledTimes(2))
     expect(useWorkspaceStore().workspaces).toEqual(personalWorkspaces)
     expect(useWorkspaceStore().selectedWorkspace?.id).toBe('owned-workspace')
     expect(hasBootstrappedWorkspaces.value).toBe(true)
     expect(isAppInitializing.value).toBe(true)
+    expect(isAccessContextReady.value).toBe(false)
 
-    resolveAllWorkspaces([...personalWorkspaces, savedWorkspace])
+    resolveAllWorkspaces({
+      ok: true,
+      status: 200,
+      data: [...personalWorkspaces, savedWorkspace],
+    })
     await startup
 
-    expect(listAllItemsMock).toHaveBeenNthCalledWith(2, {})
+    expect(workspaceListMock).toHaveBeenNthCalledWith(2, { fetch_all: true })
     expect(useWorkspaceStore().workspaces).toHaveLength(2)
     expect(useWorkspaceStore().selectedWorkspace?.id).toBe(
       'unaffiliated-private'
     )
     expect(hasBootstrappedWorkspaces.value).toBe(true)
     expect(isAppInitializing.value).toBe(false)
+    expect(isAccessContextReady.value).toBe(true)
   })
 
-  it('keeps personal workspaces usable if the admin expansion fails', async () => {
+  it('retains personal workspaces but does not establish access if admin expansion fails', async () => {
     sessionState.isAuthenticated = true
     createHydroServerMock.mockResolvedValue(undefined)
     fetchAllVocabulariesMock.mockResolvedValue(undefined)
@@ -248,8 +271,12 @@ describe('app initialization bootstrap', () => {
       { id: 'owned-workspace', name: 'Owned workspace' },
     ]
     const error = new Error('Full workspace list unavailable')
-    listAllItemsMock
-      .mockResolvedValueOnce(personalWorkspaces)
+    workspaceListMock
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        data: personalWorkspaces,
+      })
       .mockRejectedValueOnce(error)
     const consoleErrorSpy = vi
       .spyOn(console, 'error')
@@ -259,16 +286,129 @@ describe('app initialization bootstrap', () => {
         startAppInitialization,
         initializationError,
         hasBootstrappedWorkspaces,
+        isAccessContextReady,
+        accessContextError,
       } = await import('../appInitialization')
       await startAppInitialization()
 
       expect(useWorkspaceStore().workspaces).toEqual(personalWorkspaces)
       expect(initializationError.value).toBe(error)
       expect(hasBootstrappedWorkspaces.value).toBe(true)
+      expect(isAccessContextReady.value).toBe(false)
+      expect(accessContextError.value).toBe(error)
     } finally {
       consoleErrorSpy.mockRestore()
     }
   })
+
+  it('waits for both user and workspaces without waiting for vocabularies', async () => {
+    sessionState.isAuthenticated = true
+    createHydroServerMock.mockResolvedValue(undefined)
+    let resolveUser!: (response: unknown) => void
+    let resolveWorkspaces!: (response: unknown) => void
+    let resolveVocabularies!: () => void
+    userGetMock.mockReturnValue(
+      new Promise((resolve) => {
+        resolveUser = resolve
+      })
+    )
+    workspaceListMock.mockReturnValue(
+      new Promise((resolve) => {
+        resolveWorkspaces = resolve
+      })
+    )
+    fetchAllVocabulariesMock.mockReturnValue(
+      new Promise<void>((resolve) => {
+        resolveVocabularies = resolve
+      })
+    )
+
+    const { startAppInitialization, isAccessContextReady, isAppInitializing } =
+      await import('../appInitialization')
+    const startup = startAppInitialization()
+    await vi.waitFor(() => expect(workspaceListMock).toHaveBeenCalled())
+    expect(isAccessContextReady.value).toBe(false)
+
+    resolveWorkspaces({ ok: true, status: 200, data: [] })
+    await vi.waitFor(() => expect(useWorkspaceStore().workspaces).toEqual([]))
+    expect(isAccessContextReady.value).toBe(false)
+
+    resolveUser({ ok: true, status: 200, data: { email: 'user@example.com' } })
+    await vi.waitFor(() => expect(isAccessContextReady.value).toBe(true))
+    expect(isAppInitializing.value).toBe(true)
+    resolveVocabularies()
+    await startup
+  })
+
+  it.each(['user', 'workspaces'])(
+    'does not establish access after a failed %s request',
+    async (request) => {
+      sessionState.isAuthenticated = true
+      createHydroServerMock.mockResolvedValue(undefined)
+      fetchAllVocabulariesMock.mockResolvedValue(undefined)
+      userGetMock.mockResolvedValue({
+        ok: true,
+        status: 200,
+        data: { email: 'user@example.com' },
+      })
+      workspaceListMock.mockResolvedValue({ ok: true, status: 200, data: [] })
+      const error = new Error('Connection lost')
+      if (request === 'user') userGetMock.mockRejectedValue(error)
+      else workspaceListMock.mockRejectedValue(error)
+      const consoleErrorSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => undefined)
+      try {
+        const {
+          startAppInitialization,
+          isAccessContextReady,
+          accessContextError,
+        } = await import('../appInitialization')
+        await startAppInitialization()
+        expect(isAccessContextReady.value).toBe(false)
+        expect(accessContextError.value).toBe(error)
+      } finally {
+        consoleErrorSpy.mockRestore()
+      }
+    }
+  )
+
+  it.each(['user', 'workspaces'])(
+    'reports unsuccessful %s responses as load failures',
+    async (request) => {
+      sessionState.isAuthenticated = true
+      createHydroServerMock.mockResolvedValue(undefined)
+      fetchAllVocabulariesMock.mockResolvedValue(undefined)
+      userGetMock.mockResolvedValue({
+        ok: true,
+        status: 200,
+        data: { email: 'user@example.com' },
+      })
+      workspaceListMock.mockResolvedValue({ ok: true, status: 200, data: [] })
+      const failure = {
+        ok: false,
+        status: 503,
+        message: 'Temporarily unavailable',
+      }
+      if (request === 'user') userGetMock.mockResolvedValue(failure)
+      else workspaceListMock.mockResolvedValue(failure)
+      const consoleErrorSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => undefined)
+      try {
+        const {
+          startAppInitialization,
+          isAccessContextReady,
+          accessContextError,
+        } = await import('../appInitialization')
+        await startAppInitialization()
+        expect(isAccessContextReady.value).toBe(false)
+        expect(accessContextError.value).toBeInstanceOf(Error)
+      } finally {
+        consoleErrorSpy.mockRestore()
+      }
+    }
+  )
 
   it('records initialization errors and skips background app bootstrap when HydroServer setup fails', async () => {
     const initializationFailure = new Error('unable to initialize')
@@ -293,7 +433,7 @@ describe('app initialization bootstrap', () => {
     expect(initializationError.value).toBe(initializationFailure)
     expect(fetchAllVocabulariesMock).not.toHaveBeenCalled()
     expect(userGetMock).not.toHaveBeenCalled()
-    expect(listAllItemsMock).not.toHaveBeenCalled()
+    expect(workspaceListMock).not.toHaveBeenCalled()
 
     consoleErrorSpy.mockRestore()
   })
