@@ -46,8 +46,7 @@
     observed_property: 6a1bcf8e-2112-4cd0-80f3-1399f72364ca
     processing_level: fa3c97ce-41b8-4c12-b91a-9127ce0c083a
     unit: 3264c5f7-ccad-4e5b-b7a0-faf175be4750
-    observation_type: Field Observation
-    result_type: Time Series
+    type: timeSeriesCoverage
     status: Ongoing
     sampled_medium: Surface Water
     value_count: 6
@@ -73,8 +72,7 @@
     observed_property: 6a1bcf8e-2112-4cd0-80f3-1399f72364ca
     processing_level: fa3c97ce-41b8-4c12-b91a-9127ce0c083a
     unit: 3264c5f7-ccad-4e5b-b7a0-faf175be4750
-    observation_type: Field Observation
-    result_type: Time Series
+    type: timeSeriesCoverage
     status: Ongoing
     sampled_medium: Surface Water
     no_data_value: -9999

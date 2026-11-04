@@ -6,6 +6,8 @@ from odata_query.django.django_q import AstToDjangoQVisitor
 from sensorthings.types import Absent, OrderByDirection
 from core.sta import models as sta_models
 
+OM_MEASUREMENT = "http://www.opengis.net/def/observationType/OGC-OM/2.0/OM_Measurement"
+
 
 class SensorThingsUtils:
 
@@ -102,7 +104,7 @@ class SensorThingsUtils:
                 "properties__workspace__id": "monitoring_site__workspace_id",
                 "properties__workspace__name": "monitoring_site__workspace__name",
                 "properties__workspace__isPrivate": "monitoring_site__workspace__is_private",
-                "properties__resultType": "result_type",
+                "properties__type": "type",
                 "properties__status": "status",
                 "properties__sampledMedium": "sampled_medium",
                 "properties__valueCount": "value_count",

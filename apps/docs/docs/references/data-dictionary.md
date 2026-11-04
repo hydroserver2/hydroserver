@@ -34,8 +34,7 @@ A Datastream groups a collection of Observations measuring the same ObservedProp
 | M        | observedPropertyId           | A foreign key identifier for the ObservedProperty associated with the Datastream.                                  | UUID      |
 | M        | unitId                        | A foreign key identifier for the Unit used for Observations within the Datastream.                                 | UUID      |
 | M        | processingLevelId            | A foreign key identifier indicating the ProcessingLevel for the Datastream.                                        | UUID      |
-| M        | observationType               | The type of Observation recorded in the Datastream.                                                                | String    |
-| M        | resultType                    | The type of result represented by the Datastream.                                                                  | String    |
+| O        | type                           | How the Datastream's Observations are arranged. One of `timeSeriesCoverage` (one Observation per time). Defaults to `timeSeriesCoverage`. Allowed values are defined by HydroServer, not by a controlled vocabulary table. | String    |
 | O        | status                         | A text value indicating the status of the Datastream.                                                              | String    |
 | O        | observedArea                  | The spatial extent associated with the Datastream. This field exists in the database but is currently unused.      | String    |
 | M        | sampledMedium                 | The environmental medium sampled by the Datastream.                                                                | String    |

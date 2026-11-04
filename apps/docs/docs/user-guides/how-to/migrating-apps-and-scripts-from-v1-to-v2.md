@@ -117,6 +117,7 @@ for every field in v2.
 | Monitoring sites and datastreams | `tags` as a list of `key` and `value` objects | `tags` as an object of keys and values |
 | Datastreams, data product tasks, monitoring tasks, rating curves | `thingId` | `monitoringSiteId` |
 | Datastreams | `sensorId`, `fileAttachments` | `methodId`, `linkedResources` |
+| | `observationType`, `resultType` | `type` (optional, defaults to `timeSeriesCoverage`). See [Datastream types](#datastream-types). |
 | Methods (Sensors) | `methodCode`, `methodType`, `methodLink` | `code`, `type`, `definition` |
 | | `manufacturer`, `model`, `modelLink` | `sensorModelManufacturer`, `sensorModel`, `sensorModelDefinition` |
 | | `encodingType` | Removed |
@@ -127,6 +128,20 @@ for every field in v2.
 | Service accounts (API keys) | `expiresAt`, `lastUsed` | `keyExpiresAt`, `lastUsedAt` |
 | | `roleId` | Set when creating the account. Change it afterwards through the workspace's collaborators. |
 | Data product transformations | `inputDatastream` | `inputDatastreams` |
+
+### Datastream Types
+
+A datastream's free-text `observationType` and `resultType` are replaced by `type`, whose allowed values are defined by
+HydroServer. v2.0 has one type, `timeSeriesCoverage`, and every migrated datastream has it. The v1 values aren't kept
+unless your administrator saved them as tags before upgrading. See
+[Datastream observation and result types are replaced](/hosting-and-deployment/how-to/migrating-from-v1-to-v2.md#datastream-observation-and-result-types-are-replaced).
+
+- Stop sending `observationType` and `resultType` when you create or update a datastream. Send `type`, or leave it out
+  to get `timeSeriesCoverage`. Any other `type` value returns `400`.
+- Read `type` instead of `resultType` from datastream responses.
+- Filter and sort with `type` instead of `observationType` and `resultType`, such as `?type=timeSeriesCoverage` and
+  `sortby=type`.
+- Datastream CSV downloads have a `# Type:` header line instead of `# ObservationType:` and `# ResultType:`.
 
 ## SensorThings API
 
@@ -139,8 +154,11 @@ The SensorThings API's paths and query options haven't changed, but its entities
   anything that stored v1 Location IDs.
 - **Sensors:** each Sensor is a method. Its `encodingType` is always `application/json`, and its `metadata` keeps the
   same keys as v1.
-- **Datastreams:** in each Datastream's `properties`, `fileAttachments` is now `linkedResources`, and
-  `processingLevelCode` can be `null`. An ObservedProperty's `variableCode` can also be `null`.
+- **Datastreams:** in each Datastream's `properties`, `fileAttachments` is now `linkedResources`, `resultType` is now
+  `type`, and `processingLevelCode` can be `null`. An ObservedProperty's `variableCode` can also be `null`.
+- **Observation type:** every Datastream's `observationType` is
+  `http://www.opengis.net/def/observationType/OGC-OM/2.0/OM_Measurement`, and `$filter` on `observationType` compares
+  against that value.
 
 ## hydroserverpy
 
@@ -166,6 +184,9 @@ Install hydroserverpy 2.x, which works with HydroServer v2. See the
 - **Renamed fields:** model attributes follow the API's [field changes](#fields), in snake_case. For example,
   `site_type` is now `type`, `observed_property_type` and `unit_type` are now `type`, and a result qualifier's `code`
   is now `name`.
+- **Datastream types:** remove the `observation_type` and `result_type` arguments from `hs.datastreams.create()`,
+  `update()`, and `list()`. Use `type` instead, which `create()` sets to `timeSeriesCoverage` by default. See
+  [Datastream Types](#datastream-types).
 - **Tags and files:** `add_tag()` and `update_tag()` are replaced by `set_tag()`, and `delete_tag()` takes only the
   key. File attachment methods are replaced by linked resource methods such as `add_linked_resource()`. See
   [Tags](/user-guides/how-to/using-the-python-client.md#tags) and

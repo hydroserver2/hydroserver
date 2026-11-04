@@ -590,13 +590,11 @@ datastream = hs_api.datastreams.get(uid='00000000-0000-0000-0000-000000000000')
 new_datastream = hs_api.datastreams.create(
     name='Datastream A',
     description='A datastream containing environmental observations.',
-    observation_type='Field Observation',
     sampled_medium='Air',
     no_data_value=-9999,
     aggregation_statistic='Continuous',
     time_aggregation_interval=1,
     status='Ongoing',
-    result_type='Timeseries',
     is_visible=True,
     is_private=False,
     monitoring_site='00000000-0000-0000-0000-000000000000',

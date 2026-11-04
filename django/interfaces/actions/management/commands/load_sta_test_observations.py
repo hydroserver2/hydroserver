@@ -46,8 +46,6 @@ class Command(BaseCommand):
             observed_property_id=UUID("ebc5664e-0e1c-48a0-8fe0-c64dae472e30"),
             processing_level_id=UUID("9ce74667-e709-416d-96e2-bf54db2025ed"),
             unit_id=UUID("41afe53b-2c81-499b-bab3-94cad15b0bd1"),
-            observation_type="Observation",
-            result_type="Time Series",
             status="Test",
             sampled_medium="Air",
             value_count=num_observations,

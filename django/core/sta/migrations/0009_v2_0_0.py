@@ -87,8 +87,7 @@ SEARCH_VECTORS = [
     (
         "sta_datastream", "datastream", "sta_datastream_search_gin",
         {
-            "name": "A", "description": "B", "observation_type": "C", "result_type": "C",
-            "sampled_medium": "C", "status": "C", "tags::text": "D",
+            "name": "A", "description": "B", "sampled_medium": "C", "status": "C", "tags::text": "D",
         },
     ),
     (
@@ -716,6 +715,22 @@ class Migration(migrations.Migration):
                 to="sta.unit",
             ),
         ),
+
+        # --- Datastream type ----------------------------------------------------------
+        # v1 observation and result types were free text with no behavior attached. Every
+        # existing datastream becomes a time series coverage, and both v1 values are dropped.
+        migrations.RunSQL("UPDATE sta_datastream SET result_type = 'timeSeriesCoverage'"),
+        migrations.RenameField(model_name="datastream", old_name="result_type", new_name="type"),
+        migrations.AlterField(
+            model_name="datastream",
+            name="type",
+            field=models.CharField(
+                choices=[("timeSeriesCoverage", "Time Series Coverage")],
+                default="timeSeriesCoverage",
+                max_length=255,
+            ),
+        ),
+        migrations.RemoveField(model_name="datastream", name="observation_type"),
 
         # --- Vocabulary tables --------------------------------------------------------
         migrations.RenameModel(old_name="FileAttachmentType", new_name="LinkedResourceType"),

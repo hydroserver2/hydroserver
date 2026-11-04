@@ -514,7 +514,7 @@ Result-qualifier creation accepts `name` and `description` by position or by key
 | `uid` | `UUID` | No | |
 | `name` | `str` | Yes | |
 | `description` | `str` | Yes | |
-| `observation_type` | `str` | Yes | |
+| `type` | `str` | Yes | `"timeSeriesCoverage"` |
 | `sampled_medium` | `str` | Yes | |
 | `no_data_value` | `float` | Yes | |
 | `aggregation_statistic` | `str` | Yes | |
@@ -523,7 +523,6 @@ Result-qualifier creation accepts `name` and `description` by position or by key
 | `intended_time_spacing` | `float \| None` | Yes | |
 | `intended_time_spacing_unit` | `str \| None` | Yes | `"seconds"`, `"minutes"`, `"hours"`, `"days"` |
 | `status` | `str \| None` | Yes | |
-| `result_type` | `str` | Yes | |
 | `value_count` | `int \| None` | No | Maintained from observations |
 | `phenomenon_begin_time` | `datetime \| None` | No | Maintained from observations |
 | `phenomenon_end_time` | `datetime \| None` | No | Maintained from observations |
@@ -557,17 +556,17 @@ datastream.save()
 
 ```python
 hs_api.datastreams.list(workspace=..., monitoring_site=..., method=..., observed_property=...,
-                        processing_level=..., unit=..., observation_type=..., sampled_medium=...,
-                        status=..., result_type=..., tag=..., is_private=...,
+                        processing_level=..., unit=..., type=..., sampled_medium=...,
+                        status=..., tag=..., is_private=...,
                         value_count_min=..., value_count_max=...,
                         phenomenon_time_min=..., phenomenon_time_max=...) -> HydroServerCollection[Datastream]
 hs_api.datastreams.get(uid) -> Datastream
 hs_api.datastreams.create(name, description, monitoring_site, method, observed_property, processing_level,
-                          unit, observation_type, result_type, sampled_medium, no_data_value,
+                          unit, sampled_medium, no_data_value,
                           aggregation_statistic, time_aggregation_interval,
                           time_aggregation_interval_unit, intended_time_spacing=None,
                           intended_time_spacing_unit=None, status=None,
-                          is_private=False, is_visible=True, tags=None, uid=None) -> Datastream
+                          type="timeSeriesCoverage", is_private=False, is_visible=True, tags=None, uid=None) -> Datastream
 hs_api.datastreams.update(uid, name=..., description=..., monitoring_site=..., method=...,
                           observed_property=..., processing_level=..., unit=..., ...) -> Datastream
 hs_api.datastreams.delete(uid) -> None

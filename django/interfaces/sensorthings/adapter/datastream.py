@@ -1,12 +1,12 @@
 from ninja.errors import HttpError
 from django.db.utils import DataError, DatabaseError
-from django.db.models import Count
+from django.db.models import Count, Value
 from sensorthings.types import Absent
 from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.sta.models import Datastream
 from sensorthings.versions.v1_1.dto import EntityResultSetDTO, CollectionDTO, DatastreamDTO
 from interfaces.api.services.sta.datastream import DatastreamAPIService
-from .utils import SensorThingsUtils
+from .utils import SensorThingsUtils, OM_MEASUREMENT
 
 datastream_service = DatastreamAPIService()
 
@@ -37,6 +37,8 @@ class DatastreamMixin(SensorThingsUtils):
             datastreams = datastreams.prefetch_related("datastream_linked_resources")
         datastreams = principal.filter_by_permission(datastreams, "can_view")
 
+        if filters or orderby:
+            datastreams = datastreams.annotate(observation_type=Value(OM_MEASUREMENT))
         if filters:
             datastreams = self.apply_filters(datastreams, Datastream, filters)
         if orderby:
@@ -88,7 +90,7 @@ class DatastreamMixin(SensorThingsUtils):
                     id=self.select_field(select, "id", datastream.id),
                     name=self.select_field(select, "name", str(datastream.name)),
                     description=self.select_field(select, "description", datastream.description),
-                    observation_type="http://www.opengis.net/def/observationType/OGC-OM/2.0/OM_Measurement",
+                    observation_type=OM_MEASUREMENT,
                     observed_area=self.select_field(select, "observed_area", datastream.observed_area),
                     phenomenon_time=self.select_field(
                         select, "phenomenon_time",
@@ -108,7 +110,7 @@ class DatastreamMixin(SensorThingsUtils):
                     ),
                     properties=(
                         {
-                            "result_type": datastream.result_type,
+                            "type": datastream.type,
                             "status": datastream.status,
                             "sampled_medium": datastream.sampled_medium,
                             "value_count": datastream.value_count,

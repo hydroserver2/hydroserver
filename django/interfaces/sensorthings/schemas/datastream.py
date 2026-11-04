@@ -6,7 +6,7 @@ from .workspace import WorkspaceProperties
 
 
 class DatastreamProperties(BaseModel):
-    result_type: str
+    type: str
     status: Optional[str] = None
     sampled_medium: str
     value_count: Optional[int] = None

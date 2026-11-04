@@ -32,16 +32,18 @@ from core.sta.models import SampledMedium, AggregationStatistic, DatastreamStatu
 from interfaces.api.schemas.base import ItemId, NewItemId
 
 
+DatastreamType = Literal["timeSeriesCoverage"]
+
+
 class DatastreamFields(Schema):
     name: str = Field(..., max_length=255)
     description: str
-    observation_type: str = Field(..., max_length=255)
+    type: DatastreamType = "timeSeriesCoverage"
     sampled_medium: str = Field(..., max_length=255)
     no_data_value: float
     aggregation_statistic: str = Field(..., max_length=255)
     time_aggregation_interval: float
     status: Optional[str] = Field(None, max_length=255)
-    result_type: str = Field(..., max_length=255)
     is_private: bool = False
     is_visible: bool = True
     time_aggregation_interval_unit: Literal["seconds", "minutes", "hours", "days"]
@@ -123,10 +125,9 @@ DatastreamIncludeRelation = Literal[*DATASTREAM_INCLUDE_RELATIONS.keys()]
 
 _sortby_fields = (
     "name",
-    "observationType",
+    "type",
     "sampledMedium",
     "status",
-    "resultType",
     "isPrivate",
     "isVisible",
     "aggregationStatistic",
@@ -210,9 +211,7 @@ class DatastreamQueryParameters(DatastreamFilterFields, CollectionQueryParameter
         description="Not supported yet. Any value returns no datastreams.",
         alias="resultQualifier",
     )
-    observation_type: list[str] = Query(
-        [], description="Datastreams with this observation type. Matches exactly, including case."
-    )
+    type: list[DatastreamType] = Query([], description="Datastreams of this type.")
     sampled_medium: list[str] = Query(
         [], description="Datastreams with this sampled medium. Matches `name` in `sampled-mediums`."
     )
@@ -220,10 +219,6 @@ class DatastreamQueryParameters(DatastreamFilterFields, CollectionQueryParameter
         [],
         description="Datastreams with this status. Matches `name` in `datastream-statuses`. `null` matches "
         "datastreams without a status.",
-    )
-    result_type: list[str] = Query(
-        [],
-        description="Datastreams with this result type. Matches exactly, including case.",
     )
     tag: list[str] = Query(
         [],
