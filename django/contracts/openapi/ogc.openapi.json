@@ -2302,13 +2302,12 @@
                 "workspaceId",
                 "name",
                 "description",
-                "observationType",
+                "type",
                 "sampledMedium",
                 "noDataValue",
                 "aggregationStatistic",
                 "timeAggregationInterval",
                 "status",
-                "resultType",
                 "isPrivate",
                 "isVisible",
                 "timeAggregationIntervalUnit",
@@ -2402,11 +2401,6 @@
             "title": "Nodatavalue",
             "type": "number"
           },
-          "observationType": {
-            "maxLength": 255,
-            "title": "Observationtype",
-            "type": "string"
-          },
           "observedPropertyId": {
             "format": "uuid",
             "title": "Observedpropertyid",
@@ -2415,11 +2409,6 @@
           "processingLevelId": {
             "format": "uuid",
             "title": "Processinglevelid",
-            "type": "string"
-          },
-          "resultType": {
-            "maxLength": 255,
-            "title": "Resulttype",
             "type": "string"
           },
           "sampledMedium": {
@@ -2465,6 +2454,11 @@
               "days"
             ],
             "title": "Timeaggregationintervalunit",
+            "type": "string"
+          },
+          "type": {
+            "const": "timeSeriesCoverage",
+            "title": "Type",
             "type": "string"
           },
           "unitId": {
@@ -2557,11 +2551,6 @@
             "title": "Nodatavalue",
             "type": "number"
           },
-          "observationType": {
-            "maxLength": 255,
-            "title": "Observationtype",
-            "type": "string"
-          },
           "observedPropertyId": {
             "format": "uuid",
             "title": "Observedpropertyid",
@@ -2570,11 +2559,6 @@
           "processingLevelId": {
             "format": "uuid",
             "title": "Processinglevelid",
-            "type": "string"
-          },
-          "resultType": {
-            "maxLength": 255,
-            "title": "Resulttype",
             "type": "string"
           },
           "sampledMedium": {
@@ -2616,6 +2600,12 @@
             "title": "Timeaggregationintervalunit",
             "type": "string"
           },
+          "type": {
+            "const": "timeSeriesCoverage",
+            "default": "timeSeriesCoverage",
+            "title": "Type",
+            "type": "string"
+          },
           "unitId": {
             "format": "uuid",
             "title": "Unitid",
@@ -2630,12 +2620,10 @@
           "unitId",
           "name",
           "description",
-          "observationType",
           "sampledMedium",
           "noDataValue",
           "aggregationStatistic",
           "timeAggregationInterval",
-          "resultType",
           "timeAggregationIntervalUnit"
         ],
         "title": "DatastreamPostBody",
@@ -2716,11 +2704,6 @@
             "title": "Nodatavalue",
             "type": "number"
           },
-          "observationType": {
-            "maxLength": 255,
-            "title": "Observationtype",
-            "type": "string"
-          },
           "observedPropertyId": {
             "format": "uuid",
             "title": "Observedpropertyid",
@@ -2779,11 +2762,6 @@
             ],
             "title": "Resultendtime"
           },
-          "resultType": {
-            "maxLength": 255,
-            "title": "Resulttype",
-            "type": "string"
-          },
           "sampledMedium": {
             "maxLength": 255,
             "title": "Sampledmedium",
@@ -2823,6 +2801,12 @@
             "title": "Timeaggregationintervalunit",
             "type": "string"
           },
+          "type": {
+            "const": "timeSeriesCoverage",
+            "default": "timeSeriesCoverage",
+            "title": "Type",
+            "type": "string"
+          },
           "unitId": {
             "format": "uuid",
             "title": "Unitid",
@@ -2854,12 +2838,10 @@
           "unitId",
           "name",
           "description",
-          "observationType",
           "sampledMedium",
           "noDataValue",
           "aggregationStatistic",
           "timeAggregationInterval",
-          "resultType",
           "timeAggregationIntervalUnit",
           "workspaceId",
           "linkedResources"
@@ -2949,15 +2931,6 @@
             "title": "Monitoringsiteid",
             "type": "array"
           },
-          "observationType": {
-            "default": [],
-            "description": "Datastreams with this observation type. Matches exactly, including case.",
-            "items": {
-              "type": "string"
-            },
-            "title": "Observationtype",
-            "type": "array"
-          },
           "observedPropertyId": {
             "default": [],
             "description": "Datastreams that observe this observed property. Matches `id` in `observed-properties`.",
@@ -3000,13 +2973,12 @@
                 "workspaceId",
                 "name",
                 "description",
-                "observationType",
+                "type",
                 "sampledMedium",
                 "noDataValue",
                 "aggregationStatistic",
                 "timeAggregationInterval",
                 "status",
-                "resultType",
                 "isPrivate",
                 "isVisible",
                 "timeAggregationIntervalUnit",
@@ -3052,15 +3024,6 @@
             "title": "Resultqualifier",
             "type": "array"
           },
-          "resultType": {
-            "default": [],
-            "description": "Datastreams with this result type. Matches exactly, including case.",
-            "items": {
-              "type": "string"
-            },
-            "title": "Resulttype",
-            "type": "array"
-          },
           "sampledMedium": {
             "default": [],
             "description": "Datastreams with this sampled medium. Matches `name` in `sampled-mediums`.",
@@ -3076,10 +3039,9 @@
             "items": {
               "enum": [
                 "name",
-                "observationType",
+                "type",
                 "sampledMedium",
                 "status",
-                "resultType",
                 "isPrivate",
                 "isVisible",
                 "aggregationStatistic",
@@ -3089,10 +3051,9 @@
                 "resultBeginTime",
                 "resultEndTime",
                 "-name",
-                "-observationType",
+                "-type",
                 "-sampledMedium",
                 "-status",
-                "-resultType",
                 "-isPrivate",
                 "-isVisible",
                 "-aggregationStatistic",
@@ -3102,10 +3063,9 @@
                 "-resultBeginTime",
                 "-resultEndTime",
                 "+name",
-                "+observationType",
+                "+type",
                 "+sampledMedium",
                 "+status",
-                "+resultType",
                 "+isPrivate",
                 "+isVisible",
                 "+aggregationStatistic",
@@ -3144,6 +3104,16 @@
               "type": "string"
             },
             "title": "Tag",
+            "type": "array"
+          },
+          "type": {
+            "default": [],
+            "description": "Datastreams of this type.",
+            "items": {
+              "const": "timeSeriesCoverage",
+              "type": "string"
+            },
+            "title": "Type",
             "type": "array"
           },
           "unitId": {
@@ -3275,11 +3245,6 @@
             "title": "Nodatavalue",
             "type": "number"
           },
-          "observationType": {
-            "maxLength": 255,
-            "title": "Observationtype",
-            "type": "string"
-          },
           "observedPropertyId": {
             "format": "uuid",
             "title": "Observedpropertyid",
@@ -3338,11 +3303,6 @@
             ],
             "title": "Resultendtime"
           },
-          "resultType": {
-            "maxLength": 255,
-            "title": "Resulttype",
-            "type": "string"
-          },
           "sampledMedium": {
             "maxLength": 255,
             "title": "Sampledmedium",
@@ -3382,6 +3342,12 @@
             "title": "Timeaggregationintervalunit",
             "type": "string"
           },
+          "type": {
+            "const": "timeSeriesCoverage",
+            "default": "timeSeriesCoverage",
+            "title": "Type",
+            "type": "string"
+          },
           "unitId": {
             "format": "uuid",
             "title": "Unitid",
@@ -3414,12 +3380,10 @@
           "unitId",
           "name",
           "description",
-          "observationType",
           "sampledMedium",
           "noDataValue",
           "aggregationStatistic",
           "timeAggregationInterval",
-          "resultType",
           "timeAggregationIntervalUnit",
           "workspaceId",
           "linkedResources"
@@ -20437,13 +20401,12 @@
                   "workspaceId",
                   "name",
                   "description",
-                  "observationType",
+                  "type",
                   "sampledMedium",
                   "noDataValue",
                   "aggregationStatistic",
                   "timeAggregationInterval",
                   "status",
-                  "resultType",
                   "isPrivate",
                   "isVisible",
                   "timeAggregationIntervalUnit",
@@ -20542,10 +20505,9 @@
               "items": {
                 "enum": [
                   "name",
-                  "observationType",
+                  "type",
                   "sampledMedium",
                   "status",
-                  "resultType",
                   "isPrivate",
                   "isVisible",
                   "aggregationStatistic",
@@ -20555,10 +20517,9 @@
                   "resultBeginTime",
                   "resultEndTime",
                   "-name",
-                  "-observationType",
+                  "-type",
                   "-sampledMedium",
                   "-status",
-                  "-resultType",
                   "-isPrivate",
                   "-isVisible",
                   "-aggregationStatistic",
@@ -20568,10 +20529,9 @@
                   "-resultBeginTime",
                   "-resultEndTime",
                   "+name",
-                  "+observationType",
+                  "+type",
                   "+sampledMedium",
                   "+status",
-                  "+resultType",
                   "+isPrivate",
                   "+isVisible",
                   "+aggregationStatistic",
@@ -20719,17 +20679,18 @@
             }
           },
           {
-            "description": "Datastreams with this observation type. Matches exactly, including case.",
+            "description": "Datastreams of this type.",
             "in": "query",
-            "name": "observationType",
+            "name": "type",
             "required": false,
             "schema": {
               "default": [],
-              "description": "Datastreams with this observation type. Matches exactly, including case.",
+              "description": "Datastreams of this type.",
               "items": {
+                "const": "timeSeriesCoverage",
                 "type": "string"
               },
-              "title": "Observationtype",
+              "title": "Type",
               "type": "array"
             }
           },
@@ -20768,21 +20729,6 @@
                 ]
               },
               "title": "Status",
-              "type": "array"
-            }
-          },
-          {
-            "description": "Datastreams with this result type. Matches exactly, including case.",
-            "in": "query",
-            "name": "resultType",
-            "required": false,
-            "schema": {
-              "default": [],
-              "description": "Datastreams with this result type. Matches exactly, including case.",
-              "items": {
-                "type": "string"
-              },
-              "title": "Resulttype",
               "type": "array"
             }
           },
@@ -21097,13 +21043,12 @@
                   "workspaceId",
                   "name",
                   "description",
-                  "observationType",
+                  "type",
                   "sampledMedium",
                   "noDataValue",
                   "aggregationStatistic",
                   "timeAggregationInterval",
                   "status",
-                  "resultType",
                   "isPrivate",
                   "isVisible",
                   "timeAggregationIntervalUnit",

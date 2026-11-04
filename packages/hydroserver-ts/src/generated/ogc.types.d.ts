@@ -2984,7 +2984,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "workspaceId" | "name" | "description" | "observationType" | "sampledMedium" | "noDataValue" | "aggregationStatistic" | "timeAggregationInterval" | "status" | "resultType" | "isPrivate" | "isVisible" | "timeAggregationIntervalUnit" | "intendedTimeSpacing" | "intendedTimeSpacingUnit" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "monitoringSiteId" | "methodId" | "observedPropertyId" | "processingLevelId" | "unitId" | "tags" | "linkedResources")[];
+            properties?: ("id" | "workspaceId" | "name" | "description" | "type" | "sampledMedium" | "noDataValue" | "aggregationStatistic" | "timeAggregationInterval" | "status" | "isPrivate" | "isVisible" | "timeAggregationIntervalUnit" | "intendedTimeSpacing" | "intendedTimeSpacingUnit" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "monitoringSiteId" | "methodId" | "observedPropertyId" | "processingLevelId" | "unitId" | "tags" | "linkedResources")[];
         };
         /** DatastreamPatchBody */
         DatastreamPatchBody: {
@@ -3014,8 +3014,6 @@ export interface components {
             name?: string;
             /** Nodatavalue */
             noDataValue?: number;
-            /** Observationtype */
-            observationType?: string;
             /**
              * Observedpropertyid
              * Format: uuid
@@ -3026,8 +3024,6 @@ export interface components {
              * Format: uuid
              */
             processingLevelId?: string;
-            /** Resulttype */
-            resultType?: string;
             /** Sampledmedium */
             sampledMedium?: string;
             /** Status */
@@ -3043,6 +3039,11 @@ export interface components {
              * @enum {string}
              */
             timeAggregationIntervalUnit?: "seconds" | "minutes" | "hours" | "days";
+            /**
+             * Type
+             * @constant
+             */
+            type?: "timeSeriesCoverage";
             /**
              * Unitid
              * Format: uuid
@@ -3088,8 +3089,6 @@ export interface components {
             name: string;
             /** Nodatavalue */
             noDataValue: number;
-            /** Observationtype */
-            observationType: string;
             /**
              * Observedpropertyid
              * Format: uuid
@@ -3100,8 +3099,6 @@ export interface components {
              * Format: uuid
              */
             processingLevelId: string;
-            /** Resulttype */
-            resultType: string;
             /** Sampledmedium */
             sampledMedium: string;
             /** Status */
@@ -3120,6 +3117,12 @@ export interface components {
              * @enum {string}
              */
             timeAggregationIntervalUnit: "seconds" | "minutes" | "hours" | "days";
+            /**
+             * Type
+             * @default timeSeriesCoverage
+             * @constant
+             */
+            type: "timeSeriesCoverage";
             /**
              * Unitid
              * Format: uuid
@@ -3162,8 +3165,6 @@ export interface components {
             name: string;
             /** Nodatavalue */
             noDataValue: number;
-            /** Observationtype */
-            observationType: string;
             /**
              * Observedpropertyid
              * Format: uuid
@@ -3182,8 +3183,6 @@ export interface components {
             resultBeginTime?: string | null;
             /** Resultendtime */
             resultEndTime?: string | null;
-            /** Resulttype */
-            resultType: string;
             /** Sampledmedium */
             sampledMedium: string;
             /** Status */
@@ -3202,6 +3201,12 @@ export interface components {
              * @enum {string}
              */
             timeAggregationIntervalUnit: "seconds" | "minutes" | "hours" | "days";
+            /**
+             * Type
+             * @default timeSeriesCoverage
+             * @constant
+             */
+            type: "timeSeriesCoverage";
             /**
              * Unitid
              * Format: uuid
@@ -3250,12 +3255,6 @@ export interface components {
              */
             monitoringSiteId: string[];
             /**
-             * Observationtype
-             * @description Datastreams with this observation type. Matches exactly, including case.
-             * @default []
-             */
-            observationType: string[];
-            /**
              * Observedpropertyid
              * @description Datastreams that observe this observed property. Matches `id` in `observed-properties`.
              * @default []
@@ -3277,7 +3276,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "workspaceId" | "name" | "description" | "observationType" | "sampledMedium" | "noDataValue" | "aggregationStatistic" | "timeAggregationInterval" | "status" | "resultType" | "isPrivate" | "isVisible" | "timeAggregationIntervalUnit" | "intendedTimeSpacing" | "intendedTimeSpacingUnit" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "monitoringSiteId" | "methodId" | "observedPropertyId" | "processingLevelId" | "unitId" | "tags" | "linkedResources")[];
+            properties?: ("id" | "workspaceId" | "name" | "description" | "type" | "sampledMedium" | "noDataValue" | "aggregationStatistic" | "timeAggregationInterval" | "status" | "isPrivate" | "isVisible" | "timeAggregationIntervalUnit" | "intendedTimeSpacing" | "intendedTimeSpacingUnit" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "monitoringSiteId" | "methodId" | "observedPropertyId" | "processingLevelId" | "unitId" | "tags" | "linkedResources")[];
             /**
              * Q
              * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
@@ -3290,12 +3289,6 @@ export interface components {
              */
             resultQualifier: string[];
             /**
-             * Resulttype
-             * @description Datastreams with this result type. Matches exactly, including case.
-             * @default []
-             */
-            resultType: string[];
-            /**
              * Sampledmedium
              * @description Datastreams with this sampled medium. Matches `name` in `sampled-mediums`.
              * @default []
@@ -3306,7 +3299,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("name" | "observationType" | "sampledMedium" | "status" | "resultType" | "isPrivate" | "isVisible" | "aggregationStatistic" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "-name" | "-observationType" | "-sampledMedium" | "-status" | "-resultType" | "-isPrivate" | "-isVisible" | "-aggregationStatistic" | "-valueCount" | "-phenomenonBeginTime" | "-phenomenonEndTime" | "-resultBeginTime" | "-resultEndTime" | "+name" | "+observationType" | "+sampledMedium" | "+status" | "+resultType" | "+isPrivate" | "+isVisible" | "+aggregationStatistic" | "+valueCount" | "+phenomenonBeginTime" | "+phenomenonEndTime" | "+resultBeginTime" | "+resultEndTime")[];
+            sortby: ("name" | "type" | "sampledMedium" | "status" | "isPrivate" | "isVisible" | "aggregationStatistic" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "-name" | "-type" | "-sampledMedium" | "-status" | "-isPrivate" | "-isVisible" | "-aggregationStatistic" | "-valueCount" | "-phenomenonBeginTime" | "-phenomenonEndTime" | "-resultBeginTime" | "-resultEndTime" | "+name" | "+type" | "+sampledMedium" | "+status" | "+isPrivate" | "+isVisible" | "+aggregationStatistic" | "+valueCount" | "+phenomenonBeginTime" | "+phenomenonEndTime" | "+resultBeginTime" | "+resultEndTime")[];
             /**
              * Status
              * @description Datastreams with this status. Matches `name` in `datastream-statuses`. `null` matches datastreams without a status.
@@ -3319,6 +3312,12 @@ export interface components {
              * @default []
              */
             tag: string[];
+            /**
+             * Type
+             * @description Datastreams of this type.
+             * @default []
+             */
+            type: "timeSeriesCoverage"[];
             /**
              * Unitid
              * @description Datastreams in this unit. Matches `id` in `units`.
@@ -3384,8 +3383,6 @@ export interface components {
             name: string;
             /** Nodatavalue */
             noDataValue: number;
-            /** Observationtype */
-            observationType: string;
             /**
              * Observedpropertyid
              * Format: uuid
@@ -3404,8 +3401,6 @@ export interface components {
             resultBeginTime?: string | null;
             /** Resultendtime */
             resultEndTime?: string | null;
-            /** Resulttype */
-            resultType: string;
             /** Sampledmedium */
             sampledMedium: string;
             /** Status */
@@ -3424,6 +3419,12 @@ export interface components {
              * @enum {string}
              */
             timeAggregationIntervalUnit: "seconds" | "minutes" | "hours" | "days";
+            /**
+             * Type
+             * @default timeSeriesCoverage
+             * @constant
+             */
+            type: "timeSeriesCoverage";
             /**
              * Unitid
              * Format: uuid
@@ -9662,7 +9663,7 @@ export interface operations {
                 /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
                 datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "name" | "description" | "observationType" | "sampledMedium" | "noDataValue" | "aggregationStatistic" | "timeAggregationInterval" | "status" | "resultType" | "isPrivate" | "isVisible" | "timeAggregationIntervalUnit" | "intendedTimeSpacing" | "intendedTimeSpacingUnit" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "monitoringSiteId" | "methodId" | "observedPropertyId" | "processingLevelId" | "unitId" | "tags" | "linkedResources")[];
+                properties?: ("id" | "workspaceId" | "name" | "description" | "type" | "sampledMedium" | "noDataValue" | "aggregationStatistic" | "timeAggregationInterval" | "status" | "isPrivate" | "isVisible" | "timeAggregationIntervalUnit" | "intendedTimeSpacing" | "intendedTimeSpacingUnit" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "monitoringSiteId" | "methodId" | "observedPropertyId" | "processingLevelId" | "unitId" | "tags" | "linkedResources")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("workspace" | "monitoringSite" | "method" | "observedProperty" | "processingLevel" | "unit" | "sampledMedium" | "aggregationStatistic" | "status")[];
                 /** @description Number of items to skip. */
@@ -9670,7 +9671,7 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "observationType" | "sampledMedium" | "status" | "resultType" | "isPrivate" | "isVisible" | "aggregationStatistic" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "-name" | "-observationType" | "-sampledMedium" | "-status" | "-resultType" | "-isPrivate" | "-isVisible" | "-aggregationStatistic" | "-valueCount" | "-phenomenonBeginTime" | "-phenomenonEndTime" | "-resultBeginTime" | "-resultEndTime" | "+name" | "+observationType" | "+sampledMedium" | "+status" | "+resultType" | "+isPrivate" | "+isVisible" | "+aggregationStatistic" | "+valueCount" | "+phenomenonBeginTime" | "+phenomenonEndTime" | "+resultBeginTime" | "+resultEndTime")[];
+                sortby?: ("name" | "type" | "sampledMedium" | "status" | "isPrivate" | "isVisible" | "aggregationStatistic" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "-name" | "-type" | "-sampledMedium" | "-status" | "-isPrivate" | "-isVisible" | "-aggregationStatistic" | "-valueCount" | "-phenomenonBeginTime" | "-phenomenonEndTime" | "-resultBeginTime" | "-resultEndTime" | "+name" | "+type" | "+sampledMedium" | "+status" | "+isPrivate" | "+isVisible" | "+aggregationStatistic" | "+valueCount" | "+phenomenonBeginTime" | "+phenomenonEndTime" | "+resultBeginTime" | "+resultEndTime")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Datastreams in this workspace. Matches `id` in `workspaces`. */
@@ -9687,14 +9688,12 @@ export interface operations {
                 unitId?: string[];
                 /** @description Not supported yet. Any value returns no datastreams. */
                 resultQualifier?: string[];
-                /** @description Datastreams with this observation type. Matches exactly, including case. */
-                observationType?: string[];
+                /** @description Datastreams of this type. */
+                type?: "timeSeriesCoverage"[];
                 /** @description Datastreams with this sampled medium. Matches `name` in `sampled-mediums`. */
                 sampledMedium?: string[];
                 /** @description Datastreams with this status. Matches `name` in `datastream-statuses`. `null` matches datastreams without a status. */
                 status?: (string | "null")[];
-                /** @description Datastreams with this result type. Matches exactly, including case. */
-                resultType?: string[];
                 /** @description Datastreams with this tag, as `{key}:{value}`. Repeat the parameter to require several tags. */
                 tag?: string[];
                 /** @description `false` returns only datastreams that are public at every level: the datastream, its monitoring site, and its workspace. `true` returns only datastreams that are private at every level. */
@@ -9797,7 +9796,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "name" | "description" | "observationType" | "sampledMedium" | "noDataValue" | "aggregationStatistic" | "timeAggregationInterval" | "status" | "resultType" | "isPrivate" | "isVisible" | "timeAggregationIntervalUnit" | "intendedTimeSpacing" | "intendedTimeSpacingUnit" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "monitoringSiteId" | "methodId" | "observedPropertyId" | "processingLevelId" | "unitId" | "tags" | "linkedResources")[];
+                properties?: ("id" | "workspaceId" | "name" | "description" | "type" | "sampledMedium" | "noDataValue" | "aggregationStatistic" | "timeAggregationInterval" | "status" | "isPrivate" | "isVisible" | "timeAggregationIntervalUnit" | "intendedTimeSpacing" | "intendedTimeSpacingUnit" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "monitoringSiteId" | "methodId" | "observedPropertyId" | "processingLevelId" | "unitId" | "tags" | "linkedResources")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("workspace" | "monitoringSite" | "method" | "observedProperty" | "processingLevel" | "unit" | "sampledMedium" | "aggregationStatistic" | "status")[];
                 /** @description Response format. Overrides the Accept header. */

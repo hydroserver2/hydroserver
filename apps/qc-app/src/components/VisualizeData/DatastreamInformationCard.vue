@@ -215,6 +215,7 @@ import { useDataVisStore } from '@/store/dataVisualization'
 import { storeToRefs } from 'pinia'
 import { computed, ref, h } from 'vue'
 import {
+  DATASTREAM_TYPE_LABELS,
   Datastream,
   type DatastreamExtended,
   type Tags,
@@ -310,8 +311,7 @@ const generalItems = computed(() => [
   { label: 'Date Last Updated', value: formatTimeWithZone(d.value.phenomenonEndTime) },
   { label: 'Begin Date', value: formatTimeWithZone(d.value.phenomenonBeginTime) },
   { label: 'End Date', value: formatTimeWithZone(d.value.phenomenonEndTime) },
-  { label: 'Data Type', value: d.value.observationType },
-  { label: 'Value Type', value: d.value.resultType },
+  { label: 'Type', value: DATASTREAM_TYPE_LABELS[d.value.type] ?? d.value.type },
   { label: 'Sample Medium', value: d.value.sampledMedium },
   { label: 'No-data Value', value: d.value.noDataValue },
   { label: 'Id', value: d.value.id },

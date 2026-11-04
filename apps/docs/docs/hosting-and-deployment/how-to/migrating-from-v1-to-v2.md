@@ -191,6 +191,21 @@ once.
   before you can edit the site or datastream they belong to. To avoid this, fill in or delete empty tag values in the
   admin dashboard under **Measurement Data** > **Thing tags** and **Datastream tags** before upgrading.
 
+### Datastream observation and result types are replaced
+
+**Table:** `sta_datastream` (`observation_type` and `result_type` fields)
+
+In v1, each datastream's **observation type** and **result type** were free text that HydroServer didn't use. v2
+replaces both with a **type** that HydroServer defines and uses to decide how a datastream's observations are stored.
+v2.0 has one type, `timeSeriesCoverage`, and every existing datastream is set to it.
+
+- **Data loss:** Every datastream's **observation type** and **result type** are dropped, whatever their values. The
+  SensorThings API still reports every datastream's observation type as
+  `http://www.opengis.net/def/observationType/OGC-OM/2.0/OM_Measurement`.
+
+To keep the v1 values, copy them into datastream tags while still running v1. The tags are carried over by
+[Tags are consolidated](#tags-are-consolidated).
+
 ### File attachments become linked resources
 
 **Tables:** `sta_thingfileattachment` and `sta_datastreamfileattachment` (renamed to

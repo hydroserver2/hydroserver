@@ -133,13 +133,12 @@ def _datastream_payload(**overrides):
         "id": "00000000-0000-0000-0000-000000000001",
         "name": "Datastream",
         "description": "",
-        "observationType": "OM_Measurement",
+        "type": "timeSeriesCoverage",
         "sampledMedium": "Water",
         "noDataValue": -9999,
         "aggregationStatistic": "Average",
         "timeAggregationInterval": 15,
         "timeAggregationIntervalUnit": "minutes",
-        "resultType": "Time Series Coverage",
         "valueCount": 3,
         "phenomenonEndTime": "2024-01-01T00:00:00+00:00",
         "monitoringSiteId": "00000000-0000-0000-0000-000000000002",
@@ -161,12 +160,14 @@ def test_create_does_not_send_server_maintained_statistics():
 
     service.create(
         name="Datastream", description="", monitoring_site="s", method="m", observed_property="o",
-        processing_level="p", unit="u", observation_type="OM_Measurement", result_type="Time Series Coverage",
-        sampled_medium="Water", no_data_value=-9999, aggregation_statistic="Average",
+        processing_level="p", unit="u", sampled_medium="Water", no_data_value=-9999, aggregation_statistic="Average",
         time_aggregation_interval=15, time_aggregation_interval_unit="minutes",
     )
 
-    assert not set(json.loads(client.request.call_args_list[0].kwargs["data"])) & STATISTIC_KEYS
+    body = json.loads(client.request.call_args_list[0].kwargs["data"])
+    assert not set(body) & STATISTIC_KEYS
+    assert body["type"] == "timeSeriesCoverage"
+    assert "observationType" not in body and "resultType" not in body
 
 
 def test_save_does_not_send_changed_server_maintained_statistics():

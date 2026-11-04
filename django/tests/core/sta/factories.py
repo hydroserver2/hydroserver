@@ -258,8 +258,6 @@ class DatastreamFactory(DjangoModelFactory):
     )
     name = factory.Sequence(lambda seq: f"Datastream {seq}")
     description = factory.Faker("sentence")
-    observation_type = "OM_Measurement"
-    result_type = "Time Series Coverage"
     sampled_medium = "Water"
     no_data_value = -9999.0
     aggregation_statistic = "Average"

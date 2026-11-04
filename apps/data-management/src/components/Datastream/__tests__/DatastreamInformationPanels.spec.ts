@@ -12,6 +12,7 @@ vi.mock('@hydroserver/client', () => ({
       getItem: getItemMock,
     },
   },
+  DATASTREAM_TYPE_LABELS: { timeSeriesCoverage: 'Time Series Coverage' },
 }))
 
 /**
@@ -30,8 +31,7 @@ const mergedDatastream = {
   valueCount: 12,
   phenomenonBeginTime: null,
   phenomenonEndTime: null,
-  observationType: 'OM_Measurement',
-  resultType: 'Time Series Coverage',
+  type: 'timeSeriesCoverage',
   sampledMedium: 'Water',
   noDataValue: -9999,
   aggregationStatistic: 'Average',
@@ -116,6 +116,7 @@ describe('DatastreamInformationPanels', () => {
 
     const text = wrapper.text()
     expect(text).toContain('Acme Workspace')
+    expect(text).toContain('Time Series Coverage')
     expect(text).toContain('Logan River')
     expect(text).toContain('Sensor Deployment')
     expect(text).toContain('Stage')
