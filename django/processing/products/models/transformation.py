@@ -233,6 +233,8 @@ class DataProductTransformation(models.Model, ResourcePermissionMixin):
             raise ValidationError("The output datastream must belong to the same workspace as this task.")
         if output_site_id != task_site_id:
             raise ValidationError("The output datastream must belong to the same monitoring site as this task.")
+        if self.output_datastream.etl_mappings.exists():
+            raise ValidationError("This datastream is already mapped to by an ETL task.", code="unique")
 
         if self.transformation_type == TransformationType.RATING_CURVE:
             if not self.rating_curve_id:

@@ -5,6 +5,7 @@ from processing.etl.models import EtlMapping
 from tests.core.iam.factories import WorkspaceFactory
 from tests.core.sta.factories import DatastreamFactory, MonitoringSiteFactory
 from tests.processing.etl.factories import DataConnectionFactory, EtlMappingFactory, EtlTaskFactory
+from tests.processing.products.factories import DataProductTransformationFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -43,6 +44,18 @@ def test_full_clean_rejects_target_datastream_already_mapped_by_another_task():
     EtlMappingFactory(etl_task=etl_task_1, target_datastream=datastream)
 
     mapping = EtlMapping(etl_task=etl_task_2, source_identifier="col2", target_datastream=datastream)
+
+    with pytest.raises(ValidationError):
+        mapping.full_clean()
+
+
+def test_full_clean_rejects_target_datastream_already_output_by_data_product_task():
+    workspace = WorkspaceFactory()
+    etl_task = EtlTaskFactory(data_connection=DataConnectionFactory(workspace=workspace))
+    datastream = DatastreamFactory(monitoring_site=MonitoringSiteFactory(workspace=workspace))
+    DataProductTransformationFactory(output_datastream=datastream)
+
+    mapping = EtlMapping(etl_task=etl_task, source_identifier="col", target_datastream=datastream)
 
     with pytest.raises(ValidationError):
         mapping.full_clean()
