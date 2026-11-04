@@ -424,14 +424,14 @@ test.describe('workspace management', () => {
     await authenticateSession(page, users.owner.email, users.owner.password)
     await page.goto('/workspaces')
     await expect(
-      page.getByRole('heading', { name: 'Unable to load workspaces' })
+      page.getByRole('heading', { name: 'Unable to load HydroServer' })
     ).toBeVisible()
     await expect(
       page.getByRole('heading', { name: 'Create your first workspace' })
     ).toHaveCount(0)
 
     failWorkspaceRequests = false
-    await page.getByRole('button', { name: 'Retry' }).click()
+    await page.getByRole('button', { name: 'Try again', exact: true }).click()
     await expect(
       workspaceListItem(page, fixtures.workspaces.private.name)
     ).toBeVisible()
