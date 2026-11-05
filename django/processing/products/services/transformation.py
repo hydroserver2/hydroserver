@@ -3,7 +3,7 @@ import uuid6
 import logging
 import numpy as np
 import pandas as pd
-from datetime import datetime, timedelta, timezone as dt_timezone
+from datetime import date, datetime, time, timedelta, timezone as dt_timezone
 from zoneinfo import ZoneInfo
 from typing import Union, Literal
 
@@ -56,6 +56,7 @@ class TransformationInput(BaseModel):
 _PERIOD_TO_UNIT = {"minutes": "min", "hours": "h", "days": "D"}
 _UNIT_TO_DURATION = {"minutes": "m", "hours": "h", "days": "d", "weeks": "w"}
 _UNIT_TO_SECONDS = {"minutes": 60, "hours": 3600, "days": 86400}
+_DAY_US = 86_400_000_000
 
 
 class DataProductTransformationService(ServiceUtils):
@@ -660,22 +661,31 @@ class DataProductTransformationService(ServiceUtils):
             else None
         )
 
+        # Compute whole-day intervals in microseconds that account for DST transitions.
+        interval_us = duration_to_us(interval)
+        tz = ZoneInfo(normalize_tz(local_timezone)) if local_timezone else None
+        calendar_days = interval_us // _DAY_US if tz is not None and interval_us % _DAY_US == 0 else None
+
         # Advance raw_start to the next aligned period boundary so we never
         # re-aggregate a period already present in the output datastream.
         raw_start = output_ds.phenomenon_end_time
         if raw_start is not None:
             epoch = datetime(1970, 1, 1, tzinfo=dt_timezone.utc)
-            interval_us = duration_to_us(interval)
             raw_start_utc = raw_start if raw_start.tzinfo else raw_start.replace(tzinfo=dt_timezone.utc)
-            raw_start_us = int((raw_start_utc - epoch).total_seconds() * 1_000_000)
-            if local_timezone:
-                tz = ZoneInfo(normalize_tz(local_timezone))
-                utc_offset_us = int(raw_start_utc.astimezone(tz).utcoffset().total_seconds() * 1_000_000)
+            if calendar_days:
+                epoch_date = date(1970, 1, 1)
+                elapsed_days = (raw_start_utc.astimezone(tz).date() - epoch_date).days
+                start_date = epoch_date + timedelta(days=(elapsed_days // calendar_days + 1) * calendar_days)
+                start = datetime.combine(start_date, time.min, tzinfo=tz).astimezone(dt_timezone.utc)
             else:
-                utc_offset_us = 0
-            local_midnight_us = -utc_offset_us
-            start_us = local_midnight_us + ((raw_start_us - local_midnight_us) // interval_us + 1) * interval_us
-            start = epoch + timedelta(microseconds=start_us)
+                raw_start_us = int((raw_start_utc - epoch).total_seconds() * 1_000_000)
+                if tz is not None:
+                    utc_offset_us = int(raw_start_utc.astimezone(tz).utcoffset().total_seconds() * 1_000_000)
+                else:
+                    utc_offset_us = 0
+                local_midnight_us = -utc_offset_us
+                start_us = local_midnight_us + ((raw_start_us - local_midnight_us) // interval_us + 1) * interval_us
+                start = epoch + timedelta(microseconds=start_us)
         else:
             start = None
 
@@ -686,9 +696,18 @@ class DataProductTransformationService(ServiceUtils):
         if start is not None and end <= start:
             return 0
 
-        input_df = self._fetch_observations(input_ds, after=start, through=end)
+        # Buckets are left-closed, so include the observation at the next bucket start.
+        input_df = self._fetch_observations(input_ds, at_or_after=start, through=end)
         if len(input_df) == 0:
             return 0
+
+        # Time-weighted means interpolate each bucket's start boundary from the
+        # preceding observation, so include the last valid one before the window.
+        # The previous bucket it lands in is already in the output and is dropped below.
+        if start is not None and transformation.aggregation_method == "time_weighted_mean":
+            prior_df = self._fetch_observation_before(input_ds, start, exclude_value=input_ds.no_data_value)
+            if len(prior_df) > 0:
+                input_df = pd.concat([prior_df, input_df], ignore_index=True)
 
         result_df = apply_aggregation(
             input_df,
@@ -703,11 +722,21 @@ class DataProductTransformationService(ServiceUtils):
         # Discard the last bucket if its end extends beyond the available input data,
         # as it may be incomplete (i.e., the current period is still in progress).
         if len(result_df) > 0:
-            interval_us = duration_to_us(interval)
             end_utc = end if end.tzinfo else end.replace(tzinfo=dt_timezone.utc)
-            result_df = result_df[
-                result_df[TIMESTAMP_COL] + pd.Timedelta(microseconds=interval_us) <= end_utc
-            ].reset_index(drop=True)
+            if calendar_days:
+                bucket_ends = pd.Series([
+                    datetime.combine(
+                        label.astimezone(tz).date() + timedelta(days=calendar_days), time.min, tzinfo=tz
+                    ).astimezone(dt_timezone.utc)
+                    for label in result_df[TIMESTAMP_COL]
+                ], index=result_df.index, dtype="datetime64[us, UTC]")
+            else:
+                bucket_ends = result_df[TIMESTAMP_COL] + pd.Timedelta(microseconds=interval_us)
+            result_df = result_df[bucket_ends <= end_utc].reset_index(drop=True)
+
+        # Never re-emit buckets that are already in the output datastream.
+        if start is not None and len(result_df) > 0:
+            result_df = result_df[result_df[TIMESTAMP_COL] >= start].reset_index(drop=True)
 
         if len(result_df) == 0:
             return 0
@@ -720,9 +749,14 @@ class DataProductTransformationService(ServiceUtils):
         after=None,
         through=None,
         since=None,
+        *,
+        at_or_after=None,
     ) -> pd.DataFrame:
         """
         Fetch observations for a datastream as a canonical pandas timeseries DataFrame.
+
+        `after` is exclusive for pointwise continuation; `at_or_after` includes an
+        aggregation bucket's starting observation. `through` is always inclusive.
         """
 
         qs = Observation.objects.filter(datastream=datastream).order_by("phenomenon_time")
@@ -731,10 +765,38 @@ class DataProductTransformationService(ServiceUtils):
             qs = qs.filter(phenomenon_time__gt=after)
         if since is not None:
             qs = qs.filter(phenomenon_time__gte=since)
+        if at_or_after is not None:
+            qs = qs.filter(phenomenon_time__gte=at_or_after)
         if through is not None:
             qs = qs.filter(phenomenon_time__lte=through)
 
-        data = list(qs.values_list("phenomenon_time", "result"))
+        return DataProductTransformationService._to_timeseries_df(list(qs.values_list("phenomenon_time", "result")))
+
+    @staticmethod
+    def _fetch_observation_before(
+        datastream: Datastream,
+        before,
+        exclude_value=None,
+    ) -> pd.DataFrame:
+        """
+        Fetch the latest observation strictly before `before`, skipping `exclude_value`
+        (e.g. the no-data value), as a canonical pandas timeseries DataFrame.
+        """
+
+        qs = Observation.objects.filter(datastream=datastream, phenomenon_time__lt=before)
+
+        if exclude_value is not None:
+            qs = qs.exclude(result=exclude_value)
+
+        return DataProductTransformationService._to_timeseries_df(
+            list(qs.order_by("-phenomenon_time").values_list("phenomenon_time", "result")[:1])
+        )
+
+    @staticmethod
+    def _to_timeseries_df(data: list) -> pd.DataFrame:
+        """
+        Convert (phenomenon_time, result) rows into a canonical pandas timeseries DataFrame.
+        """
 
         if not data:
             return pd.DataFrame({

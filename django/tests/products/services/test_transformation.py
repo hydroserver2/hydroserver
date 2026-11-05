@@ -17,7 +17,7 @@ the db fixture rolls everything back after each test.
 import uuid
 import pytest
 import numpy as np
-from datetime import datetime, timezone as dt_timezone
+from datetime import datetime, timedelta, timezone as dt_timezone
 from core.types import Unset
 from processing.products.models import DataProductTransformation, DataProductTask
 from processing.products.services.transformation import DataProductTransformationService, TransformationInput
@@ -1220,3 +1220,231 @@ def test_run_aggregation_time_weighted_mean(run_context):
     assert len(out_obs) == 1
     assert out_obs[0].phenomenon_time == datetime(2025, 2, 10, 0, 0, tzinfo=dt_timezone.utc)
     np.testing.assert_allclose(out_obs[0].result, 2.875)
+
+
+# ============================================================
+# run_aggregation: incremental runs and DST (issue #642)
+# ============================================================
+
+def _utc(*args):
+    return datetime(*args, tzinfo=dt_timezone.utc)
+
+
+def _add_half_hourly_obs(datastream, start, end, value=1.0):
+    """Insert an observation every 30 minutes over [start, end)."""
+    ts = start
+    while ts < end:
+        _add_obs(datastream, ts, value)
+        ts += timedelta(minutes=30)
+
+
+def _output_rows(ds_out):
+    from core.sta.models.observation import Observation
+    return list(
+        Observation.objects.filter(datastream=ds_out)
+        .order_by("phenomenon_time")
+        .values_list("phenomenon_time", "result")
+    )
+
+
+def _create_aggregation(ctx, ds_in, ds_out, **kwargs):
+    params = dict(
+        aggregation_method="sum",
+        output_interval_units="days",
+        output_interval=1,
+        timezone_type="iana",
+        timezone="America/Denver",
+    )
+    params.update(kwargs)
+    return transformation_service.create(
+        task=uuid.UUID(TASK1),
+        principal=ctx["owner"],
+        transformation_type="aggregation",
+        output_datastream=ds_out.pk,
+        input_datastreams=[TransformationInput(datastream=ds_in.pk)],
+        **params,
+    )
+
+
+def _make_in_out(ctx):
+    kwargs = {k: ctx[k] for k in ("thing", "sensor", "observed_property", "processing_level", "unit")}
+    return _make_datastream(**kwargs), _make_datastream(**kwargs)
+
+
+def test_run_aggregation_dst_fall_back(run_context):
+    """
+    Regression test for #642. 2026-11-01 is a 25-hour day in America/Denver:
+      Oct 31 local = 2026-10-31T06:00Z → 2026-11-01T06:00Z (24h, 48 half-hours)
+      Nov  1 local = 2026-11-01T06:00Z → 2026-11-02T07:00Z (25h, 50 half-hours)
+      Nov  2 local = 2026-11-02T07:00Z → 2026-11-03T07:00Z (24h, 48 half-hours)
+
+    The Nov 1 bucket must not be released until its true end (07:00Z), and the
+    next run must start at 07:00Z rather than 06:00Z. Starting at 06:00Z
+    re-emits Nov 1 and the task fails on every run after that.
+    """
+    ds_in, ds_out = _make_in_out(run_context)
+    _add_half_hourly_obs(ds_in, _utc(2026, 10, 31, 6), _utc(2026, 11, 3, 8))
+    t = _create_aggregation(run_context, ds_in, ds_out)
+
+    # Nov 1 is still in progress at 06:30Z (local 23:30 MST).
+    _set_end_time(ds_in, _utc(2026, 11, 2, 6, 30))
+    assert transformation_service.run(t) == 1
+    assert _output_rows(ds_out) == [(_utc(2026, 10, 31, 6), 48.0)]
+
+    _set_end_time(ds_in, _utc(2026, 11, 2, 7))
+    t.refresh_from_db()
+    assert transformation_service.run(t) == 1
+    assert _output_rows(ds_out)[-1] == (_utc(2026, 11, 1, 6), 50.0)
+
+    _set_end_time(ds_in, _utc(2026, 11, 3, 7))
+    t.refresh_from_db()
+    assert transformation_service.run(t) == 1
+    assert _output_rows(ds_out)[-1] == (_utc(2026, 11, 2, 7), 48.0)
+
+    t.refresh_from_db()
+    assert transformation_service.run(t) == 0
+
+
+def test_run_aggregation_dst_fall_back_recovers_from_stuck_state(run_context):
+    """
+    Tasks stuck in production already have a (partial) Nov 1 bucket in the
+    output. The next run must continue with Nov 2 instead of re-emitting Nov 1.
+    """
+    ds_in, ds_out = _make_in_out(run_context)
+    _add_half_hourly_obs(ds_in, _utc(2026, 11, 1, 6), _utc(2026, 11, 3, 8))
+    _add_obs(ds_out, _utc(2026, 11, 1, 6), 49.0)
+    _set_end_time(ds_out, _utc(2026, 11, 1, 6))
+    _set_end_time(ds_in, _utc(2026, 11, 3, 7))
+    t = _create_aggregation(run_context, ds_in, ds_out)
+
+    assert transformation_service.run(t) == 1
+    assert _output_rows(ds_out) == [
+        (_utc(2026, 11, 1, 6), 49.0),
+        (_utc(2026, 11, 2, 7), 48.0),
+    ]
+
+
+def test_run_aggregation_dst_spring_forward(run_context):
+    """
+    2026-03-08 is a 23-hour day in America/Denver:
+      Mar 8 local = 2026-03-08T07:00Z → 2026-03-09T06:00Z (23h, 46 half-hours)
+      Mar 9 local = 2026-03-09T06:00Z → 2026-03-10T06:00Z (24h, 48 half-hours)
+
+    Mar 8 is complete at 06:00Z, and the next run must start at 06:00Z (not
+    07:00Z), so Mar 9 keeps its first local hour.
+    """
+    ds_in, ds_out = _make_in_out(run_context)
+    _add_half_hourly_obs(ds_in, _utc(2026, 3, 8, 7), _utc(2026, 3, 10, 7))
+    t = _create_aggregation(run_context, ds_in, ds_out)
+
+    _set_end_time(ds_in, _utc(2026, 3, 9, 6))
+    assert transformation_service.run(t) == 1
+    assert _output_rows(ds_out) == [(_utc(2026, 3, 8, 7), 46.0)]
+
+    _set_end_time(ds_in, _utc(2026, 3, 10, 6))
+    t.refresh_from_db()
+    assert transformation_service.run(t) == 1
+    assert _output_rows(ds_out)[-1] == (_utc(2026, 3, 9, 6), 48.0)
+
+
+def test_run_aggregation_dst_transition_at_midnight(run_context):
+    """
+    America/Santiago springs forward at local midnight, so 2026-09-06 00:00 doesn't
+    exist and that local day starts at 01:00 (-03):
+      Sep 5 local = 2026-09-05T04:00Z → 2026-09-06T04:00Z (24h, 48 half-hours)
+      Sep 6 local = 2026-09-06T04:00Z → 2026-09-07T03:00Z (23h, 46 half-hours)
+
+    The Sep 5 bucket's end falls on the nonexistent midnight and must resolve to
+    04:00Z instead of raising. (Data starts the day before so pandas' resample
+    doesn't have to anchor on the nonexistent midnight itself.)
+    """
+    ds_in, ds_out = _make_in_out(run_context)
+    _add_half_hourly_obs(ds_in, _utc(2026, 9, 4, 4), _utc(2026, 9, 7, 4))
+    _set_end_time(ds_in, _utc(2026, 9, 7, 3))
+    t = _create_aggregation(run_context, ds_in, ds_out, timezone="America/Santiago")
+
+    assert transformation_service.run(t) == 3
+    assert _output_rows(ds_out) == [
+        (_utc(2026, 9, 4, 4), 48.0),
+        (_utc(2026, 9, 5, 4), 48.0),
+        (_utc(2026, 9, 6, 4), 46.0),
+    ]
+
+
+@pytest.mark.parametrize("min_values", [None, 2])
+def test_run_aggregation_incremental_includes_observation_at_next_bucket_start(run_context, min_values):
+    ds_in, ds_out = _make_in_out(run_context)
+    for ts, value in [(_utc(2026, 1, 1, 0), 1.0), (_utc(2026, 1, 1, 0, 30), 2.0), (_utc(2026, 1, 1, 1), 100.0)]:
+        _add_obs(ds_in, ts, value)
+    _set_end_time(ds_in, _utc(2026, 1, 1, 1))
+    t = _create_aggregation(
+        run_context, ds_in, ds_out,
+        output_interval_units="hours", timezone_type=None, timezone=None, min_values=min_values,
+    )
+
+    assert transformation_service.run(t) == 1
+    assert _output_rows(ds_out) == [(_utc(2026, 1, 1, 0), 3.0)]
+
+    for ts, value in [(_utc(2026, 1, 1, 1, 30), 2.0), (_utc(2026, 1, 1, 2), 0.0)]:
+        _add_obs(ds_in, ts, value)
+    _set_end_time(ds_in, _utc(2026, 1, 1, 2))
+    t.refresh_from_db()
+
+    assert transformation_service.run(t) == 1
+    assert _output_rows(ds_out) == [(_utc(2026, 1, 1, 0), 3.0), (_utc(2026, 1, 1, 1), 102.0)]
+    t.refresh_from_db()
+    assert transformation_service.run(t) == 0
+
+
+def test_run_aggregation_incremental_time_weighted_mean_interpolates_from_previous_observation(run_context):
+    from hydroserverpy.core.timeseries import RESULT_COL
+    from hydroserverpy.products.aggregation import apply_aggregation
+
+    ds_in, ds_out = _make_in_out(run_context)
+    for ts, value in [(_utc(2026, 1, 1, 0), 0.0), (_utc(2026, 1, 1, 0, 40), 4.0), (_utc(2026, 1, 1, 1, 20), 8.0)]:
+        _add_obs(ds_in, ts, value)
+    _set_end_time(ds_in, _utc(2026, 1, 1, 1, 20))
+    t = _create_aggregation(
+        run_context, ds_in, ds_out,
+        aggregation_method="time_weighted_mean", output_interval_units="hours", timezone_type=None, timezone=None,
+    )
+
+    assert transformation_service.run(t) == 1
+
+    for ts, value in [(_utc(2026, 1, 1, 1, 50), 2.0), (_utc(2026, 1, 1, 2, 10), 2.0)]:
+        _add_obs(ds_in, ts, value)
+    _set_end_time(ds_in, _utc(2026, 1, 1, 2, 10))
+    t.refresh_from_db()
+
+    assert transformation_service.run(t) == 1
+    rows = _output_rows(ds_out)
+    # The 01:00 boundary interpolates between 00:40=4 and 01:20=8 -> 6, and the
+    # result matches aggregating the full history in one pass.
+    full = apply_aggregation(
+        transformation_service._fetch_observations(ds_in), interval="1h", method="time_weighted_mean",
+    )
+    assert [ts for ts, _ in rows] == [_utc(2026, 1, 1, 0), _utc(2026, 1, 1, 1)]
+    assert [r for _, r in rows] == pytest.approx([3.0, 31 / 6])
+    assert [r for _, r in rows] == pytest.approx(full[RESULT_COL].tolist()[:2])
+
+
+@pytest.mark.parametrize("transformation_type", ["derivation", "rating_curve"])
+def test_run_pointwise_transformations_exclude_already_processed_observation(run_context, transformation_type):
+    ds_in, ds_out = _make_in_out(run_context)
+    _add_obs(ds_out, _utc(2026, 1, 1, 1), 2.0)
+    _set_end_time(ds_out, _utc(2026, 1, 1, 1))
+    for ts, value in [(_utc(2026, 1, 1, 1), 1.0), (_utc(2026, 1, 1, 2), 2.0)]:
+        _add_obs(ds_in, ts, value)
+    _set_end_time(ds_in, _utc(2026, 1, 1, 2))
+
+    t = transformation_service.create(
+        task=uuid.UUID(TASK1),
+        principal=run_context["owner"],
+        transformation_type=transformation_type,
+        output_datastream=ds_out.pk,
+        input_datastreams=[TransformationInput(datastream=ds_in.pk, variable_name="x")],
+        **({"formula": "x * 2"} if transformation_type == "derivation" else {"rating_curve": uuid.UUID(RC1)}),
+    )
+
+    assert transformation_service.run(t) == 1
+    assert _output_rows(ds_out) == [(_utc(2026, 1, 1, 1), 2.0), (_utc(2026, 1, 1, 2), 4.0)]
