@@ -3,8 +3,9 @@ import { resolve } from 'path'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
 import vuetify from 'vite-plugin-vuetify'
+import { profileFixturesPlugin } from './dev/profileFixtures'
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ mode, command }) => {
   const env = { ...loadEnv(mode, process.cwd(), ''), ...process.env }
   const apiProxyTarget = env.VITE_APP_PROXY_BASE_URL
   const qcProxyTarget =
@@ -26,6 +27,10 @@ export default defineConfig(({ mode }) => {
   return {
     base: mode === 'django' ? '/static/web/' : '/',
     plugins: [
+      ...(env.VITE_PROFILE_FIXTURES === '1' ||
+      (command === 'serve' && env.VITE_PROFILE_FIXTURES !== '0')
+        ? [profileFixturesPlugin(env.VITE_PROFILE_FIXTURES === '1')]
+        : []),
       vue(),
       tailwindcss(),
       vuetify({

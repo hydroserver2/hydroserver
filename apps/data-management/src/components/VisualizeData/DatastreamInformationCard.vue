@@ -36,6 +36,7 @@
 </template>
 
 <script setup lang="ts">
+import { selectPlotDatastream } from '@/models/profile'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { Datastream, MonitoringSite } from '@hydroserver/client'
 import { downloadDatastreamCsv } from '@/utils/csvExport'
@@ -66,10 +67,11 @@ const downloadDatastream = async (id: string) => {
 }
 
 const addToPlot = (datastream: Datastream) => {
-  const index = plottedDatastreams.value.findIndex(
-    (ds) => ds.id === datastream.id
+  plottedDatastreams.value = selectPlotDatastream(
+    plottedDatastreams.value,
+    datastream,
+    true
   )
-  if (index === -1) plottedDatastreams.value.push(datastream)
   emit('close')
 }
 

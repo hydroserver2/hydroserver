@@ -20,7 +20,9 @@
                 <strong>{{ item.label }}</strong
                 >:
                 <div class="tag-list-wrap">
-                  <span v-if="!Object.keys(item.value ?? {}).length">No tags</span>
+                  <span v-if="!Object.keys(item.value ?? {}).length"
+                    >No tags</span
+                  >
                   <v-chip
                     v-for="[key, value] in Object.entries(item.value ?? {})"
                     :key="key"
@@ -112,6 +114,7 @@
 </template>
 
 <script setup lang="ts">
+import { isProfileDatastream, type ProfileDatastream } from '@/models/profile'
 import { formatTimeWithZone } from '@/utils/time'
 import { onMounted, ref } from 'vue'
 import hs, {
@@ -161,8 +164,24 @@ onMounted(async () => {
     },
     {
       label: 'Type',
-      value: DATASTREAM_TYPE_LABELS[d.type as DatastreamType] ?? d.type,
+      value: isProfileDatastream(d)
+        ? 'Profile'
+        : (DATASTREAM_TYPE_LABELS[d.type as DatastreamType] ?? d.type),
     },
+    ...(isProfileDatastream(d)
+      ? [
+          {
+            label: 'Vertical reference',
+            value:
+              (d as unknown as ProfileDatastream).zReference ??
+              'Depth below surface',
+          },
+          {
+            label: 'Vertical unit',
+            value: (d as unknown as ProfileDatastream).zUnit ?? 'm',
+          },
+        ]
+      : []),
     { label: 'Sample Medium', value: d.sampledMedium },
     { label: 'Nodata value', value: d.noDataValue },
     { label: 'Id', value: d.id },

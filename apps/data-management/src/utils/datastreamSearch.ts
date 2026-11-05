@@ -4,6 +4,7 @@ import {
 } from '@hydroserver/design-system/vue'
 
 export const DATASTREAM_QUALIFIER_KEYS = [
+  'type',
   'workspace',
   'site',
   'observed-property',
@@ -44,6 +45,7 @@ export function parseDatastreamQuery(
   qualifiers: readonly QueryQualifier[] = []
 ) {
   const filters: DatastreamQueryFilters = {
+    type: [],
     workspace: [],
     site: [],
     'observed-property': [],

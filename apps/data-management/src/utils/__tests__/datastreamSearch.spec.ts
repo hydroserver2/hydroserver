@@ -50,6 +50,7 @@ describe('datastream query search', () => {
       )
     ).toEqual({
       filters: {
+        type: [],
         workspace: ['Bear River'],
         site: ['logan'],
         'observed-property': ['Water temperature'],
@@ -66,6 +67,7 @@ describe('datastream query search', () => {
     expect(parseDatastreamQuery('site:logan sort:updated-desc recent')).toEqual(
       {
         filters: {
+          type: [],
           workspace: [],
           site: ['logan'],
           'observed-property': [],
@@ -83,6 +85,7 @@ describe('datastream query search', () => {
     expect(
       serializeDatastreamQuery(
         {
+          type: [],
           workspace: ['Bear River'],
           site: ['logan'],
           'observed-property': ['Water temperature'],
@@ -101,6 +104,7 @@ describe('datastream query search', () => {
     expect(
       serializeDatastreamQuery(
         {
+          type: [],
           workspace: [],
           site: [],
           'observed-property': [],

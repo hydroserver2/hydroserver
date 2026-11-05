@@ -293,6 +293,7 @@
 </template>
 
 <script setup lang="ts">
+import { datastreamTypeLabel, datastreamTypeOptions } from '@/models/profile'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import type {
   Datastream,
@@ -383,6 +384,7 @@ const filterSearches = reactive<Record<DatastreamQualifierKey, string>>({
   unit: '',
   method: '',
   'processing-level': '',
+  type: '',
 })
 const activeWorkspaceId = computed(
   () =>
@@ -422,6 +424,7 @@ const filteredDatastreams = computed(() =>
         !showLinkedDatastreams.value &&
         isLinked(datastream)
       ) &&
+      matchesFilter(filters.type, datastreamTypeLabel(datastream)) &&
       matchesFilter(filters.workspace, workspaceName(datastream)) &&
       matchesFilter(filters.site, monitoringSiteName(datastream)) &&
       matchesFilter(
@@ -458,6 +461,7 @@ const uniqueSorted = (values: Array<string | null | undefined>) =>
     (a, b) => a.localeCompare(b)
   )
 const searchQualifiers = computed(() => [
+  { key: 'type', label: 'Datastream type', values: datastreamTypeOptions },
   {
     key: 'workspace',
     label: 'Workspaces',
@@ -502,6 +506,12 @@ const searchQualifiers = computed(() => [
   },
 ])
 const filterDefinitions = computed<FilterDefinition[]>(() => [
+  {
+    key: 'type',
+    label: 'Datastream type',
+    options: datastreamTypeOptions.map(option),
+    selectedCount: parsedSearch.value.filters.type.length,
+  },
   {
     key: 'workspace',
     label: 'Workspaces',

@@ -31,6 +31,7 @@
 </template>
 
 <script setup lang="ts">
+import { isProfileDatastream } from '@/models/profile'
 import DataVisNavRail from '@/components/VisualizeData/DataVisNavRail.vue'
 import DataVisDatasetsTable from '@/components/VisualizeData/DataVisDatasetsTable.vue'
 import DataVisualizationCard from '@/components/VisualizeData/DataVisualizationCard.vue'
@@ -118,6 +119,18 @@ const buildStateQuery = (): LocationQueryRaw => {
     PLs: selectedProcessingLevelNames.value,
     OPs: selectedObservedPropertyNames.value,
     q: tableSearch.value.trim() || undefined,
+    ...(plottedDatastreams.value.some(isProfileDatastream)
+      ? Object.fromEntries(
+          Object.entries(route.query).filter(([key]) =>
+            [
+              'profileMode',
+              'profileVisits',
+              'profileVisit',
+              'profileAnalyte',
+            ].includes(key)
+          )
+        )
+      : {}),
   }
 
   // The default layout is represented by the blank route so the main app-bar

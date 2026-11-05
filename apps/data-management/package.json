@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:profiles": "VITE_PROFILE_FIXTURES=1 vite",
     "docker-dev": "vite --host 0.0.0.0",
     "build": "vue-tsc && vite build",
     "django-build": "vue-tsc && vite build --mode django",

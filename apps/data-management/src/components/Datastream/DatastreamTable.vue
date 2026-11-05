@@ -254,7 +254,13 @@
                   Data is private
                 </div>
                 <div v-else class="site-datastreams__observations">
+                  <ProfileSparkline
+                    v-if="isProfileDatastream(item)"
+                    :datastream="item"
+                    @open-chart="selectedChartDatastream = item"
+                  />
                   <Sparkline
+                    v-else
                     class="site-datastreams__sparkline"
                     :datastream="item"
                     :unit-name="item.unitName"
@@ -265,6 +271,7 @@
                     "
                   />
                   <div
+                    v-if="!isProfileDatastream(item)"
                     class="site-datastreams__latest"
                     :class="latestStatusClass(item)"
                   >
@@ -678,6 +685,12 @@
 </template>
 
 <script setup lang="ts">
+import ProfileSparkline from '@/components/Profile/ProfileSparkline.vue'
+import {
+  datastreamTypeLabel,
+  datastreamTypeOptions,
+  isProfileDatastream,
+} from '@/models/profile'
 import DatastreamPopupPlot from '@/components/Datastream/DatastreamPopupPlot.vue'
 import DatastreamForm from '@/components/Datastream/DatastreamForm.vue'
 import DatastreamDeleteCard from './DatastreamDeleteCard.vue'
@@ -785,7 +798,7 @@ type LinkedMonitoringTask = LinkedDatastreamTask & {
 }
 
 type SiteDatastreamFilterKey =
-  'observed-property' | 'unit' | 'method' | 'processing-level'
+  'type' | 'observed-property' | 'unit' | 'method' | 'processing-level'
 type FilterOption = { value: string; label: string }
 type FilterDefinition = {
   key: SiteDatastreamFilterKey
@@ -1000,6 +1013,7 @@ const filterSearches = reactive<Record<SiteDatastreamFilterKey, string>>({
   unit: '',
   method: '',
   'processing-level': '',
+  type: '',
 })
 const uniqueSorted = (values: Array<string | null | undefined>) =>
   [...new Set(values.filter((value): value is string => Boolean(value)))].sort(
@@ -1008,6 +1022,11 @@ const uniqueSorted = (values: Array<string | null | undefined>) =>
 const option = (value: string): FilterOption => ({ value, label: value })
 const filterOptions = computed<Omit<FilterDefinition, 'selectedCount'>[]>(
   () => [
+    {
+      key: 'type',
+      label: 'Datastream type',
+      options: datastreamTypeOptions.map(option),
+    },
     {
       key: 'observed-property',
       label: 'Observed property',
@@ -1146,6 +1165,7 @@ const tableDatastreams = computed(() => {
   return visibleDatastreams.value
     .filter(
       (item) =>
+        matchesFilter(filters.type, datastreamTypeLabel(item)) &&
         matchesFilter(
           filters['observed-property'],
           item.observedPropertyName

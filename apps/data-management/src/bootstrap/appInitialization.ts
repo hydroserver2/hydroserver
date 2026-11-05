@@ -6,7 +6,10 @@ import hs, { createHydroServer, User } from '@hydroserver/client'
 import { storeToRefs } from 'pinia'
 import { ref } from 'vue'
 
-const hydroServerHost = import.meta.env.VITE_APP_PROXY_BASE_URL || ''
+const hydroServerHost =
+  import.meta.env.VITE_PROFILE_FIXTURES === '1'
+    ? ''
+    : import.meta.env.VITE_APP_PROXY_BASE_URL || ''
 
 const isHydroServerInitializing = ref(false)
 export const isHydroServerReady = ref(false)

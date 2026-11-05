@@ -72,6 +72,7 @@
 </template>
 
 <script setup lang="ts">
+import { datastreamTypeLabel, datastreamTypeOptions } from '@/models/profile'
 import { computed, reactive } from 'vue'
 import { storeToRefs } from 'pinia'
 import { mdiChevronDown, mdiMagnify } from '@mdi/js'
@@ -124,6 +125,7 @@ const filterSearches = reactive<Record<FilterKey, string>>({
   unit: '',
   method: '',
   'processing-level': '',
+  type: '',
 })
 
 const parsedQuery = computed(() => parseDatastreamQuery(tableSearch.value))
@@ -243,6 +245,12 @@ const sortedMethodNames = computed(() => {
 })
 
 const filterDefinitions = computed<FilterDefinition[]>(() => [
+  {
+    key: 'type',
+    label: 'Datastream type',
+    options: datastreamTypeOptions.map((value) => ({ value, label: value })),
+    selectedCount: parsedQuery.value.filters.type.length,
+  },
   {
     key: 'workspace',
     label: 'Workspaces',

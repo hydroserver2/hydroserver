@@ -1,6 +1,7 @@
 import { AppSettings, ElevationService, GeoService } from '@/models/settings'
 
-const devHost = import.meta.env.VITE_APP_PROXY_BASE_URL || 'http://127.0.0.1:8000'
+const devHost =
+  import.meta.env.VITE_APP_PROXY_BASE_URL || 'http://127.0.0.1:8000'
 const defaultSettings: AppSettings = {
   authenticationConfiguration: {
     hydroserverSignupEnabled: false,
@@ -43,7 +44,9 @@ const defaultSettings: AppSettings = {
 
 let scriptTag: HTMLScriptElement | null
 
-if (import.meta.env.DEV) {
+if (import.meta.env.VITE_PROFILE_FIXTURES === '1') {
+  scriptTag = null
+} else if (import.meta.env.DEV) {
   try {
     const xhr = new XMLHttpRequest()
     xhr.open('GET', devHost, false)

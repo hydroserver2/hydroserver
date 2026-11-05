@@ -11,6 +11,8 @@ import {
   calculateSummaryStatistics,
 } from '@/utils/plotting/summaryStatisticUtils'
 import { defineStore } from 'pinia'
+import { datastreamTypeLabel, isProfileDatastream } from '@/models/profile'
+import { parseDatastreamQuery } from '@/utils/datastreamSearch'
 import { computed, reactive, ref, watch } from 'vue'
 import { PlotlyColors } from '@/utils/materialColors'
 import { createPlotlyOption, PlotlyOptions } from '@/utils/plotting/plotly'
@@ -217,8 +219,13 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   }
 
   const filteredDatastreams = computed(() => {
+    const types = parseDatastreamQuery(tableSearch.value).filters.type.map(
+      (value) => value.toLowerCase()
+    )
     return datastreams.value.filter(
       (datastream) =>
+        (!types.length ||
+          types.includes(datastreamTypeLabel(datastream).toLowerCase())) &&
         matchesSelectedMonitoringSite(datastream) &&
         matchesSelectedWorkspace(datastream) &&
         matchesSelectedObservedProperty(datastream) &&
@@ -433,6 +440,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
 
   /** Refreshes the graphSeriesArray based on the current selection of datastreams */
   const refreshGraphSeriesArray = async (datastreams: Datastream[]) => {
+    datastreams = datastreams.filter((stream) => !isProfileDatastream(stream))
     const begin = beginDate.value.toISOString()
     const end = endDate.value.toISOString()
     const ids = datastreams
@@ -518,6 +526,17 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   watch(
     () => plottedDatastreams.value,
     (newDs) => {
+      const profile = newDs.find(isProfileDatastream)
+      if (profile) {
+        if (newDs.length !== 1) plottedDatastreams.value = [profile]
+        // Invalidate outstanding time series requests when switching to a profile.
+        refreshCounter.value += 1
+        activeRefreshKey.value = ''
+        loadingStates.value.clear()
+        clearState()
+        prevDatastreamIds = ''
+        return
+      }
       const newDatastreamIds = JSON.stringify(newDs.map((ds) => ds.id).sort())
 
       if (!newDs.length || !beginDate.value || !endDate.value) {

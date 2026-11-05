@@ -58,7 +58,13 @@
                     data-testid="clear-selected-datastreams"
                     @change="clearSelected"
                   />
-                  <span> {{ plottedDatastreams.length }} of 5 selected </span>
+                  <span>
+                    {{
+                      plottedDatastreams.some(isProfileDatastream)
+                        ? '1 primary profile selected'
+                        : `${plottedDatastreams.length} of 5 selected`
+                    }}
+                  </span>
                 </div>
 
                 <div class="datastream-selection-actions">
@@ -172,7 +178,11 @@
                 type="checkbox"
                 class="plot-checkbox"
                 :checked="isChecked(item)"
-                :disabled="plottedDatastreams.length >= 5 && !isChecked(item)"
+                :disabled="
+                  !isProfileDatastream(item) &&
+                  plottedDatastreams.length >= 5 &&
+                  !isChecked(item)
+                "
                 :aria-label="`Plot ${item.name || 'datastream'}`"
                 :data-testid="`plot-datastream-${item.id}`"
                 @click.stop
@@ -274,6 +284,11 @@
 </template>
 
 <script setup lang="ts">
+import {
+  datastreamTypeOptions,
+  isProfileDatastream,
+  selectPlotDatastream,
+} from '@/models/profile'
 import { computed, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { Datastream, MonitoringSite } from '@hydroserver/client'
@@ -331,6 +346,7 @@ const {
 const { workspaces } = storeToRefs(useWorkspaceStore())
 
 const initialFilters: DatastreamQueryFilters = {
+  type: [],
   workspace: selectedWorkspaces.value.map((item) => item.name),
   site: selectedMonitoringSites.value.map((item) => item.name),
   'observed-property': [...selectedObservedPropertyNames.value],
@@ -353,6 +369,7 @@ const uniqueSorted = (values: Array<string | null | undefined>) =>
     (a, b) => a.localeCompare(b)
   )
 const searchQualifiers = computed(() => [
+  { key: 'type', label: 'Datastream type', values: datastreamTypeOptions },
   {
     key: 'workspace',
     label: 'Workspaces',
@@ -723,15 +740,11 @@ function updatePlottedDatastreams(
   datastream: Datastream,
   selected: boolean | null
 ) {
-  const index = plottedDatastreams.value.findIndex(
-    (item) => item.id === datastream.id
+  plottedDatastreams.value = selectPlotDatastream(
+    plottedDatastreams.value,
+    datastream,
+    Boolean(selected)
   )
-  if (selected && index === -1) {
-    if (plottedDatastreams.value.length >= 5) return
-    plottedDatastreams.value.push(datastream)
-  } else if (!selected && index !== -1) {
-    plottedDatastreams.value.splice(index, 1)
-  }
 }
 </script>
 

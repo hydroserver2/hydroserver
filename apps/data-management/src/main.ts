@@ -7,6 +7,7 @@ import '@hydroserver/design-system/components.css'
 import 'ol/ol.css'
 
 import { createApp } from 'vue'
+import { installProfileFixtureTransport } from '@/services/profileFixtureTransport'
 import App from './App.vue'
 import router from './router/router'
 import vuetify from '@hydroserver/design-system/vue/vuetify'
@@ -15,6 +16,13 @@ import { injectClarity } from '@/plugins/clarity'
 import { injectGoogleAnalytics } from '@/plugins/googleAnalytics'
 import { settings } from '@/config/settings'
 import { startAppInitialization } from '@/bootstrap/appInitialization'
+
+if (
+  import.meta.env.DEV &&
+  !['0', '1'].includes(import.meta.env.VITE_PROFILE_FIXTURES)
+) {
+  installProfileFixtureTransport(window)
+}
 
 const app = createApp(App)
 const pinia = createPinia()
