@@ -495,8 +495,32 @@ test.describe("visualization", () => {
 
   async function ensureTableFiltersVisible(page: Page) {
     await expect(
-      page.getByRole("button", { name: "Filter by workspace" }),
+      page.getByRole("button", { name: "Sort datastreams" }),
     ).toBeVisible();
+  }
+
+  // Filters that don't fit the toolbar width move into "More filters", and
+  // can move as the layout settles, so retry until the filter's menu opens.
+  async function openFilter(page: Page, label: string) {
+    await expect(async () => {
+      const button = page.getByRole("button", {
+        name: `Filter by ${label.toLowerCase()}`,
+      });
+      if (await button.isVisible()) {
+        await button.click({ timeout: 1000 });
+      } else {
+        await page
+          .getByRole("button", { name: "More filters" })
+          .click({ timeout: 1000 });
+        await page
+          .locator(".v-overlay--active .v-list-item")
+          .filter({ hasText: label })
+          .click({ timeout: 1000 });
+      }
+      await expect(page.getByText(`Filter by ${label}`)).toBeVisible({
+        timeout: 1000,
+      });
+    }).toPass();
   }
 
   async function plotPublicDatastream(page: Page) {
@@ -520,9 +544,6 @@ test.describe("visualization", () => {
       page.getByRole("heading", { name: "Datastreams" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Filter by site" }),
-    ).toBeVisible();
-    await expect(
       page.getByTestId("clear-selected-datastreams"),
     ).toHaveCount(0);
     await expect(
@@ -531,6 +552,8 @@ test.describe("visualization", () => {
     await expect(
       mobileDatastreamRow(page, fixtures.datastreams.publicSystemMetadata.name),
     ).toBeVisible();
+
+    await openFilter(page, "Sites");
   });
 
   test("visualization preserves selected datastream state in the URL and supports summary mode", async ({
@@ -651,7 +674,7 @@ test.describe("visualization", () => {
       ),
     ).toBeVisible();
 
-    await page.getByRole("button", { name: "Filter by sites" }).click();
+    await openFilter(page, "Sites");
     await page
       .getByRole("checkbox", {
         name: `Sites: ${fixtures.monitoringSites.privateWorkspacePublic.name}`,
@@ -693,9 +716,12 @@ test.describe("visualization", () => {
     ).toBeVisible();
 
     await tableSearch.fill(siteQualifier);
+    await page.keyboard.press("Escape");
+    await openFilter(page, "Sites");
     await expect(
-      page.getByRole("button", { name: "Filter by sites (1 selected)" }),
-    ).toBeVisible();
+      page.getByRole("checkbox", { name: `Sites: ${selectedSiteName}` }),
+    ).toBeChecked();
+    await page.keyboard.press("Escape");
     await expect(
       mobileDatastreamRow(
         page,

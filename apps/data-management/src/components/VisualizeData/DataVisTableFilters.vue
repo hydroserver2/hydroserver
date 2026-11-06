@@ -1,11 +1,16 @@
 <template>
-  <div class="datavis-header-filters">
+  <div ref="container" class="datavis-header-filters">
+    <!-- Filters that don't fit move into the "More filters" menu; their own
+         menus then open from that button. -->
     <v-menu
-      v-for="filter in filterDefinitions"
+      v-for="(filter, index) in filterDefinitions"
       :key="filter.key"
+      :model-value="openFilter === filter.key"
+      :target="index >= visibleCount ? '.datavis-filter-overflow' : undefined"
       :close-on-content-click="false"
-      location="bottom start"
+      :location="index >= visibleCount ? 'bottom end' : 'bottom start'"
       attach="body"
+      @update:model-value="openFilter = $event ? filter.key : null"
     >
       <template #activator="{ props: menuProps }">
         <v-btn
@@ -15,6 +20,7 @@
           class="datavis-filter-button"
           :class="{
             'datavis-filter-button--active': filter.selectedCount > 0,
+            'datavis-filter--hidden': index >= visibleCount,
           }"
           :append-icon="mdiChevronDown"
           :aria-label="`Filter by ${filter.label.toLowerCase()}${
@@ -68,13 +74,45 @@
         </div>
       </v-list>
     </v-menu>
+
+    <v-menu location="bottom end" attach="body">
+      <template #activator="{ props: menuProps }">
+        <v-btn-icon
+          v-bind="menuProps"
+          :icon="mdiDotsVertical"
+          size="small"
+          class="datavis-filter-overflow"
+          :class="{ 'datavis-filter--hidden': !overflowFilters.length }"
+          aria-label="More filters"
+        />
+      </template>
+      <v-list density="compact">
+        <v-list-item
+          v-for="filter in overflowFilters"
+          :key="filter.key"
+          :title="filter.label"
+          @click="openFilter = filter.key"
+        >
+          <template v-if="filter.selectedCount" #append>
+            <span class="filter-count">{{ filter.selectedCount }}</span>
+          </template>
+        </v-list-item>
+      </v-list>
+    </v-menu>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, reactive } from 'vue'
+import {
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  reactive,
+  ref,
+  useTemplateRef,
+} from 'vue'
 import { storeToRefs } from 'pinia'
-import { mdiChevronDown, mdiMagnify } from '@mdi/js'
+import { mdiChevronDown, mdiDotsVertical, mdiMagnify } from '@mdi/js'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { useWorkspaceStore } from '@/store/workspaces'
 import {
@@ -174,6 +212,50 @@ const filterDefinitions = computed<FilterDefinition[]>(() => [
   },
 ])
 
+const openFilter = ref<FilterKey | null>(null)
+const container = useTemplateRef('container')
+const visibleCount = ref(filterDefinitions.value.length)
+const overflowFilters = computed(() =>
+  filterDefinitions.value.slice(visibleCount.value)
+)
+
+// Show as many filters as fit, in order; the rest go in the overflow menu.
+// Hidden buttons stay rendered (but invisible) so they can still be measured.
+function fitFilters() {
+  const element = container.value
+  if (!element?.clientWidth) return
+  const gap = parseFloat(getComputedStyle(element).columnGap) || 0
+  const widths = [
+    ...element.querySelectorAll<HTMLElement>('.datavis-filter-button'),
+  ].map((button) => button.offsetWidth + gap)
+  const fitsAll =
+    widths.reduce((sum, width) => sum + width, 0) - gap <= element.clientWidth
+  let room = fitsAll
+    ? Infinity
+    : element.clientWidth -
+      (element.querySelector<HTMLElement>('.datavis-filter-overflow')
+        ?.offsetWidth ?? 0)
+  let count = 0
+  for (const width of widths) {
+    if (width > room) break
+    room -= width
+    count++
+  }
+  visibleCount.value = count
+}
+
+let observer: ResizeObserver | undefined
+onMounted(() => {
+  fitFilters()
+  observer = new ResizeObserver(fitFilters)
+  if (!container.value) return
+  observer.observe(container.value)
+  container.value
+    .querySelectorAll('.datavis-filter-button')
+    .forEach((button) => observer!.observe(button))
+})
+onBeforeUnmount(() => observer?.disconnect())
+
 const filteredOptions = (filter: FilterDefinition) => {
   const query = filterSearches[filter.key].trim().toLocaleLowerCase()
   if (!query) return filter.options
@@ -227,10 +309,26 @@ const clearFilter = (key: FilterKey) => {
 
 <style scoped>
 .datavis-header-filters {
+  position: relative;
   display: flex;
-  flex-wrap: wrap;
+  flex: 1 1 0;
   gap: var(--hs-space-8);
   align-items: center;
+  min-width: 0;
+}
+
+.datavis-filter-button {
+  flex: 0 0 auto;
+}
+
+.datavis-filter-overflow {
+  margin-left: auto;
+}
+
+/* Out of the layout and accessibility tree, but still measurable. */
+.datavis-filter--hidden {
+  position: absolute;
+  visibility: hidden;
 }
 
 .datavis-filter-button {
