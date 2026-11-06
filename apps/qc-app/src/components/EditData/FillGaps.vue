@@ -98,6 +98,24 @@
       </v-alert>
 
       <v-alert
+        v-if="overLimit"
+        class="mt-4"
+        color="error"
+        icon="mdi-alert-octagon-outline"
+        variant="tonal"
+        density="compact"
+        data-testid="fill-gaps-over-limit"
+      >
+        <div class="text-body-small">
+          This would add {{ estimatedInsertions.toLocaleString() }} points.
+          One fill can add at most {{ limit.toLocaleString() }} so the tab
+          doesn't run out of memory. Choose a coarser cadence or a larger gap
+          threshold.
+        </div>
+      </v-alert>
+
+      <v-alert
+        v-else
         class="mt-4"
         :color="plannedInsertions > 0 ? 'info' : 'success'"
         :icon="
@@ -150,7 +168,11 @@
         color="primary"
         variant="flat"
         :disabled="
-          isUpdating || isComputing || plannedInsertions === 0 || !!rangeWarning
+          isUpdating ||
+          isComputing ||
+          overLimit ||
+          plannedInsertions === 0 ||
+          !!rangeWarning
         "
         @click="onFillGaps"
       >
@@ -187,6 +209,12 @@ import {
   setGhostFills,
 } from '@/utils/plotting/staging'
 import GapFinder from '@/components/FilterPoints/GapFinder.vue'
+import {
+  estimateFillCount,
+  fillFanout as buildFillFanout,
+  fillLimit,
+  type FillFanout,
+} from '@/utils/fillGaps'
 import type { GapPlan } from '@/components/FilterPoints/GapFinder.vue'
 
 const { fillUnits } = useUIStore()
@@ -271,30 +299,20 @@ const applyIntendedCadence = () => {
   selectedFillUnit.value = i.unit
 }
 
-interface FillFanout {
-  xs: number[]
-  ys: number[]
-  count: number
-}
+const limit = computed(() =>
+  fillLimit(selectedSeries.value?.data.dataX.length ?? 0)
+)
+const estimatedInsertions = computed(() => {
+  const delta = fillDeltaMs.value
+  return delta ? estimateFillCount(gapPlans.value, delta) : 0
+})
+// Counted before any point is built, so a tiny cadence can't freeze the tab.
+const overLimit = computed(() => estimatedInsertions.value > limit.value)
 
-// Mirrors the count/fill loop in qc-utils' _fillGaps so the preview
-// matches exactly what the dispatch will write.
 const fillFanout = computed<FillFanout>(() => {
   const delta = fillDeltaMs.value
-  if (!delta || !gapPlans.value.length) return { xs: [], ys: [], count: 0 }
-  const xs: number[] = []
-  const ys: number[] = []
-  for (const p of gapPlans.value) {
-    let t = p.leftTs + delta
-    const span = p.rightTs - p.leftTs
-    const valueSpan = p.rightY - p.leftY
-    while (t < p.rightTs) {
-      xs.push(t)
-      ys.push(p.leftY + ((t - p.leftTs) * valueSpan) / span)
-      t += delta
-    }
-  }
-  return { xs, ys, count: xs.length }
+  if (!delta || overLimit.value) return { xs: [], ys: [], count: 0 }
+  return buildFillFanout(gapPlans.value, delta)
 })
 
 const plannedInsertions = computed(() => fillFanout.value.count)
@@ -384,6 +402,7 @@ const reselectGaps = async () => {
 
 const emit = defineEmits(['close'])
 const onFillGaps = async () => {
+  if (overLimit.value) return
   isUpdating.value = true
 
   setTimeout(async () => {
