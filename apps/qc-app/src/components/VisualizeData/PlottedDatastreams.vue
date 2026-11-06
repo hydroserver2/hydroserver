@@ -110,6 +110,35 @@
         </button>
         <span v-else />
 
+        <button
+          v-if="canLockAxis(datastream.id)"
+          type="button"
+          class="plotted-item__axis-lock d-inline-flex align-center justify-center cursor-pointer rounded-sm"
+          :title="
+            lockedAxisIds.has(datastream.id)
+              ? 'Unlock Y axis'
+              : 'Lock Y axis to move with the primary axis'
+          "
+          :data-testid="`axis-lock-${datastream.id}`"
+          :aria-pressed="lockedAxisIds.has(datastream.id)"
+          @click="toggleAxisLock(datastream.id)"
+        >
+          <v-icon
+            :icon="
+              lockedAxisIds.has(datastream.id)
+                ? 'mdi-lock'
+                : 'mdi-lock-open-variant-outline'
+            "
+            size="16"
+            :color="
+              lockedAxisIds.has(datastream.id)
+                ? labelColorForDatastream(datastream.id)
+                : 'grey'
+            "
+          />
+        </button>
+        <span v-else />
+
         <!-- Darker companion of the line colour: ties the row to its
              axis while staying legible at body-text weight. -->
         <div
@@ -205,6 +234,8 @@ import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 import {
   handleNewPlot,
+  canLockAxis,
+  toggleAxisLock,
   toggleAxisVisibility,
   toggleTraceVisibility,
 } from '@/utils/plotting/plotly'
@@ -228,6 +259,7 @@ const {
   graphSeriesArray,
   hiddenAxisIds,
   hiddenTraceIds,
+  lockedAxisIds,
   plotlyOptions,
 } = storeToRefs(usePlotlyStore())
 
@@ -431,7 +463,7 @@ function reorder(from: number, to: number): boolean {
 
 .plotted-item {
   display: grid;
-  grid-template-columns: 16px 22px 22px 1fr 22px;
+  grid-template-columns: 16px 22px 22px 22px 1fr 22px;
   align-items: center;
   gap: 6px;
   padding: 6px 8px;
@@ -494,6 +526,7 @@ function reorder(from: number, to: number): boolean {
 
 .plotted-item__visibility,
 .plotted-item__axis-toggle,
+.plotted-item__axis-lock,
 .plotted-item__close {
   width: 22px;
   height: 22px;
@@ -504,6 +537,7 @@ function reorder(from: number, to: number): boolean {
 
 .plotted-item__visibility:hover:not(:disabled),
 .plotted-item__axis-toggle:hover:not(:disabled),
+.plotted-item__axis-lock:hover,
 .plotted-item__close:hover {
   background-color: rgba(0, 0, 0, 0.06);
 }

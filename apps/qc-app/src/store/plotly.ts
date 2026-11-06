@@ -101,6 +101,9 @@ export const usePlotlyStore = defineStore('Plotly', () => {
    */
   const hiddenTraceIds = ref<Set<string>>(new Set())
 
+  /** Datastream ids whose y axis moves with the primary axis. */
+  const lockedAxisIds = ref<Set<string>>(new Set())
+
   /**
    * Active center-column tab. `'plot'` shows the Plotly chart,
    * `'table'` shows the editable observation table. Lifted out of
@@ -408,6 +411,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
       // Leave a sentinel here; the post-refresh assigner fills it in.
       color: '',
       intendedSpacingMs: spacingMsFromDatastream(datastream),
+      variable: variableOf(datastream),
     } as GraphSeries
   }
 
@@ -427,6 +431,11 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     }
     return buildGraphSeries(datastream, data)
   }
+
+  const variableOf = (ds: Datastream): string | undefined =>
+    ds.observedPropertyId && ds.unitId
+      ? `${ds.observedPropertyId}:${ds.unitId}`
+      : undefined
 
   /**
    * Convert a datastream's declared `intendedTimeSpacing` (+ unit) into
@@ -567,6 +576,7 @@ export const usePlotlyStore = defineStore('Plotly', () => {
     crosshair,
     hiddenAxisIds,
     hiddenTraceIds,
+    lockedAxisIds,
     activeTab,
     tableScrollRequest,
     requestTableScroll,

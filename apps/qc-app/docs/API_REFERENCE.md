@@ -582,6 +582,7 @@ ephemeral (DOM handles, live chart caches).
 | `crosshair`                | state    | `{ visible, cursorX, cursorY, plotLeft, plotBottom }` | CSS-driven crosshair position. |
 | `hiddenAxisIds`            | state    | `Set<string>`                                     | Datastream ids whose right-side y-axis chrome is hidden. |
 | `hiddenTraceIds`           | state    | `Set<string>`                                     | Datastream ids whose trace is fully hidden (eye toggle). |
+| `lockedAxisIds`            | state    | `Set<string>`                                     | Datastream ids whose y axis moves with the primary axis (lock toggle). |
 | `activeTab`                | state    | `'plot' \| 'table'`                               | Center-column tab; captured by the share URL. |
 | `tableScrollRequest`       | state    | `{ time: number; seq: number } \| null`           | Set when the plot zooms to the session window; `DataTable` scrolls to the first row at/after `time`. `seq` re-triggers on repeats. |
 | `requestTableScroll`       | action   | `(time: number) => void`                          | Publish a `tableScrollRequest` for the given epoch-ms range start (bumps `seq`). |
