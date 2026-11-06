@@ -106,12 +106,23 @@ describe('StartEditingDialog', () => {
     expect(w.find('[data-testid="edit-managed-mgd-2"]').text()).toContain(
       'Start new session'
     )
-    // mgd-1's sessions run oldest first; mgd-2's action node follows them.
+    // Each timeline is headed by its start node; mgd-1's says why it can't.
     expect(ids).toEqual([
+      'session-blocked-mgd-1',
       'chooser-session-s-0',
       'chooser-session-s-1',
       'new-session-node',
     ])
+  })
+
+  it('says why a new session cannot start while one is in progress', () => {
+    const w = mountDialog()
+    const blocked = w.find('[data-testid="session-blocked-mgd-1"]')
+    expect(blocked.text()).toContain(
+      'A session is in progress. Continue it, or delete it to start a new one.'
+    )
+    expect(blocked.find('button').exists()).toBe(false)
+    expect(w.find('[data-testid="session-blocked-mgd-2"]').exists()).toBe(false)
   })
 
   it('renders sessions as a timeline, marked by status', () => {
@@ -225,7 +236,14 @@ describe('StartEditingDialog', () => {
   it('shows an empty hint with only the create option when there are no managed datastreams', () => {
     const w = mountDialog({ options: [] })
     expect(w.text()).toContain('No QC datastreams')
-    expect(w.find('[data-testid="chooser-create-managed"]').exists()).toBe(true)
+    const create = w.find('[data-testid="chooser-create-managed"]')
+    expect(create.classes()).toContain('v-btn--variant-tonal')
+  })
+
+  it('keeps creating a managed datastream secondary to starting a session', () => {
+    const w = mountDialog()
+    const create = w.find('[data-testid="chooser-create-managed"]')
+    expect(create.classes()).toContain('v-btn--variant-text')
   })
 })
 
