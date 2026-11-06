@@ -67,3 +67,9 @@ class EtlMapping(models.Model, ResourcePermissionMixin):
             raise ValidationError(
                 "The target datastream must belong to the same workspace as this task."
             )
+
+        if hasattr(self.target_datastream, "data_product_transformation"):
+            raise ValidationError(
+                "This datastream is already the output of a data product task.",
+                code="unique",
+            )

@@ -17,6 +17,8 @@ from tests.processing.products.factories import (
     DataProductTransformationInputFactory,
     RatingCurveFactory,
 )
+from processing.products.models import DataProductTransformation
+from tests.processing.etl.factories import EtlMappingFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -528,6 +530,25 @@ def test_create_derivation_transformation_returns_400_when_formula_missing(clien
     )
 
     assert response.status_code == 400
+
+
+def test_create_transformation_returns_409_for_etl_mapped_output_datastream(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task, monitoring_site = _make_task_with_monitoring_site(workspace)
+    output_ds = DatastreamFactory(monitoring_site=monitoring_site)
+    input_ds = DatastreamFactory(monitoring_site=monitoring_site)
+    EtlMappingFactory(target_datastream=output_ds)
+    client.force_login(owner)
+
+    response = client.post(
+        TRANSFORMATIONS_URL,
+        data=_derivation_body(task, output_ds, input_ds),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 409
+    assert not DataProductTransformation.objects.filter(output_datastream=output_ds).exists()
 
 
 def test_create_aggregation_transformation_returns_400_when_rating_curve_set(client):
