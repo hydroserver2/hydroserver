@@ -125,7 +125,7 @@ matters; lower means smaller idle memory, more frequent grow / copy.
 | Value                  | Args                                                                         |
 |------------------------|------------------------------------------------------------------------------|
 | `ADD_POINTS`           | `(datetimes: number[], values: number[])` — parallel arrays.                 |
-| `CHANGE_VALUES`        | `(operator: Operator, value: number, [range?])` — applies at prior selection.|
+| `CHANGE_VALUES`        | `(operator: Operator, value: number, [range?])` — applies at prior selection. Fails on a non-finite `value` or `DIV` by 0.|
 | `ASSIGN_VALUES_BULK`   | `(indices: number[], values: number[])` — parallel arrays. No workers.       |
 | `ASSIGN_DATETIMES_BULK`| `(indices: number[], datetimes: number[])` — combined delete + add.          |
 | `DELETE_POINTS`        | `(indices?: number[])`, defaulting to the prior selection. Indices past the end and repeats are ignored. |

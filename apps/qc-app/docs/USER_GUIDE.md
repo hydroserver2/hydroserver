@@ -512,7 +512,7 @@ Apply an arithmetic operator at each selected index. The toggle row is `+ − ×
 
 ![Change values panel](./images/panel-changeValues.png)
 
-Press Enter on the value field, or click **Apply**, to commit.
+Press Enter on the value field, or click **Apply**, to commit. The value must be a number, and `÷` doesn't accept 0; until it's valid, the field says why and **Apply** stays off.
 
 #### Shift datetimes
 
