@@ -49,6 +49,8 @@ export function useHistorySnapshots() {
       Snackbar.error('Load a managed datastream for editing first.')
       return
     }
+    const meta = metaFor(session, opIndex)
+    if (dataVis.refuseSnapshot(meta.sessionLabel)) return
 
     isBuilding.value = true
     try {
@@ -68,7 +70,7 @@ export function useHistorySnapshots() {
         { historyId, session, source, managed, opIndex, liveHistory }
       )
 
-      await dataVis.addSnapshotSeries(id, record, metaFor(session, opIndex))
+      await dataVis.addSnapshotSeries(id, record, meta)
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       Snackbar.error(`Couldn't build the snapshot: ${msg}`)
