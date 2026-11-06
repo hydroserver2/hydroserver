@@ -6,7 +6,10 @@ import { ref } from 'vue'
 
 const plotlyRef = ref<any>({ data: [{ id: 'qc' }] })
 const selectedSeries = ref<any>({
-  data: { dispatchFilter: vi.fn().mockResolvedValue([]) },
+  data: {
+    dispatchFilter: vi.fn().mockResolvedValue([]),
+    dispatchFilterWithin: vi.fn().mockResolvedValue([]),
+  },
 })
 const isUpdating = ref(false)
 
@@ -171,6 +174,34 @@ describe('useFilterDispatch.dispatchFilter', () => {
     await dispatchFilter('CHANGE' as any, 'Greater than', 1)
     expect(observed).toBe(true)
     expect(isUpdating.value).toBe(false)
+  })
+
+  it('searches only the base selection while within selection is on', async () => {
+    const { useFilterDispatch } = await import(
+      '@/composables/useFilterDispatch'
+    )
+    const { useUIStore } = await import('@/store/userInterface')
+    const ui = useUIStore()
+    ui.filterWithinSelection = true
+    ui.filterWithinBase = [4, 5, 6]
+    let applying = false
+    selectedSeries.value.data.dispatchFilterWithin.mockImplementationOnce(
+      async () => {
+        applying = ui.filterWithinApplying
+        return [5]
+      },
+    )
+    const out = await useFilterDispatch().dispatchFilter('CHANGE' as any, 'Greater than', 1)
+    expect(selectedSeries.value.data.dispatchFilterWithin).toHaveBeenCalledWith(
+      [4, 5, 6],
+      'CHANGE',
+      'Greater than',
+      1,
+    )
+    expect(selectedSeries.value.data.dispatchFilter).not.toHaveBeenCalled()
+    expect(out).toEqual([5])
+    expect(applying).toBe(true)
+    expect(ui.filterWithinApplying).toBe(false)
   })
 
   it('returns [] when no series is loaded', async () => {

@@ -103,6 +103,7 @@ src/
 ├─ composables/
 │  ├─ useDataSelection.ts       Bridges Plotly's selectedpoints into the Pinia store.
 │  ├─ useFilterDispatch.ts      Shared "open panel → dispatch op → highlight result" flow.
+│  ├─ useFilterWithinSelection.ts  Filters that search only the selected points.
 │  ├─ useEditEntry.ts           Entering and leaving the editor.
 │  ├─ useEditSession.ts         Open, save and commit a QC session.
 │  ├─ useLeaveSession.ts        The one question asked before any exit.
