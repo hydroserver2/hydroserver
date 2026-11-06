@@ -107,6 +107,7 @@ src/
 │  ├─ useEditSession.ts         Open, save and commit a QC session.
 │  ├─ useLeaveSession.ts        The one question asked before any exit.
 │  ├─ useManagedDatastreams.ts  The chooser's managed datastreams, and deleting them.
+│  ├─ useWorkspaceCatalog.ts    The Select view's lists for a workspace, every page.
 │  ├─ useHistorySnapshots.ts    History snapshots plotted as comparison lines.
 │  ├─ useWorkspacePermissions.ts Role checks that gate editing, Save and Commit.
 │  ├─ useQcHistory.ts           Download the QC history (qc-utils' serializeHistory).
