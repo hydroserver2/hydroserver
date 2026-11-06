@@ -29,8 +29,9 @@ const getObservationsChecksum = vi.fn()
 const hs = ref<any>({
   datastreams: { getItem, createObservations, getObservationsChecksum },
 })
+const sessionExpired = ref(false)
 vi.mock('@/store/hydroserver', () => ({
-  useHydroServer: () => ({ hs }),
+  useHydroServer: () => ({ hs, sessionExpired }),
 }))
 
 const fetchDetachedRecord = vi.fn()
@@ -407,6 +408,19 @@ describe('useEditSession', () => {
       'VALUE_THRESHOLD',
       'DELETE_POINTS',
     ])
+  })
+
+  it('a successful save clears the expired-login notice', async () => {
+    await seedHistory()
+    const { useEditSession } = await import('@/composables/useEditSession')
+    const session = useEditSession()
+    await session.beginEditing()
+    await session.startSession(WIN)
+    sessionExpired.value = true
+
+    await session.saveDraft()
+
+    expect(sessionExpired.value).toBe(false)
   })
 
   it('commit checks the source window has not changed', async () => {

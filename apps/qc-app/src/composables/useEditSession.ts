@@ -70,7 +70,7 @@ export function useEditSession() {
   const { qcDatastream } = storeToRefs(useDataVisStore())
   const { replaceDatastream, setEditRecord } = useDataVisStore()
   const { selectedSeries } = storeToRefs(usePlotlyStore())
-  const { hs } = storeToRefs(useHydroServer())
+  const { hs, sessionExpired } = storeToRefs(useHydroServer())
   // Working copies build on records of their own, so the plotted source
   // keeps its context window.
   const { fetchDetachedRecord, forget } = useObservationStore()
@@ -311,6 +311,8 @@ export function useEditSession() {
       operations
     )
     snapshotSavedEdits()
+    // The save got through, so the login is good again.
+    sessionExpired.value = false
   }
 
   async function commit(description?: string): Promise<void> {

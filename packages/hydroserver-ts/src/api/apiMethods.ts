@@ -14,20 +14,23 @@ function canResend(body: BodyInit | null | undefined): boolean {
   return !(typeof ReadableStream !== 'undefined' && body instanceof ReadableStream)
 }
 
-/** Sends a request, retrying a token-authenticated 401 once with a fresh token. */
+/**
+ * Sends a request, retrying a token-authenticated 401 once with a fresh
+ * token. A 401 that stands is reported to the unauthorized handler.
+ */
 async function send(
   endpoint: string,
   options: RequestOptions
 ): Promise<Response> {
   const opts = await requestInterceptor(options)
   let response = await fetch(endpoint, opts)
-  const usedToken = new Headers(opts.headers).has('Authorization')
-  if (response.status !== 401 || !usedToken) return response
+  if (response.status !== 401) return response
 
-  if (canResend(opts.body)) {
+  const usedToken = new Headers(opts.headers).has('Authorization')
+  if (usedToken && canResend(opts.body)) {
     response = await fetch(endpoint, await requestInterceptor(options))
   }
-  if (response.status === 401) notifyUnauthorized()
+  if (response.status === 401) notifyUnauthorized(usedToken)
   return response
 }
 

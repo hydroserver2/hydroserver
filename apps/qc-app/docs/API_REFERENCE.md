@@ -748,6 +748,7 @@ ephemeral connection state).
 | Name | Kind  | Type / signature   | Notes |
 |------|-------|--------------------|-------|
 | `hs` | state | `Ref<HydroServer>` | Non-null after `main.ts` finishes settings load; type-asserted as non-null for ergonomic consumer code. |
+| `sessionExpired` | state | `Ref<boolean>` | Set by `main.ts` when the client emits `session:expired` (a request rejected with 401 while signed in). `SessionExpiredNotice` shows while it's true; a successful `saveDraft` or dismissing the notice clears it. |
 
 ### `useQcSessionStore()` (`src/store/qcSession.ts`)
 

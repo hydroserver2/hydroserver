@@ -710,6 +710,12 @@ The dialog lets you add an optional session description. Once you confirm:
 2. The session is committed and becomes read-only. The Snackbar shows "Session committed." and the footer swaps Save and Commit for **New session**.
 3. On failure, the Snackbar shows the backend's error message verbatim. Show that to your administrator if you need help.
 
+### When your login expires
+
+If your login ends while you're editing, Save and Commit are refused and a
+notice says so; your edits stay. Click **Log in** to sign in again in a new
+tab, then save. Don't reload the editor tab first.
+
 ### Committed sessions are read-only
 
 A committed session can be looked at but not changed. This applies right after
@@ -805,6 +811,7 @@ Click **Workspaces** in the nav rail and **Select** another, or **Continue** to 
 | I closed the editor and cannot find my session | It is still in progress, just not open. | Click the Edit button on that datastream's row to resume it. Sessions you discarded on the way out are gone for good. |
 | Big edits freeze the page | `SharedArrayBuffer` not available; running inline. | Have your admin re-enable COOP/COEP headers, or accept the slower fallback. |
 | Save fails with a backend error | Permissions / workspace issue / network. | The Snackbar shows the backend message verbatim. Share that with your admin. |
+| "Your login expired" notice | The server ended your login. | Click **Log in** to sign in again in a new tab, then save. Your edits stay in the editor. |
 | The history shows a red failed entry after Load | The QC history referenced something missing in this datastream. | The rest of the QC history still ran. Click the chevron on the row to see its arguments. |
 
 ## See also
