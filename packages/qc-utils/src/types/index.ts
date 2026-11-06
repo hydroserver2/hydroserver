@@ -54,6 +54,20 @@ export enum FilterOperation {
   GT = "Greater than",
   GTE = "Greater than or equal to",
   E = "Equal",
+  NE = "Not equal to",
+}
+
+export interface ValueFilter {
+  operator: FilterOperation;
+  value: number;
+}
+
+/** `any` selects points matching at least one filter; `all` requires every filter. */
+export type FilterMatch = "any" | "all";
+
+export interface ValueThresholdArgs {
+  filters: ValueFilter[];
+  match: FilterMatch;
 }
 
 export enum Operator {

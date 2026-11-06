@@ -764,18 +764,51 @@ describe('ObservationRecord', () => {
     });
 
     it('VALUE_THRESHOLD selects points matching the filter map', async () => {
-      const selection = await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, {
-        [FilterOperation.GTE]: 100,
-      });
+      const selection = await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { filters: [{ operator: FilterOperation.GTE, value: 100 }], match: 'any' });
       expect(selection).toEqual([10, 11, 12, 13, 14, 15, 16, 17, 18, 19]);
     });
 
     it('VALUE_THRESHOLD returns [] for an empty filter map', async () => {
       const selection = await rec.dispatch(
         EnumFilterOperations.VALUE_THRESHOLD,
-        {},
+        { filters: [], match: 'any' },
       );
       expect(selection).toEqual([]);
+    });
+
+    it('VALUE_THRESHOLD with match "all" combines not-equal with a bound', async () => {
+      const selection = await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, {
+        filters: [
+          { operator: FilterOperation.LT, value: 50 },
+          { operator: FilterOperation.NE, value: 20 },
+          { operator: FilterOperation.NE, value: 30 },
+        ],
+        match: 'all',
+      });
+      expect(selection).toEqual([0, 1, 4]);
+    });
+
+    it('VALUE_THRESHOLD with match "any" keeps the union', async () => {
+      const selection = await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, {
+        filters: [
+          { operator: FilterOperation.LT, value: 20 },
+          { operator: FilterOperation.GT, value: 170 },
+        ],
+        match: 'any',
+      });
+      expect(selection).toEqual([0, 1, 18, 19]);
+    });
+
+    it.each([
+      [{ 'Greater than': 5 }],
+      [{ filters: [], match: 'some' }],
+      [{ filters: [{ operator: 'Bogus', value: 1 }], match: 'any' }],
+    ])('VALUE_THRESHOLD marks malformed arguments %j as failed', async (args) => {
+      const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+      const selection = await rec.dispatchFilter(EnumFilterOperations.VALUE_THRESHOLD, args);
+      log.mockRestore();
+      expect(selection).toEqual([]);
+      expect(rec.history[rec.history.length - 1].execution.status).toBe('failed');
     });
 
     it('CHANGE selects points whose Δy matches the comparator', async () => {
@@ -925,7 +958,7 @@ describe('ObservationRecord', () => {
       // y >= 80 selects 8..19; intersect with the window → [8, 9, 10].
       const selection = await rec.dispatch(
         EnumFilterOperations.VALUE_THRESHOLD,
-        { [FilterOperation.GTE]: 80 },
+        { filters: [{ operator: FilterOperation.GTE, value: 80 }], match: 'any' },
         [fromTs, toTs],
       );
       expect(selection.sort((a, b) => a - b)).toEqual([8, 9, 10]);
@@ -970,7 +1003,7 @@ describe('ObservationRecord', () => {
       const farFuture = Date.UTC(2099, 0, 1);
       const selection = await rec.dispatch(
         EnumFilterOperations.VALUE_THRESHOLD,
-        { [FilterOperation.GTE]: 0 },
+        { filters: [{ operator: FilterOperation.GTE, value: 0 }], match: 'any' },
         [farFuture, farFuture + 1000],
       );
       expect(selection).toEqual([]);
@@ -990,13 +1023,9 @@ describe('ObservationRecord', () => {
     });
 
     it('dispatchFilter replaces the trailing filter entry rather than stacking', async () => {
-      await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, {
-        [FilterOperation.GTE]: 100,
-      });
+      await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { filters: [{ operator: FilterOperation.GTE, value: 100 }], match: 'any' });
       const lenAfterFirst = rec.history.length;
-      await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, {
-        [FilterOperation.GTE]: 150,
-      });
+      await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { filters: [{ operator: FilterOperation.GTE, value: 150 }], match: 'any' });
       expect(rec.history.length).toBe(lenAfterFirst);
       expect(rec.history[rec.history.length - 1].method).toBe(
         EnumFilterOperations.VALUE_THRESHOLD,
@@ -1216,9 +1245,9 @@ describe('ObservationRecord', () => {
     // replay merges them into one entry and every later entry moves up.
     it('keeps each comment on its own operation when replay merges entries', async () => {
       await rec.dispatch([
-        [EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 1 }],
+        [EnumFilterOperations.VALUE_THRESHOLD, { filters: [{ operator: 'Greater than', value: 1 }], match: 'any' }],
         [EnumEditOperations.ADD_POINTS, [[rec.dataX[1]! + 1, 5]]],
-        [EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 2 }],
+        [EnumFilterOperations.VALUE_THRESHOLD, { filters: [{ operator: 'Greater than', value: 2 }], match: 'any' }],
         [EnumEditOperations.DELETE_POINTS],
       ]);
       rec.history.forEach((item, i) => {
@@ -1293,9 +1322,7 @@ describe('ObservationRecord', () => {
     });
 
     it('spans a filter result', async () => {
-      await rec.dispatchFilter(EnumFilterOperations.VALUE_THRESHOLD, {
-        [FilterOperation.GT]: 15,
-      });
+      await rec.dispatchFilter(EnumFilterOperations.VALUE_THRESHOLD, { filters: [{ operator: FilterOperation.GT, value: 15 }], match: 'any' });
       expect(rec.history[0]!.execution.extent).toEqual({
         begin: at(16),
         end: at(19),
@@ -1321,9 +1348,7 @@ describe('ObservationRecord', () => {
     });
 
     it('spans the selection an edit took from a filter', async () => {
-      await rec.dispatchFilter(EnumFilterOperations.VALUE_THRESHOLD, {
-        [FilterOperation.GT]: 17,
-      });
+      await rec.dispatchFilter(EnumFilterOperations.VALUE_THRESHOLD, { filters: [{ operator: FilterOperation.GT, value: 17 }], match: 'any' });
       await rec.dispatchAction(EnumEditOperations.DELETE_POINTS);
       expect(rec.history[1]!.execution.selectionSize).toBe(2);
       expect(rec.history[1]!.execution.extent).toEqual({
