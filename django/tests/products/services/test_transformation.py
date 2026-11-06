@@ -1354,20 +1354,68 @@ def test_run_aggregation_dst_transition_at_midnight(run_context):
       Sep 5 local = 2026-09-05T04:00Z → 2026-09-06T04:00Z (24h, 48 half-hours)
       Sep 6 local = 2026-09-06T04:00Z → 2026-09-07T03:00Z (23h, 46 half-hours)
 
-    The Sep 5 bucket's end falls on the nonexistent midnight and must resolve to
-    04:00Z instead of raising. (Data starts the day before so pandas' resample
-    doesn't have to anchor on the nonexistent midnight itself.)
+    The Sep 5 bucket ends on the nonexistent midnight, and the second run's data
+    starts on it; both must resolve to 04:00Z instead of raising.
     """
     ds_in, ds_out = _make_in_out(run_context)
-    _add_half_hourly_obs(ds_in, _utc(2026, 9, 4, 4), _utc(2026, 9, 7, 4))
-    _set_end_time(ds_in, _utc(2026, 9, 7, 3))
+    _add_half_hourly_obs(ds_in, _utc(2026, 9, 5, 4), _utc(2026, 9, 7, 4))
     t = _create_aggregation(run_context, ds_in, ds_out, timezone="America/Santiago")
 
-    assert transformation_service.run(t) == 3
+    _set_end_time(ds_in, _utc(2026, 9, 6, 4))
+    assert transformation_service.run(t) == 1
+    assert _output_rows(ds_out) == [(_utc(2026, 9, 5, 4), 48.0)]
+
+    _set_end_time(ds_in, _utc(2026, 9, 7, 3))
+    t.refresh_from_db()
+    assert transformation_service.run(t) == 1
+    assert _output_rows(ds_out)[-1] == (_utc(2026, 9, 6, 4), 46.0)
+
+
+def test_run_aggregation_weekly_buckets_stay_on_one_grid(run_context):
+    """
+    A new weekly task's buckets start on Monday, and later runs continue the same
+    Monday grid instead of re-anchoring on the first new observation's day.
+    Data starts Wednesday 2026-01-07, so the first (Monday Jan 5) bucket has 5 days.
+    """
+    ds_in, ds_out = _make_in_out(run_context)
+    _add_half_hourly_obs(ds_in, _utc(2026, 1, 7), _utc(2026, 2, 2, 1))
+    t = _create_aggregation(
+        run_context, ds_in, ds_out, output_interval_units="weeks", timezone_type=None, timezone=None,
+    )
+
+    _set_end_time(ds_in, _utc(2026, 1, 19))
+    assert transformation_service.run(t) == 2
+
+    _set_end_time(ds_in, _utc(2026, 2, 2))
+    t.refresh_from_db()
+    assert transformation_service.run(t) == 2
     assert _output_rows(ds_out) == [
-        (_utc(2026, 9, 4, 4), 48.0),
-        (_utc(2026, 9, 5, 4), 48.0),
-        (_utc(2026, 9, 6, 4), 46.0),
+        (_utc(2026, 1, 5), 5 * 48.0),
+        (_utc(2026, 1, 12), 7 * 48.0),
+        (_utc(2026, 1, 19), 7 * 48.0),
+        (_utc(2026, 1, 26), 7 * 48.0),
+    ]
+
+
+def test_run_aggregation_weekly_continues_existing_output_grid(run_context):
+    """
+    Existing weekly outputs whose buckets start on another weekday (here Tuesday,
+    from the old first-observation-day grid) keep that weekday with no overlap.
+    """
+    ds_in, ds_out = _make_in_out(run_context)
+    _add_half_hourly_obs(ds_in, _utc(2026, 1, 6), _utc(2026, 1, 27, 1))
+    _add_obs(ds_out, _utc(2026, 1, 6), 7 * 48.0)
+    _set_end_time(ds_out, _utc(2026, 1, 6))
+    _set_end_time(ds_in, _utc(2026, 1, 27))
+    t = _create_aggregation(
+        run_context, ds_in, ds_out, output_interval_units="weeks", timezone_type=None, timezone=None,
+    )
+
+    assert transformation_service.run(t) == 2
+    assert _output_rows(ds_out) == [
+        (_utc(2026, 1, 6), 7 * 48.0),
+        (_utc(2026, 1, 13), 7 * 48.0),
+        (_utc(2026, 1, 20), 7 * 48.0),
     ]
 
 

@@ -3,7 +3,7 @@ import uuid6
 import logging
 import numpy as np
 import pandas as pd
-from datetime import date, datetime, time, timedelta, timezone as dt_timezone
+from datetime import datetime, time, timedelta, timezone as dt_timezone
 from zoneinfo import ZoneInfo
 from typing import Union, Literal
 
@@ -663,8 +663,8 @@ class DataProductTransformationService(ServiceUtils):
 
         # Compute whole-day intervals in microseconds that account for DST transitions.
         interval_us = duration_to_us(interval)
-        tz = ZoneInfo(normalize_tz(local_timezone)) if local_timezone else None
-        calendar_days = interval_us // _DAY_US if tz is not None and interval_us % _DAY_US == 0 else None
+        tz = ZoneInfo(normalize_tz(local_timezone)) if local_timezone else dt_timezone.utc
+        calendar_days = interval_us // _DAY_US if interval_us % _DAY_US == 0 else None
 
         # Advance raw_start to the next aligned period boundary so we never
         # re-aggregate a period already present in the output datastream.
@@ -673,16 +673,11 @@ class DataProductTransformationService(ServiceUtils):
             epoch = datetime(1970, 1, 1, tzinfo=dt_timezone.utc)
             raw_start_utc = raw_start if raw_start.tzinfo else raw_start.replace(tzinfo=dt_timezone.utc)
             if calendar_days:
-                epoch_date = date(1970, 1, 1)
-                elapsed_days = (raw_start_utc.astimezone(tz).date() - epoch_date).days
-                start_date = epoch_date + timedelta(days=(elapsed_days // calendar_days + 1) * calendar_days)
+                start_date = raw_start_utc.astimezone(tz).date() + timedelta(days=calendar_days)
                 start = datetime.combine(start_date, time.min, tzinfo=tz).astimezone(dt_timezone.utc)
             else:
                 raw_start_us = int((raw_start_utc - epoch).total_seconds() * 1_000_000)
-                if tz is not None:
-                    utc_offset_us = int(raw_start_utc.astimezone(tz).utcoffset().total_seconds() * 1_000_000)
-                else:
-                    utc_offset_us = 0
+                utc_offset_us = int(raw_start_utc.astimezone(tz).utcoffset().total_seconds() * 1_000_000)
                 local_midnight_us = -utc_offset_us
                 start_us = local_midnight_us + ((raw_start_us - local_midnight_us) // interval_us + 1) * interval_us
                 start = epoch + timedelta(microseconds=start_us)
@@ -713,6 +708,7 @@ class DataProductTransformationService(ServiceUtils):
             input_df,
             interval=interval,
             method=transformation.aggregation_method,  # noqa
+            anchor=raw_start if calendar_days else None,
             local_timezone=local_timezone,
             min_values=transformation.min_values,
             on_sparse="ndv",
