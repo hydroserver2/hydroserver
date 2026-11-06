@@ -108,8 +108,15 @@ that holds it. Omitted or `null`, every value is treated as a measurement.
 | `restoreHistory(steps)`                      | `Promise<number[]>` | Replace the history with `steps` (keeping their comment and attribution), clear the redo stack and replay from raw. For going back to a saved history that undo and new edits have diverged from. |
 | `previewIndex`                               | `number \| null`    | The step being previewed, or null when the data reflects the whole history. `undo` ends a preview; `redo` ends it first, then redoes. |
 | `removeHistoryItem(index: number)`           | `Promise<number[]>` | Drop a specific entry and clear the redo stack; replay the rest. Returns the selection left. |
+| `findTimeCollision(times, vacated?)`         | `number \| null`   | The earliest of `times` already taken, by a point that stays or by another of `times`. Indices in `vacated` don't count as taken. |
+| `findShiftCollision(index, amount, unit, timeZone)` | `number \| null` | The earliest timestamp a `SHIFT_DATETIMES` of `index` would land on that is already taken. |
 
 The op handlers themselves are private — dispatch by enum.
+
+Two points can't share a timestamp. `ADD_POINTS`, `SHIFT_DATETIMES` and
+`ASSIGN_DATETIMES_BULK` fail without changing the data when a point would
+land on a taken timestamp, and the error names it. Points the edit moves
+free their old timestamps, so shifting a block into its own slots is fine.
 
 ### `const INCREASE_AMOUNT: number`
 

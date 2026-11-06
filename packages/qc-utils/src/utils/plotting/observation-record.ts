@@ -47,6 +47,7 @@ import {
   type InterpolateGroup,
   persistenceCore,
   rateOfChangeCore,
+  shiftDatetime,
   shiftDatetimesCollection,
   type ShiftDatetimesParams,
   valueThresholdCore,
@@ -90,6 +91,26 @@ function growBuffer(buffer: ArrayBufferLike, newByteLength: number): void {
   } else if (typeof anyBuf.resize === "function") {
     anyBuf.resize(newByteLength);
   }
+}
+
+/** Validate a shift and turn it into the kernel's parameters. */
+function shiftParams(
+  amount: number,
+  unit: TimeUnit,
+  timeZone: string,
+): ShiftDatetimesParams {
+  if (!isValidTimeZone(timeZone)) {
+    throw new Error(`Shift datetimes: unknown time zone "${String(timeZone)}".`);
+  }
+  const calendar = unit === TimeUnit.MONTH || unit === TimeUnit.YEAR;
+  if (calendar && !Number.isInteger(amount)) {
+    throw new Error("Shift datetimes: months and years shift by whole numbers.");
+  }
+  return {
+    months: calendar ? (unit === TimeUnit.YEAR ? amount * 12 : amount) : 0,
+    deltaMs: calendar ? 0 : amount * timeUnitMultipliers[unit] * 1000,
+    timeZone,
+  };
 }
 
 /** The distinct indices in `[0, length)`, ascending. Both delete paths
@@ -524,6 +545,70 @@ export class ObservationRecord {
     return begin <= end ? { begin, end } : undefined;
   }
 
+  /**
+   * The earliest of `times` that is already taken, either by a point
+   * that stays or by another of `times`; null when all are free.
+   * `vacated` lists indices the edit removes, whose timestamps are free.
+   */
+  findTimeCollision(
+    times: ArrayLike<number>,
+    vacated: ArrayLike<number> = [],
+  ): number | null {
+    const leaving = new Set(Array.from(vacated));
+    const sorted = Float64Array.from(times).sort();
+    const xs = this.dataX;
+    for (let k = 0; k < sorted.length; k++) {
+      const t = sorted[k];
+      if (k > 0 && t === sorted[k - 1]) return t;
+      for (let i = findFirstGreaterOrEqual(xs, t); xs[i] === t; i++) {
+        if (!leaving.has(i)) return t;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * The earliest timestamp a SHIFT_DATETIMES of `index` would land on
+   * that is already taken, or null. Lets a caller warn before
+   * dispatching; the shift itself refuses the same collisions.
+   */
+  findShiftCollision(
+    index: number[],
+    amount: number,
+    unit: TimeUnit,
+    timeZone: string,
+  ): number | null {
+    return this._shiftCollision(index, shiftParams(amount, unit, timeZone));
+  }
+
+  private _shiftCollision(
+    index: number[],
+    params: ShiftDatetimesParams,
+  ): number | null {
+    const times = new Float64Array(index.length);
+    for (let i = 0; i < index.length; i++) {
+      times[i] = shiftDatetime(this.dataX[index[i]], params);
+    }
+    return this.findTimeCollision(times, index);
+  }
+
+  // Two points can't share a timestamp; the API refuses them on commit.
+  private _assertTimesFree(
+    label: string,
+    points: [number, number][],
+    vacated: ArrayLike<number> = [],
+  ) {
+    const taken = this.findTimeCollision(
+      points.map((p) => p[0]),
+      vacated,
+    );
+    if (taken !== null) {
+      throw new Error(
+        `${label}: a point already exists at ${new Date(taken).toISOString()}.`,
+      );
+    }
+  }
+
   private _refuseWhilePreviewing() {
     if (this.previewIndex !== null) throw new HistoryPreviewError();
   }
@@ -601,7 +686,7 @@ export class ObservationRecord {
   async dispatchAction(action: EnumEditOperations, ...args: any) {
     this._refuseWhilePreviewing();
     const actions: EnumDictionary<EnumEditOperations, Function> = {
-      [EnumEditOperations.ADD_POINTS]: this._addDataPoints,
+      [EnumEditOperations.ADD_POINTS]: this._addNewDataPoints,
       [EnumEditOperations.CHANGE_VALUES]: this._changeValues,
       [EnumEditOperations.ASSIGN_VALUES_BULK]: this._assignValuesBulk,
       [EnumEditOperations.DELETE_POINTS]: this._deleteDataPointsFromSelection,
@@ -1033,6 +1118,7 @@ export class ObservationRecord {
       sortedIndices[i] = selection[i];
     }
 
+    this._assertTimesFree("Change datetimes", collection, sortedIndices);
     // `_deleteDataPoints` requires ascending indices.
     sortedIndices.sort((a, b) => a - b);
     await this._deleteDataPoints(sortedIndices);
@@ -1187,20 +1273,14 @@ export class ObservationRecord {
     unit: TimeUnit,
     timeZone: string,
   ): Promise<number[]> {
-    if (!isValidTimeZone(timeZone)) {
-      throw new Error(`Shift datetimes: unknown time zone "${String(timeZone)}".`);
-    }
-    const calendar = unit === TimeUnit.MONTH || unit === TimeUnit.YEAR;
-    if (calendar && !Number.isInteger(amount)) {
-      throw new Error("Shift datetimes: months and years shift by whole numbers.");
-    }
+    const params = shiftParams(amount, unit, timeZone);
     if (index.length === 0) return [];
-
-    const params: ShiftDatetimesParams = {
-      months: calendar ? (unit === TimeUnit.YEAR ? amount * 12 : amount) : 0,
-      deltaMs: calendar ? 0 : amount * timeUnitMultipliers[unit] * 1000,
-      timeZone,
-    };
+    const taken = this._shiftCollision(index, params);
+    if (taken !== null) {
+      throw new Error(
+        `Shift datetimes: a point already exists at ${new Date(taken).toISOString()}.`,
+      );
+    }
 
     const N = index.length;
 
@@ -1773,6 +1853,14 @@ export class ObservationRecord {
     }, groups);
 
     return groups;
+  }
+
+  /** ADD_POINTS: refuse a point on a taken timestamp, then insert. */
+  private async _addNewDataPoints(
+    dataPoints: [number, number][],
+  ): Promise<number[]> {
+    this._assertTimesFree("Add points", dataPoints);
+    return this._addDataPoints(dataPoints);
   }
 
   /**

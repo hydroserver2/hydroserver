@@ -300,7 +300,7 @@ const cases: CalibratedCase[] = [
       const selection = consecutiveIndexes(size, rec.dataX.length)
       await rec.dispatch([
         [EnumFilterOperations.SELECTION, selection],
-        [EnumEditOperations.SHIFT_DATETIMES, 1, TimeUnit.HOUR, 'UTC'],
+        [EnumEditOperations.SHIFT_DATETIMES, 1, TimeUnit.MINUTE, 'UTC'],
       ])
       return rec
     },
