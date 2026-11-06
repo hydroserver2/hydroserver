@@ -116,15 +116,27 @@ const statsComplete = ref(false)
 const statsHaveError = ref(false)
 let requestId = 0
 
+// Only the total is needed, so ask for no rows.
+const countItems = (
+  service: { list: (params: any) => Promise<unknown> },
+  workspace: Workspace
+) => service.list({ workspaceId: [workspace.id], limit: 0 })
+
 function responseData<T>(result: PromiseSettledResult<unknown>): T[] | null {
   if (result.status === 'rejected') return null
   const response = result.value as { ok?: boolean; data?: T[] } | null
   return response?.ok && Array.isArray(response.data) ? response.data : null
 }
 
+// Collection counts come from the server's total; nested lists are counted.
 function responseCount(result: PromiseSettledResult<unknown>): number | null {
   const data = responseData(result)
-  return data === null ? null : data.length
+  if (data === null) return null
+  const { value } = result as PromiseFulfilledResult<{
+    meta?: { numberMatched?: unknown }
+  }>
+  const total = value.meta?.numberMatched
+  return typeof total === 'number' ? total : data.length
 }
 
 async function loadStats(workspace: Workspace) {
@@ -145,25 +157,18 @@ async function loadStats(workspace: Workspace) {
   // Show the most useful totals before the slower, paginated metadata lists.
   const primaryResults = Promise.allSettled([
     hs.workspaces.getCollaborators(workspace.id),
-    hs.monitoringSites.listSiteSummaries(workspace.id),
+    countItems(hs.monitoringSites, workspace),
     serviceAccountRequest,
   ])
-  const metadataResults = Promise.allSettled([
-    hs.methods.list({ workspaceId: [workspace.id], fetch_all: true }),
-    hs.observedProperties.list({
-      workspaceId: [workspace.id],
-      fetch_all: true,
-    }),
-    hs.processingLevels.list({
-      workspaceId: [workspace.id],
-      fetch_all: true,
-    }),
-    hs.units.list({ workspaceId: [workspace.id], fetch_all: true }),
-    hs.resultQualifiers.list({
-      workspaceId: [workspace.id],
-      fetch_all: true,
-    }),
-  ])
+  const metadataResults = Promise.allSettled(
+    [
+      hs.methods,
+      hs.observedProperties,
+      hs.processingLevels,
+      hs.units,
+      hs.resultQualifiers,
+    ].map((service) => countItems(service, workspace))
+  )
 
   const primary = await primaryResults
   if (currentRequest !== requestId) return

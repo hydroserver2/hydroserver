@@ -95,6 +95,7 @@
               :can-delete="canDeleteMetadata"
               :can-manage-system="canManageSystemMetadata"
               :scope="scope"
+              :active="tab === 0"
             />
           </v-window-item>
 
@@ -107,6 +108,7 @@
               :can-delete="canDeleteMetadata"
               :can-manage-system="canManageSystemMetadata"
               :scope="scope"
+              :active="tab === 1"
             />
           </v-window-item>
 
@@ -119,6 +121,7 @@
               :can-delete="canDeleteMetadata"
               :can-manage-system="canManageSystemMetadata"
               :scope="scope"
+              :active="tab === 2"
             />
           </v-window-item>
 
@@ -131,6 +134,7 @@
               :can-delete="canDeleteMetadata"
               :can-manage-system="canManageSystemMetadata"
               :scope="scope"
+              :active="tab === 3"
             />
           </v-window-item>
 
@@ -143,6 +147,7 @@
               :can-delete="canDeleteMetadata"
               :can-manage-system="canManageSystemMetadata"
               :scope="scope"
+              :active="tab === 4"
             />
           </v-window-item>
         </v-window>

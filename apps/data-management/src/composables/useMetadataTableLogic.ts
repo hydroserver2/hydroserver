@@ -23,7 +23,8 @@ export function useMetadataTableLogic<T extends MetadataRow>(
   ItemClass: new () => T,
   workspaceId: Ref<string | undefined>,
   scope: Ref<'workspace' | 'system' | 'all'>,
-  search: Ref<string | undefined>
+  search: Ref<string | undefined>,
+  active: Ref<boolean>
 ) {
   const openEdit = ref(false)
   const openDelete = ref(false)
@@ -55,7 +56,8 @@ export function useMetadataTableLogic<T extends MetadataRow>(
         data: rows,
         meta: { numberMatched: rows.length },
       }
-    }
+    },
+    () => active.value
   )
   const items = computed(() =>
     page.items.value.map((row) =>

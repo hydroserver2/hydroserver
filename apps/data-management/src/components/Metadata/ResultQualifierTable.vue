@@ -105,14 +105,18 @@ import {
 } from '@mdi/js'
 import PermissionTooltip from '@/components/PermissionTooltip.vue'
 
-const props = defineProps<{
-  search: string | undefined
-  workspaceId?: string
-  canEdit: boolean
-  canDelete: boolean
-  canManageSystem?: boolean
-  scope?: 'workspace' | 'system' | 'all'
-}>()
+const props = withDefaults(
+  defineProps<{
+    search: string | undefined
+    workspaceId?: string
+    canEdit: boolean
+    canDelete: boolean
+    canManageSystem?: boolean
+    scope?: 'workspace' | 'system' | 'all'
+    active?: boolean
+  }>(),
+  { active: true }
+)
 
 const {
   item,
@@ -132,6 +136,7 @@ const {
   ResultQualifier,
   toRef(props, 'workspaceId'),
   toRef(() => props.scope ?? 'workspace'),
-  toRef(props, 'search')
+  toRef(props, 'search'),
+  toRef(props, 'active')
 )
 </script>

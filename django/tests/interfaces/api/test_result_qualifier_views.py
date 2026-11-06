@@ -161,6 +161,24 @@ def test_get_result_qualifiers_q_searches_name_and_description(client):
     assert items[0]["name"] == "Surface water"
 
 
+def test_get_result_qualifiers_q_matches_word_prefixes(client):
+    ResultQualifierFactory(global_=True, name="Name 1", description="")
+    ResultQualifierFactory(global_=True, name="Groundwater", description="")
+
+    for q in ["n", "Na", "name 1", "nam,zzz"]:
+        response = client.get(RESULT_QUALIFIERS_URL, {"q": q})
+        assert response.status_code == 200
+        assert [item["name"] for item in response.json()["data"]] == ["Name 1"], q
+
+
+def test_get_result_qualifiers_q_ignores_search_syntax(client):
+    ResultQualifierFactory(global_=True, name="Surface water", description="")
+
+    for q in ["surface & !", "(surf:*)", "'", "&|!"]:
+        response = client.get(RESULT_QUALIFIERS_URL, {"q": q})
+        assert response.status_code == 200, q
+
+
 def test_get_result_qualifiers_sortby_name_descending(client):
     ResultQualifierFactory(global_=True, name="Alpha")
     ResultQualifierFactory(global_=True, name="Beta")

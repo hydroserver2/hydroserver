@@ -1,4 +1,5 @@
 import json
+import re
 import uuid
 
 from typing import Union, Any, Optional, Type
@@ -277,7 +278,8 @@ class APIService:
         field for relevance ordering.
 
         Comma-separated terms are combined with OR; the whitespace-separated words within
-        each term are combined with AND. Matching is case-insensitive.
+        each term are combined with AND. Each word matches as a prefix, so partially typed
+        words match (e.g. "temp" matches "temperature"). Matching is case-insensitive.
 
         Returns the (possibly unchanged) queryset and whether search was applied, so
         callers can pass that through to `apply_sorting`'s `rank` argument.
@@ -286,13 +288,19 @@ class APIService:
         if not q or not q.strip():
             return queryset, False
 
-        groups = [group.strip() for group in q.split(",") if group.strip()]
+        # Keep only letters and digits so no tsquery syntax reaches the raw query.
+        groups = [re.findall(r"[^\W_]+", group) for group in q.split(",")]
+        groups = [words for words in groups if words]
         if not groups:
             return queryset, False
 
         search_query = None
-        for group in groups:
-            group_query = SearchQuery(group, config=cls.SEARCH_CONFIG, search_type="plain")
+        for words in groups:
+            group_query = SearchQuery(
+                " & ".join(f"{word}:*" for word in words),
+                config=cls.SEARCH_CONFIG,
+                search_type="raw",
+            )
             search_query = group_query if search_query is None else search_query | group_query
 
         queryset = queryset.annotate(rank=SearchRank(F(field), search_query)).filter(
