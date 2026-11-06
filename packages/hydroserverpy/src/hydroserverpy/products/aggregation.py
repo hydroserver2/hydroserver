@@ -2,8 +2,9 @@ import logging
 import pandas as pd
 
 from bisect import bisect_left
-from datetime import datetime, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from typing import Literal, Optional
+from zoneinfo import ZoneInfo
 
 from pydantic import ConfigDict, validate_call
 
@@ -15,19 +16,32 @@ logger = logging.getLogger(__name__)
 
 TIME_WEIGHTED_MEAN = "time_weighted_mean"
 
+_DAY_US = 86_400_000_000
+_DEFAULT_CALENDAR_ORIGIN = date(1970, 1, 5)
 
-def _resample(frame: pd.DataFrame, rule, offset: pd.Timedelta):
+
+def _calendar_window_edges(timestamps: pd.Series, days: int, origin: date, tz: ZoneInfo) -> list:
     """
-    Resample `frame` on TIMESTAMP_COL, omitting `offset` for calendar-aware
-    rules (e.g. Day) that don't support it — passing it anyway is harmless
-    (those rules are only used when offset is the zero default) but pandas
-    emits a RuntimeWarning on every call otherwise.
+    Return the UTC edges of `days`-long local calendar windows covering `timestamps`.
+    Windows start at local midnight on dates a whole number of windows from `origin`,
+    so the grid doesn't depend on where the data starts. zoneinfo resolves nonexistent
+    or ambiguous midnights (DST changing at 00:00) without raising, unlike pandas.
     """
 
-    kwargs = dict(rule=rule, on=TIMESTAMP_COL, closed="left", label="left")
-    if isinstance(rule, pd.Timedelta):
-        kwargs["offset"] = offset
-    return frame.resample(**kwargs)
+    if len(timestamps) == 0:
+        return []
+
+    def midnight(day: date) -> datetime:
+        return datetime.combine(day, time.min, tzinfo=tz).astimezone(timezone.utc)
+
+    first_date = timestamps.iloc[0].tz_convert(tz).date()
+    current = first_date - timedelta(days=(first_date - origin).days % days)
+    edges = [midnight(current)]
+    while edges[-1] <= timestamps.iloc[-1]:
+        current += timedelta(days=days)
+        edges.append(midnight(current))
+
+    return edges
 
 
 def _boundary_value(
@@ -76,29 +90,10 @@ def _boundary_value(
     return None
 
 
-def _next_bin_start(bin_start: pd.Timestamp, rule, offset: pd.Timedelta) -> pd.Timestamp:
+def _time_weighted_mean(localized: pd.DataFrame, windows: list) -> pd.Series:
     """
-    Return the bin boundary immediately after `bin_start`, using pandas' own
-    resample binning rather than direct date arithmetic.
-
-    A plain `bin_start + rule` (or `pd.date_range`) can drift by the DST offset
-    across a transition, and that behavior isn't consistent across pandas
-    versions. Resampling a probe frame anchored at `bin_start` guarantees the
-    next label is computed by the exact same binning algorithm already used
-    (and proven correct) for every other bin boundary in the caller. `offset`
-    only has an effect when `rule` is Tick-based (e.g. a Timedelta); it's
-    ignored by pandas for calendar-aware offsets like Day, which is fine since
-    those are only used when no anchor/offset was requested.
-    """
-
-    probe = pd.DataFrame({TIMESTAMP_COL: [bin_start, bin_start + 2 * rule]})
-    edges = _resample(probe, rule, offset).size().index
-    return edges[1]
-
-
-def _time_weighted_mean(localized: pd.DataFrame, bin_starts: list, rule, offset: pd.Timedelta) -> pd.Series:
-    """
-    Compute a trapezoidal (linear-interpolation) time-weighted mean for each bin.
+    Compute a trapezoidal (linear-interpolation) time-weighted mean for each
+    (bin_start, bin_end) pair in `windows`.
 
     Each bin's value is the area under the piecewise-linear curve through the
     observations spanning [bin_start, bin_end), divided by the bin duration.
@@ -113,13 +108,7 @@ def _time_weighted_mean(localized: pd.DataFrame, bin_starts: list, rule, offset:
 
     results = []
 
-    for i, window_start in enumerate(bin_starts):
-        if i + 1 < len(bin_starts):
-            window_end = bin_starts[i + 1]
-        else:
-            # No trailing bin label for the last window.
-            window_end = _next_bin_start(window_start, rule, offset)
-
+    for window_start, window_end in windows:
         left = bisect_left(timestamps, window_start)
         right = bisect_left(timestamps, window_end)
 
@@ -158,7 +147,7 @@ def _time_weighted_mean(localized: pd.DataFrame, bin_starts: list, rule, offset:
         duration = (window_end - window_start).total_seconds()
         results.append(area / duration if duration > 0 else float("nan"))
 
-    return pd.Series(results, index=pd.Index(bin_starts, name=TIMESTAMP_COL))
+    return pd.Series(results, index=pd.Index([start for start, _ in windows], name=TIMESTAMP_COL))
 
 
 @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
@@ -186,6 +175,11 @@ def apply_aggregation(
     observation by the time it represents rather than treating all observations in
     a window equally, via trapezoidal integration between observations (interpolating
     across window boundaries as needed).
+
+    Whole-day intervals (days, weeks) use local calendar days, so windows start at
+    local midnight and follow DST (23/25-hour days). They're aligned to the local date
+    of `anchor` (time of day ignored), or to Monday 1970-01-05, so the same windows
+    result wherever the input starts.
     """
 
     df = validate_timeseries(df)
@@ -221,18 +215,6 @@ def apply_aggregation(
     else:
         offset = pd.Timedelta(0)
 
-    # Day-or-longer intervals use a calendar-aware offset so windows respect
-    # local wall-clock (DST) boundaries rather than a fixed absolute duration
-    # (e.g. a "day" around a spring-forward transition is 23 real hours, not
-    # 24). Tick-based rules like Timedelta can't express that, and pandas
-    # ignores `offset=` for calendar-aware rules, so this only applies when
-    # there's no anchor.
-    _DAY_US = 86_400_000_000
-    if anchor is None and interval_us % _DAY_US == 0:
-        resample_rule = pd.tseries.offsets.Day(interval_us // _DAY_US)
-    else:
-        resample_rule = freq
-
     # Convert to local timezone before grouping so window boundaries align
     # to local calendar time rather than UTC. Reverted to UTC after aggregation.
     tz_str = normalize_tz(local_timezone) if local_timezone else "UTC"
@@ -240,13 +222,28 @@ def apply_aggregation(
     localized[TIMESTAMP_COL] = localized[TIMESTAMP_COL].dt.tz_convert(tz_str)
     localized = localized.sort_values(TIMESTAMP_COL).reset_index(drop=True)
 
-    resampled = _resample(localized, resample_rule, offset)
-    counts = resampled[RESULT_COL].count()
+    if interval_us % _DAY_US == 0:
+        # Whole-day windows use explicit local-midnight edges instead of pandas'
+        # resample, whose day bins start on the first observation's day (so they
+        # shift with the input) and which raises on a nonexistent local midnight.
+        tz = ZoneInfo(tz_str)
+        origin = anchor_utc.astimezone(tz).date() if anchor is not None else _DEFAULT_CALENDAR_ORIGIN
+        edges = pd.DatetimeIndex(
+            _calendar_window_edges(localized[TIMESTAMP_COL], interval_us // _DAY_US, origin, tz), tz="UTC"
+        ).tz_convert(tz_str)
+        positions = edges.searchsorted(localized[TIMESTAMP_COL], side="right") - 1
+        grouped = localized.groupby(edges[positions].rename(TIMESTAMP_COL))[RESULT_COL]
+        counts = grouped.count()
+        windows = [(edges[i], edges[i + 1]) for i in sorted(set(positions))]
+    else:
+        grouped = localized.resample(rule=freq, on=TIMESTAMP_COL, closed="left", label="left", offset=offset)[RESULT_COL]
+        counts = grouped.count()
+        windows = [(start, start + freq) for start in counts.index]
 
     if method == TIME_WEIGHTED_MEAN:
-        values_col = _time_weighted_mean(localized, counts.index.tolist(), resample_rule, offset)
+        values_col = _time_weighted_mean(localized, windows)
     else:
-        values_col = getattr(resampled[RESULT_COL], method)()
+        values_col = getattr(grouped, method)()
 
     aggregated = pd.DataFrame({RESULT_COL: values_col, "_count": counts})
 
