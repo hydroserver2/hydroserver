@@ -507,21 +507,22 @@ export class ObservationRecord {
     return this._replay([...this.history]);
   }
 
-  /** First and last datetime among `indices`, or undefined if none are in
-   *  range. Indices need not be sorted. */
-  private _extentOf(
+  /** The datetimes of `indices`, ascending, and their first and last, for a
+   *  history entry's `execution`. Empty when none are in range. Indices need
+   *  not be sorted. */
+  private _pointsOf(
     indices: ArrayLike<number>,
-  ): { begin: number; end: number } | undefined {
+  ): { times?: Float64Array; extent?: { begin: number; end: number } } {
     const xs = this.dataX;
-    let begin = Infinity;
-    let end = -Infinity;
+    const times = new Float64Array(indices.length);
+    let n = 0;
     for (let k = 0; k < indices.length; k++) {
       const t = xs[indices[k]];
-      if (t === undefined || !Number.isFinite(t)) continue;
-      if (t < begin) begin = t;
-      if (t > end) end = t;
+      if (t !== undefined && Number.isFinite(t)) times[n++] = t;
     }
-    return begin <= end ? { begin, end } : undefined;
+    if (!n) return {};
+    const sorted = (n === times.length ? times : times.slice(0, n)).sort();
+    return { times: sorted, extent: { begin: sorted[0]!, end: sorted[n - 1]! } };
   }
 
   private _refuseWhilePreviewing() {
@@ -643,7 +644,7 @@ export class ObservationRecord {
           datasetSize: this.dataset.source.x?.length ?? 0,
           selectionSize: prevSelected?.length,
           // Read before the edit moves or removes those points.
-          extent: prevSelected && this._extentOf(prevSelected),
+          ...(prevSelected && this._pointsOf(prevSelected)),
         },
       };
       this.history.push(historyItem);
@@ -686,9 +687,9 @@ export class ObservationRecord {
           mode: this._pendingExecutionMode,
           inFlight: false,
           // Inserting ops have no prior selection; their result is it.
-          extent:
-            stored.execution.extent ??
-            (newSelection?.length ? this._extentOf(newSelection) : undefined),
+          ...(stored.execution.times || !newSelection?.length
+            ? {}
+            : this._pointsOf(newSelection)),
         };
       }
     } catch (e) {
@@ -870,9 +871,7 @@ export class ObservationRecord {
           durationMs: measurement.duration,
           mode: this._pendingExecutionMode,
           selectionSize: measurement.response?.length,
-          extent: measurement.response?.length
-            ? this._extentOf(measurement.response)
-            : undefined,
+          ...this._pointsOf(measurement.response ?? []),
           inFlight: false,
         };
       }

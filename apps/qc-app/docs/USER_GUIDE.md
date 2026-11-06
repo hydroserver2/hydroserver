@@ -584,7 +584,7 @@ The body shows:
   - A **plot-this-step** button that adds that point in history to the plot as a comparison line.
   - Clicking the row previews the data as it was at that step; a selection step also selects its points on the plot. Every step stays in the history: steps after the one on screen are dimmed, since they are recorded but not reflected in the plot. A banner reads **Previewing step N of M** with a **Back to latest** button (clicking the last step works too). While previewing, editing waits: operation panels, plot selections and table saves hold until you are back on the latest step. Replaying re-measures each step's duration but keeps its comment and attribution.
   - An **undo** button on the trailing entry only. Undo and redo are the only ways to change the history; from a preview, undo acts on the whole history and ends the preview.
-- A chevron toggles an inline drawer under the row. It shows the raw qc-utils call arguments, **Applied by** with the name of whoever applied the step (once it is saved), and a **Comment** box for why the step was applied. A comment is saved with the operation, and a row that has one shows a comment icon next to its name. On a committed session the comment is shown but can't be changed.
+- A chevron toggles an inline drawer under the row. It shows the raw qc-utils call arguments, **Points** with the time of every point the step changed or selected, **Applied by** with the name of whoever applied the step (once it is saved), and a **Comment** box for why the step was applied. A comment is saved with the operation, and a row that has one shows a comment icon next to its name. On a committed session the comment is shown but can't be changed.
 
 ### The sessions timeline
 

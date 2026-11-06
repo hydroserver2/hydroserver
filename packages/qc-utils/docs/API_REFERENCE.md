@@ -425,6 +425,7 @@ runtime fact. See below for the field-by-field contract.
   datasetSize?: number,                // observation count at dispatch time
   selectionSize?: number,              // indices the op acted on
   extent?: { begin: number, end: number }, // epoch-ms of the first / last point acted on
+  times?: Float64Array,                // epoch-ms of every point acted on, ascending
 }
 ```
 
@@ -432,16 +433,18 @@ runtime fact. See below for the field-by-field contract.
 
 - **Push time** (synchronous, before the handler runs): `startedAt`,
   `inFlight: true`, `datasetSize`, and (for selection-consuming
-  edits) `selectionSize` and `extent`, read from the preceding entry's
+  edits) `selectionSize`, `extent` and `times`, read from the preceding entry's
   selection (a SELECTION or a filter result) before the edit moves it.
 - **Resolve time** (after the handler returns or throws): `status`,
   `durationMs`, `mode`, `inFlight: false`, and (for filters)
-  `selectionSize` and `extent` from the produced selection. ADD_POINTS
-  and FILL_GAPS get `extent` here from the points they inserted.
+  `selectionSize`, `extent` and `times` from the produced selection.
+  ADD_POINTS and FILL_GAPS get `extent` and `times` here from the points
+  they inserted.
 
-`extent` names the period a step touched in datetimes, which later edits
-don't shift the way they shift indices. It is runtime-only, like
-`selected`: replay recomputes it and `serializeHistory` leaves it out.
+`extent` names the period a step touched in datetimes, and `times` lists
+every point in it, which later edits don't shift the way they shift
+indices. Both are runtime-only, like `selected`: replay recomputes them and
+`serializeHistory` leaves them out.
 
 The qc-app reads this object to drive the EditHistory UI (per-row
 spinner via `inFlight`, failure badge via `status`, duration text
