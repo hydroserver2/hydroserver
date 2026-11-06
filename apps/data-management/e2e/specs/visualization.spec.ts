@@ -643,6 +643,19 @@ test.describe("visualization", () => {
     await expect(clearSelectedCheckbox).toHaveJSProperty("indeterminate", true);
     await expect(selectionBar).toContainText("1 of 5 selected");
 
+    await page.getByTestId("toggle-selected-datastreams").click();
+    await expect(
+      page.getByTestId(
+        `plot-datastream-${fixtures.datastreams.publicSystemMetadata.id}`,
+      ),
+    ).toHaveCount(0);
+    await page.getByTestId("toggle-selected-datastreams").click();
+    await expect(
+      page.getByTestId(
+        `plot-datastream-${fixtures.datastreams.publicSystemMetadata.id}`,
+      ),
+    ).toBeVisible();
+
     await clearSelectedCheckbox.click();
 
     await expect(clearSelectedCheckbox).toHaveCount(0);

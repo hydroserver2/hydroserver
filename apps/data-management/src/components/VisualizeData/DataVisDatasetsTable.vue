@@ -152,6 +152,15 @@
                 <v-btn
                   size="small"
                   variant="text"
+                  data-testid="toggle-selected-datastreams"
+                  @click="showOnlySelected = !showOnlySelected"
+                >
+                  {{ showOnlySelected ? 'Show all' : 'Show selected' }}
+                </v-btn>
+
+                <v-btn
+                  size="small"
+                  variant="text"
                   :loading="downloading"
                   :prepend-icon="mdiDownload"
                   data-testid="download-selected-datastreams"
@@ -252,6 +261,7 @@
 
         <template #tbody="{ columns }">
           <LoadMoreRow
+            v-if="!showOnlySelected"
             :colspan="columns.length"
             :has-more="hasMore"
             :loading="loading"
@@ -259,7 +269,7 @@
             @load="loadMore"
             @retry="retry"
           />
-          <tbody v-if="total === 0">
+          <tbody v-if="total === 0 && !showOnlySelected">
             <tr>
               <td colspan="3" class="datastreams-empty hs-text-sm">
                 No datastreams match the current filters.
@@ -552,12 +562,24 @@ watch(total, (value) => {
   pinned.value = [...plottedDatastreams.value]
   table.value?.scrollToIndex(0)
 })
+// "Show selected" hides every row that isn't currently selected.
+const showOnlySelected = ref(false)
+watch(showOnlySelected, () => table.value?.scrollToIndex(0))
+watch(
+  () => plottedDatastreams.value.length,
+  (count) => {
+    if (!count) showOnlySelected.value = false
+  }
+)
 const tableItems = computed<DatastreamTableItem[]>(() => {
   const pinnedIds = new Set(pinned.value.map((item) => item.id))
-  return [
-    ...pinned.value,
-    ...items.value.filter((item) => !pinnedIds.has(item.id)),
-  ].map((datastream) => ({
+  const rows = showOnlySelected.value
+    ? plottedDatastreams.value
+    : [
+        ...pinned.value,
+        ...items.value.filter((item) => !pinnedIds.has(item.id)),
+      ]
+  return rows.map((datastream) => ({
     ...datastream,
     monitoringSiteName: dataVisStore.monitoringSiteById.get(
       datastream.monitoringSiteId
@@ -751,26 +773,26 @@ function updatePlottedDatastreams(
   margin-left: auto;
 }
 
-.datastreams-table-card {
+/* Sized to its rows, scrolling only once they outgrow the panel. */
+.datastreams-table-card,
+.datastreams-table {
   display: flex;
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   flex-direction: column;
   min-height: 0;
+}
+
+.datastreams-table-card {
   overflow: hidden;
 }
 
 .datastreams-table {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  min-height: 0;
   background: transparent;
 }
 
-/* The toolbars sit above the scrolling rows, which always keep some room. */
 .datastreams-table :deep(.v-table__wrapper) {
-  flex: 1 1 0;
-  min-height: calc(5 * var(--hs-space-32));
+  flex: 0 1 auto;
+  min-height: 0;
 }
 
 .datastream-filter-header,

@@ -42,7 +42,7 @@ function mockList(rows: object[]) {
 const VDataTableVirtual = {
   props: ['items'],
   methods: { scrollToIndex: () => {} },
-  template: `<table><slot name="thead" /><tbody><template v-for="item in items" :key="item.id"><slot name="item" :item="item" :item-ref="() => {}" /></template></tbody><slot name="tbody" :columns="[]" /></table>`,
+  template: `<div><slot name="top" /><table><tbody><template v-for="item in items" :key="item.id"><slot name="item" :item="item" :item-ref="() => {}" /></template></tbody><slot name="tbody" :columns="[]" /></table></div>`,
 }
 const mountTable = () =>
   shallowMount(DataVisDatasetsTable, {
@@ -130,6 +130,25 @@ describe('DataVisDatasetsTable', () => {
     expect(store.plottedDatastreams.map((item) => item.id)).toEqual([
       'datastream-1',
     ])
+    expect(rowIds(wrapper)).toEqual(['datastream-1', 'datastream-2'])
+  })
+
+  it('shows only the selected datastreams while "Show selected" is on', async () => {
+    mockList([datastream, { ...datastream, id: 'datastream-2' }])
+    const store = useDataVisStore()
+    store.monitoringSites = [site] as any
+    const wrapper = mountTable()
+    await flushPromises()
+    store.plottedDatastreams = [{ ...datastream, id: 'datastream-2' }] as any
+    await flushPromises()
+    const toggle = () =>
+      wrapper
+        .get('[data-testid="toggle-selected-datastreams"]')
+        .trigger('click')
+
+    await toggle()
+    expect(rowIds(wrapper)).toEqual(['datastream-2'])
+    await toggle()
     expect(rowIds(wrapper)).toEqual(['datastream-1', 'datastream-2'])
   })
 
