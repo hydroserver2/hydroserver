@@ -35,7 +35,7 @@ import DataVisNavRail from '@/components/VisualizeData/DataVisNavRail.vue'
 import DataVisDatasetsTable from '@/components/VisualizeData/DataVisDatasetsTable.vue'
 import DataVisualizationCard from '@/components/VisualizeData/DataVisualizationCard.vue'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
-import hs from '@hydroserver/client'
+import hs, { type Datastream } from '@hydroserver/client'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { storeToRefs } from 'pinia'
 import { useRoute, useRouter, type LocationQueryRaw } from 'vue-router'
@@ -55,7 +55,8 @@ const {
   selectedProcessingLevelNames,
   processingLevels,
   observedProperties,
-  datastreams,
+  units,
+  methods,
   beginDate,
   endDate,
   dataZoomStart,
@@ -163,7 +164,7 @@ const buildStateQuery = (): LocationQueryRaw => {
   return query
 }
 
-const parseUrlAndSetState = () => {
+const parseUrlAndSetState = async () => {
   const parseBoolean = (
     value:
       | import('vue-router').LocationQueryValue
@@ -214,9 +215,10 @@ const parseUrlAndSetState = () => {
     if (datastreamIdsStrings.length > 5) {
       Snackbar.info('Only the first 5 datastreams were loaded from the URL.')
     }
-    plottedDatastreams.value = datastreams.value.filter((ds) =>
-      limitedIds.includes(ds.id)
+    const found = await Promise.all(
+      limitedIds.map((id) => hs.datastreams.getItem(id))
     )
+    plottedDatastreams.value = found.filter((ds): ds is Datastream => !!ds)
   }
 
   // Site IDs
@@ -397,27 +399,28 @@ watch(
 
 onMounted(async () => {
   try {
-    const hasBootstrapData =
-      monitoringSites.value.length > 0 ||
-      datastreams.value.length > 0 ||
-      processingLevels.value.length > 0 ||
-      observedProperties.value.length > 0
-
-    if (!hasBootstrapData) {
-      const res = await hs.datastreams.getVisualizationBootstrap()
-      if (res.ok) {
-        monitoringSites.value = res.data.monitoringSites
-        datastreams.value = res.data.datastreams
-        processingLevels.value = res.data.processingLevels
-        observedProperties.value = res.data.observedProperties
-      }
+    // Filter options; the datastreams themselves are paged by the table.
+    if (!monitoringSites.value.length) {
+      ;[
+        monitoringSites.value,
+        observedProperties.value,
+        processingLevels.value,
+        units.value,
+        methods.value,
+      ] = await Promise.all([
+        hs.monitoringSites.listAllItems(),
+        hs.observedProperties.listAllItems(),
+        hs.processingLevels.listAllItems(),
+        hs.units.listAllItems(),
+        hs.methods.listAllItems(),
+      ])
     }
+    await parseUrlAndSetState()
   } catch (error) {
     Snackbar.error('Unable to fetch data from the API.')
     console.error('Unable to fetch data from the API:', error)
   }
 
-  parseUrlAndSetState()
   loading.value = false
   syncRouteQuery()
 })
@@ -481,6 +484,10 @@ onUnmounted(() => {
   }
   .visualize-page {
     --datavis-rail-width: 56px;
+  }
+  /* Leave room for rows below the wrapped filter toolbar; the page scrolls. */
+  .table-section {
+    min-height: calc(17 * var(--hs-space-32));
   }
 }
 </style>

@@ -2,10 +2,13 @@
   <MetadataItemTable
     :items="items"
     :loading="isLoading"
-    :search="search"
+    :has-more="hasMore"
+    :error="error"
     kind="resultQualifier"
     :default-scope="workspaceId ? 'workspace' : 'system'"
     :show-scope="scope === 'all'"
+    @load-more="loadMore"
+    @retry="retry"
   >
     <template #actions="{ item }">
       <PermissionTooltip
@@ -93,8 +96,7 @@ import DeleteMetadataCard from '@/components/Metadata/DeleteMetadataCard.vue'
 import ResultQualifierFormCard from '@/components/Metadata/ResultQualifierFormCard.vue'
 import MetadataItemTable from '@/components/Metadata/MetadataItemTable.vue'
 import { toRef } from 'vue'
-import { useSystemTableLogic } from '@/composables/useSystemTableLogic'
-import { useAllScopeTableLogic } from '@/composables/useAllScopeTableLogic'
+import { useMetadataTableLogic } from '@/composables/useMetadataTableLogic'
 import {
   mdiDeleteOffOutline,
   mdiPencil,
@@ -116,25 +118,20 @@ const {
   item,
   items,
   isLoading,
+  hasMore,
+  error,
+  loadMore,
+  retry,
   openEdit,
   openDelete,
   openDialog,
   onUpdate,
   onDelete,
-} =
-  props.workspaceId
-    ? useAllScopeTableLogic(
-        async (wsId: string) =>
-          await hs.resultQualifiers.listAllItems({ workspaceId: [wsId] }),
-        () => hs.resultQualifiers.listAllItems({ workspaceId: ['null'] }),
-        hs.resultQualifiers.delete,
-        ResultQualifier,
-        toRef(props, 'workspaceId'),
-        toRef(() => props.scope ?? 'workspace')
-      )
-    : useSystemTableLogic(
-        () => hs.resultQualifiers.listAllItems({ workspaceId: ['null'] }),
-        (id: string) => hs.resultQualifiers.delete(id),
-        ResultQualifier
-      )
+} = useMetadataTableLogic(
+  hs.resultQualifiers,
+  ResultQualifier,
+  toRef(props, 'workspaceId'),
+  toRef(() => props.scope ?? 'workspace'),
+  toRef(props, 'search')
+)
 </script>

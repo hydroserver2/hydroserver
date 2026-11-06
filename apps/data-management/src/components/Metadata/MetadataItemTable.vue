@@ -1,15 +1,10 @@
 <template>
-  <v-skeleton-loader
-    v-if="loading"
-    type="table"
-    class="metadata-table-loading-skeleton"
-  />
   <v-data-table-virtual
-    v-else
+    ref="table"
     class="metadata-items"
     :headers="headers"
-    :items="filteredItems"
-    :sort-by="[{ key: titleKey, order: 'asc' }]"
+    :items="items"
+    :hide-no-data="hasMore"
     fixed-header
   >
     <template #[`item.${titleKey}`]="{ item }">
@@ -47,6 +42,16 @@
         >
         <slot name="actions" :item="item" />
       </div>
+    </template>
+    <template #tbody="{ columns }">
+      <LoadMoreRow
+        :colspan="columns.length"
+        :has-more="hasMore"
+        :loading="loading"
+        :error="error"
+        @load="$emit('load-more')"
+        @retry="$emit('retry')"
+      />
     </template>
   </v-data-table-virtual>
 
@@ -112,21 +117,18 @@
 </template>
 
 <script setup lang="ts" generic="T extends MetadataItem">
-import { computed, ref, useId } from 'vue'
+import { computed, ref, useId, useTemplateRef, watch } from 'vue'
 import { mdiChevronRight } from '@mdi/js'
 import { HsCopyButton, HsTableSummary } from '@hydroserver/design-system/vue'
 import MetadataScopeChip from './MetadataScopeChip.vue'
+import LoadMoreRow from '@/components/base/LoadMoreRow.vue'
 import { Snackbar } from '@/utils/notifications'
 import type { ItemScope } from '@/composables/tableScope'
 
 import type { MetadataItem } from './metadataItem'
 
 type MetadataKind =
-  | 'method'
-  | 'observedProperty'
-  | 'processingLevel'
-  | 'unit'
-  | 'resultQualifier'
+  'method' | 'observedProperty' | 'processingLevel' | 'unit' | 'resultQualifier'
 type FieldKey = Exclude<keyof MetadataItem, 'id' | '_scope'>
 interface Field {
   key: FieldKey
@@ -138,11 +140,20 @@ const props = defineProps<{
   items: T[]
   kind: MetadataKind
   loading: boolean
-  search?: string
+  hasMore: boolean
+  error?: string
   defaultScope: ItemScope
   showScope?: boolean
 }>()
+defineEmits<{ 'load-more': []; retry: [] }>()
 defineSlots<{ actions(props: { item: T }): any }>()
+
+// Start at the top whenever a new search or scope restarts the list.
+const table = useTemplateRef('table')
+watch(
+  () => props.items.length === 0,
+  (empty) => empty && table.value?.scrollToIndex(0)
+)
 
 const selectedId = ref<string>()
 const detailTitleId = useId()
@@ -190,7 +201,7 @@ const fields = computed<Field[]>(() => {
   return result
 })
 const headers = computed(() => [
-  { title: kindLabel.value, key: titleKey.value },
+  { title: kindLabel.value, key: titleKey.value, sortable: false },
   {
     title: 'Actions',
     key: 'actions',
@@ -216,19 +227,6 @@ const summaryDetails = (item: T) =>
       const label = fields.value.find((field) => field.key === key)!.label
       return `${label} not provided`
     })
-
-// Search the metadata itself, including fields moved out of table columns.
-const filteredItems = computed(() => {
-  const query = props.search?.trim().toLocaleLowerCase()
-  if (!query) return props.items
-  return props.items.filter((item) =>
-    [
-      item.id,
-      itemScope(item),
-      ...fields.value.map((field) => item[field.key]),
-    ].some((value) => value?.toLocaleLowerCase().includes(query))
-  )
-})
 
 function safeLink(value: string | null | undefined) {
   if (!value) return undefined

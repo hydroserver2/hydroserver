@@ -2,10 +2,13 @@
   <MetadataItemTable
     :items="items"
     :loading="isLoading"
-    :search="search"
+    :has-more="hasMore"
+    :error="error"
     kind="observedProperty"
     :default-scope="workspaceId ? 'workspace' : 'system'"
     :show-scope="scope === 'all'"
+    @load-more="loadMore"
+    @retry="retry"
   >
     <template #actions="{ item }">
       <PermissionTooltip
@@ -98,8 +101,7 @@ import DeleteMetadataCard from '@/components/Metadata/DeleteMetadataCard.vue'
 import MetadataItemTable from '@/components/Metadata/MetadataItemTable.vue'
 import hs, { ObservedProperty } from '@hydroserver/client'
 import { toRef } from 'vue'
-import { useSystemTableLogic } from '@/composables/useSystemTableLogic'
-import { useAllScopeTableLogic } from '@/composables/useAllScopeTableLogic'
+import { useMetadataTableLogic } from '@/composables/useMetadataTableLogic'
 import {
   mdiDeleteOffOutline,
   mdiPencil,
@@ -121,25 +123,20 @@ const {
   item,
   items,
   isLoading,
+  hasMore,
+  error,
+  loadMore,
+  retry,
   openEdit,
   openDelete,
   openDialog,
   onUpdate,
   onDelete,
-} =
-  props.workspaceId
-    ? useAllScopeTableLogic(
-        async (wsId: string) =>
-          await hs.observedProperties.listAllItems({ workspaceId: [wsId] }),
-        () => hs.observedProperties.listAllItems({ workspaceId: ['null'] }),
-        hs.observedProperties.delete,
-        ObservedProperty,
-        toRef(props, 'workspaceId'),
-        toRef(() => props.scope ?? 'workspace')
-      )
-    : useSystemTableLogic(
-        () => hs.observedProperties.listAllItems({ workspaceId: ['null'] }),
-        (id: string) => hs.observedProperties.delete(id),
-        ObservedProperty
-      )
+} = useMetadataTableLogic(
+  hs.observedProperties,
+  ObservedProperty,
+  toRef(props, 'workspaceId'),
+  toRef(() => props.scope ?? 'workspace'),
+  toRef(props, 'search')
+)
 </script>

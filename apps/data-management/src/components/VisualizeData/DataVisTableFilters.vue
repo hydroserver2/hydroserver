@@ -93,20 +93,12 @@ type FilterDefinition = {
   selectedCount: number
 }
 
-const dataVisStore = useDataVisStore()
-const {
-  matchesSelectedObservedProperty,
-  matchesSelectedUnit,
-  matchesSelectedMethod,
-  matchesSelectedProcessingLevel,
-  matchesSelectedMonitoringSite,
-  matchesSelectedWorkspace,
-} = dataVisStore
 const {
   monitoringSites,
-  datastreams,
   observedProperties,
   processingLevels,
+  units,
+  methods,
   selectedMonitoringSites,
   selectedWorkspaces,
   selectedObservedPropertyNames,
@@ -114,7 +106,7 @@ const {
   selectedMethodNames,
   selectedProcessingLevelNames,
   tableSearch,
-} = storeToRefs(dataVisStore)
+} = storeToRefs(useDataVisStore())
 const { workspaces } = storeToRefs(useWorkspaceStore())
 
 const filterSearches = reactive<Record<FilterKey, string>>({
@@ -128,173 +120,56 @@ const filterSearches = reactive<Record<FilterKey, string>>({
 
 const parsedQuery = computed(() => parseDatastreamQuery(tableSearch.value))
 
-const sortedWorkspaces = computed(() => {
-  const workspaceIds = new Set<string>()
-  datastreams.value.forEach((datastream) => {
-    if (
-      !matchesSelectedMonitoringSite(datastream) ||
-      !matchesSelectedObservedProperty(datastream) ||
-      !matchesSelectedUnit(datastream) ||
-      !matchesSelectedMethod(datastream) ||
-      !matchesSelectedProcessingLevel(datastream)
-    )
-      return
+const uniqueNames = (items: { name?: string | null }[]) =>
+  [...new Set(items.map((item) => item.name).filter(Boolean) as string[])]
+    .sort((a, b) => a.localeCompare(b))
+    .map((name) => ({ value: name, label: name }))
 
-    const workspaceId = dataVisStore.monitoringSiteById.get(
-      datastream.monitoringSiteId
-    )?.workspaceId
-    if (workspaceId) workspaceIds.add(workspaceId)
-  })
-  return workspaces.value
-    .filter((workspace) => workspaceIds.has(workspace.id))
-    .sort((a, b) => a.name.localeCompare(b.name))
-})
-
-const sortedMonitoringSites = computed(() => {
-  const ids = new Set<string>()
-  datastreams.value.forEach((datastream) => {
-    if (
-      !matchesSelectedObservedProperty(datastream) ||
-      !matchesSelectedUnit(datastream) ||
-      !matchesSelectedMethod(datastream) ||
-      !matchesSelectedProcessingLevel(datastream) ||
-      !matchesSelectedWorkspace(datastream)
+// Sites are narrowed to the selected workspaces.
+const siteOptions = computed(() => {
+  const workspaceIds = new Set(selectedWorkspaces.value.map((item) => item.id))
+  return uniqueNames(
+    monitoringSites.value.filter(
+      (site) => !workspaceIds.size || workspaceIds.has(site.workspaceId)
     )
-      return
-    ids.add(datastream.monitoringSiteId)
-  })
-  return monitoringSites.value
-    .filter((site) => ids.has(site.id))
-    .sort((a, b) => a.name.localeCompare(b.name))
-})
-
-const sortedObservedPropertyNames = computed(() => {
-  const names = new Set<string>()
-  datastreams.value.forEach((datastream) => {
-    if (
-      !matchesSelectedMonitoringSite(datastream) ||
-      !matchesSelectedUnit(datastream) ||
-      !matchesSelectedMethod(datastream) ||
-      !matchesSelectedProcessingLevel(datastream) ||
-      !matchesSelectedWorkspace(datastream)
-    )
-      return
-    const name = dataVisStore.observedPropertyById.get(
-      datastream.observedPropertyId
-    )?.name
-    if (name) names.add(name)
-  })
-  return [...names].sort()
-})
-
-const sortedProcessingLevelNames = computed(() => {
-  const names = new Set<string>()
-  datastreams.value.forEach((datastream) => {
-    if (
-      !matchesSelectedMonitoringSite(datastream) ||
-      !matchesSelectedObservedProperty(datastream) ||
-      !matchesSelectedUnit(datastream) ||
-      !matchesSelectedMethod(datastream) ||
-      !matchesSelectedWorkspace(datastream)
-    )
-      return
-    const name = dataVisStore.processingLevelById.get(
-      datastream.processingLevelId
-    )?.name
-    if (name) names.add(name)
-  })
-  return [...names].sort()
-})
-
-const sortedUnitNames = computed(() => {
-  const names = new Set<string>()
-  datastreams.value.forEach((datastream) => {
-    if (
-      !matchesSelectedMonitoringSite(datastream) ||
-      !matchesSelectedObservedProperty(datastream) ||
-      !matchesSelectedMethod(datastream) ||
-      !matchesSelectedProcessingLevel(datastream) ||
-      !matchesSelectedWorkspace(datastream)
-    )
-      return
-    const name = (datastream as typeof datastream & { unitName?: string })
-      .unitName
-    if (name) names.add(name)
-  })
-  return [...names].sort()
-})
-
-const sortedMethodNames = computed(() => {
-  const names = new Set<string>()
-  datastreams.value.forEach((datastream) => {
-    if (
-      !matchesSelectedMonitoringSite(datastream) ||
-      !matchesSelectedObservedProperty(datastream) ||
-      !matchesSelectedUnit(datastream) ||
-      !matchesSelectedProcessingLevel(datastream) ||
-      !matchesSelectedWorkspace(datastream)
-    )
-      return
-    const name = (datastream as typeof datastream & { methodName?: string })
-      .methodName
-    if (name) names.add(name)
-  })
-  return [...names].sort()
+  )
 })
 
 const filterDefinitions = computed<FilterDefinition[]>(() => [
   {
     key: 'workspace',
     label: 'Workspaces',
-    options: sortedWorkspaces.value.map((item) => ({
-      value: item.name,
-      label: item.name,
-    })),
+    options: uniqueNames(workspaces.value),
     selectedCount: selectedWorkspaces.value.length,
   },
   {
     key: 'site',
     label: 'Sites',
-    options: sortedMonitoringSites.value.map((item) => ({
-      value: item.name,
-      label: item.name,
-    })),
+    options: siteOptions.value,
     selectedCount: selectedMonitoringSites.value.length,
   },
   {
     key: 'observed-property',
     label: 'Observed properties',
-    options: sortedObservedPropertyNames.value.map((item) => ({
-      value: item,
-      label: item,
-    })),
+    options: uniqueNames(observedProperties.value),
     selectedCount: selectedObservedPropertyNames.value.length,
   },
   {
     key: 'unit',
     label: 'Units',
-    options: sortedUnitNames.value.map((item) => ({
-      value: item,
-      label: item,
-    })),
+    options: uniqueNames(units.value),
     selectedCount: selectedUnitNames.value.length,
   },
   {
     key: 'method',
     label: 'Methods',
-    options: sortedMethodNames.value.map((item) => ({
-      value: item,
-      label: item,
-    })),
+    options: uniqueNames(methods.value),
     selectedCount: selectedMethodNames.value.length,
   },
   {
     key: 'processing-level',
     label: 'Processing levels',
-    options: sortedProcessingLevelNames.value.map((item) => ({
-      value: item,
-      label: item,
-    })),
+    options: uniqueNames(processingLevels.value),
     selectedCount: selectedProcessingLevelNames.value.length,
   },
 ])

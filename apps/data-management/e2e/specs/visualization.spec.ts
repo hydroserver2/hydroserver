@@ -555,14 +555,9 @@ test.describe("visualization", () => {
       .getByTestId(`datavis-metadata-${fixtures.datastreams.public.id}`)
       .click();
     await page.getByTestId("add-datastream-to-plot").click();
-    await page.getByTestId("toggle-selected-datastreams").click();
-
-    await expect(
-      mobileDatastreamRow(page, fixtures.datastreams.public.name),
-    ).toBeVisible();
-    await expect(
-      mobileDatastreamRow(page, fixtures.datastreams.publicSystemMetadata.name),
-    ).toHaveCount(0);
+    await expect(page.getByTestId("datastream-selection-bar")).toContainText(
+      "1 of 5 selected",
+    );
 
     await page.getByTestId("show-summary-view").click();
     await expect(
@@ -610,8 +605,8 @@ test.describe("visualization", () => {
     await authenticateSession(page, users.owner.email, users.owner.password);
     await page.goto(`/visualize-data?sites=${fixtures.monitoringSites.public.id}`);
 
-    const tableHeader = page.locator("thead");
-    const clearSelectedCheckbox = tableHeader.getByRole("checkbox", {
+    const selectionBar = page.getByTestId("datastream-selection-bar");
+    const clearSelectedCheckbox = selectionBar.getByRole("checkbox", {
       name: "Clear selected datastreams",
     });
 
@@ -623,19 +618,8 @@ test.describe("visualization", () => {
     await plotPublicDatastream(page);
     await expect(clearSelectedCheckbox).toBeVisible();
     await expect(clearSelectedCheckbox).toHaveJSProperty("indeterminate", true);
-    await expect(tableHeader).toContainText("1 of 5 selected");
-    await page.getByTestId("toggle-selected-datastreams").click();
+    await expect(selectionBar).toContainText("1 of 5 selected");
 
-    await expect(
-      page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`),
-    ).toBeVisible();
-    await expect(
-      page.getByTestId(
-        `plot-datastream-${fixtures.datastreams.publicSystemMetadata.id}`,
-      ),
-    ).toHaveCount(0);
-
-    // clearSelected() resets showOnlySelected to false, so both rows are visible immediately
     await clearSelectedCheckbox.click();
 
     await expect(clearSelectedCheckbox).toHaveCount(0);
@@ -865,16 +849,15 @@ test.describe("visualization", () => {
     );
 
     await page.getByTestId("add-datastream-to-plot").click();
-    await page.getByTestId("toggle-selected-datastreams").click();
 
     await expect(
       page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`),
-    ).toBeVisible();
+    ).toBeChecked();
     await expect(
       page.getByTestId(
         `plot-datastream-${fixtures.datastreams.publicSystemMetadata.id}`,
       ),
-    ).toHaveCount(0);
+    ).not.toBeChecked();
 
     const zipDownload = page.waitForEvent("download");
     await page.getByTestId("download-selected-datastreams").click();
@@ -900,14 +883,15 @@ test.describe("visualization", () => {
       )
       .click();
     await page.getByTestId("clear-and-plot-datastream").click();
-    await page.getByTestId("toggle-selected-datastreams").click();
 
     await expect(
-      mobileDatastreamRow(page, fixtures.datastreams.publicSystemMetadata.name),
-    ).toBeVisible();
+      page.getByTestId(
+        `plot-datastream-${fixtures.datastreams.publicSystemMetadata.id}`,
+      ),
+    ).toBeChecked();
     await expect(
-      mobileDatastreamRow(page, fixtures.datastreams.public.name),
-    ).toHaveCount(0);
+      page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`),
+    ).not.toBeChecked();
   });
 
   test("visualization selected download works for multiple datastreams", async ({
