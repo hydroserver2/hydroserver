@@ -6,6 +6,7 @@ import {
   HistoryItem,
   Operator,
   TimeUnit,
+  ValueThresholdArgs,
 } from "../../types";
 import { measureEllapsedTime } from "../ellapsed-time";
 import { timeUnitMultipliers } from "../format";
@@ -2020,27 +2021,35 @@ export class ObservationRecord {
   /**
    * Filter by applying a set of logical operations, using worker threads.
    *  1. Main thread encodes filters as numeric opcodes + thresholds (cheaper than string compares in the hot loop).
-   *  2. Workers scan disjoint chunks of Y; an index is selected if ANY filter matches (short-circuit).
+   *  2. Workers scan disjoint chunks of Y; an index is selected if ANY filter matches, or EVERY filter with `match: "all"`.
    *  3. Results from each chunk are concatenated in order to preserve ascending indexes.
    *
-   * Opcodes: 0=LT, 1=LTE, 2=GT, 3=GTE, 4=E.
+   * Opcodes: 0=LT, 1=LTE, 2=GT, 3=GTE, 4=E, 5=NE.
    */
   private async _valueThreshold(
-    appliedFilters: { [key: string]: number },
+    { filters, match }: ValueThresholdArgs,
     range?: [number, number],
   ): Promise<number[]> {
-    const keys = Object.keys(appliedFilters);
-    if (keys.length === 0) return [];
+    if (!Array.isArray(filters) || (match !== "any" && match !== "all")) {
+      throw new Error('VALUE_THRESHOLD expects { filters: [...], match: "any" | "all" }');
+    }
+    if (filters.length === 0) return [];
 
-    const opMap: Record<string, number> = {
+    const opMap: Record<FilterOperation, number> = {
       [FilterOperation.LT]: 0,
       [FilterOperation.LTE]: 1,
       [FilterOperation.GT]: 2,
       [FilterOperation.GTE]: 3,
       [FilterOperation.E]: 4,
+      [FilterOperation.NE]: 5,
     };
-    const ops = keys.map((k) => opMap[k] ?? 4);
-    const values = keys.map((k) => appliedFilters[k]);
+    const ops = filters.map((f) => {
+      const op = opMap[f.operator];
+      if (op === undefined) throw new Error(`Unknown value filter: ${f.operator}`);
+      return op;
+    });
+    const values = filters.map((f) => f.value);
+    const matchAll = match === "all";
 
     const dataY = this.dataset.source.y;
     const dataX = this.dataset.source.x;
@@ -2068,7 +2077,7 @@ export class ObservationRecord {
       datasetSize: total,
     });
     if (!decision.useWorker) {
-      return valueThresholdCore(dataY, start, end, ops, values);
+      return valueThresholdCore(dataY, start, end, ops, values, matchAll);
     }
     this._pendingExecutionMode = "worker";
 
@@ -2093,6 +2102,7 @@ export class ObservationRecord {
             end: cEnd,
             ops,
             values,
+            matchAll,
           });
           worker.onmessage = (event: MessageEvent) => {
             resolve(event.data as number[]);

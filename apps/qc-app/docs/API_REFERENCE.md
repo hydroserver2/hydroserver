@@ -105,7 +105,7 @@ Composables are the public hook surface for components. They wrap stores
 
 ```ts
 const { runFilter } = useFilterDispatch()
-await runFilter(EnumFilterOperations.VALUE_THRESHOLD, [{ 'Greater than': 100 }])
+await runFilter(EnumFilterOperations.VALUE_THRESHOLD, [{ filters: [{ operator: 'Greater than', value: 100 }], match: 'any' }])
 ```
 
 - Calls `selectedSeries.data.dispatchFilter(...)` on the QC datastream.
@@ -967,7 +967,7 @@ Wire shape:
     "endDate":   "2024-06-30T23:59:59.999Z"
   },
   "operations": [
-    { "method": "VALUE_THRESHOLD", "args": [{ "Greater than": 100 }] },
+    { "method": "VALUE_THRESHOLD", "args": [{ "filters": [{ "operator": "Greater than", "value": 100 }], "match": "any" }] },
     { "method": "CHANGE_VALUES",   "args": ["ASSIGN", 11.5] }
   ]
 }

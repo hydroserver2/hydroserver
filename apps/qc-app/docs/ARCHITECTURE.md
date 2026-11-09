@@ -182,7 +182,7 @@ seconds). Put the preference in `qcPreferences` (or a store like
                 ▼
  ┌──────────────────────────────────────┐
  │ Panel collects args                  │
- │ (e.g. { 'Greater than': 100 })       │
+ │ (e.g. { filters: [...], match })     │
  └──────────────┬───────────────────────┘
                 ▼
  ┌──────────────────────────────────────┐

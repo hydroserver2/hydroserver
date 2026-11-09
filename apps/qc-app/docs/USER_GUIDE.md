@@ -445,11 +445,16 @@ These do not change data. They produce a selection that the next edit operation 
 
 #### Value thresholds
 
-Flag any point whose value satisfies a chosen comparator (`>=`, `>`, `==`, `<`, `<=`). You can combine multiple comparators. Each appears as a removable chip under "Applied".
+Flag any point whose value satisfies a chosen comparator (`>=`, `>`, `==`, `!=`, `<`, `<=`). You can add as many filters as you like, including the same comparator more than once. Each appears as a removable chip under "Applied".
 
 ![Value thresholds panel](./images/panel-valueThreshold.png)
 
-Typing a number and pressing Enter (or clicking **Add filter**) runs the filter. The selection on the plot updates live. Use **Clear all** on the applied chips row to remove every comparator at once.
+Typing a number and pressing Enter (or clicking **Add filter**) runs the filter. The selection on the plot updates live. Use **Clear all** on the applied chips row to remove every filter at once. **Apply** runs the applied filters again, for example after the selection was cleared.
+
+Once two or more filters are applied, choose how they combine:
+
+- **Match any** (default) selects points that pass at least one filter.
+- **Match all** selects only points that pass every filter. Use it for value ranges (`Greater than 0` and `Less than 10`) or to leave out fill values with `Not equal to`.
 
 > **Example:** "Anything reading > 100 mg/L is bad" → set
 > `Greater than: 100` and run. Every offending point is now selected.

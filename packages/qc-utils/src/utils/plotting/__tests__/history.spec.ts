@@ -50,7 +50,7 @@ describe('serializeHistory', () => {
   });
 
   it('produces a v1 envelope with createdAt + window + operations', async () => {
-    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 });
+    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { filters: [{ operator: 'Greater than', value: 5 }], match: 'any' });
     const history = serializeHistory(rec, SAMPLE_WINDOW);
 
     expect(history.version).toBe(QC_HISTORY_VERSION);
@@ -59,25 +59,25 @@ describe('serializeHistory', () => {
     expect(history.window).toEqual(SAMPLE_WINDOW);
     expect(history.operations).toHaveLength(1);
     expect(history.operations[0].method).toBe(EnumFilterOperations.VALUE_THRESHOLD);
-    expect(history.operations[0].args).toEqual([{ 'Greater than': 5 }]);
+    expect(history.operations[0].args).toEqual([{ filters: [{ operator: 'Greater than', value: 5 }], match: 'any' }]);
   });
 
   it('persists an operator comment, trimmed', async () => {
-    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 });
+    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { filters: [{ operator: 'Greater than', value: 5 }], match: 'any' });
     rec.history[0].comment = '  sensor fouling  ';
     const history = serializeHistory(rec, SAMPLE_WINDOW);
     expect(history.operations[0].comment).toBe('sensor fouling');
   });
 
   it('omits the comment field when absent or blank', async () => {
-    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 });
+    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { filters: [{ operator: 'Greater than', value: 5 }], match: 'any' });
     expect(serializeHistory(rec, SAMPLE_WINDOW).operations[0].comment).toBeUndefined();
     rec.history[0].comment = '   ';
     expect(serializeHistory(rec, SAMPLE_WINDOW).operations[0].comment).toBeUndefined();
   });
 
   it('persists who performed the operation, trimmed', async () => {
-    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 });
+    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { filters: [{ operator: 'Greater than', value: 5 }], match: 'any' });
     rec.history[0].performedBy = '  Ada Lovelace  ';
     expect(serializeHistory(rec, SAMPLE_WINDOW).operations[0].performedBy).toBe(
       'Ada Lovelace'
@@ -85,7 +85,7 @@ describe('serializeHistory', () => {
   });
 
   it('strips runtime-only fields (isLoading, duration, executionMode, selected, icon)', async () => {
-    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 });
+    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { filters: [{ operator: 'Greater than', value: 5 }], match: 'any' });
     const history = serializeHistory(rec, SAMPLE_WINDOW);
     const op = history.operations[0] as Record<string, unknown>;
     expect(op.isLoading).toBeUndefined();
@@ -96,7 +96,7 @@ describe('serializeHistory', () => {
   });
 
   it('round-trips execution.status into the persisted op, omitting it for successful entries', async () => {
-    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 0 });
+    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { filters: [{ operator: 'Greater than', value: 0 }], match: 'any' });
     rec.history[0].execution.status = 'failed';
     const history = serializeHistory(rec, SAMPLE_WINDOW);
     expect(history.operations[0].execution?.status).toBe('failed');
@@ -108,7 +108,7 @@ describe('serializeHistory', () => {
 
   it('round-trips execution.startedAt verbatim into the persisted op', async () => {
     const before = Date.now();
-    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 });
+    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { filters: [{ operator: 'Greater than', value: 5 }], match: 'any' });
     const after = Date.now();
     const history = serializeHistory(rec, SAMPLE_WINDOW);
     const startedAt = history.operations[0].execution?.startedAt;
@@ -142,7 +142,7 @@ describe('serializeHistory', () => {
     // y = 0..19 above the >= 10 threshold gives 10 indices.
     const sel = await rec.dispatch(
       EnumFilterOperations.VALUE_THRESHOLD,
-      { 'Greater than or equal to': 10 },
+      { filters: [{ operator: 'Greater than or equal to', value: 10 }], match: 'any' },
     );
     expect(sel).toHaveLength(10);
     const history = serializeHistory(rec, SAMPLE_WINDOW);
@@ -150,7 +150,7 @@ describe('serializeHistory', () => {
   });
 
   it('omits the execution field when the history entry has no execution data', async () => {
-    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 });
+    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { filters: [{ operator: 'Greater than', value: 5 }], match: 'any' });
     // Replace execution with an empty shell so every field is undefined.
     rec.history[0].execution = { startedAt: NaN, inFlight: false };
     const history = serializeHistory(rec, SAMPLE_WINDOW);
@@ -160,7 +160,7 @@ describe('serializeHistory', () => {
   });
 
   it('skips non-finite execution.startedAt during serialize', async () => {
-    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 });
+    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { filters: [{ operator: 'Greater than', value: 5 }], match: 'any' });
     rec.history[0].execution.startedAt = NaN;
     const history = serializeHistory(rec, SAMPLE_WINDOW);
     expect(history.operations[0].execution?.startedAt).toBeUndefined();
@@ -170,7 +170,7 @@ describe('serializeHistory', () => {
     // The `h.args ? [...h.args] : []` ternary's else branch only
     // fires when args is undefined / falsy. Construct an entry by
     // hand so the dispatch path doesn't auto-fill `args = []`.
-    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 });
+    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { filters: [{ operator: 'Greater than', value: 5 }], match: 'any' });
     delete rec.history[0].args;
     const history = serializeHistory(rec, SAMPLE_WINDOW);
     expect(history.operations[0].args).toEqual([]);
@@ -184,7 +184,7 @@ describe('parseHistory', () => {
       createdAt: '2024-01-01T00:00:00.000Z',
       window: SAMPLE_WINDOW,
       operations: [
-        { method: 'VALUE_THRESHOLD', args: [{ 'Greater than': 5 }] },
+        { method: 'VALUE_THRESHOLD', args: [{ filters: [{ operator: 'Greater than', value: 5 }], match: 'any' }] },
       ],
     };
     const history = parseHistory(json);
@@ -201,14 +201,14 @@ describe('parseHistory', () => {
     const withComment = parseHistory({
       ...base,
       operations: [
-        { method: 'VALUE_THRESHOLD', args: [{ 'Greater than': 5 }], comment: 'sensor fouling' },
+        { method: 'VALUE_THRESHOLD', args: [{ filters: [{ operator: 'Greater than', value: 5 }], match: 'any' }], comment: 'sensor fouling' },
       ],
     });
     expect(withComment.operations[0].comment).toBe('sensor fouling');
 
     const without = parseHistory({
       ...base,
-      operations: [{ method: 'VALUE_THRESHOLD', args: [{ 'Greater than': 5 }] }],
+      operations: [{ method: 'VALUE_THRESHOLD', args: [{ filters: [{ operator: 'Greater than', value: 5 }], match: 'any' }] }],
     });
     expect(without.operations[0].comment).toBeUndefined();
   });
@@ -391,7 +391,7 @@ describe('parseHistory', () => {
       createdAt: '2024-01-01T00:00:00.000Z',
       window: SAMPLE_WINDOW,
       operations: [
-        { method: 'VALUE_THRESHOLD', args: [{ 'Greater than': 5 }], execution: exec },
+        { method: 'VALUE_THRESHOLD', args: [{ filters: [{ operator: 'Greater than', value: 5 }], match: 'any' }], execution: exec },
       ],
     });
     expect(history.operations[0].execution).toEqual(exec);
@@ -468,7 +468,7 @@ describe('applyHistory — round-trip', () => {
   });
 
   it('round-trips an independent filter (VALUE_THRESHOLD)', async () => {
-    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 10 });
+    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { filters: [{ operator: 'Greater than', value: 10 }], match: 'any' });
     const before = rec.history.length;
     const history = serializeHistory(rec, SAMPLE_WINDOW);
 
@@ -480,11 +480,11 @@ describe('applyHistory — round-trip', () => {
     expect(report.failed).toEqual([]);
     expect(fresh.history.length).toBe(before);
     expect(fresh.history[0].method).toBe(EnumFilterOperations.VALUE_THRESHOLD);
-    expect(fresh.history[0].args).toEqual([{ 'Greater than': 10 }]);
+    expect(fresh.history[0].args).toEqual([{ filters: [{ operator: 'Greater than', value: 10 }], match: 'any' }]);
   });
 
   it('carries comments onto the replayed entries', async () => {
-    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 10 });
+    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { filters: [{ operator: 'Greater than', value: 10 }], match: 'any' });
     rec.history[0].comment = 'sensor fouling';
     const history = serializeHistory(rec, SAMPLE_WINDOW);
 
@@ -496,7 +496,7 @@ describe('applyHistory — round-trip', () => {
   });
 
   it('carries performedBy onto the replayed entries', async () => {
-    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 10 });
+    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { filters: [{ operator: 'Greater than', value: 10 }], match: 'any' });
     rec.history[0].performedBy = 'Ada Lovelace';
     const history = serializeHistory(rec, SAMPLE_WINDOW);
 
@@ -626,7 +626,7 @@ describe('applyHistory — round-trip', () => {
 
   it('round-trips a multi-step history and matches the source dataset bit-for-bit', async () => {
     await rec.dispatch([
-      [EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 }],
+      [EnumFilterOperations.VALUE_THRESHOLD, { filters: [{ operator: 'Greater than', value: 5 }], match: 'any' }],
       [EnumFilterOperations.SELECTION, [0, 1, 2]],
       [EnumEditOperations.DELETE_POINTS],
       [EnumFilterOperations.SELECTION, [4, 5]],
@@ -646,13 +646,13 @@ describe('applyHistory — round-trip', () => {
   });
 
   it('clears history + redoStack before replay (in-place, preserving the array reference)', async () => {
-    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 5 });
+    await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { filters: [{ operator: 'Greater than', value: 5 }], match: 'any' });
     const history = serializeHistory(rec, SAMPLE_WINDOW);
 
     const fresh = makeRecord(20);
     await fresh.reload();
     // Pre-seed garbage state to confirm the loader resets it.
-    await fresh.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { 'Less than': 0 });
+    await fresh.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { filters: [{ operator: 'Less than', value: 0 }], match: 'any' });
     await fresh.undo();
     expect(fresh.redoStack.length).toBeGreaterThan(0);
 
@@ -684,7 +684,7 @@ describe('applyHistory — round-trip', () => {
       operations: [
         {
           method: 'VALUE_THRESHOLD',
-          args: [{ 'Greater than': 5 }],
+          args: [{ filters: [{ operator: 'Greater than', value: 5 }], match: 'any' }],
           execution: {
             startedAt: PERSISTED_STARTED,
             status: 'success',

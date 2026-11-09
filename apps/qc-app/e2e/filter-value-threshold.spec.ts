@@ -10,6 +10,7 @@
 import { expect, test } from '@playwright/test'
 import { installMocks } from './support/mocks'
 import { openOp, setupEditView, waitForSelection } from './support/app'
+import { buildObservations } from './support/fixtures'
 
 test.describe('filter: value threshold', () => {
   test.beforeEach(async ({ page }) => {
@@ -58,5 +59,34 @@ test.describe('filter: value threshold', () => {
       .locator('[data-testid^="history-item-"]')
       .filter({ hasText: /Value Threshold|Selection/ })
     await expect(rows).toHaveCount(1)
+  })
+
+  test('match all excludes a fill value with not equal to', async ({ page }) => {
+    const y = buildObservations().result
+    const fill = y.find((v) => v < 8)!
+    const matchAll = y.filter((v) => v < 8 && v !== fill).length
+
+    const addFilter = async (operator: string, value: number) => {
+      await page.getByTestId('value-threshold-operator').click()
+      await page.getByRole('option', { name: operator, exact: true }).click()
+      await page.getByLabel('Value').fill(String(value))
+      await page.getByRole('button', { name: /add filter/i }).click()
+    }
+
+    await openOp(page, 'valueThreshold')
+    await addFilter('Less than', 8)
+    await waitForSelection(page, 1)
+    await addFilter('Not equal to', fill)
+
+    const row = page
+      .locator('[data-testid^="history-item-"]')
+      .filter({ hasText: /Value Threshold/ })
+    await expect(row).toContainText(`${y.length} pts`)
+
+    await page
+      .getByTestId('value-threshold-match')
+      .getByRole('button', { name: 'Match all' })
+      .click()
+    await expect(row).toContainText(`${matchAll} pts`)
   })
 })
