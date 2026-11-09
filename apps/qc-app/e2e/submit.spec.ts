@@ -35,6 +35,37 @@ test.describe('commit a QC session', () => {
     await expect(save).toBeEnabled()
   })
 
+  test('a save after the login expired says so and keeps the edits', async ({
+    page,
+  }) => {
+    await installMocks(page, { qcHistories: true })
+    await setupEditView(page)
+    // Registered after the mocks, so it wins: the server ended the session.
+    await page.route(/\/sessions\/[^/]+\/operations/, (route) =>
+      route.fulfill({
+        status: 401,
+        contentType: 'application/json',
+        body: JSON.stringify({ detail: 'Unauthorized' }),
+      })
+    )
+
+    await selectAllPoints(page)
+    await openOp(page, 'changeValues')
+    const value = page.getByLabel('Value')
+    await value.fill('1')
+    await value.press('Enter')
+    await expectHistoryContains(page, 'Change Values')
+
+    const save = page.getByTestId('exit-save-btn')
+    await save.click()
+    await expect(page.getByTestId('session-expired')).toContainText(
+      'Your edits are still here'
+    )
+    await expect(page.getByText('Draft saved.')).toHaveCount(0)
+    await expectHistoryContains(page, 'Change Values')
+    await expect(save).toBeEnabled()
+  })
+
   test('save then commit pushes a replace-mode payload', async ({ page }) => {
     const submissions: Array<{ mode: string | null; body: any }> = []
     const sessions: MockQcSession[] = []
