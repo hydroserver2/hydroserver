@@ -183,6 +183,8 @@ sessions as a timeline, oldest first:
   which opens the session window step. It reads **Continue from the latest
   commit** once something is committed, since the new session starts from
   what that commit left.
+- Only one session can be open at a time. While one is in progress, the
+  timeline says to continue or delete it first.
 - **Create new managed datastream** at the bottom sets up another
   quality-controlled version of the same source.
 
