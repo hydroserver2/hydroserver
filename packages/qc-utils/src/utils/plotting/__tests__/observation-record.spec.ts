@@ -544,6 +544,24 @@ describe('ObservationRecord', () => {
       idx.forEach((i) => expect(rec.dataY[i]).toBe(42));
     });
 
+    it('CHANGE_VALUES fails on a value that is not a finite number or a divide by zero', async () => {
+      const idx = [5, 10, 15];
+      const beforeY = Array.from(rec.dataY);
+      for (const [operator, value] of [
+        [Operator.ASSIGN, NaN],
+        [Operator.ADD, Infinity],
+        [Operator.MULT, -Infinity],
+        [Operator.DIV, 0],
+      ] as const) {
+        await rec.dispatch([
+          [EnumFilterOperations.SELECTION, idx],
+          [EnumEditOperations.CHANGE_VALUES, operator, value],
+        ]);
+        expect(rec.history[rec.history.length - 1].execution.status).toBe('failed');
+      }
+      expect(Array.from(rec.dataY)).toEqual(beforeY);
+    });
+
     it('CHANGE_VALUES returns early when no selection is present', async () => {
       const beforeY = Array.from(rec.dataY);
       await rec.dispatch(EnumEditOperations.CHANGE_VALUES, Operator.ADD, 5);

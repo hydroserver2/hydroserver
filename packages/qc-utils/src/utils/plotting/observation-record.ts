@@ -909,6 +909,12 @@ export class ObservationRecord {
     operator: Operator,
     value: number,
   ): Promise<number[]> {
+    if (!Number.isFinite(value)) {
+      throw new Error("Change values: the value must be a finite number.");
+    }
+    if (operator === Operator.DIV && value === 0) {
+      throw new Error("Change values: cannot divide by zero.");
+    }
     const selected = this.history[this.history.length - 2]?.selected;
     if (!selected || selected.length === 0) return [];
 
