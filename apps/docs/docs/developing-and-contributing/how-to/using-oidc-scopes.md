@@ -69,7 +69,7 @@ Request these scopes only if your app manages access or tasks.
 A request with a valid token that lacks the endpoint's scope gets a `403` response:
 
 ```json
-{ "detail": "Access token is missing the required scope: workspace:read" }
+{ "message": "Access token is missing the required scope: workspace:read" }
 ```
 
 This applies even to resources that anonymous users can read, such as public workspaces. A token is never treated as

@@ -36,7 +36,7 @@ def get_method_types(
     query: Query[VocabularyQueryParameters],
 ):
     """
-    Get Method Types.
+    Get method types.
     """
 
     return 200, method_type_service.list(
@@ -65,7 +65,7 @@ def create_method_type(
     data: MethodTypePostBody,
 ):
     """
-    Create a new Method Type.
+    Create a new method type.
     """
 
     return 201, method_type_service.create(
@@ -92,7 +92,7 @@ def get_method_type(
     query: Query[VocabularyItemQueryParameters],
 ):
     """
-    Get a Method Type.
+    Get a method type.
     """
 
     return 200, method_type_service.get(
@@ -119,7 +119,7 @@ def update_method_type(
     data: MethodTypePatchBody,
 ):
     """
-    Update a Method Type.
+    Update a method type.
     """
 
     method_type_service.update(
@@ -145,7 +145,7 @@ def delete_method_type(
     request: HydroServerHttpRequest, method_type_id: Path[uuid.UUID]
 ):
     """
-    Delete a Method Type.
+    Delete a method type.
     """
 
     return 204, method_type_service.delete(

@@ -17,6 +17,11 @@ from .processing_level import ProcessingLevel
 from .observed_property import ObservedProperty
 
 
+DATASTREAM_TYPE_CHOICES = (
+    ("timeSeriesCoverage", "Time Series Coverage"),
+)
+
+
 class DatastreamQuerySet(models.QuerySet):
     def delete(self):
         from .observation import Observation
@@ -49,8 +54,9 @@ class Datastream(models.Model):
     unit = models.ForeignKey(
         Unit, on_delete=models.PROTECT, related_name="datastreams"
     )
-    observation_type = models.CharField(max_length=255)
-    result_type = models.CharField(max_length=255)
+    type = models.CharField(
+        max_length=255, choices=DATASTREAM_TYPE_CHOICES, default="timeSeriesCoverage"
+    )
     status = models.CharField(max_length=255, null=True, blank=True)
     observed_area = models.CharField(max_length=255, null=True, blank=True)  # Unused
     sampled_medium = models.CharField(max_length=255)

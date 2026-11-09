@@ -38,7 +38,7 @@ def get_etl_tasks(
     query: Query[EtlTaskQueryParameters],
 ):
     """
-    Get ETL Tasks accessible to the authenticated user.
+    Get ETL tasks accessible to the authenticated user.
     """
 
     return 200, etl_task_service.list(
@@ -70,7 +70,7 @@ def create_etl_task(
     data: EtlTaskPostBody,
 ):
     """
-    Create a new ETL Task.
+    Create a new ETL task.
     """
 
     return 201, etl_task_service.create(principal=request.principal, data=data)
@@ -93,7 +93,7 @@ def get_etl_task(
     query: Query[EtlTaskItemQueryParameters],
 ):
     """
-    Get an ETL Task.
+    Get an ETL task.
     """
 
     return 200, etl_task_service.get_item(
@@ -119,7 +119,7 @@ def update_etl_task(
     data: EtlTaskPatchBody,
 ):
     """
-    Update an ETL Task.
+    Update an ETL task.
     """
 
     etl_task_service.update(principal=request.principal, uid=task_id, data=data)
@@ -143,7 +143,7 @@ def delete_etl_task(
     task_id: Path[uuid.UUID],
 ):
     """
-    Delete an ETL Task.
+    Delete an ETL task.
     """
 
     etl_task_service.delete(
@@ -172,7 +172,7 @@ def trigger_etl_task(
     task_id: Path[uuid.UUID],
 ):
     """
-    Trigger an immediate run of an ETL Task on a Celery worker.
+    Run an ETL task now and return the new task run.
     """
 
     require_orchestration_enabled()
@@ -207,7 +207,8 @@ def get_etl_task_runs(
     query: Query[TaskRunQueryParameters],
 ):
     """
-    Get runs for an ETL Task.
+    Get the runs of an ETL task, each with its status, start and finish times, and outcome
+    message.
     """
 
     run_kwargs = query.model_dump(
@@ -249,7 +250,8 @@ def get_etl_task_run(
     run_id: Path[uuid.UUID],
 ):
     """
-    Get a single run for an ETL Task.
+    Get one run of an ETL task, with its status, start and finish times, outcome message, and
+    `result` details.
     """
 
     run = etl_task_service.get_run(

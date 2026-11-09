@@ -1,6 +1,6 @@
 # Introduction
 
-Use the menu to your left to navigate through HyroServer's documentation. The following is a brief overview of the documentation we provide:
+Use the menu to your left to navigate through HydroServer's documentation. The following is a brief overview of the documentation we provide:
 
 * **[HydroServer Overview](/introduction/hydroserver-overview.md)**: Get an overview of HydroServer's core capabilities and how it streamlines environmental data management.
 * **[Background & Motivation](/introduction/background-and-motivation.md)**: Learn about why we built HydroServer and the challenges it was designed to address.

@@ -36,7 +36,7 @@ def get_methods(
     query: Query[MethodQueryParameters],
 ):
     """
-    Get public Methods and Methods associated with the authenticated user.
+    Get public methods and methods associated with the authenticated user.
     """
 
     return 200, method_service.list(
@@ -67,7 +67,7 @@ def create_method(
     data: MethodPostBody,
 ):
     """
-    Create a new Method.
+    Create a new method.
     """
 
     return 201, method_service.create(
@@ -94,7 +94,7 @@ def get_method(
     query: Query[MethodItemQueryParameters],
 ):
     """
-    Get a Method.
+    Get a method.
     """
 
     return 200, method_service.get(
@@ -122,7 +122,7 @@ def update_method(
     data: MethodPatchBody,
 ):
     """
-    Update a Method.
+    Update a method.
     """
 
     method_service.update(
@@ -148,7 +148,7 @@ def update_method(
 @transaction.atomic
 def delete_method(request: HydroServerHttpRequest, method_id: Path[uuid.UUID]):
     """
-    Delete a Method.
+    Delete a method.
     """
 
     return 204, method_service.delete(principal=request.principal, uid=method_id)

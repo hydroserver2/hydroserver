@@ -85,10 +85,9 @@ const row = ({ name, latitude, longitude }: MonitoringSite) => {
 };
 
 const res = await hs.monitoringSites.list({
-  page: 1,
-  page_size: 50,
+  limit: 50,
   sortby: ["name"],
-  is_private: false,
+  isPrivate: false,
 });
 
 if (!res.ok) {
@@ -150,7 +149,7 @@ With this setup, the client uses `host: ""` so requests go through the local `/a
    `await createHydroServer({ host: "" })` initializes the client once. After that, `hs` is available throughout your app.
 
 2. One API call for monitoring sites
-   `hs.monitoringSites.list(...)` retrieves page 1 with `page_size: 50`, ordered by name, and limited to public monitoring sites.
+   `hs.monitoringSites.list(...)` retrieves the first 50 monitoring sites (`limit: 50`), ordered by name, and limited to public monitoring sites. Use `offset` to fetch later pages.
 
 3. Rendering  
    The response data is mapped directly into `<li>` elements with MonitoringSite name and location text.

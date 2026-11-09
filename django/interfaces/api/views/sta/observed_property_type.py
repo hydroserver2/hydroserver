@@ -36,7 +36,7 @@ def get_observed_property_types(
     query: Query[VocabularyQueryParameters],
 ):
     """
-    Get Observed Property Types.
+    Get observed property types.
     """
 
     return 200, observed_property_type_service.list(
@@ -65,7 +65,7 @@ def create_observed_property_type(
     data: ObservedPropertyTypePostBody,
 ):
     """
-    Create a new Observed Property Type.
+    Create a new observed property type.
     """
 
     return 201, observed_property_type_service.create(
@@ -92,7 +92,7 @@ def get_observed_property_type(
     query: Query[VocabularyItemQueryParameters],
 ):
     """
-    Get an Observed Property Type.
+    Get an observed property type.
     """
 
     return 200, observed_property_type_service.get(
@@ -119,7 +119,7 @@ def update_observed_property_type(
     data: ObservedPropertyTypePatchBody,
 ):
     """
-    Update an Observed Property Type.
+    Update an observed property type.
     """
 
     observed_property_type_service.update(
@@ -145,7 +145,7 @@ def delete_observed_property_type(
     request: HydroServerHttpRequest, observed_property_type_id: Path[uuid.UUID]
 ):
     """
-    Delete an Observed Property Type.
+    Delete an observed property type.
     """
 
     return 204, observed_property_type_service.delete(

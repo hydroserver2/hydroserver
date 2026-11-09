@@ -1,7 +1,11 @@
 <template>
   <div class="orchestration-page hs-workbench-canvas">
+    <AccessDenied
+      v-if="routeWorkspaceDenied"
+      :workspace-id="routeWorkspaceId ?? undefined"
+    />
     <v-alert
-      v-if="!orchestrationEnabled"
+      v-if="!routeWorkspaceDenied && !orchestrationEnabled"
       class="orchestration-disabled-alert"
       type="info"
       variant="tonal"
@@ -211,6 +215,7 @@ import hs, {
 } from '@hydroserver/client'
 
 import router from '@/router/router'
+import AccessDenied from '@/pages/AccessDenied.vue'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import type { Task } from '@/types/orchestrationTasks'
 import { useWorkspaceStore } from '@/store/workspaces'
@@ -314,22 +319,14 @@ const applyRouteWorkspace = () => {
 
 watch([routeWorkspaceId, workspaces], applyRouteWorkspace, { immediate: true })
 
-// The workspaces list is the user's accessible (associated) workspaces, loaded
-// before the app mounts. A workspace_id in the URL that isn't in that list is
-// one the user has no permission to view, so surface an explicit error rather
-// than silently falling back to a different workspace.
+// App.vue waits for the current user and their full workspace list before
+// mounting protected pages. A workspace_id in the URL that isn't in that list is
+// one the user has no permission to view. Keep the denial at the requested URL
+// so reloading can retry access without losing the workspace or task link.
 const routeWorkspaceDenied = computed(
   () =>
     !!routeWorkspaceId.value &&
     !workspaces.value.some((ws) => ws.id === routeWorkspaceId.value)
-)
-
-watch(
-  routeWorkspaceDenied,
-  (denied) => {
-    if (denied) router.replace({ name: 'AccessDenied' })
-  },
-  { immediate: true }
 )
 
 watch(
@@ -805,7 +802,7 @@ const fetchVisibleTasks = async (force = false) => {
 }
 
 const syncSelectedGroupToRoute = async (overrideWorkspaceId?: string) => {
-  if (hasTaskDetails.value) return
+  if (routeWorkspaceDenied.value || hasTaskDetails.value) return
   await replaceSelectedGroup(
     activeTab.value,
     selectedGroupIdForTab(activeTab.value),
@@ -868,12 +865,16 @@ const closeWorkspaceScopedUi = () => {
 let workspaceSyncRequestId = 0
 
 watch(
-  selectedWorkspaceId,
-  async (newId, oldId) => {
-    if (newId == null || routeWorkspaceDenied.value) return
+  [selectedWorkspaceId, routeWorkspaceDenied],
+  async ([newId, denied], [oldId]) => {
     const syncRequestId = ++workspaceSyncRequestId
+    if (newId == null || denied) {
+      stopAll()
+      return
+    }
     const isCurrentWorkspaceSync = () =>
       syncRequestId === workspaceSyncRequestId &&
+      !routeWorkspaceDenied.value &&
       selectedWorkspaceId.value === newId
     const workspaceChanged = oldId != null && oldId !== newId
     const routeSelectedThisWorkspace = routeWorkspaceId.value === newId
@@ -904,7 +905,7 @@ let routeSelectionSyncRequestId = 0
 
 watch([routeDataConnectionId, routeSiteId, routeView], async () => {
   const syncRequestId = ++routeSelectionSyncRequestId
-  if (loading.value || hasTaskDetails.value) {
+  if (routeWorkspaceDenied.value || loading.value || hasTaskDetails.value) {
     return
   }
 

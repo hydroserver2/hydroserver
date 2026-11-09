@@ -107,19 +107,29 @@ class MonitoringTaskQueryParameters(MonitoringTaskFilterFields, CollectionQueryP
         "whitespace-separated words within a term are combined with AND.",
     )
     monitoring_site: list[uuid.UUID] = Query(
-        [], description="Filter monitoring tasks by monitoring_site ID.", alias="monitoringSiteId"
+        [],
+        description="Monitoring tasks for this monitoring site. Matches `id` in `monitoring-sites`.",
+        alias="monitoringSiteId",
     )
     workspace: list[uuid.UUID] = Query(
-        [], description="Filter monitoring tasks by workspace ID.", alias="workspaceId"
+        [],
+        description="Monitoring tasks in this workspace. Matches `id` in `workspaces`.",
+        alias="workspaceId",
     )
     latest_run_status: list[str | Literal["null"]] = Query(
-        [], description="Filter monitoring tasks by their most recent run status."
+        [],
+        description="Monitoring tasks whose latest run has this status: `PENDING`, `STARTED`, `SUCCESS`, or "
+        "`FAILURE`. `null` matches tasks that have never run.",
     )
     datastream: list[uuid.UUID] = Query(
-        [], description="Filter monitoring tasks by datastream ID.", alias="datastreamId"
+        [],
+        description="Monitoring tasks with a rule that checks this datastream. Matches `id` in `datastreams`.",
+        alias="datastreamId",
     )
     rule_type: list[str] = Query(
-        [], description="Filter monitoring tasks by rule type."
+        [],
+        description="Monitoring tasks with a rule of this type: `range`, `rate_of_change`, `persistence`, or "
+        "`missing_data`.",
     )
 
 

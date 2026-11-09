@@ -114,7 +114,11 @@
 <script setup lang="ts">
 import { formatTimeWithZone } from '@/utils/time'
 import { onMounted, ref } from 'vue'
-import hs, { type Tags } from '@hydroserver/client'
+import hs, {
+  DATASTREAM_TYPE_LABELS,
+  type DatastreamType,
+  type Tags,
+} from '@hydroserver/client'
 
 const props = defineProps({
   datastreamId: { type: String, required: true },
@@ -155,8 +159,10 @@ onMounted(async () => {
       label: 'End Date',
       value: formatTimeWithZone(d.phenomenonEndTime),
     },
-    { label: 'Data Type', value: d.observationType },
-    { label: 'Value Type', value: d.resultType },
+    {
+      label: 'Type',
+      value: DATASTREAM_TYPE_LABELS[d.type as DatastreamType] ?? d.type,
+    },
     { label: 'Sample Medium', value: d.sampledMedium },
     { label: 'Nodata value', value: d.noDataValue },
     { label: 'Id', value: d.id },

@@ -89,10 +89,13 @@ class QualityControlHistoryQueryParameters(
         WithJsonSchema(sortby_array_schema(QualityControlHistorySortByFields)),
     ] = Query([], description="Select one or more fields to sort the response by.")
     managed_datastream_id: list[uuid.UUID] = Query(
-        [], description="Filter histories by managed datastream ID."
+        [],
+        description="The history whose managed datastream is this datastream. Matches `id` in `datastreams`.",
     )
     source_datastream_id: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter histories by source datastream ID."
+        [],
+        description="Histories whose source datastream is this datastream. Matches `id` in `datastreams`. "
+        "`null` matches histories without a source datastream.",
     )
 
 

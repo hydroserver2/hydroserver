@@ -46,7 +46,7 @@ def get_observations(
     query: Query[ObservationQueryParameters],
 ):
     """
-    Get Observations.
+    Get public observations and observations associated with the authenticated user.
     """
 
     profile = getattr(request, "response_profile", None)
@@ -84,7 +84,7 @@ def create_observation(
     data: ObservationPostBody,
 ):
     """
-    Create a new Observation.
+    Create a new observation.
     """
 
     return 201, observation_service.create(
@@ -106,7 +106,7 @@ def insert_observations(
     data: ObservationBulkPostBody | ObservationBulkColumnarPostBody,
 ):
     """
-    Insert Observations.
+    Create many observations in a datastream at once.
     """
 
     return 201, observation_service.bulk_create(
@@ -130,7 +130,7 @@ def delete_observations(
     data: ObservationBulkDeleteBody,
 ):
     """
-    Delete Observations between the given phenomenon start and end times.
+    Delete a datastream's observations between the given phenomenon start and end times.
     """
 
     return 204, observation_service.bulk_delete(
@@ -154,7 +154,7 @@ def get_observation(
     query: Query[ObservationItemQueryParameters],
 ):
     """
-    Get an Observation.
+    Get an observation.
     """
 
     return 200, observation_service.get_item(
@@ -181,7 +181,7 @@ def delete_observation(
     observation_id: Path[uuid.UUID],
 ):
     """
-    Delete an Observation.
+    Delete an observation.
     """
 
     return 204, observation_service.delete(

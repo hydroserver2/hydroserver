@@ -150,10 +150,9 @@ class DatastreamAPIService(APIService):
             "processing_level_id",
             "unit_id",
             "observations__result_qualifier_id",
-            "observation_type",
+            "type",
             "sampled_medium",
             "status",
-            "result_type",
             "is_private",
             "value_count__lte",
             "value_count__gte",
@@ -597,8 +596,7 @@ class DatastreamAPIService(APIService):
             f"# -------------------------------------\n"
             f"# Name: {datastream.name}\n"
             f"# Description: {datastream.description}\n"
-            f"# ObservationType: {datastream.observation_type}\n"
-            f"# ResultType: {datastream.result_type}\n"
+            f"# Type: {datastream.type}\n"
             f"# Status: {datastream.status}\n"
             f"# SampledMedium: {datastream.sampled_medium}\n"
             f"# ValueCount: {datastream.value_count}\n"

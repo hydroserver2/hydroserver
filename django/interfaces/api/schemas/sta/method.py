@@ -100,18 +100,29 @@ class MethodQueryParameters(MethodFilterFields, CollectionQueryParameters, Exten
         "whitespace-separated words within a term are combined with AND.",
     )
     workspace_id: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter methods by workspace ID."
+        [],
+        description="Methods that belong to this workspace. Matches `id` in `workspaces`. `null` matches "
+        "methods shared by every workspace.",
     )
     datastreams__monitoring_site_id: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter methods by monitoring_site ID.", alias="monitoringSiteId"
+        [],
+        description="Methods used by datastreams at this monitoring site. Matches `id` in `monitoring-sites`. "
+        "`null` matches methods that no datastream uses.",
+        alias="monitoringSiteId",
     )
     datastreams__id: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter methods by datastream ID.", alias="datastreamId"
+        [],
+        description="Methods used by this datastream. Matches `id` in `datastreams`. `null` matches methods "
+        "that no datastream uses.",
+        alias="datastreamId",
     )
-    type: list[str] = Query([], description="Filter methods by type")
-    sensor_model: list[str | Literal["null"]] = Query([], description="Filter methods by sensor model")
+    type: list[str] = Query([], description="Methods of this type. Matches `name` in `method-types`.")
+    sensor_model: list[str | Literal["null"]] = Query(
+        [],
+        description="Methods with this sensor model. `null` matches methods without one.",
+    )
     sensor_model_manufacturer: list[str | Literal["null"]] = Query(
-        [], description="Filter methods by sensor model manufacturer"
+        [], description="Methods with this sensor manufacturer. `null` matches methods without one."
     )
 
 

@@ -60,8 +60,6 @@ def _datastream_body(monitoring_site, method, observed_property, processing_leve
         "observedPropertyId": str(observed_property.id),
         "processingLevelId": str(processing_level.id),
         "unitId": str(unit.id),
-        "observationType": "OM_Measurement",
-        "resultType": "Time Series Coverage",
         "sampledMedium": "Water",
         "noDataValue": -9999.0,
         "aggregationStatistic": "Average",
@@ -235,6 +233,51 @@ def test_create_datastream_returns_400_for_observed_property_from_another_worksp
     )
 
     assert response.status_code == 400
+
+
+def test_create_datastream_defaults_type_to_time_series_coverage(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    method = MethodFactory(workspace=workspace)
+    observed_property = ObservedPropertyFactory(workspace=workspace)
+    processing_level = ProcessingLevelFactory(workspace=workspace)
+    unit = UnitFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.post(
+        DATASTREAMS_URL,
+        data=_datastream_body(monitoring_site, method, observed_property, processing_level, unit),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
+    detail = client.get(_detail_url(response.json()["id"])).json()["data"]
+    assert detail["type"] == "timeSeriesCoverage"
+    assert "observationType" not in detail
+    assert "resultType" not in detail
+
+
+def test_create_datastream_returns_400_for_invalid_type(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    method = MethodFactory(workspace=workspace)
+    observed_property = ObservedPropertyFactory(workspace=workspace)
+    processing_level = ProcessingLevelFactory(workspace=workspace)
+    unit = UnitFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.post(
+        DATASTREAMS_URL,
+        data=_datastream_body(
+            monitoring_site, method, observed_property, processing_level, unit, type="profileCoverage"
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+    assert "timeSeriesCoverage" in response.json()["message"]
 
 
 # --- get_datastream --------------------------------------------------------------------
@@ -740,6 +783,9 @@ def test_get_datastream_csv_returns_csv_with_observations(client):
     assert response["Content-Type"] == "text/csv"
     body = b"".join(response.streaming_content).decode()
     assert "12.5" in body
+    assert "# Type: timeSeriesCoverage" in body
+    assert "# ObservationType:" not in body
+    assert "# ResultType:" not in body
 
 
 # --- linked resources ----------------------------------------------------------------

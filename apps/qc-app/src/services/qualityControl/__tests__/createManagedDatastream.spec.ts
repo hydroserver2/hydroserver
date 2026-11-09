@@ -14,7 +14,7 @@ const makeSource = (overrides: Partial<Datastream> = {}): Datastream =>
     name: 'Raw Temperature',
     description: 'raw sensor data',
     monitoringSiteId: 'site-1',
-    observationType: 'OM_Measurement',
+    type: 'timeSeriesCoverage',
     sampledMedium: 'Air',
     noDataValue: -9999,
     aggregationStatistic: 'Continuous',

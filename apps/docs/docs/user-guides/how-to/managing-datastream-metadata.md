@@ -4,7 +4,7 @@ Datastreams represent time series of observations measured at or created at a mo
 
 ## Creating a Datastream
 
-Creating and managing datastreams is done on the landing page for a monitoring site. To create a new datastream, click on the 'Add new datastream' button at the top right of the datastreams table. This will launch the 'Create datastream' window.
+Creating and managing datastreams is done on the landing page for a monitoring site. To create a new datastream, click on the 'Add datastream' button at the top right of the datastreams table. This will launch the 'Create datastream' window.
 
 In this form, you can create the basic metadata for a datastream. The following are included:
 
@@ -56,7 +56,7 @@ For example, `Discharge - Hourly RAW @ Kanarraville` and `Discharge - Hourly RAW
 
 With the minimum datastream metadata set, you can click the 'Create datastream' button to save the datastream.
 
-**NOTE**: Some of the metadata elements on the 'Create datastream' form (e.g., Medium, Status, and Aggregation Statistic) are controlled vocabulary lists. These controlled vocabularies can be modified by a HydroServer Administrator if needed.
+**NOTE**: Some of the metadata elements on the 'Create datastream' form (e.g., Medium, Status, and Aggregation Statistic) are controlled vocabulary lists. These controlled vocabularies can be modified by a HydroServer Administrator if needed. See [Controlled Vocabularies](/hosting-and-deployment/how-to/using-the-administrator-dashboard.md#controlled-vocabularies) in the admin dashboard guide.
 
 <img src="/data-management-app/create-datastream.png" alt="Create datastream form" class="img-white-bg">
 
@@ -66,9 +66,9 @@ Once the datastream is created, it will be displayed in the list of datastreams 
 
 When an item does not exist in the dropdown list for method, observed property, unit, or processing level, it must be created before it can be used. This can be done by clicking on the green '+' next to those attributes. Each one has a metadata entry form that will pop up.
 
-Every linked metadata item has a required **name** (up to 255 characters), which is the label shown in the frontend. Methods, observed properties, processing levels, and result qualifiers also require a free-text **description** and allow an optional **code** (up to 255 characters) for an external or organizational identifier. Units have neither description nor code. Methods, observed properties, processing levels, and units allow an optional **definition** URL (up to 2,000 characters) pointing to a vocabulary term, standard, or manual. Result qualifiers have no definition field. See the [data dictionary](/references/data-dictionary#metadata-field-conventions) for these conventions and the distinction between definition, link, and attachment URL.
+Every linked metadata item has a required **name** (up to 255 characters), which is the label shown in the frontend. Methods, observed properties, processing levels, and result qualifiers also require a free-text **description** and allow an optional **code** (up to 255 characters) for an external or organizational identifier. Units have neither description nor code. Methods, observed properties, processing levels, and units allow an optional **definition** URL (up to 2,000 characters) pointing to a vocabulary term, standard, or manual. Result qualifiers have no definition field. See the [data dictionary](/references/data-dictionary#metadata-field-conventions) for these conventions and the distinction between definition, link, and linked resource URL.
 
-**NOTE**: Linked metadata can also be created via the Data Management --> Metadata management page in HydroServer. On the 'Manage metadata' page, you can set up all of your methods, observed properties, processing levels, and units before creating datastreams to make it easier and to enable choosing existing linked metadata from the drop down lists.
+**NOTE**: Linked metadata can also be created on the **Metadata** tab of the **Manage workspaces** page. Select a workspace, open the **Metadata** tab, and you can set up all of your methods, observed properties, processing levels, and units before creating datastreams to make it easier and to enable choosing existing linked metadata from the drop down lists.
 
 **NOTE**: All metadata in a HydroServer instance is created within a workspace. If you have multiple workspaces and you want to be able to use the same list of methods, observed properties, processing levels, and units across multiple workspaces, a HydroServer administrator can set these up as 'System metadata' for use across workspaces.
 
@@ -76,7 +76,7 @@ Every linked metadata item has a required **name** (up to 255 characters), which
 
 Because creating the metadata for a datastream can be a little tedious, we created a button to load a template for a datastream. If you have multiple monitoring sites with similar datastreams (e.g., multiple sites with the same installed instruments), you can choose a datastream from another site to serve as a template.
 
-To use this functionality, click the 'Add new datastream' button on the site landing page, then select the 'Load template' button at the top right of the 'Create datastream' form. You will select a site and then you will see a list of existing datastreams you can choose from.
+To use this functionality, click the 'Add datastream' button on the site landing page, then select the 'Load template' button at the top right of the 'Create datastream' form. You will select a site and then you will see a list of existing datastreams you can choose from.
 
 <img src="/data-management-app/choose-datastream-template.png" alt="Choose a datastream template" class="img-white-bg">
 
@@ -85,6 +85,10 @@ Choosing a template will copy all of the metadata elements for that datastream i
 ## Editing Datastream Metadata
 
 Once a datastream is created, it can be edited by finding it in the list of datastreams on the site landing page, clicking on the Actions button (the three vertical dots) and selecting 'Edit datastream metadata'. This will launch the datastream's metadata into the same form you used to create the datastream and you can edit it there.
+
+## Datastream Tags and Linked Resources
+
+Like monitoring sites, datastreams can have tags (custom key-value metadata) and linked resources (uploaded files or links to external URLs, such as a calibration report). The Data Management App does not edit these for datastreams yet. Use the Data Management API or a client package instead, for example `hs_api.datastreams.set_tag(...)` and `hs_api.datastreams.add_linked_resource(...)` in [hydroserverpy](/user-guides/how-to/using-the-python-client.md#tag-and-linked-resource-methods). See [Photos and Linked Resources](/user-guides/how-to/managing-site-metadata.md#photos-and-linked-resources) for more about linked resources.
 
 ## Deleting a Datastream
 

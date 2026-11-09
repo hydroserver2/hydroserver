@@ -7,9 +7,15 @@
         <div
           v-if="showPlot"
           class="plot-section"
-          :style="{ flex: `${cardHeight} 1 0%` }"
+          :style="{
+            flex: `${cardHeight} 1 0%`,
+            minHeight: `${minimumPlotHeight}px`,
+          }"
         >
-          <DataVisualizationCard :cardHeight="cardHeight" />
+          <DataVisualizationCard
+            :cardHeight="cardHeight"
+            @minimum-height="minimumPlotHeight = $event"
+          />
         </div>
 
         <div
@@ -68,6 +74,7 @@ const {
 } = storeToRefs(dataVisStore)
 
 const fullHeight = 90
+const minimumPlotHeight = ref(0)
 const defaultPlotHeight = 45
 const defaultTableHeight = 35
 
@@ -329,8 +336,7 @@ const parseUrlAndSetState = () => {
     ? detailLevelParam.find((item): item is string => typeof item === 'string')
     : detailLevelParam
   const detailLevel = Number(detailLevelRaw)
-  if (detailLevel >= 1)
-    datastreamDetailLevel.value = detailLevel >= 2 ? 2 : 1
+  if (detailLevel >= 1) datastreamDetailLevel.value = detailLevel >= 2 ? 2 : 1
 
   const columnsParam = route.query.columns
   if (columnsParam) {
@@ -448,6 +454,7 @@ onUnmounted(() => {
   flex: 1;
   min-width: 0;
   position: relative;
+  overflow-y: auto;
 }
 
 .plot-section,
@@ -461,6 +468,10 @@ onUnmounted(() => {
 .table-section > * {
   flex: 1;
   min-height: 0;
+}
+
+.table-section {
+  min-height: 30dvh;
 }
 
 @media (max-width: 600px) {

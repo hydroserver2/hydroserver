@@ -22,7 +22,8 @@
       :title="`Time zone: ${zoneDescription}`"
       hide-details
       density="compact"
-      :style="{ flex: '0 0 auto', width: seconds ? '10.5rem' : '8.75rem' }"
+      :size="timeShape().empty.length"
+      class="date-picker-field__time"
       data-testid="date-picker-time"
     />
   </div>
@@ -452,6 +453,16 @@ onBeforeUnmount(() => {
 /* Wide enough for MM/DD/YYYY; the time field wraps below it instead. */
 .date-picker-field__date {
   min-width: 9.25rem;
+}
+
+/* Sized by its content (the input's `size` plus the zone label), so a long
+   label like UTC+09:00 doesn't hide the time. */
+.date-picker-field__time {
+  flex: 0 0 auto;
+}
+
+.date-picker-field__time :deep(.v-field__input) {
+  width: auto;
 }
 
 .date-picker-card :deep(.v-date-picker-controls) {

@@ -23,13 +23,12 @@ if TYPE_CHECKING:
 class Datastream(HydroServerBaseModel):
     name: str = Field(..., max_length=255)
     description: str
-    observation_type: str = Field(..., max_length=255)
+    type: Literal["timeSeriesCoverage"] = "timeSeriesCoverage"
     sampled_medium: str = Field(..., max_length=255)
     no_data_value: float
     aggregation_statistic: str = Field(..., max_length=255)
     time_aggregation_interval: float
     status: Optional[str] = Field(None, max_length=255)
-    result_type: str = Field(..., max_length=255)
     value_count: Optional[int] = Field(None, ge=0)
     phenomenon_begin_time: Optional[datetime] = None
     phenomenon_end_time: Optional[datetime] = None
@@ -52,8 +51,8 @@ class Datastream(HydroServerBaseModel):
     linked_resources: Dict[str, Dict[str, str]]
 
     _editable_fields: ClassVar[set[str]] = {
-        "name", "description", "observation_type", "sampled_medium", "no_data_value", "aggregation_statistic",
-        "time_aggregation_interval", "status", "result_type", "is_private", "is_visible",
+        "name", "description", "type", "sampled_medium", "no_data_value", "aggregation_statistic",
+        "time_aggregation_interval", "status", "is_private", "is_visible",
         "time_aggregation_interval_unit", "intended_time_spacing", "intended_time_spacing_unit", "monitoring_site_id",
         "method_id", "observed_property_id", "processing_level_id", "unit_id"
     }

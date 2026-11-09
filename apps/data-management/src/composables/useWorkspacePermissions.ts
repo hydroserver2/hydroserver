@@ -39,8 +39,9 @@ export function useWorkspacePermissions(
   }
   const getUserRoleName = (workspace: Workspace): string => {
     if (isOwner(workspace)) return 'Owner'
-    if (workspace.collaboratorRole?.name) return workspace.collaboratorRole.name
-    if (isAdmin()) return 'None (Admin)'
+    const roleName = workspace.collaboratorRole?.name
+    if (roleName) return isAdmin() ? `${roleName} (Admin)` : roleName
+    if (isAdmin()) return 'Admin'
     return ''
   }
 

@@ -88,7 +88,9 @@ class ResultQualifierQueryParameters(
         "whitespace-separated words within a term are combined with AND.",
     )
     workspace_id: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter terms by workspace ID."
+        [],
+        description="Result qualifiers that belong to this workspace. Matches `id` in `workspaces`. `null` "
+        "matches result qualifiers shared by every workspace.",
     )
 
 

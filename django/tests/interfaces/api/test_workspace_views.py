@@ -150,6 +150,39 @@ def test_get_workspace_include_pending_transfer_to_absent_without_active_transfe
     assert body["data"]["pendingTransferToEmail"] is None
 
 
+@pytest.mark.parametrize("list_view", [False, True])
+def test_admin_can_view_other_users_pending_transfer(client, list_view):
+    admin = UserFactory(is_superuser=True)
+    recipient = UserFactory()
+    workspace = WorkspaceFactory(is_private=True)
+    workspace.initiate_transfer(recipient)
+    client.force_login(admin)
+
+    response = client.get(
+        WORKSPACES_URL if list_view else _detail_url(workspace.id),
+        {"include": "pendingTransferTo"},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    item = body["data"][0] if list_view else body["data"]
+    assert item["pendingTransferToEmail"] == recipient.email
+    assert body["included"]["pendingTransferRecipients"][0]["email"] == recipient.email
+
+
+def test_pending_transfer_stays_hidden_from_uninvolved_collaborator(client):
+    workspace = WorkspaceFactory(is_private=True)
+    collaborator = _viewer_collaborator(workspace)
+    workspace.initiate_transfer(UserFactory())
+    client.force_login(collaborator.user)
+
+    response = client.get(_detail_url(workspace.id), {"include": "pendingTransferTo"})
+
+    assert response.status_code == 200
+    assert response.json()["data"]["pendingTransferToEmail"] is None
+    assert response.json()["included"] == {}
+
+
 def test_get_workspace_include_collaborator_role_sideloads_for_collaborator(client):
     workspace = WorkspaceFactory()
     collaborator = _viewer_collaborator(workspace)
@@ -275,6 +308,44 @@ def test_get_workspaces_excludes_private_workspaces_of_others(client):
 
     assert response.status_code == 200
     assert response.json()["data"] == []
+
+
+def test_get_workspaces_includes_unaffiliated_public_and_private_workspaces_for_admin(client):
+    admin = UserFactory(is_superuser=True)
+    public = WorkspaceFactory(is_private=False)
+    private = WorkspaceFactory(is_private=True)
+    client.force_login(admin)
+
+    response = client.get(WORKSPACES_URL, {"include": "owner,collaboratorRole"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert {w["id"] for w in body["data"]} == {str(public.id), str(private.id)}
+    assert all(w["collaboratorRoleId"] is None for w in body["data"])
+    assert {owner["email"] for owner in body["included"]["owners"]} == {
+        public.owner.email, private.owner.email
+    }
+
+
+@pytest.mark.parametrize("as_superuser", [False, True])
+def test_associated_filter_still_requires_membership_for_users_and_admins(client, as_superuser):
+    user = UserFactory(is_superuser=as_superuser)
+    owned = WorkspaceFactory(owner=user)
+    collaborator = _viewer_collaborator(WorkspaceFactory(is_private=True))
+    collaborator.user = user
+    collaborator.save()
+    pending = WorkspaceFactory(is_private=True)
+    pending.initiate_transfer(user)
+    WorkspaceFactory(is_private=False)
+    WorkspaceFactory(is_private=True)
+    client.force_login(user)
+
+    response = client.get(WORKSPACES_URL, {"isAssociated": "true"})
+
+    assert response.status_code == 200
+    assert {w["id"] for w in response.json()["data"]} == {
+        str(owned.id), str(collaborator.workspace_id), str(pending.id)
+    }
 
 
 def test_get_workspaces_properties_filters_every_item_in_the_list(client):
@@ -668,12 +739,14 @@ def test_accept_workspace_transfer_returns_400_when_none_pending(client):
 # --- reject_workspace_transfer ---------------------------------------------------------
 
 
-def test_reject_workspace_transfer_succeeds_for_owner(client):
+@pytest.mark.parametrize("actor", ["owner", "recipient", "admin"])
+def test_reject_workspace_transfer_succeeds_for_owner_recipient_or_admin(client, actor):
     owner = UserFactory()
     new_owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     workspace.initiate_transfer(new_owner)
-    client.force_login(owner)
+    principal = {"owner": owner, "recipient": new_owner}.get(actor)
+    client.force_login(principal or UserFactory(is_superuser=True))
 
     response = client.delete(_transfer_url(workspace.id))
 
@@ -681,6 +754,34 @@ def test_reject_workspace_transfer_succeeds_for_owner(client):
     workspace.refresh_from_db()
     assert workspace.owner == owner
     assert workspace.transfer is None
+
+
+@pytest.mark.parametrize("is_staff", [False, True])
+def test_uninvolved_user_cannot_cancel_a_transfer(client, is_staff):
+    workspace = WorkspaceFactory(is_private=True)
+    recipient = UserFactory()
+    workspace.initiate_transfer(recipient)
+    client.force_login(UserFactory(is_staff=is_staff))
+
+    response = client.delete(_transfer_url(workspace.id))
+
+    assert response.status_code == 403
+    workspace.refresh_from_db()
+    assert workspace.transfer.new_owner == recipient
+
+
+def test_admin_cannot_accept_a_transfer_for_another_recipient(client):
+    workspace = WorkspaceFactory(is_private=True)
+    owner = workspace.owner
+    workspace.initiate_transfer(UserFactory())
+    client.force_login(UserFactory(is_superuser=True))
+
+    response = client.put(_transfer_url(workspace.id))
+
+    assert response.status_code == 403
+    workspace.refresh_from_db()
+    assert workspace.owner == owner
+    assert workspace.transfer is not None
 
 
 def test_reject_workspace_transfer_returns_400_when_none_pending(client):

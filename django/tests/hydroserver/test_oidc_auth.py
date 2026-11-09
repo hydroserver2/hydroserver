@@ -32,6 +32,7 @@ from interfaces.auth.security import (
     oidc_task_run_auth,
     oidc_workspace_read_auth,
 )
+from interfaces.api.http.errors import InvalidTokenError, PermissionDeniedError
 from tests.core.iam.factories import UserFactory, WorkspaceFactory
 
 pytestmark = pytest.mark.django_db
@@ -100,8 +101,9 @@ def test_oidc_auth_returns_none_without_authorization_header():
     assert not hasattr(request, "principal")
 
 
-def test_oidc_auth_returns_none_for_unknown_token():
-    request = _bearer_request("does-not-exist")
+def test_oidc_auth_returns_none_for_non_bearer_authorization_header():
+    request = _bearer_request(None)
+    request.META["HTTP_AUTHORIZATION"] = "Basic dXNlcjpwYXNz"
 
     with request_context(request):
         result = oidc_data_read_auth(request)
@@ -109,7 +111,17 @@ def test_oidc_auth_returns_none_for_unknown_token():
     assert result is None
 
 
-def test_oidc_auth_returns_none_for_expired_token(oidc_client):
+def test_oidc_auth_raises_for_unknown_token():
+    request = _bearer_request("does-not-exist")
+
+    with request_context(request), pytest.raises(InvalidTokenError) as exc_info:
+        oidc_data_read_auth(request)
+
+    assert exc_info.value.status_code == 401
+    assert not hasattr(request, "principal")
+
+
+def test_oidc_auth_raises_for_expired_token(oidc_client):
     user = UserFactory()
     _access_token(
         oidc_client,
@@ -119,21 +131,32 @@ def test_oidc_auth_returns_none_for_expired_token(oidc_client):
     )
     request = _bearer_request("expired-token")
 
-    with request_context(request):
-        result = oidc_data_read_auth(request)
+    with request_context(request), pytest.raises(InvalidTokenError) as exc_info:
+        oidc_data_read_auth(request)
 
-    assert result is None
+    assert exc_info.value.status_code == 401
 
 
-def test_oidc_auth_returns_none_for_inactive_users_token(oidc_client):
+def test_oidc_auth_raises_for_inactive_users_token(oidc_client):
     user = UserFactory(inactive=True)
     _access_token(oidc_client, user, "inactive-user-token")
     request = _bearer_request("inactive-user-token")
 
-    with request_context(request):
-        result = oidc_data_read_auth(request)
+    with request_context(request), pytest.raises(InvalidTokenError) as exc_info:
+        oidc_data_read_auth(request)
 
-    assert result is None
+    assert exc_info.value.status_code == 401
+
+
+def test_oidc_auth_raises_for_token_without_user(oidc_client):
+    _access_token(oidc_client, None, "userless-token", scopes=["openid", DATA_READ])
+    request = _bearer_request("userless-token")
+
+    with request_context(request), pytest.raises(PermissionDeniedError) as exc_info:
+        oidc_data_read_auth(request)
+
+    assert exc_info.value.status_code == 403
+    assert str(exc_info.value) == "Access token is not associated with a user"
 
 
 @pytest.mark.parametrize(
@@ -263,7 +286,7 @@ def test_data_and_workspace_scopes_cannot_reach_iam_or_task_run_endpoints(
     )
 
     assert response.status_code == 403
-    assert "missing the required scope" in response.json()["detail"]
+    assert "missing the required scope" in response.json()["message"]
 
 
 @pytest.mark.parametrize(

@@ -9,8 +9,7 @@
     observed_property: d66414cc-ff33-4e12-bbe0-2c048abd1f40
     processing_level: a7ff1528-e485-4def-b325-45330c1c448c
     unit: 85c4118e-d1cc-4003-bbc5-5c65af802ae0
-    observation_type: Field Observation
-    result_type: Time Series
+    type: timeSeriesCoverage
     status: Ongoing
     sampled_medium: Surface Water
     value_count: 2
@@ -42,8 +41,7 @@
     observed_property: d66414cc-ff33-4e12-bbe0-2c048abd1f40
     processing_level: a7ff1528-e485-4def-b325-45330c1c448c
     unit: 85c4118e-d1cc-4003-bbc5-5c65af802ae0
-    observation_type: Field Observation
-    result_type: Time Series
+    type: timeSeriesCoverage
     status: Ongoing
     sampled_medium: Air
     value_count: 2
@@ -75,8 +73,7 @@
     observed_property: d66414cc-ff33-4e12-bbe0-2c048abd1f40
     processing_level: a7ff1528-e485-4def-b325-45330c1c448c
     unit: 85c4118e-d1cc-4003-bbc5-5c65af802ae0
-    observation_type: Field Observation
-    result_type: Time Series
+    type: timeSeriesCoverage
     status: Ongoing
     sampled_medium: Surface Water
     value_count: 2
@@ -108,8 +105,7 @@
     observed_property: d66414cc-ff33-4e12-bbe0-2c048abd1f40
     processing_level: a7ff1528-e485-4def-b325-45330c1c448c
     unit: 85c4118e-d1cc-4003-bbc5-5c65af802ae0
-    observation_type: Field Observation
-    result_type: Time Series
+    type: timeSeriesCoverage
     status: Ongoing
     sampled_medium: Air
     value_count: 2
@@ -141,8 +137,7 @@
     observed_property: 6a1bcf8e-2112-4cd0-80f3-1399f72364ca
     processing_level: 712eebc4-1f07-452d-8d48-64a1ab2022a3
     unit: 3264c5f7-ccad-4e5b-b7a0-faf175be4750
-    observation_type: Field Observation
-    result_type: Time Series
+    type: timeSeriesCoverage
     status: Ongoing
     sampled_medium: Surface Water
     value_count: 2
@@ -174,8 +169,7 @@
     observed_property: 6a1bcf8e-2112-4cd0-80f3-1399f72364ca
     processing_level: 712eebc4-1f07-452d-8d48-64a1ab2022a3
     unit: 3264c5f7-ccad-4e5b-b7a0-faf175be4750
-    observation_type: Field Observation
-    result_type: Time Series
+    type: timeSeriesCoverage
     status: Ongoing
     sampled_medium: Surface Water
     value_count: 2
@@ -207,8 +201,7 @@
     observed_property: 6a1bcf8e-2112-4cd0-80f3-1399f72364ca
     processing_level: 712eebc4-1f07-452d-8d48-64a1ab2022a3
     unit: 3264c5f7-ccad-4e5b-b7a0-faf175be4750
-    observation_type: Field Observation
-    result_type: Time Series
+    type: timeSeriesCoverage
     status: Ongoing
     sampled_medium: Surface Water
     value_count: 2
@@ -240,8 +233,7 @@
     observed_property: 6a1bcf8e-2112-4cd0-80f3-1399f72364ca
     processing_level: 712eebc4-1f07-452d-8d48-64a1ab2022a3
     unit: 3264c5f7-ccad-4e5b-b7a0-faf175be4750
-    observation_type: Field Observation
-    result_type: Time Series
+    type: timeSeriesCoverage
     status: Ongoing
     sampled_medium: Surface Water
     value_count: 2
@@ -273,8 +265,7 @@
     observed_property: a5746e4e-f479-4476-a462-6a8f7874794d
     processing_level: 90777619-9d5c-44a5-87f0-ccd5844f9cc0
     unit: 383f9663-6003-4baf-b606-7e9937b96298
-    observation_type: Field Observation
-    result_type: Time Series
+    type: timeSeriesCoverage
     status: Ongoing
     sampled_medium: Surface Water
     value_count: 2

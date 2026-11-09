@@ -36,7 +36,7 @@ def get_sampled_mediums(
     query: Query[VocabularyQueryParameters],
 ):
     """
-    Get Sampled Mediums.
+    Get sampled mediums.
     """
 
     return 200, sampled_medium_service.list(
@@ -65,7 +65,7 @@ def create_sampled_medium(
     data: SampledMediumPostBody,
 ):
     """
-    Create a new Sampled Medium.
+    Create a new sampled medium.
     """
 
     return 201, sampled_medium_service.create(
@@ -92,7 +92,7 @@ def get_sampled_medium(
     query: Query[VocabularyItemQueryParameters],
 ):
     """
-    Get a Sampled Medium.
+    Get a sampled medium.
     """
 
     return 200, sampled_medium_service.get(
@@ -119,7 +119,7 @@ def update_sampled_medium(
     data: SampledMediumPatchBody,
 ):
     """
-    Update a Sampled Medium.
+    Update a sampled medium.
     """
 
     sampled_medium_service.update(
@@ -145,7 +145,7 @@ def delete_sampled_medium(
     request: HydroServerHttpRequest, sampled_medium_id: Path[uuid.UUID]
 ):
     """
-    Delete a Sampled Medium.
+    Delete a sampled medium.
     """
 
     return 204, sampled_medium_service.delete(

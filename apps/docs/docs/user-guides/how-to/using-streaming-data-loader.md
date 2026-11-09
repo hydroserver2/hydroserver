@@ -100,7 +100,7 @@ Using an **API key** is recommended because it gives the app only the permission
 You will need:
 
 - The HydroServer website address.
-- An API key created for your workspace in the Data Management App.
+- An API key from a service account created for your workspace in the Data Management App.
 
 Example HydroServer address:
 
@@ -112,36 +112,34 @@ Paste the website address into the **Host URL** box. Then paste your API key int
 
 ---
 
-## 5. Create an API Key in HydroServer
+## 5. Create a Service Account and API Key in HydroServer
 
-An API key works like a secure password that allows the Streaming Data Loader to upload data to your HydroServer workspace. It can limit access to loading data only, whereas your username and password could be used to edit many other things. This is why we recommend using an API key with the Streaming Data Loader.
+An API key works like a secure password that allows the Streaming Data Loader to upload data to your HydroServer workspace. In HydroServer, API keys belong to service accounts. A service account's role can limit access to loading data only, whereas your username and password could be used to edit many other things. This is why we recommend using a service account's API key with the Streaming Data Loader.
 
-To create an API key for the Streaming Data Loader:
+To create a service account and API key for the Streaming Data Loader:
 
 1. Open the HydroServer Data Management App website.
-2. Go to **Your sites**.
-3. Click **Manage workspaces**.
-4. Find your workspace in the table.
-5. Click the lock icon.
+2. Click **Manage workspaces** in the main navigation.
+3. Select your workspace in the workspaces sidebar.
 
 <a href="/sdl/API1.png" target="_blank" rel="noopener noreferrer">
-  <img src="/sdl/API1.png" alt="Workspace Access Control" class="img-white-bg" width="750">
+  <img src="/sdl/API1.png" alt="Workspace service accounts tab" class="img-white-bg" width="750">
 </a>
 
-6. Click **API keys**.
-7. Click **Create API key**.
-8. Give the API key a name (something like 'Streaming Data Loader').
-9. Add a short description (something like 'API Key for Streaming Data Loader').
-10. Select the role as **Data Loader**.
+4. Open the **Service accounts** tab.
+5. Click **Create service account**.
+6. Give the service account a name (something like 'Streaming Data Loader').
+7. Add a short description (something like 'Service account for the Streaming Data Loader').
+8. Select **Data Loader** as the service account's role.
 
 <a href="/sdl/API2.png" target="_blank" rel="noopener noreferrer">
-  <img src="/sdl/API2.png" alt="Create API Key" class="img-white-bg" width="750">
+  <img src="/sdl/API2.png" alt="Create service account" class="img-white-bg" width="750">
 </a>
 
-11. Click **Save**.
-12. Copy the API key.
+9. Click **Save**.
+10. Copy the API key.
 
-**IMPORTANT:** Save the API key somewhere safe. After you close the window, HydroServer will not show the value for the API key again. If you lose the API key, you can create a new one.
+**IMPORTANT:** Save the API key somewhere safe. After you close the window, HydroServer will not show the value for the API key again. If you lose the API key, you can regenerate the service account's key; the previous key will stop working.
 
 ---
 

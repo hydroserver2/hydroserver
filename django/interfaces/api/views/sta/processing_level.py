@@ -36,7 +36,7 @@ def get_processing_levels(
     query: Query[ProcessingLevelQueryParameters],
 ):
     """
-    Get public Processing Levels and Processing Levels associated with the authenticated user.
+    Get public processing levels and processing levels associated with the authenticated user.
     """
 
     return 200, processing_level_service.list(
@@ -67,7 +67,7 @@ def create_processing_level(
     data: ProcessingLevelPostBody,
 ):
     """
-    Create a new Processing Level.
+    Create a new processing level.
     """
 
     return 201, processing_level_service.create(
@@ -93,7 +93,7 @@ def get_processing_level(
     query: Query[ProcessingLevelItemQueryParameters],
 ):
     """
-    Get a Processing Level.
+    Get a processing level.
     """
 
     return 200, processing_level_service.get(
@@ -121,7 +121,7 @@ def update_processing_level(
     data: ProcessingLevelPatchBody,
 ):
     """
-    Update a Processing Level.
+    Update a processing level.
     """
 
     processing_level_service.update(
@@ -149,7 +149,7 @@ def delete_processing_level(
     request: HydroServerHttpRequest, processing_level_id: Path[uuid.UUID]
 ):
     """
-    Delete a Processing Level.
+    Delete a processing level.
     """
 
     return 204, processing_level_service.delete(

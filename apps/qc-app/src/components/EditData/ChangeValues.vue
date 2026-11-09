@@ -49,8 +49,9 @@
         type="number"
         density="comfortable"
         variant="outlined"
-        hide-details
-        @keyup.enter="!isUpdating && selectedData?.length && onChangeValues()"
+        hide-details="auto"
+        :error-messages="valueError"
+        @keyup.enter="canApply && onChangeValues()"
       />
     </v-card-text>
 
@@ -59,7 +60,7 @@
       <v-btn
         color="primary"
         variant="flat"
-        :disabled="isUpdating || !selectedData?.length"
+        :disabled="!canApply"
         @click="onChangeValues"
       >
         Apply
@@ -69,6 +70,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { EnumEditOperations, Operator } from '@uwrl/qc-utils'
@@ -85,20 +87,40 @@ const { selectedOperator, operationValue } = storeToRefs(useUIStore())
 
 const emit = defineEmits(['close'])
 
-const onChangeValues = async () => {
-  if (!selectedData.value?.length) {
-    return
-  }
+const operator = computed(
+  () => Operator[operators[selectedOperator.value] as Operator]
+)
 
-  const operator = Operator[operators[selectedOperator.value] as Operator]
+// The field gives a string, and `+''` would quietly become 0.
+const value = computed(() => {
+  const raw = String(operationValue.value ?? '').trim()
+  return raw === '' ? NaN : Number(raw)
+})
+
+const valueError = computed(() => {
+  if (!Number.isFinite(value.value)) return 'Enter a number.'
+  if (operator.value === Operator.DIV && value.value === 0)
+    return 'Cannot divide by zero.'
+  return ''
+})
+
+const canApply = computed(
+  () => !isUpdating.value && !!selectedData.value?.length && !valueError.value
+)
+
+const onChangeValues = async () => {
+  if (!canApply.value || !selectedData.value) return
+
+  const op = operator.value
+  const amount = value.value
   const indices = [...selectedData.value]
 
   isUpdating.value = true
   setTimeout(async () => {
     await selectedSeries.value?.data.dispatchAction(
       EnumEditOperations.CHANGE_VALUES,
-      operator,
-      +operationValue.value
+      op,
+      amount
     )
 
     isUpdating.value = false

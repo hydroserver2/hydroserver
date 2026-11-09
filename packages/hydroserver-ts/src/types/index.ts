@@ -29,6 +29,12 @@ export interface GraphSeries {
 
 export type TimeSpacingUnit = 'seconds' | 'minutes' | 'hours' | 'days'
 
+export type DatastreamType = 'timeSeriesCoverage'
+
+export const DATASTREAM_TYPE_LABELS: Record<DatastreamType, string> = {
+  timeSeriesCoverage: 'Time Series Coverage',
+}
+
 export type Tags = Record<string, string>
 
 export function getTagValue(tags: Tags, key: string): string | undefined {
@@ -112,8 +118,7 @@ export class Datastream {
   name: string
   description: string
   monitoringSiteId: string
-  observationType: string
-  resultType?: string
+  type: DatastreamType
   status?: string
   sampledMedium: string
   noDataValue: number
@@ -139,8 +144,7 @@ export class Datastream {
     this.name = ''
     this.description = ''
     this.monitoringSiteId = monitoringSiteId || ''
-    this.observationType = 'OM_Measurement'
-    this.resultType = 'Time Series Coverage'
+    this.type = 'timeSeriesCoverage'
     this.sampledMedium = ''
     this.noDataValue = -9999
     this.aggregationStatistic = ''
@@ -161,8 +165,7 @@ export interface DatastreamExtended {
   id: string
   name: string
   description: string
-  observationType: string
-  resultType?: string
+  type: DatastreamType
   status?: string
   sampledMedium: string
   noDataValue: number

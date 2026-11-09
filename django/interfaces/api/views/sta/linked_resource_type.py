@@ -36,7 +36,7 @@ def get_linked_resource_types(
     query: Query[VocabularyQueryParameters],
 ):
     """
-    Get Linked Resource Types.
+    Get linked resource types.
     """
 
     return 200, linked_resource_type_service.list(
@@ -65,7 +65,7 @@ def create_linked_resource_type(
     data: LinkedResourceTypePostBody,
 ):
     """
-    Create a new Linked Resource Type.
+    Create a new linked resource type.
     """
 
     return 201, linked_resource_type_service.create(
@@ -92,7 +92,7 @@ def get_linked_resource_type(
     query: Query[VocabularyItemQueryParameters],
 ):
     """
-    Get a Linked Resource Type.
+    Get a linked resource type.
     """
 
     return 200, linked_resource_type_service.get(
@@ -119,7 +119,7 @@ def update_linked_resource_type(
     data: LinkedResourceTypePatchBody,
 ):
     """
-    Update a Linked Resource Type.
+    Update a linked resource type.
     """
 
     linked_resource_type_service.update(
@@ -145,7 +145,7 @@ def delete_linked_resource_type(
     request: HydroServerHttpRequest, linked_resource_type_id: Path[uuid.UUID]
 ):
     """
-    Delete a Linked Resource Type.
+    Delete a linked resource type.
     """
 
     return 204, linked_resource_type_service.delete(

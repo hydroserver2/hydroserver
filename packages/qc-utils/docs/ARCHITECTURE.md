@@ -241,6 +241,7 @@ last `reload()`. Each `HistoryItem`:
     datasetSize?: number,       // observation count at dispatch time
     selectionSize?: number,     // indices the op acted on
     extent?: { begin: number, end: number }, // datetimes of the first / last point acted on
+    times?: Float64Array,       // datetimes of every point acted on, ascending
   },
 }
 ```

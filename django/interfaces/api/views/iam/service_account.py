@@ -37,7 +37,7 @@ def get_service_accounts(
     query: Query[ServiceAccountQueryParameters],
 ):
     """
-    Get service accounts associated with the authenticated user.
+    Get a workspace's service accounts.
     """
 
     return 200, service_account_service.list(
@@ -68,7 +68,7 @@ def create_service_account(
     data: ServiceAccountPostBody,
 ):
     """
-    Create a new service account for the workspace.
+    Create a service account and return its API key.
     """
 
     return 201, service_account_service.create(
@@ -95,7 +95,7 @@ def get_service_account(
     query: Query[ServiceAccountItemQueryParameters],
 ):
     """
-    Get service account details.
+    Get a service account.
     """
 
     return 200, service_account_service.get(
@@ -180,7 +180,7 @@ def regenerate_service_account_key(
     service_account_id: Path[uuid.UUID],
 ):
     """
-    Regenerate a service account's key using existing settings.
+    Replace a service account's API key and return the new key.
     """
 
     return 201, service_account_service.regenerate(

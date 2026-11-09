@@ -144,33 +144,48 @@ class MonitoringSiteQueryParameters(MonitoringSiteFilterFields, CollectionQueryP
         "whitespace-separated words within a term are combined with AND.",
     )
     workspace_id: list[uuid.UUID] = Query(
-        [], description="Filter monitoring sites by workspace ID."
+        [], description="Monitoring sites in this workspace. Matches `id` in `workspaces`."
     )
     admin_area_1: list[str | Literal["null"]] = Query(
-        [], description="Filter monitoring sites by admin area 1."
+        [],
+        description="Monitoring sites in this first-level administrative area, such as a state or province. "
+        "`null` matches sites without one.",
     )
     admin_area_2: list[str | Literal["null"]] = Query(
-        [], description="Filter monitoring sites by admin area 2."
+        [],
+        description="Monitoring sites in this second-level administrative area, such as a county. `null` "
+        "matches sites without one.",
     )
-    country: list[str | Literal["null"]] = Query([], description="Filter monitoring sites by country.")
-    type: list[str] = Query([], description="Filter monitoring sites by type.")
+    country: list[str | Literal["null"]] = Query(
+        [],
+        description="Monitoring sites in this country, as an ISO 3166-1 alpha-2 code such as `US`. `null` "
+        "matches sites without one.",
+    )
+    type: list[str] = Query(
+        [],
+        description="Monitoring sites of this type. Matches `name` in `monitoring-site-types`.",
+    )
     tag: list[str] = Query(
         [],
-        description="Filter monitoring sites by tag. Format tag filters as {key}:{value}. Repeat "
-        "the parameter to require several tags.",
+        description="Monitoring sites with this tag, as `{key}:{value}`. Repeat the parameter to require "
+        "several tags.",
     )
     is_private: Optional[QueryBool] = Query(
         None,
-        description="Controls whether the returned monitoring sites should be private or public.",
+        description="`false` returns only monitoring sites that are public, in public workspaces. `true` "
+        "returns only private monitoring sites in private workspaces.",
     )
 
 
 class MonitoringSiteMarkerQueryParameters(BaseQueryParameters):
     workspace_id: list[uuid.UUID] = Query(
-        [], description="Filter markers by workspace ID."
+        [], description="Markers for monitoring sites in this workspace. Matches `id` in `workspaces`."
     )
     bbox: BoundingBoxQuery = Query(None)
-    type: list[str] = Query([], description="Filter markers by monitoring site type.")
+    type: list[str] = Query(
+        [],
+        description="Markers for monitoring sites of this type. Matches `name` in `monitoring-site-types`.",
+    )
 
 
 class MonitoringSiteMarkerResponse(BaseGetResponse, ItemId):
@@ -189,16 +204,24 @@ class SiteTypeIconResponse(BaseGetResponse):
 
 class MonitoringSiteMapSummaryQueryParameters(BaseQueryParameters):
     workspace_id: list[uuid.UUID] = Query(
-        [], description="Filter site summaries by workspace ID."
+        [], description="Summaries of monitoring sites in this workspace. Matches `id` in `workspaces`."
     )
-    type: list[str] = Query([], description="Filter summaries by monitoring site type.")
+    type: list[str] = Query(
+        [],
+        description="Summaries of monitoring sites of this type. Matches `name` in `monitoring-site-types`.",
+    )
 
 
 class MonitoringSiteTaskSummaryQueryParameters(BaseQueryParameters):
     workspace_id: list[uuid.UUID] = Query(
-        [], description="Filter task summaries by workspace ID."
+        [],
+        description="Task summaries for monitoring sites in this workspace. Matches `id` in `workspaces`.",
     )
-    type: list[str] = Query([], description="Filter summaries by monitoring site type.")
+    type: list[str] = Query(
+        [],
+        description="Task summaries for monitoring sites of this type. Matches `name` in "
+        "`monitoring-site-types`.",
+    )
 
 
 class MonitoringSiteTaskSummaryResponse(BaseGetResponse, ItemId):

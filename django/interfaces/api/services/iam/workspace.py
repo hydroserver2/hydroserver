@@ -33,7 +33,9 @@ class WorkspaceAPIService(APIService):
         workspace: Workspace, principal: User | ServiceAccount | AnonymousPrincipal
     ):
         if workspace.transfer and (
-            workspace.transfer.new_owner == principal or workspace.owner == principal
+            principal.is_superuser_principal()
+            or workspace.transfer.new_owner == principal
+            or workspace.owner == principal
         ):
             workspace.pending_transfer_to = workspace.transfer.new_owner
 
@@ -311,7 +313,9 @@ class WorkspaceAPIService(APIService):
             raise BadRequestError("No workspace transfer is pending")
 
         if not (
-            workspace.transfer.new_owner == principal or workspace.owner == principal
+            principal.is_superuser_principal()
+            or workspace.transfer.new_owner == principal
+            or workspace.owner == principal
         ):
             raise PermissionDeniedError(
                 "You do not have permission to reject this workspace transfer"

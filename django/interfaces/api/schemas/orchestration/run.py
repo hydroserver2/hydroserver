@@ -41,22 +41,22 @@ class TaskRunQueryParameters(CollectionQueryParameters):
         WithJsonSchema(sortby_array_schema(TaskRunSortByFields)),
     ] = Query([], description="Select one or more fields to sort the response by.")
     status: list[Literal["PENDING", "STARTED", "SUCCESS", "FAILURE"]] = Query(
-        [], description="Filters task runs by their status."
+        [], description="Task runs with this status. `PENDING` and `STARTED` runs haven't finished yet."
     )
     started_at__lte: ISODatetime | None = Query(
-        None, description="Filters for task runs started on or before this date and time.",
+        None, description="Task runs that started at or before this RFC 3339 date-time.",
         alias="startedAtMax"
     )
     started_at__gte: ISODatetime | None = Query(
-        None, description="Filters for task runs started on or after this date and time.",
+        None, description="Task runs that started at or after this RFC 3339 date-time.",
         alias="startedAtMin"
     )
     finished_at__lte: ISODatetime | None = Query(
-        None, description="Filters for task runs finished on or before this date and time.",
+        None, description="Task runs that finished at or before this RFC 3339 date-time.",
         alias="finishedAtMax"
     )
     finished_at__gte: ISODatetime | None = Query(
-        None, description="Filters for task runs finished on or after this date and time.",
+        None, description="Task runs that finished at or after this RFC 3339 date-time.",
         alias="finishedAtMin"
     )
 

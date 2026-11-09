@@ -20,6 +20,22 @@ export const useWorkspaceStore = defineStore('workspace', () => {
 
   const hasWorkspaces = computed(() => workspaces.value?.length)
 
+  // Admins manage the entire instance, even without workspace membership.
+  // Keep this policy shared by startup, Browse retries, and workspace refreshes.
+  const workspaceListFilters = computed(() =>
+    user.value?.isSuperuser === true ? {} : { isAssociated: true }
+  )
+
+  const associatedWorkspaces = computed(() =>
+    workspaces.value.filter(
+      (ws) =>
+        !!user.value?.email &&
+        (ws.owner?.email === user.value.email ||
+          !!ws.collaboratorRole ||
+          ws.pendingTransferTo?.email === user.value.email)
+    )
+  )
+
   const ownedWorkspaces = computed(() =>
     workspaces.value.filter(
       (ws) => !!ws.owner && ws.owner.email === user.value?.email
@@ -62,6 +78,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     workspaces,
     selectedWorkspace,
     hasWorkspaces,
+    workspaceListFilters,
+    associatedWorkspaces,
     ownedWorkspaces,
     setWorkspaces,
     setSelectedWorkspaceById,

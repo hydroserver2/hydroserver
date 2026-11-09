@@ -117,10 +117,37 @@ def _seed_v1(apps):
     }
     qualifier = ResultQualifier.objects.create(code="ICE", description="Ice affected")
 
+    sensor = apps.get_model("sta", "Sensor").objects.create(
+        workspace=workspace, name="Sonde", description="d", encoding_type="application/json",
+        method_type="Instrument Deployment",
+    )
+    observed_property = apps.get_model("sta", "ObservedProperty").objects.create(
+        workspace=workspace, name="Temperature", definition="https://example.com/temp",
+        description="d", observed_property_type="Climate", code="TEMP",
+    )
+    unit = apps.get_model("sta", "Unit").objects.create(
+        workspace=workspace, name="Degree Celsius", symbol="C", definition="https://example.com/c",
+        unit_type="Temperature",
+    )
+    datastreams = [
+        apps.get_model("sta", "Datastream").objects.create(
+            thing=thing, sensor=sensor, observed_property=observed_property,
+            processing_level=levels["uri"], unit=unit, name=f"Datastream {observation_type}",
+            description="d", observation_type=observation_type, result_type=result_type,
+            sampled_medium="Water", no_data_value=-9999, aggregation_statistic="Continuous",
+            time_aggregation_interval=1, time_aggregation_interval_unit="minutes",
+        )
+        for observation_type, result_type in [
+            ("OM_Measurement", "Time Series Coverage"),
+            ("Field Observation", "Timeseries"),
+            ("Observation", "Custom"),
+        ]
+    ]
+
     return {
         "owner": owner, "limited": limited, "superuser": superuser, "role": role,
         "key_role": key_role, "api_key": api_key, "thing": thing, "levels": levels,
-        "qualifier": qualifier,
+        "qualifier": qualifier, "datastreams": datastreams,
     }
 
 
@@ -186,7 +213,14 @@ def test_v2_migration_transforms_v1_data(v1_apps):
     assert qualifier.name == "ICE"
     assert qualifier.description == "Ice affected"
 
+    Datastream = apps.get_model("sta", "Datastream")
+    datastreams = Datastream.objects.filter(pk__in=[d.pk for d in seeded["datastreams"]])
+    assert list(datastreams.values_list("type", flat=True)) == ["timeSeriesCoverage"] * 3
+    assert "observation_type" not in {field.name for field in Datastream._meta.get_fields()}
+    assert "result_type" not in {field.name for field in Datastream._meta.get_fields()}
+
     assert apps.get_model("sta", "MonitoringSite").objects.filter(search_vector="Site").exists()
+    assert Datastream.objects.filter(search_vector="Datastream").exists()
 
 
 @pytest.mark.django_db(transaction=True)

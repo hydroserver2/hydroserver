@@ -114,8 +114,6 @@ def _datastream(
         observed_property=observed_property,
         processing_level=processing_level,
         unit=unit,
-        observation_type="Field Observation",
-        result_type="Time Series",
         status="Ongoing",
         sampled_medium="Surface Water",
         value_count=2,

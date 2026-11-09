@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError
 from processing.products.models import DataProductTransformation, DataProductTransformationInput
 from tests.core.iam.factories import WorkspaceFactory
 from tests.core.sta.factories import DatastreamFactory, MonitoringSiteFactory
+from tests.processing.etl.factories import EtlMappingFactory
 from tests.processing.products.factories import (
     DataProductTaskFactory,
     DataProductTransformationFactory,
@@ -46,6 +47,20 @@ def test_full_clean_rejects_output_datastream_from_another_monitoring_site_in_sa
     rating_curve = RatingCurveFactory(monitoring_site=monitoring_site)
     transformation = DataProductTransformation(
         task=task, output_datastream=other_output,
+        transformation_type="rating_curve", rating_curve=rating_curve,
+    )
+
+    with pytest.raises(ValidationError):
+        transformation.full_clean()
+
+
+def test_full_clean_rejects_output_datastream_already_mapped_by_etl_task():
+    task, monitoring_site = _task_and_site()
+    output_ds = DatastreamFactory(monitoring_site=monitoring_site)
+    EtlMappingFactory(target_datastream=output_ds)
+    rating_curve = RatingCurveFactory(monitoring_site=monitoring_site)
+    transformation = DataProductTransformation(
+        task=task, output_datastream=output_ds,
         transformation_type="rating_curve", rating_curve=rating_curve,
     )
 
