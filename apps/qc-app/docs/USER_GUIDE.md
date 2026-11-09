@@ -524,6 +524,8 @@ Months and years follow the calendar of the time zone chosen on the rail, and ke
 
 When the QC datastream declares an `intendedTimeSpacing`, the panel shows snap chips (`0.5×`, `1×`, `2×`) that pre-fill the amount with a multiple of the intended cadence. The active chip gets a check mark.
 
+A shift that would land on an existing point is refused, and the panel names the timestamp.
+
 #### Delete points
 
 Drop the selected points from the series entirely. The warning banner repeats the count of points about to disappear. The destructive red Delete button is the only commit affordance.
@@ -540,7 +542,7 @@ Insert one or more `(datetime, value)` tuples. Each row is a card with a datetim
 
 ![Add points panel](./images/panel-addPoints.png)
 
-The first row is seeded with the last selected point's timestamp (or the last observation in the series) plus the datastream's intended cadence, so a quick "extend the series by one point" workflow is one click + one number. Subsequent rows auto-increment by the same cadence.
+The first row is seeded with the last selected point's timestamp (or the last observation in the series) plus the datastream's intended cadence, so a quick "extend the series by one point" workflow is one click + one number. Subsequent rows auto-increment by the same cadence. **Add** stays off while a row lands on an existing point.
 
 #### Fill gaps
 

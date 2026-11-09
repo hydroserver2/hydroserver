@@ -532,7 +532,7 @@ describe('applyHistory — round-trip', () => {
   it('round-trips SELECTION → SHIFT_DATETIMES with non-index args preserved', async () => {
     await rec.dispatch([
       [EnumFilterOperations.SELECTION, [7, 8, 9]],
-      [EnumEditOperations.SHIFT_DATETIMES, 1, TimeUnit.HOUR, 'UTC'],
+      [EnumEditOperations.SHIFT_DATETIMES, 1, TimeUnit.MINUTE, 'UTC'],
     ]);
     const xAfter = Array.from(rec.dataX);
     const history = serializeHistory(rec, SAMPLE_WINDOW);
@@ -543,7 +543,7 @@ describe('applyHistory — round-trip', () => {
 
     expect(report.failed).toEqual([]);
     expect(Array.from(fresh.dataX)).toEqual(xAfter);
-    expect(fresh.history[1].args).toEqual([1, TimeUnit.HOUR, 'UTC']);
+    expect(fresh.history[1].args).toEqual([1, TimeUnit.MINUTE, 'UTC']);
   });
 
   it('replays a month shift on its saved zone calendar', async () => {
