@@ -135,6 +135,8 @@ After creating a basemap or satellite layer, return to **Map Configuration** to 
 
 The map's **Overlays** control lets users turn each overlay on or off. Enabled overlays show their attribution in the map's attribution control. Hidden overlays do not request tiles; ArcGIS metadata and styles load when the overlay is first enabled. Choices apply to the current map and reset to the administrator's defaults when a new map loads.
 
+The **Base Map** menu and each overlay have an **Opacity** slider, from 0% (transparent) to 100% (fully opaque). Adjustments update the map immediately and leave site markers at their normal opacity. Opacity is retained while switching basemaps or toggling overlays in the current map, and resets to 100% when a new map loads. Opacity controls are muted and disabled while an overlay is off; turning it back on restores the selected opacity and makes the slider adjustable again.
+
 For example, to add the NetFlowlines stream network, create a layer with **Type** set to **Overlay**, supply its provider attribution, and use this **Source**:
 
 ```text

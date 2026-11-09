@@ -1,11 +1,7 @@
 <template>
   <div class="map-wrapper">
-    <div
-      class="map-controls"
-      v-if="basemapTileSources.length > 1 || overlays.length"
-    >
+    <div class="map-controls">
       <v-select
-        v-if="basemapTileSources.length > 1"
         v-model="selectedTileSourceName"
         :items="basemapTileSources"
         item-title="name"
@@ -15,13 +11,37 @@
         hide-details
         variant="solo-filled"
         class="basemap-select"
-      />
+      >
+        <template #menu-footer>
+          <v-divider />
+          <div class="layer-opacity-control">
+            <div class="layer-opacity-label hs-text-sm">
+              <span>Opacity</span>
+              <span aria-hidden="true">{{ basemapOpacity }}%</span>
+            </div>
+            <v-slider
+              v-model="basemapOpacity"
+              aria-label="Base map opacity"
+              :aria-valuetext="`${basemapOpacity}%`"
+              :min="0"
+              :max="100"
+              :step="1"
+              color="primary"
+              hide-details
+              @keydown="onOpacityKeydown"
+            />
+          </div>
+        </template>
+      </v-select>
       <v-menu v-if="overlays.length" :close-on-content-click="false">
         <template #activator="{ props: menuProps }">
           <v-btn
             v-bind="menuProps"
             :prepend-icon="mdiLayers"
             :append-icon="mdiChevronDown"
+            aria-label="Overlays"
+            variant="flat"
+            rounded="var(--hs-radius-sm)"
             class="overlay-menu-button"
           >
             Overlays
@@ -34,18 +54,46 @@
               :key="overlay.configuration.name"
             >
               <v-checkbox
+                class="overlay-visibility"
                 :model-value="overlayVisibility[index]"
                 :label="overlay.configuration.name"
                 hide-details
                 @update:model-value="setOverlayVisibility(index, !!$event)"
               />
-              <p
-                v-if="overlayErrors[index]"
-                class="text-error hs-text-sm"
-                role="status"
-              >
-                Could not load layer. Turn it off and on to retry.
-              </p>
+              <div class="overlay-opacity-controls">
+                <div
+                  class="layer-opacity-label hs-text-sm"
+                  :class="{ 'text-disabled': !overlayVisibility[index] }"
+                >
+                  <span>Opacity</span>
+                  <span aria-hidden="true">{{ overlayOpacities[index] }}%</span>
+                </div>
+                <v-slider
+                  :model-value="overlayOpacities[index]"
+                  :disabled="!overlayVisibility[index]"
+                  :aria-disabled="!overlayVisibility[index]"
+                  :aria-label="`${overlay.configuration.name} opacity`"
+                  :aria-valuetext="`${overlayOpacities[index]}%`"
+                  :min="0"
+                  :max="100"
+                  :step="1"
+                  color="primary"
+                  hide-details
+                  @update:model-value="setOverlayOpacity(index, $event)"
+                  @keydown="onOpacityKeydown"
+                />
+                <p
+                  v-if="overlayErrors[index]"
+                  class="text-error hs-text-sm"
+                  role="status"
+                >
+                  Could not load layer. Turn it off and on to retry.
+                </p>
+              </div>
+              <v-divider
+                v-if="index < overlays.length - 1"
+                class="overlay-group-divider"
+              />
             </div>
           </v-card-text>
         </v-card>
@@ -247,10 +295,22 @@ const basemapTileSources = settings.mapConfiguration.basemapLayers.map(
 const overlays = createOverlayLayers(settings.mapConfiguration.overlayLayers)
 const overlayVisibility = ref(overlays.map(({ layer }) => layer.getVisible()))
 const overlayErrors = ref(overlays.map(() => false))
+const basemapOpacity = ref(100)
+const overlayOpacities = ref(overlays.map(() => 100))
 const overlayGroup = new LayerGroup({
   layers: overlays.map(({ layer }) => layer),
   zIndex: 1,
 })
+
+function setOverlayOpacity(index: number, opacity: number) {
+  overlayOpacities.value[index] = opacity
+  overlays[index].layer.setOpacity(opacity / 100)
+}
+
+function onOpacityKeydown(event: KeyboardEvent) {
+  // Let the slider handle navigation keys without moving focus to menu items.
+  if (event.key !== 'Escape' && event.key !== 'Tab') event.stopPropagation()
+}
 
 async function setOverlayVisibility(index: number, visible: boolean) {
   overlayVisibility.value[index] = visible
@@ -728,7 +788,11 @@ const initializeMap = () => {
   if (!chosenSource) chosenSource = basemapTileSources[0]
   selectedTileSourceName.value = chosenSource.name
 
-  rasterLayer = new TileLayer({ source: chosenSource.source, zIndex: 0 })
+  rasterLayer = new TileLayer({
+    source: chosenSource.source,
+    zIndex: 0,
+    opacity: basemapOpacity.value / 100,
+  })
   markerLayer.value = new WebGLVectorLayer({
     zIndex: 2,
     source: vectorSource,
@@ -904,6 +968,10 @@ function getConfigByName(name: string): ConfigTileSource {
   const found = basemapTileSources.find((cfg) => cfg.name === name)
   return found || basemapTileSources[0]
 }
+watch(basemapOpacity, (opacity) => {
+  rasterLayer?.setOpacity(opacity / 100)
+})
+
 watch(
   () => selectedTileSourceName.value,
   (newName) => {
@@ -951,14 +1019,54 @@ watch(
   width: calc(var(--hs-space-16) * 12);
 }
 
+/* Matches the Create Site page action, in blue. */
 .overlay-menu-button {
-  padding-inline: var(--hs-space-12);
+  padding-inline: var(--hs-space-16);
+  font-size: var(--hs-font-sm);
+  font-weight: var(--hs-font-weight-bold);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.overlay-menu-button :deep(.v-btn__content) {
+  gap: var(--hs-space-6);
 }
 
 .overlay-layer-control {
+  width: calc(var(--hs-space-32) * 9);
   max-width: calc(100vw - var(--hs-space-24));
   max-height: 60vh;
   overflow-y: auto;
+}
+
+.layer-opacity-control {
+  min-width: calc(var(--hs-space-24) * 10);
+  padding: var(--hs-space-8) var(--hs-space-16);
+}
+
+.overlay-group-divider {
+  margin-block: var(--hs-space-8);
+}
+
+.overlay-visibility :deep(.v-label) {
+  margin-inline-start: var(--hs-space-4);
+}
+
+.overlay-opacity-controls {
+  margin-inline-start: var(--hs-space-32);
+  /* Keep the slider thumb's hit area and focus ring inside the menu at 100%. */
+  padding-inline-end: var(--hs-space-8);
+}
+
+.overlay-opacity-controls :deep(.v-slider > .v-input__control) {
+  margin-inline: 0;
+}
+
+.layer-opacity-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--hs-space-8);
 }
 
 .fill-width {
