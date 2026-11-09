@@ -13,6 +13,7 @@ from tests.core.iam.factories import (
 )
 from tests.core.sta.factories import DatastreamFactory, MonitoringSiteFactory
 from tests.processing.etl.factories import EtlTaskFactory, EtlMappingFactory
+from tests.processing.products.factories import DataProductTransformationFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -208,6 +209,27 @@ def test_create_etl_mapping_returns_409_for_duplicate_target_datastream(client):
             "etlTaskId": str(task.id),
             "sourceIdentifier": "col_b",
             "targetDatastreamId": str(existing.target_datastream_id),
+        },
+        content_type="application/json",
+    )
+
+    assert response.status_code == 409
+
+
+def test_create_etl_mapping_returns_409_for_data_product_output_datastream(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task = _make_task(workspace)
+    target = DatastreamFactory(monitoring_site=MonitoringSiteFactory(workspace=workspace))
+    DataProductTransformationFactory(output_datastream=target)
+    client.force_login(owner)
+
+    response = client.post(
+        MAPPINGS_URL,
+        data={
+            "etlTaskId": str(task.id),
+            "sourceIdentifier": "col_a",
+            "targetDatastreamId": str(target.id),
         },
         content_type="application/json",
     )
