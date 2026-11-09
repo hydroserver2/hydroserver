@@ -441,6 +441,10 @@ Run the filter as usual (value thresholds, change threshold, rate of change, fin
 
 Use the mask when you want to QC a specific event window without touching the rest of the series: e.g. flag persistence runs only inside a known outage, or apply a value threshold only to last month's data.
 
+### Selected points
+
+With points selected, turn on **Search only the N selected points** in a filter panel to keep only the filter's matches among them, for example a lasso period narrowed to values below 0. Changing the filter searches the same points again; selecting other points searches those instead.
+
 ### Filter operations
 
 These do not change data. They produce a selection that the next edit operation acts on.

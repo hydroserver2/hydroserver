@@ -839,10 +839,8 @@ export class ObservationRecord {
     }
   }
 
-  /** Filter operations do not transform the data and return a selection */
-  async dispatchFilter(action: EnumFilterOperations, ...args: any): Promise<number[]> {
-    this._refuseWhilePreviewing();
-    const filters: EnumDictionary<EnumFilterOperations, Function> = {
+  private _filterHandlers(): EnumDictionary<EnumFilterOperations, Function> {
+    return {
       [EnumFilterOperations.FIND_GAPS]: this._findGaps,
       [EnumFilterOperations.VALUE_THRESHOLD]: this._valueThreshold,
       [EnumFilterOperations.DATETIME_RANGE]: this._datetimeRange,
@@ -851,6 +849,32 @@ export class ObservationRecord {
       [EnumFilterOperations.RATE_OF_CHANGE]: this._rateOfChange,
       [EnumFilterOperations.SELECTION]: this._selection,
     };
+  }
+
+  /** Run a filter over `within` only, recording the matches as a SELECTION
+   *  so replay gives back exactly these points. */
+  async dispatchFilterWithin(
+    within: ArrayLike<number>,
+    action: EnumFilterOperations,
+    ...args: any
+  ): Promise<number[]> {
+    this._refuseWhilePreviewing();
+    if (action === EnumFilterOperations.SELECTION) {
+      throw new Error("A selection can't be filtered within a selection.");
+    }
+    const matches: number[] =
+      (await this._filterHandlers()[action].apply(this, args)) ?? [];
+    const base = new Set(Array.from(within));
+    return this.dispatchFilter(
+      EnumFilterOperations.SELECTION,
+      matches.filter((i) => base.has(i)),
+    );
+  }
+
+  /** Filter operations do not transform the data and return a selection */
+  async dispatchFilter(action: EnumFilterOperations, ...args: any): Promise<number[]> {
+    this._refuseWhilePreviewing();
+    const filters = this._filterHandlers();
 
     let response = [];
     // Declared outside the try so the catch block can mark the

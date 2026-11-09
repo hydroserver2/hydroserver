@@ -108,10 +108,22 @@ const { runFilter } = useFilterDispatch()
 await runFilter(EnumFilterOperations.VALUE_THRESHOLD, [{ filters: [{ operator: 'Greater than', value: 100 }], match: 'any' }])
 ```
 
-- Calls `selectedSeries.data.dispatchFilter(...)` on the QC datastream.
+- Calls `selectedSeries.data.dispatchFilter(...)` on the QC datastream, or
+  `dispatchFilterWithin(base, ...)` while **Search only the selected
+  points** is on.
 - Appends a `HistoryItem` to the edit history.
 - Highlights the resulting selection on the plot.
 - Surfaces Snackbar errors on failure.
+
+### `useFilterWithinSelection()`
+
+```ts
+const { within, baseCount, selectedCount } = useFilterWithinSelection()
+within.value = true  // keeps the current selection as the base filters search
+```
+
+The filter panels' **Search only the selected points** switch. A hand-made
+selection becomes the new base; a filter's own result doesn't.
 
 ### `useDataSelection()`
 
@@ -686,6 +698,9 @@ defaults are reseeded from the datastream on each mount.
 | `selectedChangeComparator` / `changeValue` | state | shape above / `number`                    | Change-threshold filter inputs. |
 | `filterRangeActive`               | state  | `boolean`                                         | Toggles the shared filter-window UX; the only persisted field. |
 | `filterRangeFromTs` / `filterRangeToTs` | state | `number \| null`                            | Filter-window epoch bounds; reseed on each panel mount. |
+| `filterWithinSelection`           | state  | `boolean`                                         | Filters search only `filterWithinBase` (`useFilterWithinSelection`). |
+| `filterWithinBase`                | state  | `number[] \| null`                                | The selection filters search while that is on. |
+| `filterWithinApplying`            | state  | `boolean`                                         | Set while a filter writes its own result, which doesn't become the base. |
 | `onRailItemClicked`               | action | `(title: DrawerType) => void`                     | Nav-rail click handler: toggles open/closed on repeat, switches view on first click. |
 | `showView`                        | action | `(view: View) => void`                            | Switch layouts (view + drawer). Layout only: an open edit session is untouched. |
 

@@ -1411,6 +1411,60 @@ describe('ObservationRecord', () => {
     });
   });
 
+  describe('dispatchFilterWithin', () => {
+    const { datetimes, dataValues, startMs, spacingMs } = buildUniformData(20);
+    const at = (i: number) => startMs + i * spacingMs;
+    const RANGE = EnumFilterOperations.DATETIME_RANGE;
+    let rec: ObservationRecord;
+
+    beforeEach(async () => {
+      rec = new ObservationRecord({ datetimes, dataValues });
+      await rec.reload();
+    });
+
+    it('keeps only the matches that were already selected', async () => {
+      await rec.dispatchFilter(EnumFilterOperations.SELECTION, [2, 10, 17, 18]);
+      const result = await rec.dispatchFilterWithin([2, 10, 17, 18], RANGE, at(5), at(17));
+      expect(result).toEqual([10, 17]);
+    });
+
+    it('records the narrowed selection, so replay gives the same points', async () => {
+      await rec.dispatchFilter(EnumFilterOperations.SELECTION, [2, 10, 17, 18]);
+      await rec.dispatchFilterWithin([2, 10, 17, 18], RANGE, at(5), at(17));
+      expect(rec.history.map((h) => [h.method, h.selected])).toEqual([
+        [EnumFilterOperations.SELECTION, [10, 17]],
+      ]);
+
+      await rec.dispatchAction(EnumEditOperations.DELETE_POINTS);
+      await rec.undo();
+      await rec.redo();
+      expect(rec.dataX.length).toBe(18);
+      expect(rec.history[0]!.selected).toEqual([10, 17]);
+    });
+
+    it('re-runs against the same base, not the last result', async () => {
+      const base = [2, 10, 17, 18];
+      await rec.dispatchFilter(EnumFilterOperations.SELECTION, base);
+      await rec.dispatchFilterWithin(base, RANGE, at(17), at(19));
+      const widened = await rec.dispatchFilterWithin(base, RANGE, at(5), at(19));
+      expect(widened).toEqual([10, 17, 18]);
+      expect(rec.history).toHaveLength(1);
+    });
+
+    it('clears the selection when nothing selected matches', async () => {
+      await rec.dispatchFilter(EnumFilterOperations.SELECTION, [2, 3]);
+      const result = await rec.dispatchFilterWithin([2, 3], RANGE, at(10), at(19));
+      expect(result).toEqual([]);
+      expect(rec.history).toHaveLength(0);
+    });
+
+    it('refuses a selection as the filter', async () => {
+      await expect(
+        rec.dispatchFilterWithin([1], EnumFilterOperations.SELECTION, [1])
+      ).rejects.toThrow();
+    });
+  });
+
   describe('execution extent', () => {
     const { datetimes, dataValues, startMs, spacingMs } = buildUniformData(20);
     const at = (i: number) => startMs + i * spacingMs;
