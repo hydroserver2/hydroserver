@@ -821,6 +821,26 @@ describe('ObservationRecord', () => {
       }
     });
 
+    it('FILL_GAPS fails on a fill cadence that is not above zero', async () => {
+      const startMs = Date.UTC(2023, 0, 1);
+      const local = new ObservationRecord({
+        datetimes: [startMs, startMs + 4 * 60 * 60 * 1000],
+        dataValues: [1, 2],
+      });
+      await local.reload();
+      for (const amount of [0, -1, NaN]) {
+        await local.dispatch(
+          EnumEditOperations.FILL_GAPS,
+          [30, TimeUnit.MINUTE],
+          [amount, TimeUnit.MINUTE],
+          true,
+          -9999,
+        );
+        expect(local.history[local.history.length - 1].execution.status).toBe('failed');
+      }
+      expect(local.dataX.length).toBe(2);
+    });
+
     it('FILL_GAPS is a no-op when no gap exceeds the threshold', async () => {
       const uniform = buildUniformData(20, 0, 10); // 15-min spacing
       const local = new ObservationRecord({

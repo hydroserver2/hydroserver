@@ -139,7 +139,7 @@ matters; lower means smaller idle memory, more frequent grow / copy.
 | `INTERPOLATE`          | `()` — linear interpolation per consecutive group in the prior selection.    |
 | `SHIFT_DATETIMES`      | `(amount: number, unit: TimeUnit, timeZone: string)`; months and years follow `timeZone`'s calendar; see Time zones. |
 | `DRIFT_CORRECTION`     | `(value: number)` — linear drift across each consecutive group.              |
-| `FILL_GAPS`            | `(gapThreshold: [amount, unit], fillCadence: [amount, unit], fillValue?: number)` |
+| `FILL_GAPS`            | `(gapThreshold: [amount, unit], fillCadence: [amount, unit], fillValue?: number)`. Fails on a cadence of zero or less. |
 
 ### `enum EnumFilterOperations`
 

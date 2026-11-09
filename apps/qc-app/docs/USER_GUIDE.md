@@ -559,6 +559,8 @@ The panel reuses the Find-gaps finder at the top (date range, threshold, snap ch
 
 Cadence warnings appear when the fill step would skip gaps just above the threshold, or when the cadence doesn't divide evenly into the datastream's intended spacing. The **Re-select gaps** button mirrors the one in Find gaps.
 
+One fill can add at most twice the points loaded (at least 10,000); a finer cadence keeps **Fill gaps** off.
+
 > **Workflow:** if you only want to see the gaps without filling them, use Find gaps instead. Fill gaps is the same finder with the fill controls bolted on.
 
 ## The Edit history panel
