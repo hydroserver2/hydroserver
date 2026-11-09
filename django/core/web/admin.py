@@ -18,7 +18,9 @@ class ContactInformationAdmin(admin.ModelAdmin):
 
 
 class MapLayerAdmin(admin.ModelAdmin):
-    list_display = ("name", "type", "priority", "source", "attribution")
+    list_display = (
+        "name", "type", "priority", "visible_by_default", "source", "attribution"
+    )
 
 
 class SiteTypeIconAdminForm(forms.ModelForm):

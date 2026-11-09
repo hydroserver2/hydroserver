@@ -170,8 +170,25 @@ class ContactInformation(models.Model):
 class MapLayer(models.Model):
     name = models.CharField(max_length=255, unique=True)
     type = models.CharField(max_length=255, choices=MAP_LAYER_TYPE_CHOICES)
-    priority = models.IntegerField(default=0)
-    source = models.CharField(max_length=255)
+    priority = models.IntegerField(
+        default=0,
+        help_text=(
+            "Overlays with higher priorities are drawn above lower priorities, "
+            "below site markers."
+        ),
+    )
+    visible_by_default = models.BooleanField(
+        default=False,
+        help_text="Show this overlay when a map first loads. Ignored for basemaps.",
+    )
+    source = models.CharField(
+        max_length=255,
+        help_text=(
+            "XYZ tile URL with {z}, {x}, and {y} placeholders. Overlays also support "
+            "ArcGIS VectorTileServer URLs (with or without ?f=json) or their "
+            "resources/styles/root.json URL."
+        ),
+    )
     attribution = models.CharField(max_length=255)
 
     def __str__(self):
