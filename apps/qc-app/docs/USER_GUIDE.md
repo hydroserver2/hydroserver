@@ -368,6 +368,8 @@ While editing, the edit target's row shows the session's working data over the s
 
 You can check up to **4 datastreams at a time**. The fifth plot slot is kept for the datastream you edit, so there is always room for it. The plotted count and cap are surfaced in the Datastreams table toolbar as a chip ("`N/4 plotted`"). Once you hit the cap, the unchecked rows disable their plot toggles and a tooltip explains why. Unplot a row from either the table or the list to free up a slot. While editing, the edit target and its raw source context are shown in addition to the 4 plotted datastreams. They don't count against the cap; a source you plot yourself does. History comparison lines (see [Comparing against a point in history](#comparing-against-a-point-in-history)) don't count either, and aren't included in **Download selected**.
 
+A share link that lists more than 4 plots the first 4 and names the rest.
+
 ![Two datastreams on independent y-axes](./images/home-multi-datastreams.png)
 
 When more than one datastream is on the plot:
@@ -649,6 +651,7 @@ Things worth knowing:
   Each one replays on load, so a link carrying several is slower to open.
 - Closing the session drops every snapshot. Switching to the Select view does
   not, since the session stays open.
+- Up to 2 snapshots can be shown at once; hide one to show another.
 
 ## Deleting a session
 

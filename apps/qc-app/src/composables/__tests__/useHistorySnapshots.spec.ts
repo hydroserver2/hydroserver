@@ -13,6 +13,7 @@ const {
   qcDatastream,
   addSnapshotSeries,
   removeSnapshotSeries,
+  refuseSnapshot,
   sessions,
   historyId,
   sourceDatastream,
@@ -30,6 +31,7 @@ const {
     qcDatastream: r<any>({ id: 'mgd-1', name: 'Managed' }),
     addSnapshotSeries: vi.fn().mockResolvedValue(undefined),
     removeSnapshotSeries: vi.fn().mockResolvedValue(undefined),
+    refuseSnapshot: vi.fn().mockReturnValue(false),
     sessions: r<any[]>([]),
     historyId: r<string | null>('hist-1'),
     sourceDatastream: r<any>({ id: 'src-1', name: 'Source' }),
@@ -54,6 +56,7 @@ vi.mock('@/store/dataVisualization', async () => {
       qcDatastream,
       addSnapshotSeries,
       removeSnapshotSeries,
+      refuseSnapshot,
     })),
   }
 })
@@ -135,6 +138,7 @@ beforeEach(() => {
   qcDatastream.value = { id: 'mgd-1', name: 'Managed' }
   viewedSessionId.value = null
   buildSnapshotRecord.mockResolvedValue({ history: [], isLoading: false })
+  refuseSnapshot.mockReturnValue(false)
 })
 
 describe('useHistorySnapshots', () => {
@@ -174,6 +178,17 @@ describe('useHistorySnapshots', () => {
 
     expect(removeSnapshotSeries).toHaveBeenCalledWith('snap:sess-c:1')
     expect(buildSnapshotRecord).not.toHaveBeenCalled()
+  })
+
+  it('does not build a snapshot past the limit', async () => {
+    refuseSnapshot.mockReturnValue(true)
+    const { toggleSnapshot } = useHistorySnapshots()
+
+    await toggleSnapshot('sess-c', 1)
+
+    expect(refuseSnapshot).toHaveBeenCalledWith('March backfill')
+    expect(buildSnapshotRecord).not.toHaveBeenCalled()
+    expect(addSnapshotSeries).not.toHaveBeenCalled()
   })
 
   it('reports whether a snapshot is plotted', () => {
