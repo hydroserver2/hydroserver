@@ -21,13 +21,13 @@
           <v-btn
             v-bind="menuProps"
             :prepend-icon="mdiLayers"
-            aria-label="Overlay layers"
+            :append-icon="mdiChevronDown"
+            class="overlay-menu-button"
           >
-            Layers
+            Overlays
           </v-btn>
         </template>
         <v-card class="overlay-layer-control">
-          <v-card-title class="hs-title">Overlays</v-card-title>
           <v-card-text>
             <div
               v-for="(overlay, index) in overlays"
@@ -180,7 +180,13 @@ import { createOverlayLayers } from '@/utils/maps/overlays'
 import WebGLVectorLayer from 'ol/layer/WebGLVector'
 import mapMarkerUrl from '@/assets/map-marker-64.png?url'
 import { OSM, XYZ } from 'ol/source'
-import { mdiMapMarker, mdiChevronRight, mdiClose, mdiLayers } from '@mdi/js'
+import {
+  mdiMapMarker,
+  mdiChevronRight,
+  mdiChevronDown,
+  mdiClose,
+  mdiLayers,
+} from '@mdi/js'
 
 const props = defineProps({
   monitoringSites: {
@@ -935,13 +941,18 @@ watch(
   top: var(--hs-space-12);
   right: var(--hs-space-12);
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-end;
   gap: var(--hs-space-8);
   z-index: 2; /* above the map tiles */
 }
 
 .basemap-select {
   width: calc(var(--hs-space-16) * 12);
+}
+
+.overlay-menu-button {
+  padding-inline: var(--hs-space-12);
 }
 
 .overlay-layer-control {

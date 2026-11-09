@@ -133,7 +133,7 @@ Use **Website Configuration** > **Map Layers** to add basemap and overlay option
 
 After creating a basemap or satellite layer, return to **Map Configuration** to select it as a default layer.
 
-The map's **Layers** control lets users turn each overlay on or off. Enabled overlays show their attribution in the map's attribution control. Hidden overlays do not request tiles; ArcGIS metadata and styles load when the overlay is first enabled. Choices apply to the current map and reset to the administrator's defaults when a new map loads.
+The map's **Overlays** control lets users turn each overlay on or off. Enabled overlays show their attribution in the map's attribution control. Hidden overlays do not request tiles; ArcGIS metadata and styles load when the overlay is first enabled. Choices apply to the current map and reset to the administrator's defaults when a new map loads.
 
 For example, to add the NetFlowlines stream network, create a layer with **Type** set to **Overlay**, supply its provider attribution, and use this **Source**:
 

@@ -70,7 +70,7 @@ test('Map overlays honor defaults, load lazily, and keep visibility when changin
     .toBe(true)
   expect(tileRequests.some((url) => url.includes('/flowlines/'))).toBe(false)
 
-  await page.getByRole('button', { name: 'Overlay layers' }).click()
+  await page.getByRole('button', { name: 'Overlays', exact: true }).click()
   const watersheds = page.getByRole('checkbox', {
     name: 'Watersheds',
     exact: true,
@@ -102,7 +102,7 @@ test('Map overlays honor defaults, load lazily, and keep visibility when changin
   await expect(page.locator('.ol-attribution')).not.toContainText(
     'Watershed provider'
   )
-  await page.getByRole('button', { name: 'Overlay layers' }).click()
+  await page.getByRole('button', { name: 'Overlays', exact: true }).click()
   await expect(flowlines).toBeChecked()
   await expect(watersheds).not.toBeChecked()
 
