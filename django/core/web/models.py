@@ -4,6 +4,7 @@ from django.db import models, transaction
 from django.core.exceptions import ValidationError
 from solo.models import SingletonModel
 
+
 SITE_TYPE_ICON_CHOICES = (
     ("beach", "Beach"),
     ("calculator", "Calculator"),
@@ -260,8 +261,8 @@ class SiteTypeIcon(models.Model):
     def _conflicting_keywords(self):
         """Return this icon's keywords that are already mapped to another icon."""
 
-        other_mappings = (
-            type(self).objects.exclude(pk=self.pk).values_list("icon", "site_types")
+        other_mappings = type(self).objects.exclude(pk=self.pk).values_list(
+            "icon", "site_types"
         )
         mapped_keywords = {
             normalize_site_type_keyword(site_type)

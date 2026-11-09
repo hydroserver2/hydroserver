@@ -24,8 +24,9 @@ class Migration(migrations.Migration):
             field=models.IntegerField(
                 default=0,
                 help_text=(
-                    "Overlays with higher priorities are drawn above lower priorities, "
-                    "below site markers."
+                    "Larger priority numbers render on top of smaller numbers "
+                    "(for example, priority 10 renders on top of priority 5). "
+                    "All overlays render below site markers."
                 ),
             ),
         ),

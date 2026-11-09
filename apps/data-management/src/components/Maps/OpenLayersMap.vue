@@ -35,6 +35,7 @@
       </v-select>
       <v-menu v-if="overlays.length" :close-on-content-click="false">
         <template #activator="{ props: menuProps }">
+          <!-- Vuetify's aria-owns otherwise adds menu contents to the button name. -->
           <v-btn
             v-bind="menuProps"
             :prepend-icon="mdiLayers"
@@ -50,7 +51,7 @@
         <v-card class="overlay-layer-control">
           <v-card-text>
             <div
-              v-for="(overlay, index) in overlays"
+              v-for="{ overlay, index } in overlayMenuItems"
               :key="overlay.configuration.name"
             >
               <v-checkbox
@@ -68,6 +69,7 @@
                   <span>Opacity</span>
                   <span aria-hidden="true">{{ overlayOpacities[index] }}%</span>
                 </div>
+                <!-- Vuetify disables interaction but does not mark the thumb aria-disabled. -->
                 <v-slider
                   :model-value="overlayOpacities[index]"
                   :disabled="!overlayVisibility[index]"
@@ -91,7 +93,7 @@
                 </p>
               </div>
               <v-divider
-                v-if="index < overlays.length - 1"
+                v-if="index > 0"
                 class="overlay-group-divider"
               />
             </div>
@@ -293,6 +295,10 @@ const basemapTileSources = settings.mapConfiguration.basemapLayers.map(
 )
 
 const overlays = createOverlayLayers(settings.mapConfiguration.overlayLayers)
+// List the topmost layer first without changing the map's drawing order.
+const overlayMenuItems = overlays
+  .map((overlay, index) => ({ overlay, index }))
+  .reverse()
 const overlayVisibility = ref(overlays.map(({ layer }) => layer.getVisible()))
 const overlayErrors = ref(overlays.map(() => false))
 const basemapOpacity = ref(100)

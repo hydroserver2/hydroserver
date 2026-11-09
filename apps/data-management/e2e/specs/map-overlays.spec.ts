@@ -94,9 +94,12 @@ test('Map layers honor visibility and opacity, load lazily, and retain choices w
   await page.keyboard.press('Escape')
 
   await page.getByRole('button', { name: 'Overlays', exact: true }).click()
+  await expect(page.locator('.overlay-menu-button')).toHaveAccessibleName(
+    'Overlays'
+  )
   await expect(
-    page.getByRole('button', { name: 'Overlays', exact: true })
-  ).toBeVisible()
+    page.locator('.overlay-layer-control .overlay-visibility .v-label')
+  ).toHaveText(['Flowlines', 'Watersheds'])
   const watersheds = page.getByRole('checkbox', {
     name: 'Watersheds',
     exact: true,
