@@ -382,6 +382,7 @@ Once a datastream is on the plot, the **plotted datastreams list** on the right 
 
 - **Eye toggle**: hide / show a trace on the plot without unplotting it. Useful when one series is visually crowding the others. Hidden rows render with a strikethrough; their axis stays on the plot so the scale doesn't jump.
 - **Y-axis toggle** (non-primary rows only): collapse just the secondary axis without removing the trace. Reach for it when the extra axes start eating horizontal room and you don't actually need the numeric scale.
+- **Lock** (non-primary rows only): the row's axis moves with the primary axis. Dragging or zooming the primary axis pans and zooms the locked axis by the same share of its own range, so it keeps its own scale.
 - **Drag handle**: drag a row up or down to reorder the legend. The plot redraws so the trace colors track the new order. The edit target is pinned and can't be reordered.
 - **× button**: unplot the row entirely.
 
@@ -393,6 +394,7 @@ The Plotly toolbar at the top of the chart drives the X-axis gestures (Zoom, Pan
 - **X-axis pan**: enable Pan in the toolbar, then drag the plot body. In the Edit view, the overview strip at the bottom is also draggable. It acts as a thumbnail of the loaded range.
 - **Per-axis zoom**: hover near the ends of any axis and drag. Only that axis rescales. Sibling axes keep their current view. This is how you "compare units": drop the temperature axis to a tight window without touching streamflow.
 - **Per-axis pan**: hover the middle of an axis and drag.
+- **Match the primary scale**: double-click the axis of a datastream with the same observed property and unit as the primary axis. It takes the primary axis's range, so the two series line up.
 - **Reset**: the home icon on the Plotly toolbar returns to the default zoom (does not change the begin/end dates in the
   sidebar).
 - **Fit Y/X to visible**: the collapse icons in the toolbar rescale the X or Y axis to the currently visible points. Handy

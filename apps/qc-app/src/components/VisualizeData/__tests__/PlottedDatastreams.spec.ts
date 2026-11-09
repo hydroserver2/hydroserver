@@ -37,6 +37,9 @@ const plotlyRef = ref<any>(null)
 const plotlyOptions = ref<any>({ traces: [] })
 const hiddenAxisIds = ref<Set<string>>(new Set())
 const hiddenTraceIds = ref<Set<string>>(new Set())
+const lockedAxisIds = ref<Set<string>>(new Set())
+const lockable = new Set<string>()
+const toggleAxisLock = vi.fn()
 
 const toggleDatastream = vi.fn().mockResolvedValue(undefined)
 const clearPlottedDatastreams = vi.fn().mockResolvedValue(undefined)
@@ -65,6 +68,7 @@ vi.mock('@/store/plotly', () => ({
     plotlyOptions,
     hiddenAxisIds,
     hiddenTraceIds,
+    lockedAxisIds,
     updateOptions,
     colorForDatastream,
     labelColorForDatastream,
@@ -75,6 +79,8 @@ vi.mock('@/utils/plotting/plotly', () => ({
   handleNewPlot: vi.fn().mockResolvedValue(undefined),
   toggleAxisVisibility: vi.fn(),
   toggleTraceVisibility: vi.fn().mockResolvedValue(undefined),
+  canLockAxis: (id: string) => lockable.has(id),
+  toggleAxisLock: (id: string) => toggleAxisLock(id),
 }))
 
 const closeEditor = vi.fn().mockResolvedValue(true)
@@ -405,6 +411,26 @@ describe('PlottedDatastreams row kinds', () => {
     expect(
       row(wrapper, 'ctx2').find('.plotted-item__axis-toggle').exists()
     ).toBe(true)
+  })
+
+  it('offers a lock on rows whose axis can lock, and shows it locked', async () => {
+    lockable.add('ctx2')
+    lockedAxisIds.value = new Set(['ctx2'])
+    let wrapper = mountIt()
+
+    expect(row(wrapper, 'ctx').find('[data-testid="axis-lock-ctx"]').exists()).toBe(false)
+    let lock = row(wrapper, 'ctx2').find('[data-testid="axis-lock-ctx2"]')
+    expect(lock.attributes('aria-pressed')).toBe('true')
+    await lock.trigger('click')
+    expect(toggleAxisLock).toHaveBeenCalledWith('ctx2')
+
+    lockedAxisIds.value = new Set()
+    wrapper = mountIt()
+    lock = row(wrapper, 'ctx2').find('[data-testid="axis-lock-ctx2"]')
+    expect(lock.attributes('aria-pressed')).toBe('false')
+    expect(lock.attributes('title')).toBe('Lock Y axis to move with the primary axis')
+    lockable.clear()
+    lockedAxisIds.value = new Set()
   })
 
   it('shows Clear plot only where asked, editing or not', () => {

@@ -360,6 +360,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
       yAxisLabel: qcSeries?.yAxisLabel ?? '',
       color: '',
       intendedSpacingMs: qcSeries?.intendedSpacingMs ?? null,
+      variable: qcSeries?.variable,
       snapshot: meta,
     })
 
