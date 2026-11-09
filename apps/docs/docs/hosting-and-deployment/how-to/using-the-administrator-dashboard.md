@@ -126,7 +126,7 @@ Use **Website Configuration** > **Map Layers** to add basemap and overlay option
 | --- | --- |
 | **Name** | Sets the display name shown to users. |
 | **Type** | Classifies the layer as a **Basemap** or **Overlay**. |
-| **Priority** | Overlays with higher values draw above overlays with lower values. Equal priorities sort by name. All overlays stay above the basemap and below site markers. |
+| **Priority** | Larger priority numbers render on top of smaller numbers; for example, priority 10 renders on top of priority 5. Equal priorities sort by name. All overlays stay above the basemap and below site markers. |
 | **Visible by default** | Turns an overlay on when a map first loads. Ignored for basemaps. Defaults to off. |
 | **Source** | XYZ raster tile URL containing `{z}`, `{x}`, and `{y}` placeholders. Overlays also accept ArcGIS `VectorTileServer` URLs or their `resources/styles/root.json` URL. |
 | **Attribution** | Sets the attribution text required by the layer provider. |
