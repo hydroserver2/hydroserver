@@ -21,6 +21,7 @@ import {
   INCREASE_AMOUNT,
   HistoryPreviewError,
 } from '../observation-record';
+import { serializeHistory } from '../history';
 import {
   EnumEditOperations,
   EnumFilterOperations,
@@ -1542,6 +1543,53 @@ describe('ObservationRecord', () => {
         begin: at(2),
         end: at(4),
       });
+    });
+  });
+
+  describe('execution times', () => {
+    const { datetimes, dataValues, startMs, spacingMs } = buildUniformData(20);
+    const at = (i: number) => startMs + i * spacingMs;
+    let rec: ObservationRecord;
+
+    beforeEach(async () => {
+      rec = new ObservationRecord({ datetimes, dataValues });
+      await rec.reload();
+    });
+
+    const times = (i: number) => Array.from(rec.history[i]!.execution.times ?? []);
+
+    it('lists every point a scattered selection picked, in time order', async () => {
+      await rec.dispatchFilter(EnumFilterOperations.SELECTION, [7, 3, 5]);
+      expect(times(0)).toEqual([at(3), at(5), at(7)]);
+    });
+
+    it('lists the points an edit took from the selection, before it moved them', async () => {
+      await rec.dispatch([
+        [EnumFilterOperations.SELECTION, [2, 9]],
+        [EnumEditOperations.DELETE_POINTS],
+        [EnumFilterOperations.SELECTION, [2]],
+        [EnumEditOperations.DELETE_POINTS],
+      ]);
+      expect(times(1)).toEqual([at(2), at(9)]);
+      // Index 2 held the next point by then.
+      expect(times(3)).toEqual([at(3)]);
+    });
+
+    it('lists the points an insert added', async () => {
+      await rec.dispatchAction(EnumEditOperations.ADD_POINTS, [
+        [at(30), 1],
+        [at(25), 1],
+      ]);
+      expect(times(0)).toEqual([at(25), at(30)]);
+    });
+
+    it('is left out when the history is saved', async () => {
+      await rec.dispatchFilter(EnumFilterOperations.SELECTION, [1, 4]);
+      const saved = serializeHistory(rec, {
+        startDate: new Date(at(0)).toISOString(),
+        endDate: new Date(at(19)).toISOString(),
+      });
+      expect(JSON.stringify(saved)).not.toContain('times');
     });
   });
 

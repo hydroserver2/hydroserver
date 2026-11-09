@@ -163,6 +163,13 @@ export interface HistoryExecution {
    * Runtime-only like `selected`: recomputed on replay, never serialized.
    */
   extent?: { begin: number; end: number };
+  /**
+   * Epoch-ms datetimes of every point the op acted on, ascending, under the
+   * same rules as `extent`, so a consumer can list exactly which points a
+   * scattered selection touched. Runtime-only: recomputed on replay, never
+   * serialized.
+   */
+  times?: Float64Array;
 }
 
 export type HistoryItem = {
