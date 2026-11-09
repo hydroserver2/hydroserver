@@ -35,6 +35,28 @@ test.describe('commit a QC session', () => {
     await expect(save).toBeEnabled()
   })
 
+  test('Commit is disabled while an earlier step is previewed', async ({ page }) => {
+    await installMocks(page, { qcHistories: true })
+    await setupEditView(page)
+    const commit = page.getByTestId('exit-commit-btn')
+
+    await selectAllPoints(page)
+    await openOp(page, 'changeValues')
+    const value = page.getByLabel('Value')
+    await value.fill('1')
+    await value.press('Enter')
+    await expectHistoryContains(page, 'Change Values')
+    await expect(commit).toBeEnabled()
+
+    await page.getByTestId('history-step-btn-0').click()
+    await expect(page.getByTestId('history-preview-banner')).toBeVisible()
+    await expect(commit).toBeDisabled()
+
+    await page.getByTestId('history-back-to-latest-btn').click()
+    await expect(page.getByTestId('history-preview-banner')).toBeHidden()
+    await expect(commit).toBeEnabled()
+  })
+
   test('save then commit pushes a replace-mode payload', async ({ page }) => {
     const submissions: Array<{ mode: string | null; body: any }> = []
     const sessions: MockQcSession[] = []

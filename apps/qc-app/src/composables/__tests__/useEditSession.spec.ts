@@ -18,9 +18,10 @@ vi.mock('@/store/dataVisualization', () => ({
 }))
 
 const selectedSeries = ref<any>(null)
+const previewIndex = ref<number | null>(null)
 const redraw = vi.fn()
 vi.mock('@/store/plotly', () => ({
-  usePlotlyStore: () => ({ selectedSeries, redraw }),
+  usePlotlyStore: () => ({ selectedSeries, previewIndex, redraw }),
 }))
 
 const getItem = vi.fn()
@@ -136,6 +137,7 @@ beforeEach(() => {
   wireHs()
   qcDatastream.value = { id: 'm-1' }
   selectedSeries.value = { data: makeRecord() }
+  previewIndex.value = null
   getItem.mockResolvedValue({ id: 's-1', name: 'Source' })
   createObservations.mockResolvedValue({ ok: true, status: 201, data: null })
   // The source is unchanged unless a test says otherwise.
@@ -423,6 +425,23 @@ describe('useEditSession', () => {
       new Date(WIN.phenomenonTimeStart),
       new Date(WIN.phenomenonTimeEnd)
     )
+  })
+
+  it('commit refuses while an earlier history step is previewed', async () => {
+    await seedHistory()
+    selectedSeries.value = { data: makeRecord([{ method: 'VALUE_THRESHOLD', args: [] }]) }
+    const { useEditSession } = await import('@/composables/useEditSession')
+    const session = useEditSession()
+    await session.beginEditing()
+    await session.startSession(WIN)
+    const saveOps = vi.spyOn(qc.operations, 'create')
+    previewIndex.value = 0
+
+    await expect(session.commit()).rejects.toThrow(/previewing an earlier step/i)
+
+    expect(saveOps).not.toHaveBeenCalled()
+    expect(createObservations).not.toHaveBeenCalled()
+    expect(useQcSessionStore().inProgressSession).not.toBeNull()
   })
 
   it('commit stops when the source window changed since the session started', async () => {
