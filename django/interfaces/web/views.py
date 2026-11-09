@@ -81,6 +81,7 @@ def get_app_settings_context():
                     "source": map_layer.source,
                     "attribution": map_layer.attribution,
                     "priority": map_layer.priority,
+                    "visibleByDefault": map_layer.visible_by_default,
                 }
                 for map_layer in map_layers
                 if map_layer.type == "overlay"
