@@ -32,9 +32,14 @@ import { useUIStore } from '@/store/userInterface'
 export function useFilterDispatch() {
   const { selectedSeries, isUpdating } = storeToRefs(usePlotlyStore())
   const { setPlotSelection, clearSelected } = useDataSelection()
-  const { filterRangeActive, filterRangeFromTs, filterRangeToTs } = storeToRefs(
-    useUIStore()
-  )
+  const {
+    filterRangeActive,
+    filterRangeFromTs,
+    filterRangeToTs,
+    filterWithinSelection,
+    filterWithinBase,
+    filterWithinApplying,
+  } = storeToRefs(useUIStore())
 
   /**
    * Read the shared "Filter range" window (driven by the plot-header
@@ -60,7 +65,8 @@ export function useFilterDispatch() {
   }
 
   /**
-   * Dispatch a filter and apply its resulting selection to the plot.
+   * Dispatch a filter and apply its resulting selection to the plot. With
+   * "within selection" on, the filter searches only the base selection.
    *
    * @param method Filter enum value (e.g. `VALUE_THRESHOLD`).
    * @param args Filter-specific arguments forwarded verbatim to
@@ -75,12 +81,18 @@ export function useFilterDispatch() {
     const series = selectedSeries.value?.data
     if (!series) return []
 
+    const base = filterWithinSelection.value ? filterWithinBase.value : null
     isUpdating.value = true
+    filterWithinApplying.value = !!base?.length
     try {
-      const indices = (await series.dispatchFilter(method, ...args)) ?? []
+      const indices =
+        (base?.length
+          ? await series.dispatchFilterWithin(base, method, ...args)
+          : await series.dispatchFilter(method, ...args)) ?? []
       await setPlotSelection(indices)
       return indices
     } finally {
+      filterWithinApplying.value = false
       isUpdating.value = false
     }
   }

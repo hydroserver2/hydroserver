@@ -105,13 +105,25 @@ Composables are the public hook surface for components. They wrap stores
 
 ```ts
 const { runFilter } = useFilterDispatch()
-await runFilter(EnumFilterOperations.VALUE_THRESHOLD, [{ 'Greater than': 100 }])
+await runFilter(EnumFilterOperations.VALUE_THRESHOLD, [{ filters: [{ operator: 'Greater than', value: 100 }], match: 'any' }])
 ```
 
-- Calls `selectedSeries.data.dispatchFilter(...)` on the QC datastream.
+- Calls `selectedSeries.data.dispatchFilter(...)` on the QC datastream, or
+  `dispatchFilterWithin(base, ...)` while **Search only the selected
+  points** is on.
 - Appends a `HistoryItem` to the edit history.
 - Highlights the resulting selection on the plot.
 - Surfaces Snackbar errors on failure.
+
+### `useFilterWithinSelection()`
+
+```ts
+const { within, baseCount, selectedCount } = useFilterWithinSelection()
+within.value = true  // keeps the current selection as the base filters search
+```
+
+The filter panels' **Search only the selected points** switch. A hand-made
+selection becomes the new base; a filter's own result doesn't.
 
 ### `useDataSelection()`
 
@@ -391,6 +403,17 @@ opens rather than with the workspace catalog in `App.vue`, since nothing else
 needs it. Neither request throws: a list that fails to load stays empty and
 the form falls back to the source datastream's own value.
 
+### `useWorkspaceCatalog()`
+
+```ts
+const { load, clear } = useWorkspaceCatalog()
+await load(workspaceId)
+```
+
+Loads every page of the workspace's sites, datastreams, processing levels
+and observed properties, plus all QC histories, into `useDataVisStore()`. A
+list that fails to load is left empty and named in a snackbar.
+
 ### `useWorkspacePermissions()`
 
 Synchronous, reactive role/permission checks for gating UI. The role
@@ -504,14 +527,15 @@ there; catalogs, filters, and in-flight maps refetch cleanly on boot.
 | `refreshGraphSeriesArray`           | action   | `() => Promise<unknown[]>`                        | Reconciles `graphSeriesArray` against `seriesDatastreams` (fetch deltas + reorder + recolor), skipping the edit target (its data is owned by the edit session, not this refresh). A managed datastream with a loaded working copy (`useWorkingCopiesStore`) uses it instead of fetching. Invalidates the working copy of any managed datastream no longer in `seriesDatastreams`, except the edit target. |
 | `resetState`                        | action   | `() => void`                                      | Clears filters, the plotted set, and the edit target, and drops every working copy, on a workspace swap; preserves the preset preference. |
 | `toggleDatastream`                  | action   | `(ds: Datastream) => Promise<void>`               | Plot if absent, unplot if present. |
-| `plotDatastream`                    | action   | `(ds: Datastream) => Promise<void>`               | Add to plot. Plotting never picks or changes the edit target. |
+| `plotDatastream`                    | action   | `(ds: Datastream) => Promise<void>`               | Add to plot. Plotting never picks or changes the edit target. Refused with a warning when `PLOT_CAP` datastreams are already plotted. |
 | `unplotDatastream`                  | action   | `(id: string) => Promise<void>`                   | Remove from the plotted set. Never touches the edit target. |
 | `clearPlottedDatastreams`           | action   | `() => Promise<void>`                             | Drop the entire plotted set. |
 | `sourceGroupIds`                    | action   | `(sourceId: string) => string[]`                  | The source datastream plus every managed (QC) datastream derived from it. |
-| `plotSourceSelection`               | action   | `(sourceId: string, ids: string[]) => Promise<void>` | Apply a whole "what to plot for this source" choice at once: `ids` is the complete set wanted from that source's group. Group members absent from `ids` are unplotted, additions are appended in `ids` order. One rebuild for the whole selection; never touches the edit target. |
+| `plotSourceSelection`               | action   | `(sourceId: string, ids: string[]) => Promise<void>` | Apply a whole "what to plot for this source" choice at once: `ids` is the complete set wanted from that source's group. Group members absent from `ids` are unplotted, additions are appended in `ids` order. One rebuild for the whole selection; never touches the edit target. Additions past `PLOT_CAP` are left off with a warning. |
 | `addSnapshotSeries`                 | action   | `(id: string, record: ObservationRecord, meta: SnapshotMeta) => Promise<void>` | Add a frozen history snapshot as an extra comparison line under the synthetic id `snap:<sessionId>:<opIndex>`. Never touches the edit target; `refreshGraphSeriesArray` skips its fetch. |
 | `removeSnapshotSeries`              | action   | `(id: string) => Promise<void>`                   | Drop one snapshot line. Leaves the edit target alone. |
-| `setPlottedDatastreams`             | action   | `(items: Datastream[]) => Promise<void>`          | Replace the plotted set wholesale (used by URL hydration). Doesn't touch the edit target. Hydrate that separately with `setEditTarget`. |
+| `refuseSnapshot`                    | action   | `(label: string) => boolean`                      | True, with a warning naming `label`, when `SNAPSHOT_CAP` (2) snapshots are already shown. `useHistorySnapshots` checks it before building one; `addSnapshotSeries` checks it too. |
+| `setPlottedDatastreams`             | action   | `(items: Datastream[]) => Promise<void>`          | Replace the plotted set wholesale (used by URL hydration). Keeps the first `PLOT_CAP` datastreams and warns, naming the rest. Doesn't touch the edit target. Hydrate that separately with `setEditTarget`. |
 | `setEditTarget`                     | action   | `(managedId: string) => Promise<void>`            | Begin editing `managedId`: drops snapshots, resets the `qcSession` store (not `resumeDatastreamId`) and clears zoom history when the target changes, sets `qcDatastreamId`, rebuilds the plot. Its data arrives later via `setEditRecord`. This action doesn't fetch it. |
 | `setEditRecord`                     | action   | `(record: ObservationRecord) => Promise<void>`    | Put the edit target's record on the plot: updates its graph series in place if one exists, otherwise adds it (`buildGraphSeries`), then re-plots keeping the x view and refitting the target's y axis (`handleNewPlot` with `refitSeriesIds`). The only path by which the edit target's data reaches the plot. Counted as plot work until drawn. |
 | `clearEditTarget`                   | action   | `() => Promise<void>`                             | Stop editing: drops snapshots, invalidates the edit target's working copy, clears `qcDatastreamId`, removes its graph series, and rebuilds. Plotted datastreams are left exactly as they were. |
@@ -582,6 +606,7 @@ ephemeral (DOM handles, live chart caches).
 | `crosshair`                | state    | `{ visible, cursorX, cursorY, plotLeft, plotBottom }` | CSS-driven crosshair position. |
 | `hiddenAxisIds`            | state    | `Set<string>`                                     | Datastream ids whose right-side y-axis chrome is hidden. |
 | `hiddenTraceIds`           | state    | `Set<string>`                                     | Datastream ids whose trace is fully hidden (eye toggle). |
+| `lockedAxisIds`            | state    | `Set<string>`                                     | Datastream ids whose y axis moves with the primary axis (lock toggle). |
 | `activeTab`                | state    | `'plot' \| 'table'`                               | Center-column tab; captured by the share URL. |
 | `tableScrollRequest`       | state    | `{ time: number; seq: number } \| null`           | Set when the plot zooms to the session window; `DataTable` scrolls to the first row at/after `time`. `seq` re-triggers on repeats. |
 | `requestTableScroll`       | action   | `(time: number) => void`                          | Publish a `tableScrollRequest` for the given epoch-ms range start (bumps `seq`). |
@@ -673,6 +698,9 @@ defaults are reseeded from the datastream on each mount.
 | `selectedChangeComparator` / `changeValue` | state | shape above / `number`                    | Change-threshold filter inputs. |
 | `filterRangeActive`               | state  | `boolean`                                         | Toggles the shared filter-window UX; the only persisted field. |
 | `filterRangeFromTs` / `filterRangeToTs` | state | `number \| null`                            | Filter-window epoch bounds; reseed on each panel mount. |
+| `filterWithinSelection`           | state  | `boolean`                                         | Filters search only `filterWithinBase` (`useFilterWithinSelection`). |
+| `filterWithinBase`                | state  | `number[] \| null`                                | The selection filters search while that is on. |
+| `filterWithinApplying`            | state  | `boolean`                                         | Set while a filter writes its own result, which doesn't become the base. |
 | `onRailItemClicked`               | action | `(title: DrawerType) => void`                     | Nav-rail click handler: toggles open/closed on repeat, switches view on first click. |
 | `showView`                        | action | `(view: View) => void`                            | Switch layouts (view + drawer). Layout only: an open edit session is untouched. |
 
@@ -955,7 +983,7 @@ Wire shape:
     "endDate":   "2024-06-30T23:59:59.999Z"
   },
   "operations": [
-    { "method": "VALUE_THRESHOLD", "args": [{ "Greater than": 100 }] },
+    { "method": "VALUE_THRESHOLD", "args": [{ "filters": [{ "operator": "Greater than", "value": 100 }], "match": "any" }] },
     { "method": "CHANGE_VALUES",   "args": ["ASSIGN", 11.5] }
   ]
 }

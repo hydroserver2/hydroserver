@@ -24,38 +24,41 @@ export const enum ThresholdOp {
   GT = 2,
   GTE = 3,
   E = 4,
+  NE = 5,
+}
+
+function compare(op: number, v: number, t: number): boolean {
+  if (op === ThresholdOp.LT) return v < t
+  if (op === ThresholdOp.LTE) return v <= t
+  if (op === ThresholdOp.GT) return v > t
+  if (op === ThresholdOp.GTE) return v >= t
+  if (op === ThresholdOp.NE) return v != t
+  return v == t
 }
 
 /**
  * Scan `[start, end)` of `arrayY` and collect every index where the
- * value matches ANY of the supplied comparator/threshold pairs. Short-
- * circuits on first match per element (matches worker semantics).
+ * value matches ANY (or, with `matchAll`, EVERY) comparator/threshold
+ * pair. Short-circuits per element once the outcome is known.
  */
 export function valueThresholdCore(
   arrayY: Float64Array | Float64Array<SharedArrayBuffer>,
   start: number,
   end: number,
   ops: number[],
-  values: number[]
+  values: number[],
+  matchAll = false
 ): number[] {
   const indexes: number[] = []
   const nFilters = ops.length
+  if (nFilters === 0) return indexes
   for (let i = start; i < end; i++) {
     const v = arrayY[i]
-    let match = false
+    let match = matchAll
     for (let k = 0; k < nFilters; k++) {
-      const op = ops[k]
-      const t = values[k]
-      if (op === ThresholdOp.LT) {
-        if (v < t) { match = true; break }
-      } else if (op === ThresholdOp.LTE) {
-        if (v <= t) { match = true; break }
-      } else if (op === ThresholdOp.GT) {
-        if (v > t) { match = true; break }
-      } else if (op === ThresholdOp.GTE) {
-        if (v >= t) { match = true; break }
-      } else {
-        if (v == t) { match = true; break }
+      if (compare(ops[k], v, values[k]) !== matchAll) {
+        match = !matchAll
+        break
       }
     }
     if (match) indexes.push(i)

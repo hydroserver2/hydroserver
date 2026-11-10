@@ -18,75 +18,31 @@ import FullScreenLoader from '@/components/base/FullScreenLoader.vue'
 
 import { setupRouteGuards } from '@/router/router'
 import { ref, watch, onMounted } from 'vue'
-import { useDataVisStore } from '@/store/dataVisualization'
 import { useHydroServer } from '@/store/hydroserver'
 import { useWorkspaceStore } from '@/store/workspaces'
+import { useWorkspaceCatalog } from '@/composables/useWorkspaceCatalog'
 import { storeToRefs } from 'pinia'
-import type { Datastream, DatastreamExtended } from '@hydroserver/client'
 
 // Session init runs in `src/main.ts` before the router installs so the
 // auth guard sees `hs.session.isAuthenticated` on first navigation.
 const isLoading = ref(false)
 
-const {
-  monitoringSites,
-  processingLevels,
-  observedProperties,
-  datastreams,
-  qcHistories,
-} = storeToRefs(useDataVisStore())
-
 const { hs } = storeToRefs(useHydroServer())
 const { selectedWorkspaceId } = storeToRefs(useWorkspaceStore())
-
-async function loadWorkspaceCatalog(workspaceId: string) {
-  const [
-    monitoringSitesResponse,
-    datastreamsResponse,
-    processingLevelsResponse,
-    observedPropertiesResponse,
-    histories,
-  ] = await Promise.all([
-    hs.value.monitoringSites.list({ workspaceId } as any),
-    hs.value.datastreams.list({
-      expand_related: true,
-      workspaceId,
-    } as any),
-    hs.value.processingLevels.list({ workspaceId } as any),
-    hs.value.observedProperties.list({ workspaceId } as any),
-    // QC histories aren't workspace-filterable server-side; entries for
-    // other workspaces simply never match this catalog's datastream ids.
-    hs.value.qualityControlHistories.listAllItems(),
-  ])
-
-  monitoringSites.value = monitoringSitesResponse.ok ? monitoringSitesResponse.data : []
-  datastreams.value = (datastreamsResponse.ok
-    ? datastreamsResponse.data
-    : []) as (Datastream & DatastreamExtended)[]
-  processingLevels.value = processingLevelsResponse.ok
-    ? processingLevelsResponse.data
-    : []
-  observedProperties.value = observedPropertiesResponse.ok
-    ? observedPropertiesResponse.data
-    : []
-  qcHistories.value = histories
-}
+const catalog = useWorkspaceCatalog()
 
 // Clearing the selection wipes catalogs so stale data from the old
 // workspace can't leak into the picker transition.
 watch(selectedWorkspaceId, async (id, prev) => {
   if (id === prev) return
   if (!id) {
-    monitoringSites.value = []
-    datastreams.value = []
-    processingLevels.value = []
-    observedProperties.value = []
+    catalog.clear()
     return
   }
   if (!hs.value) return
   isLoading.value = true
   try {
-    await loadWorkspaceCatalog(id)
+    await catalog.load(id)
   } finally {
     isLoading.value = false
   }
@@ -101,7 +57,7 @@ onMounted(async () => {
   if (!selectedWorkspaceId.value) return
   isLoading.value = true
   try {
-    await loadWorkspaceCatalog(selectedWorkspaceId.value)
+    await catalog.load(selectedWorkspaceId.value)
   } catch (err) {
     console.error('Failed to load workspace catalog', err)
   } finally {

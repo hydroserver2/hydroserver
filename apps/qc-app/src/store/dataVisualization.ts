@@ -14,6 +14,7 @@ import {
   type TimeWindow,
 } from '@/utils/timeRangePresets'
 import { isSnapshotId } from '@/utils/snapshotId'
+import { PLOT_CAP, SNAPSHOT_CAP, plotCapMessage } from '@/utils/plotCap'
 import { contextTargetId, makeContextId } from '@/utils/contextSeriesId'
 import { useWorkingCopiesStore } from '@/store/workingCopies'
 import { useQcSessionStore } from '@/store/qcSession'
@@ -298,10 +299,32 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     else await plotDatastream(datastream)
   }
 
+  /**
+   * `items` trimmed to `PLOT_CAP` datastreams, in order, with a warning
+   * naming any left off. Every way onto the plot goes through here, so a
+   * share link can't load more than the table allows.
+   */
+  function withinPlotCap(items: Datastream[]): Datastream[] {
+    const kept: Datastream[] = []
+    const leftOff: string[] = []
+    let count = 0
+    for (const d of items) {
+      if (isSnapshotId(d.id)) kept.push(d)
+      else if (count < PLOT_CAP) {
+        kept.push(d)
+        count++
+      } else leftOff.push(d.name)
+    }
+    if (leftOff.length) Snackbar.warn(plotCapMessage(leftOff))
+    return kept
+  }
+
   /** Add a datastream to the plot. Triggers an explicit plot rebuild, no watcher. */
   async function plotDatastream(ds: Datastream) {
     if (plottedDatastreams.value.some((d) => d.id === ds.id)) return
-    plottedDatastreams.value.push(ds)
+    const next = withinPlotCap([...plottedDatastreams.value, ds])
+    if (next.length === plottedDatastreams.value.length) return
+    plottedDatastreams.value = next
     await rebuildPlot()
   }
 
@@ -324,6 +347,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     meta: SnapshotMeta
   ) {
     if (plottedDatastreams.value.some((d) => d.id === id)) return
+    if (refuseSnapshot(meta.sessionLabel)) return
 
     const qcSeries = graphSeriesArray.value.find(
       (s) => s.id === qcDatastreamId.value
@@ -336,6 +360,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
       yAxisLabel: qcSeries?.yAxisLabel ?? '',
       color: '',
       intendedSpacingMs: qcSeries?.intendedSpacingMs ?? null,
+      variable: qcSeries?.variable,
       snapshot: meta,
     })
 
@@ -343,6 +368,19 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     updateOptions()
     const { plotlyRef } = storeToRefs(usePlotlyStore())
     if (plotlyRef.value) await handleNewPlot(undefined, { preserveZoom: true })
+  }
+
+  /**
+   * True, with a warning, when `SNAPSHOT_CAP` snapshots are already shown.
+   * Checked before a snapshot is built, since building one is the costly part.
+   */
+  function refuseSnapshot(label: string): boolean {
+    const shown = plottedDatastreams.value.filter((d) => isSnapshotId(d.id))
+    if (shown.length < SNAPSHOT_CAP) return false
+    Snackbar.warn(
+      `Up to ${SNAPSHOT_CAP} snapshots can be shown at once. Hide one to show ${label}.`
+    )
+    return true
   }
 
   /** Drop every snapshot line, without redrawing. Callers redraw themselves. */
@@ -396,7 +434,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
       .map((id) => datastreams.value.find((d) => d.id === id))
       .filter((d): d is Datastream & DatastreamExtended => !!d)
 
-    const next = [...kept, ...added]
+    const next = withinPlotCap([...kept, ...added])
     const unchanged =
       next.length === plottedDatastreams.value.length &&
       next.every((d, i) => d.id === plottedDatastreams.value[i]?.id)
@@ -415,7 +453,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
 
   /** Replace the plotted set wholesale (used by URL hydration). */
   async function setPlottedDatastreams(items: Datastream[]) {
-    plottedDatastreams.value = items.slice()
+    plottedDatastreams.value = withinPlotCap(items)
     await rebuildPlot()
   }
 
@@ -952,6 +990,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     plotSourceSelection,
     clearPlottedDatastreams,
     addSnapshotSeries,
+    refuseSnapshot,
     removeSnapshotSeries,
     setPlottedDatastreams,
     setEditTarget,

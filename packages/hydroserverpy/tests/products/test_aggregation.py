@@ -249,3 +249,89 @@ class TestApplyAggregationTimezoneAndAnchor:
         first_ts = result.sort_values(TIMESTAMP_COL)[TIMESTAMP_COL].iloc[0]
         assert first_ts.minute == 30
         assert first_ts.hour == 0
+
+# ---------------------------------------------------------------------------
+# Whole-day (calendar) window grid
+# ---------------------------------------------------------------------------
+
+def _hourly_df(start, end, value=1.0):
+    timestamps = pd.date_range(start, end, freq="1h", inclusive="left")
+    return _make_df(timestamps, [value] * len(timestamps))
+
+
+class TestApplyAggregationCalendarGrid:
+
+    def test_weekly_windows_start_on_monday_by_default(self):
+        # Data starts on Wednesday 2026-01-07; its window starts Monday 2026-01-05.
+        df = _hourly_df(_utc(2026, 1, 7), _utc(2026, 1, 20))
+        result = apply_aggregation(df, interval="1w", method="sum")
+        assert result[TIMESTAMP_COL].tolist() == [
+            pd.Timestamp("2026-01-05T00:00Z"), pd.Timestamp("2026-01-12T00:00Z"), pd.Timestamp("2026-01-19T00:00Z"),
+        ]
+        assert result[RESULT_COL].tolist() == [5 * 24, 7 * 24, 24]
+
+    def test_weekly_windows_start_at_local_midnight_on_monday(self):
+        df = _hourly_df(_utc(2026, 1, 7), _utc(2026, 1, 14))
+        result = apply_aggregation(df, interval="1w", method="sum", local_timezone="America/Denver")
+        assert result[TIMESTAMP_COL].iloc[0] == pd.Timestamp("2026-01-05T07:00Z")
+
+    def test_anchor_sets_the_window_grid_date(self):
+        # Anchored on Thursday 2026-01-01 (time of day ignored) → Thursday windows.
+        df = _hourly_df(_utc(2026, 1, 5), _utc(2026, 1, 20))
+        result = apply_aggregation(df, interval="1w", method="sum", anchor=_utc(2026, 1, 1, 15))
+        assert result[TIMESTAMP_COL].tolist() == [
+            pd.Timestamp("2026-01-01T00:00Z"), pd.Timestamp("2026-01-08T00:00Z"), pd.Timestamp("2026-01-15T00:00Z"),
+        ]
+
+    @pytest.mark.parametrize("interval", ["1d", "3d", "1w", "2w"])
+    @pytest.mark.parametrize("local_timezone", [None, "America/Denver"])
+    def test_windows_do_not_depend_on_where_input_starts(self, interval, local_timezone):
+        # Spans the Mar 8 DST change in Denver.
+        df = _hourly_df(_utc(2026, 1, 1), _utc(2026, 4, 1))
+        kwargs = dict(interval=interval, method="sum", local_timezone=local_timezone)
+        full = apply_aggregation(df, **kwargs)
+        edge = full[TIMESTAMP_COL].iloc[len(full) // 2]
+
+        # Splitting at a window edge and aggregating each part separately gives the
+        # same windows as aggregating it all at once.
+        parts = pd.concat([
+            apply_aggregation(df[df[TIMESTAMP_COL] < edge], **kwargs),
+            apply_aggregation(df[df[TIMESTAMP_COL] >= edge], **kwargs),
+        ], ignore_index=True)
+        pd.testing.assert_frame_equal(parts, full)
+
+        # Input starting mid-window (e.g. after a gap) still lands on the same grid.
+        mid_window = df[df[TIMESTAMP_COL] >= edge + pd.Timedelta(days=1, hours=5)]
+        later = apply_aggregation(mid_window, **kwargs)
+        assert set(later[TIMESTAMP_COL]) <= set(full[TIMESTAMP_COL])
+
+    def test_data_starting_on_a_nonexistent_local_midnight(self):
+        # America/Santiago springs forward at midnight: 2026-09-06 00:00 doesn't exist,
+        # so that day runs 01:00 (-03) = 04:00Z → 2026-09-07 00:00 (-03) = 03:00Z (23h).
+        df = _hourly_df(_utc(2026, 9, 6, 4), _utc(2026, 9, 7, 4))
+        result = apply_aggregation(df, interval="1d", method="sum", local_timezone="America/Santiago")
+        assert result[TIMESTAMP_COL].tolist() == [pd.Timestamp("2026-09-06T04:00Z"), pd.Timestamp("2026-09-07T03:00Z")]
+        assert result[RESULT_COL].tolist() == [23.0, 1.0]
+
+    def test_data_starting_on_an_ambiguous_local_midnight(self):
+        # America/Havana falls back at 01:00 → 00:00 on 2026-11-01, so that day runs
+        # from the first 00:00 (-04) = 04:00Z to 2026-11-02 00:00 (-05) = 05:00Z (25h).
+        df = _hourly_df(_utc(2026, 11, 1, 4), _utc(2026, 11, 2, 6))
+        result = apply_aggregation(df, interval="1d", method="sum", local_timezone="America/Havana")
+        assert result[TIMESTAMP_COL].tolist() == [pd.Timestamp("2026-11-01T04:00Z"), pd.Timestamp("2026-11-02T05:00Z")]
+        assert result[RESULT_COL].tolist() == [25.0, 1.0]
+
+    def test_time_weighted_mean_window_ends_at_its_edge_when_next_window_is_empty(self):
+        # Values rise 1 per hour from 0 (Jan 1 12:00) to 48 (Jan 3 12:00); Jan 2 has no data.
+        # Jan 1: 0 until 12:00, then linear to 12 at midnight → (0*12 + 6*12) / 24 = 3.
+        # Jan 3: 36 at midnight, linear to 48 at 12:00, then flat → (42*12 + 48*12) / 24 = 45.
+        df = _make_df([_utc(2026, 1, 1, 12), _utc(2026, 1, 3, 12)], [0.0, 48.0])
+        result = apply_aggregation(df, interval="1d", method="time_weighted_mean")
+        assert result[TIMESTAMP_COL].tolist() == [pd.Timestamp("2026-01-01T00:00Z"), pd.Timestamp("2026-01-03T00:00Z")]
+        assert result[RESULT_COL].tolist() == pytest.approx([3.0, 45.0])
+
+    def test_empty_input_returns_empty_result(self):
+        df = _make_df([], [])
+        result = apply_aggregation(df, interval="1w", method="sum")
+        assert len(result) == 0
+        assert list(result.columns) == [TIMESTAMP_COL, RESULT_COL]

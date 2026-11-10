@@ -1,7 +1,6 @@
 <template>
   <div class="map-wrapper">
-    <!-- 2) Dropdown, absolutely positioned -->
-    <div class="basemap-select-container" v-if="basemapTileSources.length > 1">
+    <div class="map-controls">
       <v-select
         v-model="selectedTileSourceName"
         :items="basemapTileSources"
@@ -11,8 +10,96 @@
         dense
         hide-details
         variant="solo-filled"
-        style="width: 180px"
-      />
+        class="basemap-select"
+      >
+        <template #menu-footer>
+          <v-divider />
+          <div class="layer-opacity-control">
+            <div class="layer-opacity-label hs-text-sm">
+              <span>Opacity</span>
+              <span aria-hidden="true">{{ basemapOpacity }}%</span>
+            </div>
+            <v-slider
+              v-model="basemapOpacity"
+              aria-label="Base map opacity"
+              :aria-valuetext="`${basemapOpacity}%`"
+              :min="0"
+              :max="100"
+              :step="1"
+              color="primary"
+              hide-details
+              @keydown="onOpacityKeydown"
+            />
+          </div>
+        </template>
+      </v-select>
+      <v-menu v-if="overlays.length" :close-on-content-click="false">
+        <template #activator="{ props: menuProps }">
+          <!-- Vuetify's aria-owns otherwise adds menu contents to the button name. -->
+          <v-btn
+            v-bind="menuProps"
+            :prepend-icon="mdiLayers"
+            :append-icon="mdiChevronDown"
+            aria-label="Overlays"
+            variant="flat"
+            rounded="var(--hs-radius-sm)"
+            class="overlay-menu-button"
+          >
+            Overlays
+          </v-btn>
+        </template>
+        <v-card class="overlay-layer-control">
+          <v-card-text>
+            <div
+              v-for="{ overlay, index } in overlayMenuItems"
+              :key="overlay.configuration.name"
+            >
+              <v-checkbox
+                class="overlay-visibility"
+                :model-value="overlayVisibility[index]"
+                :label="overlay.configuration.name"
+                hide-details
+                @update:model-value="setOverlayVisibility(index, !!$event)"
+              />
+              <div class="overlay-opacity-controls">
+                <div
+                  class="layer-opacity-label hs-text-sm"
+                  :class="{ 'text-disabled': !overlayVisibility[index] }"
+                >
+                  <span>Opacity</span>
+                  <span aria-hidden="true">{{ overlayOpacities[index] }}%</span>
+                </div>
+                <!-- Vuetify disables interaction but does not mark the thumb aria-disabled. -->
+                <v-slider
+                  :model-value="overlayOpacities[index]"
+                  :disabled="!overlayVisibility[index]"
+                  :aria-disabled="!overlayVisibility[index]"
+                  :aria-label="`${overlay.configuration.name} opacity`"
+                  :aria-valuetext="`${overlayOpacities[index]}%`"
+                  :min="0"
+                  :max="100"
+                  :step="1"
+                  color="primary"
+                  hide-details
+                  @update:model-value="setOverlayOpacity(index, $event)"
+                  @keydown="onOpacityKeydown"
+                />
+                <p
+                  v-if="overlayErrors[index]"
+                  class="text-error hs-text-sm"
+                  role="status"
+                >
+                  Could not load layer. Turn it off and on to retry.
+                </p>
+              </div>
+              <v-divider
+                v-if="index > 0"
+                class="overlay-group-divider"
+              />
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-menu>
     </div>
     <div ref="mapContainer" class="fill-width fill-height"></div>
 
@@ -128,6 +215,7 @@ import {
 import OlMap from 'ol/Map'
 import View from 'ol/View'
 import TileLayer from 'ol/layer/Tile'
+import LayerGroup from 'ol/layer/Group'
 import VectorLayer from 'ol/layer/Vector'
 import VectorSource from 'ol/source/Vector'
 import { Feature, Overlay } from 'ol'
@@ -138,10 +226,17 @@ import { fromLonLat, toLonLat } from 'ol/proj'
 import { settings } from '@/config/settings'
 import { Extent, isEmpty as extentIsEmpty } from 'ol/extent'
 import { fetchLocationData } from '@/utils/maps/location'
+import { createOverlayLayers } from '@/utils/maps/overlays'
 import WebGLVectorLayer from 'ol/layer/WebGLVector'
 import mapMarkerUrl from '@/assets/map-marker-64.png?url'
 import { OSM, XYZ } from 'ol/source'
-import { mdiMapMarker, mdiChevronRight, mdiClose } from '@mdi/js'
+import {
+  mdiMapMarker,
+  mdiChevronRight,
+  mdiChevronDown,
+  mdiClose,
+  mdiLayers,
+} from '@mdi/js'
 
 const props = defineProps({
   monitoringSites: {
@@ -199,16 +294,46 @@ const basemapTileSources = settings.mapConfiguration.basemapLayers.map(
   })
 )
 
-// TODO: Create a separate map control to toggle overlay layers
-const overlayTileSources = settings.mapConfiguration.overlayLayers.map(
-  (mapLayer) => ({
-    name: mapLayer.name,
-    source: new XYZ({
-      url: mapLayer.source,
-      attributions: mapLayer.attribution,
-    }),
-  })
-)
+const overlays = createOverlayLayers(settings.mapConfiguration.overlayLayers)
+// List the topmost layer first without changing the map's drawing order.
+const overlayMenuItems = overlays
+  .map((overlay, index) => ({ overlay, index }))
+  .reverse()
+const overlayVisibility = ref(overlays.map(({ layer }) => layer.getVisible()))
+const overlayErrors = ref(overlays.map(() => false))
+const basemapOpacity = ref(100)
+const overlayOpacities = ref(overlays.map(() => 100))
+const overlayGroup = new LayerGroup({
+  layers: overlays.map(({ layer }) => layer),
+  zIndex: 1,
+})
+
+function setOverlayOpacity(index: number, opacity: number) {
+  overlayOpacities.value[index] = opacity
+  overlays[index].layer.setOpacity(opacity / 100)
+}
+
+function onOpacityKeydown(event: KeyboardEvent) {
+  // Let the slider handle navigation keys without moving focus to menu items.
+  if (event.key !== 'Escape' && event.key !== 'Tab') event.stopPropagation()
+}
+
+async function setOverlayVisibility(index: number, visible: boolean) {
+  overlayVisibility.value[index] = visible
+  const overlay = overlays[index]
+  overlay.layer.setVisible(visible)
+  if (!visible) return
+  overlayErrors.value[index] = false
+  try {
+    await overlay.load()
+  } catch (error) {
+    overlayErrors.value[index] = true
+    console.error(
+      `[OpenLayersMap] Could not load overlay "${overlay.configuration.name}"`,
+      error
+    )
+  }
+}
 
 if (basemapTileSources.length === 0) {
   basemapTileSources.push({
@@ -241,6 +366,11 @@ const DEFAULT_MARKER_OPACITY = 0.85
 const detailMonitoringSite = ref<MapMonitoringSite>()
 const selectionSource = new VectorSource<Feature>()
 let selectionLayer: VectorLayer | undefined
+// Reference layers should never intercept monitoring-site clicks or hover states.
+const siteHitOptions = {
+  layerFilter: (layer: import('ol/layer/Layer').default) =>
+    layer === markerLayer.value || layer === selectionLayer,
+}
 // Final scale of the grown selection marker, relative to the 64px source png.
 const SELECTION_SCALE = 0.78
 let selectionScale = SELECTION_SCALE
@@ -664,8 +794,13 @@ const initializeMap = () => {
   if (!chosenSource) chosenSource = basemapTileSources[0]
   selectedTileSourceName.value = chosenSource.name
 
-  rasterLayer = new TileLayer({ source: chosenSource.source })
+  rasterLayer = new TileLayer({
+    source: chosenSource.source,
+    zIndex: 0,
+    opacity: basemapOpacity.value / 100,
+  })
   markerLayer.value = new WebGLVectorLayer({
+    zIndex: 2,
     source: vectorSource,
     style: {
       'icon-src': mapMarkerUrl,
@@ -688,6 +823,7 @@ const initializeMap = () => {
   })
 
   selectionLayer = new VectorLayer({
+    zIndex: 3,
     source: selectionSource,
     style: selectionStyle,
   })
@@ -711,9 +847,13 @@ const initializeMap = () => {
 
   map = new OlMap({
     target: mapContainer.value,
-    layers: [rasterLayer, markerLayer.value, selectionLayer],
+    layers: [rasterLayer, overlayGroup, markerLayer.value, selectionLayer],
     overlays: [popupOverlay, selectionLabelOverlay],
     view: new View(defaultView),
+  })
+
+  overlays.forEach((overlay, index) => {
+    if (overlay.layer.getVisible()) void setOverlayVisibility(index, true)
   })
 
   map.on('click', async (evt) => {
@@ -730,7 +870,11 @@ const initializeMap = () => {
       return
     }
 
-    const rawFeatures = map.forEachFeatureAtPixel(evt.pixel, (f) => f)
+    const rawFeatures = map.forEachFeatureAtPixel(
+      evt.pixel,
+      (f) => f,
+      siteHitOptions
+    )
 
     // Browse mode: clicks drive selection rather than opening a popup.
     if (props.selectable) {
@@ -759,7 +903,7 @@ const initializeMap = () => {
 
   map.on('pointermove', function (e) {
     // change mouse cursor when over marker
-    const hit = map.hasFeatureAtPixel(e.pixel)
+    const hit = map.hasFeatureAtPixel(e.pixel, siteHitOptions)
     map.getTargetElement().style.cursor = hit ? 'pointer' : ''
   })
 
@@ -830,6 +974,10 @@ function getConfigByName(name: string): ConfigTileSource {
   const found = basemapTileSources.find((cfg) => cfg.name === name)
   return found || basemapTileSources[0]
 }
+watch(basemapOpacity, (opacity) => {
+  rasterLayer?.setOpacity(opacity / 100)
+})
+
 watch(
   () => selectedTileSourceName.value,
   (newName) => {
@@ -862,12 +1010,69 @@ watch(
   font-size: var(--hs-font-lg);
 }
 
-/* 2) Position the dropdown in the top-right corner */
-.basemap-select-container {
+.map-controls {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: var(--hs-space-12);
+  right: var(--hs-space-12);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--hs-space-8);
   z-index: 2; /* above the map tiles */
+}
+
+.basemap-select {
+  width: calc(var(--hs-space-16) * 12);
+}
+
+/* Matches the Create Site page action, in blue. */
+.overlay-menu-button {
+  padding-inline: var(--hs-space-16);
+  font-size: var(--hs-font-sm);
+  font-weight: var(--hs-font-weight-bold);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.overlay-menu-button :deep(.v-btn__content) {
+  gap: var(--hs-space-6);
+}
+
+.overlay-layer-control {
+  width: calc(var(--hs-space-32) * 9);
+  max-width: calc(100vw - var(--hs-space-24));
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.layer-opacity-control {
+  min-width: calc(var(--hs-space-24) * 10);
+  padding: var(--hs-space-8) var(--hs-space-16);
+}
+
+.overlay-group-divider {
+  margin-block: var(--hs-space-8);
+}
+
+.overlay-visibility :deep(.v-label) {
+  margin-inline-start: var(--hs-space-4);
+}
+
+.overlay-opacity-controls {
+  margin-inline-start: var(--hs-space-32);
+  /* Keep the slider thumb's hit area and focus ring inside the menu at 100%. */
+  padding-inline-end: var(--hs-space-8);
+}
+
+.overlay-opacity-controls :deep(.v-slider > .v-input__control) {
+  margin-inline: 0;
+}
+
+.layer-opacity-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--hs-space-8);
 }
 
 .fill-width {

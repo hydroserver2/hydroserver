@@ -6,6 +6,7 @@ import {
   HistoryItem,
   Operator,
   TimeUnit,
+  ValueThresholdArgs,
 } from "../../types";
 import { measureEllapsedTime } from "../ellapsed-time";
 import { timeUnitMultipliers } from "../format";
@@ -47,6 +48,7 @@ import {
   type InterpolateGroup,
   persistenceCore,
   rateOfChangeCore,
+  shiftDatetime,
   shiftDatetimesCollection,
   type ShiftDatetimesParams,
   valueThresholdCore,
@@ -90,6 +92,26 @@ function growBuffer(buffer: ArrayBufferLike, newByteLength: number): void {
   } else if (typeof anyBuf.resize === "function") {
     anyBuf.resize(newByteLength);
   }
+}
+
+/** Validate a shift and turn it into the kernel's parameters. */
+function shiftParams(
+  amount: number,
+  unit: TimeUnit,
+  timeZone: string,
+): ShiftDatetimesParams {
+  if (!isValidTimeZone(timeZone)) {
+    throw new Error(`Shift datetimes: unknown time zone "${String(timeZone)}".`);
+  }
+  const calendar = unit === TimeUnit.MONTH || unit === TimeUnit.YEAR;
+  if (calendar && !Number.isInteger(amount)) {
+    throw new Error("Shift datetimes: months and years shift by whole numbers.");
+  }
+  return {
+    months: calendar ? (unit === TimeUnit.YEAR ? amount * 12 : amount) : 0,
+    deltaMs: calendar ? 0 : amount * timeUnitMultipliers[unit] * 1000,
+    timeZone,
+  };
 }
 
 /** The distinct indices in `[0, length)`, ascending. Both delete paths
@@ -507,21 +529,86 @@ export class ObservationRecord {
     return this._replay([...this.history]);
   }
 
-  /** First and last datetime among `indices`, or undefined if none are in
-   *  range. Indices need not be sorted. */
-  private _extentOf(
+  /** The datetimes of `indices`, ascending, and their first and last, for a
+   *  history entry's `execution`. Empty when none are in range. Indices need
+   *  not be sorted. */
+  private _pointsOf(
     indices: ArrayLike<number>,
-  ): { begin: number; end: number } | undefined {
+  ): { times?: Float64Array; extent?: { begin: number; end: number } } {
     const xs = this.dataX;
-    let begin = Infinity;
-    let end = -Infinity;
+    const times = new Float64Array(indices.length);
+    let n = 0;
     for (let k = 0; k < indices.length; k++) {
       const t = xs[indices[k]];
-      if (t === undefined || !Number.isFinite(t)) continue;
-      if (t < begin) begin = t;
-      if (t > end) end = t;
+      if (t !== undefined && Number.isFinite(t)) times[n++] = t;
     }
-    return begin <= end ? { begin, end } : undefined;
+    if (!n) return {};
+    const sorted = (n === times.length ? times : times.slice(0, n)).sort();
+    return { times: sorted, extent: { begin: sorted[0]!, end: sorted[n - 1]! } };
+  }
+
+  /**
+   * The earliest of `times` that is already taken, either by a point
+   * that stays or by another of `times`; null when all are free.
+   * `vacated` lists indices the edit removes, whose timestamps are free.
+   */
+  findTimeCollision(
+    times: ArrayLike<number>,
+    vacated: ArrayLike<number> = [],
+  ): number | null {
+    const leaving = new Set(Array.from(vacated));
+    const sorted = Float64Array.from(times).sort();
+    const xs = this.dataX;
+    for (let k = 0; k < sorted.length; k++) {
+      const t = sorted[k];
+      if (k > 0 && t === sorted[k - 1]) return t;
+      for (let i = findFirstGreaterOrEqual(xs, t); xs[i] === t; i++) {
+        if (!leaving.has(i)) return t;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * The earliest timestamp a SHIFT_DATETIMES of `index` would land on
+   * that is already taken, or null. Lets a caller warn before
+   * dispatching; the shift itself refuses the same collisions.
+   */
+  findShiftCollision(
+    index: number[],
+    amount: number,
+    unit: TimeUnit,
+    timeZone: string,
+  ): number | null {
+    return this._shiftCollision(index, shiftParams(amount, unit, timeZone));
+  }
+
+  private _shiftCollision(
+    index: number[],
+    params: ShiftDatetimesParams,
+  ): number | null {
+    const times = new Float64Array(index.length);
+    for (let i = 0; i < index.length; i++) {
+      times[i] = shiftDatetime(this.dataX[index[i]], params);
+    }
+    return this.findTimeCollision(times, index);
+  }
+
+  // Two points can't share a timestamp; the API refuses them on commit.
+  private _assertTimesFree(
+    label: string,
+    points: [number, number][],
+    vacated: ArrayLike<number> = [],
+  ) {
+    const taken = this.findTimeCollision(
+      points.map((p) => p[0]),
+      vacated,
+    );
+    if (taken !== null) {
+      throw new Error(
+        `${label}: a point already exists at ${new Date(taken).toISOString()}.`,
+      );
+    }
   }
 
   private _refuseWhilePreviewing() {
@@ -601,7 +688,7 @@ export class ObservationRecord {
   async dispatchAction(action: EnumEditOperations, ...args: any) {
     this._refuseWhilePreviewing();
     const actions: EnumDictionary<EnumEditOperations, Function> = {
-      [EnumEditOperations.ADD_POINTS]: this._addDataPoints,
+      [EnumEditOperations.ADD_POINTS]: this._addNewDataPoints,
       [EnumEditOperations.CHANGE_VALUES]: this._changeValues,
       [EnumEditOperations.ASSIGN_VALUES_BULK]: this._assignValuesBulk,
       [EnumEditOperations.DELETE_POINTS]: this._deleteDataPointsFromSelection,
@@ -643,7 +730,7 @@ export class ObservationRecord {
           datasetSize: this.dataset.source.x?.length ?? 0,
           selectionSize: prevSelected?.length,
           // Read before the edit moves or removes those points.
-          extent: prevSelected && this._extentOf(prevSelected),
+          ...(prevSelected && this._pointsOf(prevSelected)),
         },
       };
       this.history.push(historyItem);
@@ -686,9 +773,9 @@ export class ObservationRecord {
           mode: this._pendingExecutionMode,
           inFlight: false,
           // Inserting ops have no prior selection; their result is it.
-          extent:
-            stored.execution.extent ??
-            (newSelection?.length ? this._extentOf(newSelection) : undefined),
+          ...(stored.execution.times || !newSelection?.length
+            ? {}
+            : this._pointsOf(newSelection)),
         };
       }
     } catch (e) {
@@ -753,10 +840,8 @@ export class ObservationRecord {
     }
   }
 
-  /** Filter operations do not transform the data and return a selection */
-  async dispatchFilter(action: EnumFilterOperations, ...args: any): Promise<number[]> {
-    this._refuseWhilePreviewing();
-    const filters: EnumDictionary<EnumFilterOperations, Function> = {
+  private _filterHandlers(): EnumDictionary<EnumFilterOperations, Function> {
+    return {
       [EnumFilterOperations.FIND_GAPS]: this._findGaps,
       [EnumFilterOperations.VALUE_THRESHOLD]: this._valueThreshold,
       [EnumFilterOperations.DATETIME_RANGE]: this._datetimeRange,
@@ -765,6 +850,32 @@ export class ObservationRecord {
       [EnumFilterOperations.RATE_OF_CHANGE]: this._rateOfChange,
       [EnumFilterOperations.SELECTION]: this._selection,
     };
+  }
+
+  /** Run a filter over `within` only, recording the matches as a SELECTION
+   *  so replay gives back exactly these points. */
+  async dispatchFilterWithin(
+    within: ArrayLike<number>,
+    action: EnumFilterOperations,
+    ...args: any
+  ): Promise<number[]> {
+    this._refuseWhilePreviewing();
+    if (action === EnumFilterOperations.SELECTION) {
+      throw new Error("A selection can't be filtered within a selection.");
+    }
+    const matches: number[] =
+      (await this._filterHandlers()[action].apply(this, args)) ?? [];
+    const base = new Set(Array.from(within));
+    return this.dispatchFilter(
+      EnumFilterOperations.SELECTION,
+      matches.filter((i) => base.has(i)),
+    );
+  }
+
+  /** Filter operations do not transform the data and return a selection */
+  async dispatchFilter(action: EnumFilterOperations, ...args: any): Promise<number[]> {
+    this._refuseWhilePreviewing();
+    const filters = this._filterHandlers();
 
     let response = [];
     // Declared outside the try so the catch block can mark the
@@ -870,9 +981,7 @@ export class ObservationRecord {
           durationMs: measurement.duration,
           mode: this._pendingExecutionMode,
           selectionSize: measurement.response?.length,
-          extent: measurement.response?.length
-            ? this._extentOf(measurement.response)
-            : undefined,
+          ...this._pointsOf(measurement.response ?? []),
           inFlight: false,
         };
       }
@@ -909,6 +1018,12 @@ export class ObservationRecord {
     operator: Operator,
     value: number,
   ): Promise<number[]> {
+    if (!Number.isFinite(value)) {
+      throw new Error("Change values: the value must be a finite number.");
+    }
+    if (operator === Operator.DIV && value === 0) {
+      throw new Error("Change values: cannot divide by zero.");
+    }
     const selected = this.history[this.history.length - 2]?.selected;
     if (!selected || selected.length === 0) return [];
 
@@ -1033,6 +1148,7 @@ export class ObservationRecord {
       sortedIndices[i] = selection[i];
     }
 
+    this._assertTimesFree("Change datetimes", collection, sortedIndices);
     // `_deleteDataPoints` requires ascending indices.
     sortedIndices.sort((a, b) => a - b);
     await this._deleteDataPoints(sortedIndices);
@@ -1187,20 +1303,14 @@ export class ObservationRecord {
     unit: TimeUnit,
     timeZone: string,
   ): Promise<number[]> {
-    if (!isValidTimeZone(timeZone)) {
-      throw new Error(`Shift datetimes: unknown time zone "${String(timeZone)}".`);
-    }
-    const calendar = unit === TimeUnit.MONTH || unit === TimeUnit.YEAR;
-    if (calendar && !Number.isInteger(amount)) {
-      throw new Error("Shift datetimes: months and years shift by whole numbers.");
-    }
+    const params = shiftParams(amount, unit, timeZone);
     if (index.length === 0) return [];
-
-    const params: ShiftDatetimesParams = {
-      months: calendar ? (unit === TimeUnit.YEAR ? amount * 12 : amount) : 0,
-      deltaMs: calendar ? 0 : amount * timeUnitMultipliers[unit] * 1000,
-      timeZone,
-    };
+    const taken = this._shiftCollision(index, params);
+    if (taken !== null) {
+      throw new Error(
+        `Shift datetimes: a point already exists at ${new Date(taken).toISOString()}.`,
+      );
+    }
 
     const N = index.length;
 
@@ -1310,11 +1420,15 @@ export class ObservationRecord {
     fillValue: number,
     range?: [number, number],
   ): Promise<number[]> {
+    const fillDelta = fill[0] * timeUnitMultipliers[fill[1]] * 1000;
+    // A cadence of zero or less would never step past the gap.
+    if (!(fillDelta > 0)) {
+      throw new Error("Fill gaps: the fill cadence must be greater than zero.");
+    }
     const len = this.dataX.length;
     if (len === 0) return [];
 
     const gapThresholdMs = gap[0] * timeUnitMultipliers[gap[1]] * 1000;
-    const fillDelta = fill[0] * timeUnitMultipliers[fill[1]] * 1000;
 
     // `rangeStart` and `rangeEnd` are inclusive index bounds for the
     // detection loop below. Convert datetime bounds via binary search
@@ -1775,6 +1889,14 @@ export class ObservationRecord {
     return groups;
   }
 
+  /** ADD_POINTS: refuse a point on a taken timestamp, then insert. */
+  private async _addNewDataPoints(
+    dataPoints: [number, number][],
+  ): Promise<number[]> {
+    this._assertTimesFree("Add points", dataPoints);
+    return this._addDataPoints(dataPoints);
+  }
+
   /**
    * Adds data points using worker threads.
    *  1. Main thread sorts insertions by datetime and computes each insertion's target index via binary search on the original X.
@@ -1922,27 +2044,35 @@ export class ObservationRecord {
   /**
    * Filter by applying a set of logical operations, using worker threads.
    *  1. Main thread encodes filters as numeric opcodes + thresholds (cheaper than string compares in the hot loop).
-   *  2. Workers scan disjoint chunks of Y; an index is selected if ANY filter matches (short-circuit).
+   *  2. Workers scan disjoint chunks of Y; an index is selected if ANY filter matches, or EVERY filter with `match: "all"`.
    *  3. Results from each chunk are concatenated in order to preserve ascending indexes.
    *
-   * Opcodes: 0=LT, 1=LTE, 2=GT, 3=GTE, 4=E.
+   * Opcodes: 0=LT, 1=LTE, 2=GT, 3=GTE, 4=E, 5=NE.
    */
   private async _valueThreshold(
-    appliedFilters: { [key: string]: number },
+    { filters, match }: ValueThresholdArgs,
     range?: [number, number],
   ): Promise<number[]> {
-    const keys = Object.keys(appliedFilters);
-    if (keys.length === 0) return [];
+    if (!Array.isArray(filters) || (match !== "any" && match !== "all")) {
+      throw new Error('VALUE_THRESHOLD expects { filters: [...], match: "any" | "all" }');
+    }
+    if (filters.length === 0) return [];
 
-    const opMap: Record<string, number> = {
+    const opMap: Record<FilterOperation, number> = {
       [FilterOperation.LT]: 0,
       [FilterOperation.LTE]: 1,
       [FilterOperation.GT]: 2,
       [FilterOperation.GTE]: 3,
       [FilterOperation.E]: 4,
+      [FilterOperation.NE]: 5,
     };
-    const ops = keys.map((k) => opMap[k] ?? 4);
-    const values = keys.map((k) => appliedFilters[k]);
+    const ops = filters.map((f) => {
+      const op = opMap[f.operator];
+      if (op === undefined) throw new Error(`Unknown value filter: ${f.operator}`);
+      return op;
+    });
+    const values = filters.map((f) => f.value);
+    const matchAll = match === "all";
 
     const dataY = this.dataset.source.y;
     const dataX = this.dataset.source.x;
@@ -1970,7 +2100,7 @@ export class ObservationRecord {
       datasetSize: total,
     });
     if (!decision.useWorker) {
-      return valueThresholdCore(dataY, start, end, ops, values);
+      return valueThresholdCore(dataY, start, end, ops, values, matchAll);
     }
     this._pendingExecutionMode = "worker";
 
@@ -1995,6 +2125,7 @@ export class ObservationRecord {
             end: cEnd,
             ops,
             values,
+            matchAll,
           });
           worker.onmessage = (event: MessageEvent) => {
             resolve(event.data as number[]);

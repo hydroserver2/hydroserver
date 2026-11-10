@@ -360,13 +360,13 @@ for (const viewport of [
     await page.setViewportSize(viewport)
     await page.goto('/browse')
     await expect(
-      page.locator('.browse-map .basemap-select-container')
+      page.locator('.browse-map .map-controls')
     ).toContainText('Configured street map')
     await page.getByRole('button', { name: 'Create Site', exact: true }).click()
 
     const dialog = page.getByRole('dialog')
     await expect(dialog.getByText('Create Site', { exact: true })).toBeVisible()
-    await expect(dialog.locator('.basemap-select-container')).toContainText(
+    await expect(dialog.locator('.map-controls')).toContainText(
       'Configured street map'
     )
     const save = dialog.getByRole('button', { name: 'Save', exact: true })
@@ -407,7 +407,7 @@ for (const viewport of [
       })
       .click()
     await expect(dialog.getByText('Edit Site', { exact: true })).toBeVisible()
-    await expect(dialog.locator('.basemap-select-container')).toContainText(
+    await expect(dialog.locator('.map-controls')).toContainText(
       'Configured satellite map'
     )
     await expect(save).toBeInViewport()

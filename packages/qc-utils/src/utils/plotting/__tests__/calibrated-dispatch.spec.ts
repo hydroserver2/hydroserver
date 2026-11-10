@@ -192,9 +192,7 @@ const cases: CalibratedCase[] = [
     axis: (datasetSize) => ({ datasetSize }),
     async run(size) {
       const rec = await makeRecord(size)
-      await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, {
-        [FilterOperation.GTE]: 0,
-      })
+      await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { filters: [{ operator: FilterOperation.GTE, value: 0 }], match: 'any' })
       return rec
     },
   },
@@ -300,7 +298,7 @@ const cases: CalibratedCase[] = [
       const selection = consecutiveIndexes(size, rec.dataX.length)
       await rec.dispatch([
         [EnumFilterOperations.SELECTION, selection],
-        [EnumEditOperations.SHIFT_DATETIMES, 1, TimeUnit.HOUR, 'UTC'],
+        [EnumEditOperations.SHIFT_DATETIMES, 1, TimeUnit.MINUTE, 'UTC'],
       ])
       return rec
     },

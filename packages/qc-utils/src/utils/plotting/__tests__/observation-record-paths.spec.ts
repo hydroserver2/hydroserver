@@ -252,7 +252,7 @@ describe('ObservationRecord — worker paths', () => {
     const originalLen = rec.dataX.length
     await rec.dispatch([
       [EnumFilterOperations.SELECTION, [5, 6, 7]],
-      [EnumEditOperations.SHIFT_DATETIMES, 1, TimeUnit.HOUR, 'UTC'],
+      [EnumEditOperations.SHIFT_DATETIMES, 1, TimeUnit.MINUTE, 'UTC'],
     ])
     await flushMicrotasks()
     const last = rec.history[rec.history.length - 1]
@@ -332,7 +332,7 @@ describe('ObservationRecord — worker paths', () => {
   it('VALUE_THRESHOLD fans out to workers', async () => {
     const selection = await rec.dispatch(
       EnumFilterOperations.VALUE_THRESHOLD,
-      { [FilterOperation.GTE]: 200 }
+      { filters: [{ operator: FilterOperation.GTE, value: 200 }], match: 'any' }
     )
     expect(rec.history[rec.history.length - 1].execution.mode).toBe('worker')
     // dataY = [0, 10, 20, ...], so indexes 20..39 have y >= 200.
@@ -561,7 +561,7 @@ describe('ObservationRecord — SELECTION echo dedup', () => {
     // VALUE_THRESHOLD > 50 against y = 0,10,...,190 selects [6..19].
     const indices = await rec.dispatch(
       EnumFilterOperations.VALUE_THRESHOLD,
-      { [FilterOperation.GT]: 50 },
+      { filters: [{ operator: FilterOperation.GT, value: 50 }], match: 'any' },
     )
     expect(rec.history).toHaveLength(1)
     expect(rec.history[0].method).toBe(EnumFilterOperations.VALUE_THRESHOLD)
@@ -576,7 +576,7 @@ describe('ObservationRecord — SELECTION echo dedup', () => {
   it('splices the preceding filter when the SELECTION differs (user manual override)', async () => {
     await rec.dispatch(
       EnumFilterOperations.VALUE_THRESHOLD,
-      { [FilterOperation.GT]: 50 },
+      { filters: [{ operator: FilterOperation.GT, value: 50 }], match: 'any' },
     )
     // Override with a different selection — the filter row should
     // get spliced out so the SELECTION represents the action.
@@ -589,7 +589,7 @@ describe('ObservationRecord — SELECTION echo dedup', () => {
   it('empty SELECTION after a non-empty filter pops both rows (selection cleared)', async () => {
     await rec.dispatch(
       EnumFilterOperations.VALUE_THRESHOLD,
-      { [FilterOperation.GT]: 50 },
+      { filters: [{ operator: FilterOperation.GT, value: 50 }], match: 'any' },
     )
     expect(rec.history).toHaveLength(1)
     // Empty SELECTION clears: drop self AND the filter that was
@@ -602,7 +602,7 @@ describe('ObservationRecord — SELECTION echo dedup', () => {
     // No y in the uniform fixture exceeds 999; the filter selects nothing.
     await rec.dispatch(
       EnumFilterOperations.VALUE_THRESHOLD,
-      { [FilterOperation.GT]: 999 },
+      { filters: [{ operator: FilterOperation.GT, value: 999 }], match: 'any' },
     )
     expect(rec.history).toHaveLength(1)
     const filterMethod = rec.history[0].method

@@ -13,6 +13,7 @@ import { debounce } from 'lodash-es'
 import { handleSelected } from './selected'
 import { captureCurrentZoomState, installZoomTracking } from './zoom'
 import { handleRelayout } from './relayout'
+import { installAxisLock } from './axisLock'
 import {
   handleMouseMove,
   handleMouseOut,
@@ -271,6 +272,7 @@ const drawPlot = async (
   // drag/scroll gesture collapses to one entry. Kept independent of the
   // relayout handler above, which does tooltip/visible-point work.
   installZoomTracking(plotlyRef.value)
+  if (plotlyRef.value) installAxisLock(plotlyRef.value)
   // Seed the initial auto-fit state so the user can always undo back to
   // the plot's starting viewport. Runs after `handleRelayout(null)`
   // above so the layout ranges are populated.

@@ -54,6 +54,20 @@ export enum FilterOperation {
   GT = "Greater than",
   GTE = "Greater than or equal to",
   E = "Equal",
+  NE = "Not equal to",
+}
+
+export interface ValueFilter {
+  operator: FilterOperation;
+  value: number;
+}
+
+/** `any` selects points matching at least one filter; `all` requires every filter. */
+export type FilterMatch = "any" | "all";
+
+export interface ValueThresholdArgs {
+  filters: ValueFilter[];
+  match: FilterMatch;
 }
 
 export enum Operator {
@@ -149,6 +163,13 @@ export interface HistoryExecution {
    * Runtime-only like `selected`: recomputed on replay, never serialized.
    */
   extent?: { begin: number; end: number };
+  /**
+   * Epoch-ms datetimes of every point the op acted on, ascending, under the
+   * same rules as `extent`, so a consumer can list exactly which points a
+   * scattered selection touched. Runtime-only: recomputed on replay, never
+   * serialized.
+   */
+  times?: Float64Array;
 }
 
 export type HistoryItem = {

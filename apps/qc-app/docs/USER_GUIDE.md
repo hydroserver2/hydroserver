@@ -183,6 +183,8 @@ sessions as a timeline, oldest first:
   which opens the session window step. It reads **Continue from the latest
   commit** once something is committed, since the new session starts from
   what that commit left.
+- Only one session can be open at a time. While one is in progress, the
+  timeline says to continue or delete it first.
 - **Create new managed datastream** at the bottom sets up another
   quality-controlled version of the same source.
 
@@ -368,6 +370,8 @@ While editing, the edit target's row shows the session's working data over the s
 
 You can check up to **4 datastreams at a time**. The fifth plot slot is kept for the datastream you edit, so there is always room for it. The plotted count and cap are surfaced in the Datastreams table toolbar as a chip ("`N/4 plotted`"). Once you hit the cap, the unchecked rows disable their plot toggles and a tooltip explains why. Unplot a row from either the table or the list to free up a slot. While editing, the edit target and its raw source context are shown in addition to the 4 plotted datastreams. They don't count against the cap; a source you plot yourself does. History comparison lines (see [Comparing against a point in history](#comparing-against-a-point-in-history)) don't count either, and aren't included in **Download selected**.
 
+A share link that lists more than 4 plots the first 4 and names the rest.
+
 ![Two datastreams on independent y-axes](./images/home-multi-datastreams.png)
 
 When more than one datastream is on the plot:
@@ -380,6 +384,7 @@ Once a datastream is on the plot, the **plotted datastreams list** on the right 
 
 - **Eye toggle**: hide / show a trace on the plot without unplotting it. Useful when one series is visually crowding the others. Hidden rows render with a strikethrough; their axis stays on the plot so the scale doesn't jump.
 - **Y-axis toggle** (non-primary rows only): collapse just the secondary axis without removing the trace. Reach for it when the extra axes start eating horizontal room and you don't actually need the numeric scale.
+- **Lock** (non-primary rows only): the row's axis moves with the primary axis. Dragging or zooming the primary axis pans and zooms the locked axis by the same share of its own range, so it keeps its own scale.
 - **Drag handle**: drag a row up or down to reorder the legend. The plot redraws so the trace colors track the new order. The edit target is pinned and can't be reordered.
 - **× button**: unplot the row entirely.
 
@@ -391,6 +396,7 @@ The Plotly toolbar at the top of the chart drives the X-axis gestures (Zoom, Pan
 - **X-axis pan**: enable Pan in the toolbar, then drag the plot body. In the Edit view, the overview strip at the bottom is also draggable. It acts as a thumbnail of the loaded range.
 - **Per-axis zoom**: hover near the ends of any axis and drag. Only that axis rescales. Sibling axes keep their current view. This is how you "compare units": drop the temperature axis to a tight window without touching streamflow.
 - **Per-axis pan**: hover the middle of an axis and drag.
+- **Match the primary scale**: double-click the axis of a datastream with the same observed property and unit as the primary axis. It takes the primary axis's range, so the two series line up.
 - **Reset**: the home icon on the Plotly toolbar returns to the default zoom (does not change the begin/end dates in the
   sidebar).
 - **Fit Y/X to visible**: the collapse icons in the toolbar rescale the X or Y axis to the currently visible points. Handy
@@ -437,17 +443,26 @@ Run the filter as usual (value thresholds, change threshold, rate of change, fin
 
 Use the mask when you want to QC a specific event window without touching the rest of the series: e.g. flag persistence runs only inside a known outage, or apply a value threshold only to last month's data.
 
+### Selected points
+
+With points selected, turn on **Search only the N selected points** in a filter panel to keep only the filter's matches among them, for example a lasso period narrowed to values below 0. Changing the filter searches the same points again; selecting other points searches those instead.
+
 ### Filter operations
 
 These do not change data. They produce a selection that the next edit operation acts on.
 
 #### Value thresholds
 
-Flag any point whose value satisfies a chosen comparator (`>=`, `>`, `==`, `<`, `<=`). You can combine multiple comparators. Each appears as a removable chip under "Applied".
+Flag any point whose value satisfies a chosen comparator (`>=`, `>`, `==`, `!=`, `<`, `<=`). You can add as many filters as you like, including the same comparator more than once. Each appears as a removable chip under "Applied".
 
 ![Value thresholds panel](./images/panel-valueThreshold.png)
 
-Typing a number and pressing Enter (or clicking **Add filter**) runs the filter. The selection on the plot updates live. Use **Clear all** on the applied chips row to remove every comparator at once.
+Typing a number and pressing Enter (or clicking **Add filter**) runs the filter. The selection on the plot updates live. Use **Clear all** on the applied chips row to remove every filter at once. **Apply** runs the applied filters again, for example after the selection was cleared.
+
+Once two or more filters are applied, choose how they combine:
+
+- **Match any** (default) selects points that pass at least one filter.
+- **Match all** selects only points that pass every filter. Use it for value ranges (`Greater than 0` and `Less than 10`) or to leave out fill values with `Not equal to`.
 
 > **Example:** "Anything reading > 100 mg/L is bad" → set
 > `Greater than: 100` and run. Every offending point is now selected.
@@ -512,7 +527,7 @@ Apply an arithmetic operator at each selected index. The toggle row is `+ − ×
 
 ![Change values panel](./images/panel-changeValues.png)
 
-Press Enter on the value field, or click **Apply**, to commit.
+Press Enter on the value field, or click **Apply**, to commit. The value must be a number, and `÷` doesn't accept 0; until it's valid, the field says why and **Apply** stays off.
 
 #### Shift datetimes
 
@@ -523,6 +538,8 @@ Months and years follow the calendar of the time zone chosen on the rail, and ke
 ![Shift datetimes panel](./images/panel-shiftDatetimes.png)
 
 When the QC datastream declares an `intendedTimeSpacing`, the panel shows snap chips (`0.5×`, `1×`, `2×`) that pre-fill the amount with a multiple of the intended cadence. The active chip gets a check mark.
+
+A shift that would land on an existing point is refused, and the panel names the timestamp.
 
 #### Delete points
 
@@ -540,7 +557,7 @@ Insert one or more `(datetime, value)` tuples. Each row is a card with a datetim
 
 ![Add points panel](./images/panel-addPoints.png)
 
-The first row is seeded with the last selected point's timestamp (or the last observation in the series) plus the datastream's intended cadence, so a quick "extend the series by one point" workflow is one click + one number. Subsequent rows auto-increment by the same cadence.
+The first row is seeded with the last selected point's timestamp (or the last observation in the series) plus the datastream's intended cadence, so a quick "extend the series by one point" workflow is one click + one number. Subsequent rows auto-increment by the same cadence. **Add** stays off while a row lands on an existing point.
 
 #### Fill gaps
 
@@ -556,6 +573,8 @@ The panel reuses the Find-gaps finder at the top (date range, threshold, snap ch
 - Ghost-marker preview points on the plot for every planned insertion.
 
 Cadence warnings appear when the fill step would skip gaps just above the threshold, or when the cadence doesn't divide evenly into the datastream's intended spacing. The **Re-select gaps** button mirrors the one in Find gaps.
+
+One fill can add at most twice the points loaded (at least 10,000); a finer cadence keeps **Fill gaps** off.
 
 > **Workflow:** if you only want to see the gaps without filling them, use Find gaps instead. Fill gaps is the same finder with the fill controls bolted on.
 
@@ -582,9 +601,9 @@ The body shows:
   - A duration badge.
   - In dev mode, a small chip showing whether the op ran inline or on a worker.
   - A **plot-this-step** button that adds that point in history to the plot as a comparison line.
-  - Clicking the row previews the data as it was at that step; a selection step also selects its points on the plot. Every step stays in the history: steps after the one on screen are dimmed, since they are recorded but not reflected in the plot. A banner reads **Previewing step N of M** with a **Back to latest** button (clicking the last step works too). While previewing, editing waits: operation panels, plot selections and table saves hold until you are back on the latest step. Replaying re-measures each step's duration but keeps its comment and attribution.
+  - Clicking the row previews the data as it was at that step; a selection step also selects its points on the plot. Every step stays in the history: steps after the one on screen are dimmed, since they are recorded but not reflected in the plot. A banner reads **Previewing step N of M** with a **Back to latest** button (clicking the last step works too). While previewing, editing waits: operation panels, plot selections, table saves and **Commit** hold until you are back on the latest step. Commit waits because the plot shows an earlier step while the history still holds every step, so the saved data would not match the saved operations. Replaying re-measures each step's duration but keeps its comment and attribution.
   - An **undo** button on the trailing entry only. Undo and redo are the only ways to change the history; from a preview, undo acts on the whole history and ends the preview.
-- A chevron toggles an inline drawer under the row. It shows the raw qc-utils call arguments, **Applied by** with the name of whoever applied the step (once it is saved), and a **Comment** box for why the step was applied. A comment is saved with the operation, and a row that has one shows a comment icon next to its name. On a committed session the comment is shown but can't be changed.
+- A chevron toggles an inline drawer under the row. It shows the raw qc-utils call arguments, **Points** with the time of every point the step changed or selected, **Applied by** with the name of whoever applied the step (once it is saved), and a **Comment** box for why the step was applied. A comment is saved with the operation, and a row that has one shows a comment icon next to its name. On a committed session the comment is shown but can't be changed.
 
 ### The sessions timeline
 
@@ -645,6 +664,7 @@ Things worth knowing:
   Each one replays on load, so a link carrying several is slower to open.
 - Closing the session drops every snapshot. Switching to the Select view does
   not, since the session stays open.
+- Up to 2 snapshots can be shown at once; hide one to show another.
 
 ## Deleting a session
 

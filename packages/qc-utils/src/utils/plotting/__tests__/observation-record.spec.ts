@@ -21,6 +21,7 @@ import {
   INCREASE_AMOUNT,
   HistoryPreviewError,
 } from '../observation-record';
+import { serializeHistory } from '../history';
 import {
   EnumEditOperations,
   EnumFilterOperations,
@@ -544,6 +545,24 @@ describe('ObservationRecord', () => {
       idx.forEach((i) => expect(rec.dataY[i]).toBe(42));
     });
 
+    it('CHANGE_VALUES fails on a value that is not a finite number or a divide by zero', async () => {
+      const idx = [5, 10, 15];
+      const beforeY = Array.from(rec.dataY);
+      for (const [operator, value] of [
+        [Operator.ASSIGN, NaN],
+        [Operator.ADD, Infinity],
+        [Operator.MULT, -Infinity],
+        [Operator.DIV, 0],
+      ] as const) {
+        await rec.dispatch([
+          [EnumFilterOperations.SELECTION, idx],
+          [EnumEditOperations.CHANGE_VALUES, operator, value],
+        ]);
+        expect(rec.history[rec.history.length - 1].execution.status).toBe('failed');
+      }
+      expect(Array.from(rec.dataY)).toEqual(beforeY);
+    });
+
     it('CHANGE_VALUES returns early when no selection is present', async () => {
       const beforeY = Array.from(rec.dataY);
       await rec.dispatch(EnumEditOperations.CHANGE_VALUES, Operator.ADD, 5);
@@ -693,6 +712,76 @@ describe('ObservationRecord', () => {
       expect(Array.from(local.dataX)).toEqual(before);
     });
 
+    describe('duplicate timestamps', () => {
+      const QUARTER = 15 * 60 * 1000;
+      const fresh = async () => {
+        const local = new ObservationRecord(buildUniformData(5));
+        await local.reload();
+        return local;
+      };
+      const lastStatus = (r: ObservationRecord) =>
+        r.history[r.history.length - 1].execution.status;
+
+      it('ADD_POINTS fails when a point lands on an existing timestamp', async () => {
+        const local = await fresh();
+        const before = Array.from(local.dataX);
+        await local.dispatch(EnumEditOperations.ADD_POINTS, [[local.dataX[2], 7]]);
+        expect(lastStatus(local)).toBe('failed');
+        expect(Array.from(local.dataX)).toEqual(before);
+      });
+
+      it('ADD_POINTS fails when two new points share a timestamp', async () => {
+        const local = await fresh();
+        const t = local.dataX[4] + QUARTER;
+        await local.dispatch(EnumEditOperations.ADD_POINTS, [[t, 1], [t, 2]]);
+        expect(lastStatus(local)).toBe('failed');
+        expect(local.dataX.length).toBe(5);
+      });
+
+      it('SHIFT_DATETIMES fails when a point lands on one that did not move', async () => {
+        const local = await fresh();
+        const before = Array.from(local.dataX);
+        const beforeY = Array.from(local.dataY);
+        await local.dispatch([
+          [EnumFilterOperations.SELECTION, [1, 2]],
+          [EnumEditOperations.SHIFT_DATETIMES, 15, TimeUnit.MINUTE, 'UTC'],
+        ]);
+        expect(lastStatus(local)).toBe('failed');
+        expect(Array.from(local.dataX)).toEqual(before);
+        expect(Array.from(local.dataY)).toEqual(beforeY);
+      });
+
+      it('SHIFT_DATETIMES lets points move into slots other selected points leave', async () => {
+        const local = await fresh();
+        await local.dispatch([
+          [EnumFilterOperations.SELECTION, [2, 3, 4]],
+          [EnumEditOperations.SHIFT_DATETIMES, 15, TimeUnit.MINUTE, 'UTC'],
+        ]);
+        expect(lastStatus(local)).toBe('success');
+        expect(local.dataX.length).toBe(5);
+      });
+
+      it('findTimeCollision names the first taken timestamp', async () => {
+        const local = await fresh();
+        const free = local.dataX[4] + QUARTER;
+        expect(local.findTimeCollision([free])).toBeNull();
+        expect(local.findTimeCollision([free, local.dataX[1]])).toBe(local.dataX[1]);
+        expect(local.findTimeCollision([free, free])).toBe(free);
+        // A point the edit removes frees its timestamp.
+        expect(local.findTimeCollision([local.dataX[1]], [1])).toBeNull();
+      });
+
+      it('findShiftCollision checks a shift before it runs', async () => {
+        const local = await fresh();
+        expect(
+          local.findShiftCollision([1, 2], 15, TimeUnit.MINUTE, 'UTC'),
+        ).toBe(local.dataX[3]);
+        expect(
+          local.findShiftCollision([2, 3, 4], 15, TimeUnit.MINUTE, 'UTC'),
+        ).toBeNull();
+      });
+    });
+
     it('FILL_GAPS inserts points in detected gaps (with interpolation)', async () => {
       // Build a dataset with a single 4-hour gap in an otherwise 15-min grid.
       const spacingMs = 15 * 60 * 1000;
@@ -733,6 +822,26 @@ describe('ObservationRecord', () => {
       }
     });
 
+    it('FILL_GAPS fails on a fill cadence that is not above zero', async () => {
+      const startMs = Date.UTC(2023, 0, 1);
+      const local = new ObservationRecord({
+        datetimes: [startMs, startMs + 4 * 60 * 60 * 1000],
+        dataValues: [1, 2],
+      });
+      await local.reload();
+      for (const amount of [0, -1, NaN]) {
+        await local.dispatch(
+          EnumEditOperations.FILL_GAPS,
+          [30, TimeUnit.MINUTE],
+          [amount, TimeUnit.MINUTE],
+          true,
+          -9999,
+        );
+        expect(local.history[local.history.length - 1].execution.status).toBe('failed');
+      }
+      expect(local.dataX.length).toBe(2);
+    });
+
     it('FILL_GAPS is a no-op when no gap exceeds the threshold', async () => {
       const uniform = buildUniformData(20, 0, 10); // 15-min spacing
       const local = new ObservationRecord({
@@ -764,18 +873,51 @@ describe('ObservationRecord', () => {
     });
 
     it('VALUE_THRESHOLD selects points matching the filter map', async () => {
-      const selection = await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, {
-        [FilterOperation.GTE]: 100,
-      });
+      const selection = await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { filters: [{ operator: FilterOperation.GTE, value: 100 }], match: 'any' });
       expect(selection).toEqual([10, 11, 12, 13, 14, 15, 16, 17, 18, 19]);
     });
 
     it('VALUE_THRESHOLD returns [] for an empty filter map', async () => {
       const selection = await rec.dispatch(
         EnumFilterOperations.VALUE_THRESHOLD,
-        {},
+        { filters: [], match: 'any' },
       );
       expect(selection).toEqual([]);
+    });
+
+    it('VALUE_THRESHOLD with match "all" combines not-equal with a bound', async () => {
+      const selection = await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, {
+        filters: [
+          { operator: FilterOperation.LT, value: 50 },
+          { operator: FilterOperation.NE, value: 20 },
+          { operator: FilterOperation.NE, value: 30 },
+        ],
+        match: 'all',
+      });
+      expect(selection).toEqual([0, 1, 4]);
+    });
+
+    it('VALUE_THRESHOLD with match "any" keeps the union', async () => {
+      const selection = await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, {
+        filters: [
+          { operator: FilterOperation.LT, value: 20 },
+          { operator: FilterOperation.GT, value: 170 },
+        ],
+        match: 'any',
+      });
+      expect(selection).toEqual([0, 1, 18, 19]);
+    });
+
+    it.each([
+      [{ 'Greater than': 5 }],
+      [{ filters: [], match: 'some' }],
+      [{ filters: [{ operator: 'Bogus', value: 1 }], match: 'any' }],
+    ])('VALUE_THRESHOLD marks malformed arguments %j as failed', async (args) => {
+      const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+      const selection = await rec.dispatchFilter(EnumFilterOperations.VALUE_THRESHOLD, args);
+      log.mockRestore();
+      expect(selection).toEqual([]);
+      expect(rec.history[rec.history.length - 1].execution.status).toBe('failed');
     });
 
     it('CHANGE selects points whose Δy matches the comparator', async () => {
@@ -925,7 +1067,7 @@ describe('ObservationRecord', () => {
       // y >= 80 selects 8..19; intersect with the window → [8, 9, 10].
       const selection = await rec.dispatch(
         EnumFilterOperations.VALUE_THRESHOLD,
-        { [FilterOperation.GTE]: 80 },
+        { filters: [{ operator: FilterOperation.GTE, value: 80 }], match: 'any' },
         [fromTs, toTs],
       );
       expect(selection.sort((a, b) => a - b)).toEqual([8, 9, 10]);
@@ -970,7 +1112,7 @@ describe('ObservationRecord', () => {
       const farFuture = Date.UTC(2099, 0, 1);
       const selection = await rec.dispatch(
         EnumFilterOperations.VALUE_THRESHOLD,
-        { [FilterOperation.GTE]: 0 },
+        { filters: [{ operator: FilterOperation.GTE, value: 0 }], match: 'any' },
         [farFuture, farFuture + 1000],
       );
       expect(selection).toEqual([]);
@@ -990,13 +1132,9 @@ describe('ObservationRecord', () => {
     });
 
     it('dispatchFilter replaces the trailing filter entry rather than stacking', async () => {
-      await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, {
-        [FilterOperation.GTE]: 100,
-      });
+      await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { filters: [{ operator: FilterOperation.GTE, value: 100 }], match: 'any' });
       const lenAfterFirst = rec.history.length;
-      await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, {
-        [FilterOperation.GTE]: 150,
-      });
+      await rec.dispatch(EnumFilterOperations.VALUE_THRESHOLD, { filters: [{ operator: FilterOperation.GTE, value: 150 }], match: 'any' });
       expect(rec.history.length).toBe(lenAfterFirst);
       expect(rec.history[rec.history.length - 1].method).toBe(
         EnumFilterOperations.VALUE_THRESHOLD,
@@ -1216,9 +1354,9 @@ describe('ObservationRecord', () => {
     // replay merges them into one entry and every later entry moves up.
     it('keeps each comment on its own operation when replay merges entries', async () => {
       await rec.dispatch([
-        [EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 1 }],
+        [EnumFilterOperations.VALUE_THRESHOLD, { filters: [{ operator: 'Greater than', value: 1 }], match: 'any' }],
         [EnumEditOperations.ADD_POINTS, [[rec.dataX[1]! + 1, 5]]],
-        [EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 2 }],
+        [EnumFilterOperations.VALUE_THRESHOLD, { filters: [{ operator: 'Greater than', value: 2 }], match: 'any' }],
         [EnumEditOperations.DELETE_POINTS],
       ]);
       rec.history.forEach((item, i) => {
@@ -1274,6 +1412,60 @@ describe('ObservationRecord', () => {
     });
   });
 
+  describe('dispatchFilterWithin', () => {
+    const { datetimes, dataValues, startMs, spacingMs } = buildUniformData(20);
+    const at = (i: number) => startMs + i * spacingMs;
+    const RANGE = EnumFilterOperations.DATETIME_RANGE;
+    let rec: ObservationRecord;
+
+    beforeEach(async () => {
+      rec = new ObservationRecord({ datetimes, dataValues });
+      await rec.reload();
+    });
+
+    it('keeps only the matches that were already selected', async () => {
+      await rec.dispatchFilter(EnumFilterOperations.SELECTION, [2, 10, 17, 18]);
+      const result = await rec.dispatchFilterWithin([2, 10, 17, 18], RANGE, at(5), at(17));
+      expect(result).toEqual([10, 17]);
+    });
+
+    it('records the narrowed selection, so replay gives the same points', async () => {
+      await rec.dispatchFilter(EnumFilterOperations.SELECTION, [2, 10, 17, 18]);
+      await rec.dispatchFilterWithin([2, 10, 17, 18], RANGE, at(5), at(17));
+      expect(rec.history.map((h) => [h.method, h.selected])).toEqual([
+        [EnumFilterOperations.SELECTION, [10, 17]],
+      ]);
+
+      await rec.dispatchAction(EnumEditOperations.DELETE_POINTS);
+      await rec.undo();
+      await rec.redo();
+      expect(rec.dataX.length).toBe(18);
+      expect(rec.history[0]!.selected).toEqual([10, 17]);
+    });
+
+    it('re-runs against the same base, not the last result', async () => {
+      const base = [2, 10, 17, 18];
+      await rec.dispatchFilter(EnumFilterOperations.SELECTION, base);
+      await rec.dispatchFilterWithin(base, RANGE, at(17), at(19));
+      const widened = await rec.dispatchFilterWithin(base, RANGE, at(5), at(19));
+      expect(widened).toEqual([10, 17, 18]);
+      expect(rec.history).toHaveLength(1);
+    });
+
+    it('clears the selection when nothing selected matches', async () => {
+      await rec.dispatchFilter(EnumFilterOperations.SELECTION, [2, 3]);
+      const result = await rec.dispatchFilterWithin([2, 3], RANGE, at(10), at(19));
+      expect(result).toEqual([]);
+      expect(rec.history).toHaveLength(0);
+    });
+
+    it('refuses a selection as the filter', async () => {
+      await expect(
+        rec.dispatchFilterWithin([1], EnumFilterOperations.SELECTION, [1])
+      ).rejects.toThrow();
+    });
+  });
+
   describe('execution extent', () => {
     const { datetimes, dataValues, startMs, spacingMs } = buildUniformData(20);
     const at = (i: number) => startMs + i * spacingMs;
@@ -1293,9 +1485,7 @@ describe('ObservationRecord', () => {
     });
 
     it('spans a filter result', async () => {
-      await rec.dispatchFilter(EnumFilterOperations.VALUE_THRESHOLD, {
-        [FilterOperation.GT]: 15,
-      });
+      await rec.dispatchFilter(EnumFilterOperations.VALUE_THRESHOLD, { filters: [{ operator: FilterOperation.GT, value: 15 }], match: 'any' });
       expect(rec.history[0]!.execution.extent).toEqual({
         begin: at(16),
         end: at(19),
@@ -1321,9 +1511,7 @@ describe('ObservationRecord', () => {
     });
 
     it('spans the selection an edit took from a filter', async () => {
-      await rec.dispatchFilter(EnumFilterOperations.VALUE_THRESHOLD, {
-        [FilterOperation.GT]: 17,
-      });
+      await rec.dispatchFilter(EnumFilterOperations.VALUE_THRESHOLD, { filters: [{ operator: FilterOperation.GT, value: 17 }], match: 'any' });
       await rec.dispatchAction(EnumEditOperations.DELETE_POINTS);
       expect(rec.history[1]!.execution.selectionSize).toBe(2);
       expect(rec.history[1]!.execution.extent).toEqual({
@@ -1355,6 +1543,53 @@ describe('ObservationRecord', () => {
         begin: at(2),
         end: at(4),
       });
+    });
+  });
+
+  describe('execution times', () => {
+    const { datetimes, dataValues, startMs, spacingMs } = buildUniformData(20);
+    const at = (i: number) => startMs + i * spacingMs;
+    let rec: ObservationRecord;
+
+    beforeEach(async () => {
+      rec = new ObservationRecord({ datetimes, dataValues });
+      await rec.reload();
+    });
+
+    const times = (i: number) => Array.from(rec.history[i]!.execution.times ?? []);
+
+    it('lists every point a scattered selection picked, in time order', async () => {
+      await rec.dispatchFilter(EnumFilterOperations.SELECTION, [7, 3, 5]);
+      expect(times(0)).toEqual([at(3), at(5), at(7)]);
+    });
+
+    it('lists the points an edit took from the selection, before it moved them', async () => {
+      await rec.dispatch([
+        [EnumFilterOperations.SELECTION, [2, 9]],
+        [EnumEditOperations.DELETE_POINTS],
+        [EnumFilterOperations.SELECTION, [2]],
+        [EnumEditOperations.DELETE_POINTS],
+      ]);
+      expect(times(1)).toEqual([at(2), at(9)]);
+      // Index 2 held the next point by then.
+      expect(times(3)).toEqual([at(3)]);
+    });
+
+    it('lists the points an insert added', async () => {
+      await rec.dispatchAction(EnumEditOperations.ADD_POINTS, [
+        [at(30), 1],
+        [at(25), 1],
+      ]);
+      expect(times(0)).toEqual([at(25), at(30)]);
+    });
+
+    it('is left out when the history is saved', async () => {
+      await rec.dispatchFilter(EnumFilterOperations.SELECTION, [1, 4]);
+      const saved = serializeHistory(rec, {
+        startDate: new Date(at(0)).toISOString(),
+        endDate: new Date(at(19)).toISOString(),
+      });
+      expect(JSON.stringify(saved)).not.toContain('times');
     });
   });
 

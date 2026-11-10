@@ -98,6 +98,7 @@ that holds it. Omitted or `null`, every value is treated as a measurement.
 | `dispatchStep(step)`                         | `Promise<number[]>` | Run one recorded step (`method`, `args`) and carry its `comment` and `performedBy` onto the entry it produces. Every replay goes through it, so these survive undo, redo, removal and `applyHistory` even when replay merges entries. |
 | `dispatchAction(op: EnumEditOperations, ...args)` | `Promise<number[]>` | Run one edit op. Returns the selection it leaves.                                  |
 | `dispatchFilter(op: EnumFilterOperations, ...args)` | `Promise<number[]>` | Run one filter op. Returns its selection.                                        |
+| `dispatchFilterWithin(within, op, ...args)`         | `Promise<number[]>` | Run a filter over `within` only. Records the matches as a SELECTION, so replay is exact.|
 | `undo()`                                     | `Promise<number[]>` | Pop the last history entry; replay the rest from a fresh `reload()`. Returns the selection left. |
 | `redo()`                                     | `Promise<number[]>` | Replay the most recently undone entry. Returns its selection.                           |
 | `applyWindow(begin, end, rawData?)`          | `Promise<void>`  | Materialize the inclusive epoch-ms window `[begin, end]` of `rawData` into `dataX`/`dataY`. A passed `rawData` replaces the full series first (e.g. after a cache filled a gap). Clears history on a real change; no-op when neither the window nor the data changed. |
@@ -108,8 +109,15 @@ that holds it. Omitted or `null`, every value is treated as a measurement.
 | `restoreHistory(steps)`                      | `Promise<number[]>` | Replace the history with `steps` (keeping their comment and attribution), clear the redo stack and replay from raw. For going back to a saved history that undo and new edits have diverged from. |
 | `previewIndex`                               | `number \| null`    | The step being previewed, or null when the data reflects the whole history. `undo` ends a preview; `redo` ends it first, then redoes. |
 | `removeHistoryItem(index: number)`           | `Promise<number[]>` | Drop a specific entry and clear the redo stack; replay the rest. Returns the selection left. |
+| `findTimeCollision(times, vacated?)`         | `number \| null`   | The earliest of `times` already taken, by a point that stays or by another of `times`. Indices in `vacated` don't count as taken. |
+| `findShiftCollision(index, amount, unit, timeZone)` | `number \| null` | The earliest timestamp a `SHIFT_DATETIMES` of `index` would land on that is already taken. |
 
 The op handlers themselves are private — dispatch by enum.
+
+Two points can't share a timestamp. `ADD_POINTS`, `SHIFT_DATETIMES` and
+`ASSIGN_DATETIMES_BULK` fail without changing the data when a point would
+land on a taken timestamp, and the error names it. Points the edit moves
+free their old timestamps, so shifting a block into its own slots is fine.
 
 ### `const INCREASE_AMOUNT: number`
 
@@ -125,14 +133,14 @@ matters; lower means smaller idle memory, more frequent grow / copy.
 | Value                  | Args                                                                         |
 |------------------------|------------------------------------------------------------------------------|
 | `ADD_POINTS`           | `(datetimes: number[], values: number[])` — parallel arrays.                 |
-| `CHANGE_VALUES`        | `(operator: Operator, value: number, [range?])` — applies at prior selection.|
+| `CHANGE_VALUES`        | `(operator: Operator, value: number, [range?])` — applies at prior selection. Fails on a non-finite `value` or `DIV` by 0.|
 | `ASSIGN_VALUES_BULK`   | `(indices: number[], values: number[])` — parallel arrays. No workers.       |
 | `ASSIGN_DATETIMES_BULK`| `(indices: number[], datetimes: number[])` — combined delete + add.          |
 | `DELETE_POINTS`        | `(indices?: number[])`, defaulting to the prior selection. Indices past the end and repeats are ignored. |
 | `INTERPOLATE`          | `()` — linear interpolation per consecutive group in the prior selection.    |
 | `SHIFT_DATETIMES`      | `(amount: number, unit: TimeUnit, timeZone: string)`; months and years follow `timeZone`'s calendar; see Time zones. |
 | `DRIFT_CORRECTION`     | `(value: number)` — linear drift across each consecutive group.              |
-| `FILL_GAPS`            | `(gapThreshold: [amount, unit], fillCadence: [amount, unit], fillValue?: number)` |
+| `FILL_GAPS`            | `(gapThreshold: [amount, unit], fillCadence: [amount, unit], fillValue?: number)`. Fails on a cadence of zero or less. |
 
 ### `enum EnumFilterOperations`
 
@@ -425,6 +433,7 @@ runtime fact. See below for the field-by-field contract.
   datasetSize?: number,                // observation count at dispatch time
   selectionSize?: number,              // indices the op acted on
   extent?: { begin: number, end: number }, // epoch-ms of the first / last point acted on
+  times?: Float64Array,                // epoch-ms of every point acted on, ascending
 }
 ```
 
@@ -432,16 +441,18 @@ runtime fact. See below for the field-by-field contract.
 
 - **Push time** (synchronous, before the handler runs): `startedAt`,
   `inFlight: true`, `datasetSize`, and (for selection-consuming
-  edits) `selectionSize` and `extent`, read from the preceding entry's
+  edits) `selectionSize`, `extent` and `times`, read from the preceding entry's
   selection (a SELECTION or a filter result) before the edit moves it.
 - **Resolve time** (after the handler returns or throws): `status`,
   `durationMs`, `mode`, `inFlight: false`, and (for filters)
-  `selectionSize` and `extent` from the produced selection. ADD_POINTS
-  and FILL_GAPS get `extent` here from the points they inserted.
+  `selectionSize`, `extent` and `times` from the produced selection.
+  ADD_POINTS and FILL_GAPS get `extent` and `times` here from the points
+  they inserted.
 
-`extent` names the period a step touched in datetimes, which later edits
-don't shift the way they shift indices. It is runtime-only, like
-`selected`: replay recomputes it and `serializeHistory` leaves it out.
+`extent` names the period a step touched in datetimes, and `times` lists
+every point in it, which later edits don't shift the way they shift
+indices. Both are runtime-only, like `selected`: replay recomputes them and
+`serializeHistory` leaves them out.
 
 The qc-app reads this object to drive the EditHistory UI (per-row
 spinner via `inFlight`, failure badge via `status`, duration text

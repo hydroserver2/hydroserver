@@ -1,12 +1,24 @@
-from django.core.exceptions import FieldError
+from django.core.exceptions import EmptyResultSet, FieldError
 from django.db.models import F, Window
 from django.db.models.functions import RowNumber
 from ninja.errors import HttpError
 from odata_query.django.django_q import AstToDjangoQVisitor
+from odata_query.django.django_q_ext import NotEqual
 from sensorthings.types import Absent, OrderByDirection
 from core.sta import models as sta_models
 
 OM_MEASUREMENT = "http://www.opengis.net/def/observationType/OGC-OM/2.0/OM_Measurement"
+
+
+def _not_equal_as_sql(self, compiler, connection):
+    lhs, lhs_params = self.process_lhs(compiler, connection)
+    rhs, rhs_params = self.process_rhs(compiler, connection)
+    return "%s <> %s" % (lhs, rhs), (*lhs_params, *rhs_params)
+
+
+# TODO: Remove once odata-query supports Django 6.0.
+# odata-query's `ne` lookup concatenates params that Django 6.0 can return as a tuple and a list.
+NotEqual.as_sql = _not_equal_as_sql
 
 
 class SensorThingsUtils:
@@ -101,6 +113,8 @@ class SensorThingsUtils:
                 "unitOfMeasurement__definition": "unit__definition",
                 "observationType": "observation_type",
                 "observedArea": "observed_area",
+                "phenomenonTime": "phenomenon_begin_time",
+                "resultTime": "result_begin_time",
                 "properties__workspace__id": "monitoring_site__workspace_id",
                 "properties__workspace__name": "monitoring_site__workspace__name",
                 "properties__workspace__isPrivate": "monitoring_site__workspace__is_private",
@@ -151,9 +165,15 @@ class SensorThingsUtils:
                     "name": model_field,
                 }
         try:
-            return queryset.filter(query_filter)
+            queryset = queryset.filter(query_filter)
+            queryset.query.get_compiler(queryset.db).as_sql()  # Surfaces errors Django raises at compile time.
+            return queryset
+        except EmptyResultSet:
+            return queryset
         except FieldError:
             raise HttpError(422, "Failed to parse filter parameter.")
+        except (ValueError, TypeError):
+            raise HttpError(400, "Invalid $filter expression.")
 
     def apply_order(self, queryset, component, orderby, entity_name=None):
         if not orderby:
@@ -168,7 +188,10 @@ class SensorThingsUtils:
             prefix = "-" if field.direction == OrderByDirection.DESC else ""
             order_exprs.append(f"{prefix}{model_field}")
 
-        return queryset.order_by(*order_exprs)
+        try:
+            return queryset.order_by(*order_exprs)
+        except FieldError:
+            raise HttpError(400, "Invalid $orderby expression.")
 
     @staticmethod
     def apply_pagination(queryset, top=100, skip=0):
