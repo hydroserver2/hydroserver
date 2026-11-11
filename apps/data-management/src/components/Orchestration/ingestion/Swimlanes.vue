@@ -67,23 +67,44 @@
 </template>
 
 <script setup lang="ts">
+import { computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import type { EtlMapping } from '@hydroserver/client'
 import { mdiArrowRight } from '@mdi/js'
 import DatastreamSiteButton from '@/components/Orchestration/shared/DatastreamSiteButton.vue'
 import { useOrchestrationStore } from '@/store/orchestration'
+import { useWorkspaceStore } from '@/store/workspaces'
 import { datastreamMonitoringSiteId } from '@/utils/orchestration/datastreams'
 
 const props = defineProps<{
   mappings: EtlMapping[]
 }>()
 
+const orchestrationStore = useOrchestrationStore()
 const {
   linkedDatastreams,
   workspaceDatastreams,
   draftDatastreams,
   workspaceMonitoringSites,
-} = storeToRefs(useOrchestrationStore())
+} = storeToRefs(orchestrationStore)
+const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
+const workspaceId = computed(() => selectedWorkspace.value?.id ?? null)
+
+watch(
+  workspaceId,
+  async (id) => {
+    if (!id) return
+    try {
+      await Promise.all([
+        orchestrationStore.ensureWorkspaceDatastreams(id),
+        orchestrationStore.ensureWorkspaceMonitoringSites(id),
+      ])
+    } catch (error) {
+      console.error('Error fetching mapping target details', error)
+    }
+  },
+  { immediate: true }
+)
 
 function targetDatastream(mapping: EtlMapping) {
   const key = mapping.targetDatastreamId
