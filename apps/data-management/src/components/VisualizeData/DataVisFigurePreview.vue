@@ -16,7 +16,9 @@
           <v-btn-dialog-action
             :prepend-icon="mdiDownload"
             :loading="exporting"
-            :disabled="!ready || !dimensionsValid"
+            :disabled="
+              !ready || !dimensionsValid || !exportValid || !textSizeValid
+            "
             @click="download"
             >Download PNG</v-btn-dialog-action
           >
@@ -36,6 +38,30 @@
         >
           <section class="figure-settings-section">
             <h2 class="hs-subheading">Image</h2>
+            <v-btn-toggle
+              v-model="exportMode"
+              mandatory
+              divided
+              color="primary"
+              variant="outlined"
+              rounded="md"
+              class="figure-export-mode"
+              role="group"
+              aria-label="Export destination"
+            >
+              <v-btn
+                value="screen"
+                :prepend-icon="mdiMonitor"
+                :aria-pressed="exportMode === 'screen'"
+                >Screen</v-btn
+              >
+              <v-btn
+                value="print"
+                :prepend-icon="mdiPrinter"
+                :aria-pressed="exportMode === 'print'"
+                >Print</v-btn
+              >
+            </v-btn-toggle>
             <v-textarea
               v-model="settings.title"
               label="Image title"
@@ -44,12 +70,20 @@
               hide-details
             />
             <v-select
+              v-if="exportMode === 'screen'"
               v-model="imageShape"
               label="Image shape"
               :items="shapes"
               hide-details
             />
-            <div class="figure-dimensions">
+            <v-select
+              v-else
+              v-model="printPreset"
+              label="Print size"
+              :items="printSizes"
+              hide-details
+            />
+            <div v-if="exportMode === 'screen'" class="figure-dimensions">
               <v-text-field
                 v-model.number="settings.width"
                 @update:model-value="imageShape = 0"
@@ -57,7 +91,7 @@
                 type="number"
                 suffix="px"
                 :min="MIN_IMAGE_WIDTH"
-                :max="MAX_IMAGE_DIMENSION"
+                :max="maxLayoutDimension"
                 step="1"
                 :rules="[(value) => dimensionRule(value, MIN_IMAGE_WIDTH)]"
                 hide-details="auto"
@@ -69,18 +103,103 @@
                 type="number"
                 suffix="px"
                 :min="MIN_IMAGE_HEIGHT"
-                :max="MAX_IMAGE_DIMENSION"
+                :max="maxLayoutDimension"
                 step="1"
                 :rules="[(value) => dimensionRule(value, MIN_IMAGE_HEIGHT)]"
                 hide-details="auto"
               />
             </div>
+            <template v-else>
+              <div class="figure-dimensions">
+                <v-text-field
+                  v-model.number="printWidth"
+                  label="Print width"
+                  type="number"
+                  :suffix="printUnit"
+                  min="0.5"
+                  step="0.5"
+                  :rules="[(value) => printDimensionRule(value, 'width')]"
+                  hide-details="auto"
+                />
+                <v-text-field
+                  v-model.number="printHeight"
+                  label="Print height"
+                  type="number"
+                  :suffix="printUnit"
+                  min="0.5"
+                  step="0.5"
+                  :rules="[(value) => printDimensionRule(value, 'height')]"
+                  hide-details="auto"
+                />
+              </div>
+              <v-select
+                v-model="printUnit"
+                label="Units"
+                :items="[
+                  { title: 'Inches', value: 'in' },
+                  { title: 'cm', value: 'cm' },
+                ]"
+                hide-details
+              />
+              <v-select
+                v-model="printQuality"
+                label="Print quality"
+                :items="printQualities"
+                hint="Available quality levels depend on image size."
+                persistent-hint
+                hide-details="auto"
+              />
+              <v-text-field
+                v-if="printQuality === 'custom'"
+                v-model.number="customDpi"
+                label="Custom DPI"
+                type="number"
+                min="72"
+                :max="maxPrintDpi"
+                step="1"
+                :error-messages="customDpiError"
+                hide-details="auto"
+              />
+            </template>
             <v-select
-              v-model="settings.fontSize"
-              label="Text size"
-              :items="[16, 18, 20, 22, 24, 28, 32, 40]"
-              suffix="px"
+              v-if="exportMode === 'screen'"
+              v-model="screenScale"
+              label="Resolution"
+              :items="screenResolutions"
               hide-details
+            />
+            <div
+              v-if="!customDpiError"
+              class="figure-export-summary hs-text-sm"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              <template v-if="dimensionsValid && exportValid">
+                <span class="hs-font-data"
+                  >{{ exportSize.width }} × {{ exportSize.height }} px</span
+                >
+                <span
+                  v-if="exportMode === 'print'"
+                  class="text-medium-emphasis"
+                >
+                  {{ formatSize(printWidth) }} × {{ formatSize(printHeight) }}
+                  {{ printUnit }} · {{ printDpi }} DPI
+                </span>
+              </template>
+              <span v-else class="text-error" role="alert">
+                {{ exportError || 'Enter valid image dimensions.' }}
+              </span>
+            </div>
+            <v-text-field
+              v-model.number="textSize"
+              label="Text size"
+              type="number"
+              :min="1"
+              step="1"
+              suffix="px"
+              :rules="[textSizeRule]"
+              hide-details="auto"
+              data-testid="figure-text-size"
             />
           </section>
           <section class="figure-settings-section">
@@ -257,7 +376,7 @@ import {
 } from 'vue'
 import { storeToRefs } from 'pinia'
 import { cloneDeep } from 'lodash-es'
-import { mdiClose, mdiDownload } from '@mdi/js'
+import { mdiClose, mdiDownload, mdiMonitor, mdiPrinter } from '@mdi/js'
 import { useDataVisStore } from '@/store/dataVisualization'
 import {
   downloadPlotlyImage,
@@ -269,11 +388,17 @@ import {
   DEFAULT_IMAGE_HEIGHT,
   MIN_IMAGE_WIDTH,
   MIN_IMAGE_HEIGHT,
-  MAX_IMAGE_DIMENSION,
   type FigureSettings,
 } from '@/utils/plotting/figurePreview'
 import { Snackbar } from '@/utils/notifications'
 import { PlotlyColors } from '@/utils/materialColors'
+import { getFigureExportSize } from '@/utils/plotting/imageExport'
+import {
+  DEFAULT_EXPORT_LIMITS,
+  detectImageExportLimits,
+  getMaxPrintDpi,
+  supportsImageExport,
+} from '@/utils/plotting/imageExportLimits'
 
 const props = defineProps<{ getPlot: () => any }>()
 const colorNames = [
@@ -309,6 +434,17 @@ const settings = ref<FigureSettings>({
   traces: [],
   axes: [],
 })
+const textSize = ref<number | string>(settings.value.fontSize)
+function textSizeRule(value: unknown) {
+  return (
+    (Number.isFinite(Number(value)) && Number(value) >= 1) ||
+    'Enter a text size of at least 1 px.'
+  )
+}
+const textSizeValid = computed(() => textSizeRule(textSize.value) === true)
+watch(textSize, (value) => {
+  if (textSizeRule(value) === true) settings.value.fontSize = Number(value)
+})
 const shapes = [
   { title: 'Landscape (4:3)', value: 4 / 3 },
   { title: 'Widescreen (16:9)', value: 16 / 9 },
@@ -316,6 +452,34 @@ const shapes = [
   { title: 'Portrait (3:4)', value: 3 / 4 },
   { title: 'Custom', value: 0 },
 ]
+const printPresets = [
+  { title: '3.5 × 2.5 in', value: '3.5x2.5', width: 3.5, height: 2.5 },
+  { title: '7 × 3.5 in', value: '7x3.5', width: 7, height: 3.5 },
+  { title: '6 × 4 in', value: '6x4', width: 6, height: 4 },
+  { title: '4 × 6 in', value: '4x6', width: 4, height: 6 },
+  { title: '5 × 5 in', value: '5x5', width: 5, height: 5 },
+  { title: '7 × 5 in', value: '7x5', width: 7, height: 5 },
+  { title: '5 × 7 in', value: '5x7', width: 5, height: 7 },
+  { title: '8 × 10 in', value: '8x10', width: 8, height: 10 },
+  { title: '8.5 × 11 in', value: '8.5x11', width: 8.5, height: 11 },
+] as const
+const qualityPresets = [
+  { title: 'Draft · 150 DPI', value: 150 },
+  { title: 'Standard · 300 DPI', value: 300 },
+  { title: 'Mixed artwork · 500 DPI', value: 500 },
+  { title: 'Fine detail · 600 DPI', value: 600 },
+  { title: 'Line art · 1000 DPI', value: 1000 },
+  { title: 'Fine line art · 1200 DPI', value: 1200 },
+]
+const exportLimits = shallowRef({ ...DEFAULT_EXPORT_LIMITS })
+// Keep the interactive layout bounded independently of the final PNG dimensions.
+const maxLayoutDimension = computed(() =>
+  Math.min(
+    exportLimits.value.maxWidth,
+    exportLimits.value.maxHeight,
+    exportLimits.value.maxGlDimension
+  )
+)
 const stage = ref<HTMLElement | null>(null)
 const plotContainer = ref<HTMLElement | null>(null)
 const stageSize = ref({ width: 800, height: 600 })
@@ -327,8 +491,8 @@ function dimensionRule(value: unknown, min: number) {
   return (
     (Number.isInteger(number) &&
       number >= min &&
-      number <= MAX_IMAGE_DIMENSION) ||
-    `${min}–${MAX_IMAGE_DIMENSION} px, whole numbers`
+      number <= maxLayoutDimension.value) ||
+    `${min}–${maxLayoutDimension.value} px, whole numbers`
   )
 }
 const dimensionsValid = computed(
@@ -336,31 +500,275 @@ const dimensionsValid = computed(
     dimensionRule(settings.value.width, MIN_IMAGE_WIDTH) === true &&
     dimensionRule(settings.value.height, MIN_IMAGE_HEIGHT) === true
 )
+const exportMode = ref<'screen' | 'print'>('screen')
+const screenScale = ref(1)
+const printUnit = ref<'in' | 'cm'>('in')
+const printWidthInches = ref(6)
+const printHeightInches = ref(4.5)
+const selectedPrintPreset = ref('custom')
+const printSizeInitialized = ref(false)
+const printQuality = ref<number | 'custom'>(300)
+const customDpi = ref(300)
+const printDpi = computed(() =>
+  Number(printQuality.value === 'custom' ? customDpi.value : printQuality.value)
+)
+const maxPrintDpi = computed(() =>
+  getMaxPrintDpi(
+    printWidthInches.value,
+    printHeightInches.value,
+    exportLimits.value
+  )
+)
+watch(printQuality, (quality) => {
+  if (quality !== 'custom' || maxPrintDpi.value < 72) return
+  if (
+    !Number.isInteger(customDpi.value) ||
+    customDpi.value < 72 ||
+    customDpi.value > maxPrintDpi.value
+  )
+    customDpi.value = Math.min(300, maxPrintDpi.value)
+})
+const printSizes = computed(() => [
+  ...printPresets
+    .filter(
+      (preset) =>
+        supportsImageExport(
+          Math.round(preset.width * printDpi.value),
+          Math.round(preset.height * printDpi.value),
+          exportLimits.value
+        ) || preset.value === selectedPrintPreset.value
+    )
+    .map(({ title, value, width, height }) => ({
+      title,
+      value,
+      props: {
+        disabled: !supportsImageExport(
+          Math.round(width * printDpi.value),
+          Math.round(height * printDpi.value),
+          exportLimits.value
+        ),
+      },
+    })),
+  { title: 'Custom', value: 'custom' },
+])
+const printQualities = computed(() => [
+  ...qualityPresets
+    .filter(
+      ({ value }) => value <= maxPrintDpi.value || value === printQuality.value
+    )
+    .map((item) => ({
+      ...item,
+      props: { disabled: item.value > maxPrintDpi.value },
+    })),
+  {
+    title: 'Custom DPI',
+    value: 'custom',
+    props: { disabled: maxPrintDpi.value < 72 },
+  },
+])
+const screenResolutions = computed(() =>
+  [
+    { title: 'Standard · 1×', value: 1 },
+    { title: 'High · 2×', value: 2 },
+    { title: 'Very high · 4×', value: 4 },
+  ]
+    .filter(
+      ({ value }) =>
+        supportsImageExport(
+          Math.floor(Number(settings.value.width) * value),
+          Math.floor(Number(settings.value.height) * value),
+          exportLimits.value
+        ) || value === screenScale.value
+    )
+    .map((item) => ({
+      ...item,
+      props: {
+        disabled: !supportsImageExport(
+          Math.floor(Number(settings.value.width) * item.value),
+          Math.floor(Number(settings.value.height) * item.value),
+          exportLimits.value
+        ),
+      },
+    }))
+)
+const printWidth = computed({
+  get: () =>
+    Number.isFinite(printWidthInches.value)
+      ? Number(
+          (
+            printWidthInches.value * (printUnit.value === 'cm' ? 2.54 : 1)
+          ).toFixed(3)
+        )
+      : '',
+  set: (value: number | string) => {
+    printWidthInches.value =
+      value === '' ? NaN : Number(value) / (printUnit.value === 'cm' ? 2.54 : 1)
+    selectedPrintPreset.value = 'custom'
+  },
+})
+const printHeight = computed({
+  get: () =>
+    Number.isFinite(printHeightInches.value)
+      ? Number(
+          (
+            printHeightInches.value * (printUnit.value === 'cm' ? 2.54 : 1)
+          ).toFixed(3)
+        )
+      : '',
+  set: (value: number | string) => {
+    printHeightInches.value =
+      value === '' ? NaN : Number(value) / (printUnit.value === 'cm' ? 2.54 : 1)
+    selectedPrintPreset.value = 'custom'
+  },
+})
+const exportSize = computed(() => {
+  const size = getFigureExportSize(
+    Number(settings.value.width),
+    Number(settings.value.height),
+    exportMode.value === 'print'
+      ? {
+          mode: 'print',
+          widthInches: printWidthInches.value,
+          heightInches: printHeightInches.value,
+          dpi: printDpi.value,
+        }
+      : { mode: 'screen', scale: screenScale.value }
+  )
+  if (exportMode.value !== 'print' || !(size.width > 0 && size.height > 0))
+    return size
+  // Fit tall and wide print layouts within the preview's rendering limits.
+  // Plotly requires at least 10 logical pixels in each dimension.
+  const ratio = size.width / size.height
+  const layoutWidth = Math.min(
+    maxLayoutDimension.value,
+    maxLayoutDimension.value * ratio,
+    Math.max(10 * ratio, Number(settings.value.width))
+  )
+  return { ...size, scale: size.width / layoutWidth }
+})
+function printDimensionRule(value: unknown, dimension: 'width' | 'height') {
+  return (
+    (Number.isFinite(Number(value)) && Number(value) > 0) ||
+    `Enter a ${dimension} greater than zero.`
+  )
+}
+function dpiRule(value: unknown) {
+  const dpi = Number(value)
+  if (!Number.isInteger(dpi) || dpi < 72)
+    return 'Enter a whole-number DPI of at least 72.'
+  if (dpi > maxPrintDpi.value)
+    return (
+      'This DPI exceeds your browser’s export limits for this print size. ' +
+      (maxPrintDpi.value >= 72
+        ? `Use ${maxPrintDpi.value} DPI or less.`
+        : 'Reduce the print width or height.')
+    )
+  return true
+}
+const customDpiError = computed(() => {
+  if (exportMode.value !== 'print' || printQuality.value !== 'custom') return ''
+  const error = dpiRule(printDpi.value)
+  return error === true ? '' : error
+})
+const exportError = computed(() => {
+  if (exportMode.value === 'print') {
+    const widthError = printDimensionRule(printWidth.value, 'width')
+    if (widthError !== true) return widthError
+    const heightError = printDimensionRule(printHeight.value, 'height')
+    if (heightError !== true) return heightError
+    const dpiError = dpiRule(printDpi.value)
+    if (dpiError !== true) return dpiError
+  }
+  const { width, height } = exportSize.value
+  if (!supportsImageExport(width, height, exportLimits.value))
+    return 'Reduce image size or resolution to fit this browser’s export limit.'
+  if (
+    exportMode.value === 'print' &&
+    Math.min(width, height) / exportSize.value.scale < 10
+  )
+    return 'Choose print dimensions with a less extreme aspect ratio.'
+  return ''
+})
+const exportValid = computed(() => !exportError.value)
+const formatSize = (value: number | string) =>
+  Number(Number(value).toFixed(2)).toLocaleString()
 const selectedShape = ref(4 / 3)
 const imageShape = computed({
   get: () => selectedShape.value,
   set: (ratio: number) => {
     selectedShape.value = ratio
     if (ratio <= 0) return
-    settings.value.width = DEFAULT_IMAGE_WIDTH
-    settings.value.height = Math.round(DEFAULT_IMAGE_WIDTH / ratio)
+    settings.value.width = Math.min(
+      DEFAULT_IMAGE_WIDTH,
+      maxLayoutDimension.value
+    )
+    settings.value.height = Math.round(settings.value.width / ratio)
   },
+})
+const printPreset = computed({
+  get: () => selectedPrintPreset.value,
+  set: (value: string) => {
+    const preset = printPresets.find((preset) => preset.value === value)
+    selectedPrintPreset.value = preset?.value ?? 'custom'
+    if (!preset) return
+    printWidthInches.value = preset.width
+    printHeightInches.value = preset.height
+  },
+})
+watch(exportMode, (mode) => {
+  if (mode !== 'print' || printSizeInitialized.value) return
+  // Start with the screen figure's proportions; retain print edits on later visits.
+  printHeightInches.value =
+    (printWidthInches.value * settings.value.height) / settings.value.width
+  selectedPrintPreset.value =
+    printPresets.find(
+      (preset) =>
+        Math.abs(preset.width - printWidthInches.value) < 0.001 &&
+        Math.abs(preset.height - printHeightInches.value) < 0.001
+    )?.value ?? 'custom'
+  printSizeInitialized.value = true
 })
 const figure = computed<ReturnType<typeof buildFigurePreview> | null>(
   (previous) => {
     if (!source.value) return null
-    if (!dimensionsValid.value) return previous ?? null
+    if (!dimensionsValid.value || !exportValid.value || !textSizeValid.value)
+      return previous ?? null
     void fontVersion.value
     if (context)
       context.font = `${settings.value.fontSize}px ${fontFamily.value}`
-    return buildFigurePreview(
+    const preview = buildFigurePreview(
       source.value,
-      settings.value,
+      exportMode.value === 'print'
+        ? {
+            ...settings.value,
+            // Reflow the chart to the print aspect ratio rather than stretching it.
+            width: exportSize.value.width / exportSize.value.scale,
+            height: exportSize.value.height / exportSize.value.scale,
+          }
+        : settings.value,
       fontFamily.value,
       (text) =>
         context?.measureText(text).width ??
         Array.from(text).length * settings.value.fontSize * 0.65
     )
+    return {
+      ...preview,
+      config: {
+        ...preview.config,
+        // WebGL traces need denser backing pixels as well as a larger PNG.
+        plotGlPixelRatio: exportValid.value
+          ? Math.max(
+              1,
+              Math.min(
+                4,
+                Math.max(2, exportSize.value.scale),
+                exportLimits.value.maxGlDimension /
+                  Math.max(preview.layout.width, preview.layout.height)
+              )
+            )
+          : 2,
+      },
+    }
   }
 )
 const scale = computed(() =>
@@ -379,6 +787,7 @@ function axisCaption(key: string) {
 function openPreview() {
   const gd = props.getPlot()
   if (!gd?.data || !gd?.layout) return
+  exportLimits.value = detectImageExportLimits()
   const layout = cloneDeep(gd.layout)
   const axes = Object.keys(layout).filter((key) => /^[xy]axis\d*$/.test(key))
   for (const key of axes) {
@@ -432,7 +841,17 @@ function openPreview() {
 function resetFigure() {
   if (defaults.value) {
     settings.value = cloneDeep(defaults.value)
+    textSize.value = settings.value.fontSize
     selectedShape.value = 4 / 3
+    exportMode.value = 'screen'
+    screenScale.value = 1
+    printWidthInches.value = 6
+    printHeightInches.value = 4.5
+    selectedPrintPreset.value = 'custom'
+    printSizeInitialized.value = false
+    printUnit.value = 'in'
+    printQuality.value = 300
+    customDpi.value = 300
   }
 }
 
@@ -511,7 +930,14 @@ watch(open, async (value) => {
 })
 
 async function download() {
-  if (exporting.value || !ready.value || !dimensionsValid.value) return
+  if (
+    exporting.value ||
+    !ready.value ||
+    !dimensionsValid.value ||
+    !exportValid.value ||
+    !textSizeValid.value
+  )
+    return
   exporting.value = true
   try {
     await renderFigure()
@@ -521,7 +947,14 @@ async function download() {
         .trim()
         .replace(/[\\/:*?"<>|]+/g, '-')
         .replace(/\s+/g, '_') || 'HydroServer_image'
-    await downloadPlotlyImage(chart, { filename, format: 'png', scale: 1 })
+    await downloadPlotlyImage(chart, {
+      filename,
+      format: 'png',
+      scale: exportSize.value.scale,
+      width: figure.value.layout.width,
+      height: figure.value.layout.height,
+      dpi: exportSize.value.dpi,
+    })
   } catch (error) {
     console.error('Unable to download image', error)
     Snackbar.error('Unable to download the image. Please try again.')
@@ -594,6 +1027,17 @@ defineExpose({ openPreview })
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--hs-space-12);
+}
+.figure-export-mode {
+  width: 100%;
+}
+.figure-export-mode :deep(.v-btn) {
+  flex: 1;
+}
+.figure-export-summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hs-space-4);
 }
 .figure-trace-fields {
   padding: var(--hs-space-12);
