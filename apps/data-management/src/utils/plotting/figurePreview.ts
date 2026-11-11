@@ -26,7 +26,6 @@ export const DEFAULT_IMAGE_WIDTH = 1200
 export const DEFAULT_IMAGE_HEIGHT = 900
 export const MIN_IMAGE_WIDTH = 400
 export const MIN_IMAGE_HEIGHT = 300
-export const MAX_IMAGE_DIMENSION = 6000
 
 /** Build a separate figure; its labels and layout never mutate the live plot. */
 export function buildFigurePreview(
