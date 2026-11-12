@@ -8,20 +8,10 @@
         :key="row.key"
         class="quality-mapping-target"
       >
-        <div class="datastream-display">
-          <div class="datastream-display__content">
-            <span class="target-name hs-title">{{ row.name }}</span>
-            <small v-if="row.monitoringSiteName" class="target-monitoringSite">
-              {{ row.monitoringSiteName }}
-            </small>
-            <small class="target-id">{{ row.id || '—' }}</small>
-          </div>
-          <DatastreamSiteButton
-            :datastream="row.datastream"
-            :datastream-id="row.id"
-            :fallback-monitoring-site-id="row.monitoringSiteId"
-          />
-        </div>
+        <MappingDatastreamCard
+          :datastream-id="row.id"
+          :monitoring-site-id="props.monitoringSiteId"
+        />
       </div>
     </div>
 
@@ -31,37 +21,16 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { storeToRefs } from 'pinia'
 import hs, { type MonitoringRule } from '@hydroserver/client'
-import DatastreamSiteButton from '@/components/Orchestration/shared/DatastreamSiteButton.vue'
-import { useOrchestrationStore } from '@/store/orchestration'
-import { datastreamMonitoringSiteId } from '@/utils/orchestration/datastreams'
-
-type DatastreamLike = {
-  id?: string
-  name?: string
-  monitoringSiteId?: string
-  monitoring_site_id?: string
-  monitoringSite?: { id?: string; name?: string }
-} | null
+import MappingDatastreamCard from '@/components/Orchestration/shared/MappingDatastreamCard.vue'
+import { useMappingDatastreams } from '@/composables/orchestration/useMappingDatastreams'
 
 const props = defineProps<{
   taskId: string
   monitoringSiteId?: string | null
 }>()
 
-const {
-  linkedDatastreams,
-  workspaceDatastreams,
-  draftDatastreams,
-  workspaceMonitoringSites,
-} = storeToRefs(useOrchestrationStore())
-
-const allKnownDatastreams = computed(() => [
-  ...workspaceDatastreams.value,
-  ...linkedDatastreams.value,
-  ...draftDatastreams.value,
-])
+useMappingDatastreams()
 
 const rules = ref<MonitoringRule[]>([])
 
@@ -75,48 +44,19 @@ async function loadRules() {
   } as any)
 }
 
-watch(() => props.taskId, () => void loadRules(), { immediate: true })
+watch(
+  () => props.taskId,
+  () => void loadRules(),
+  { immediate: true }
+)
 
 defineExpose({ reload: loadRules })
 
-const mappingRows = computed(() => {
-  const byDatastream = new Map<string, MonitoringRule[]>()
-  for (const rule of rules.value) {
-    const id = String(rule.datastreamId ?? '')
-    if (!byDatastream.has(id)) byDatastream.set(id, [])
-    byDatastream.get(id)!.push(rule)
-  }
-
-  return Array.from(byDatastream.keys()).map((id, index) => {
-    const datastream = resolveDatastream(null, id)
-    const monitoringSiteId =
-      (datastream ? datastreamMonitoringSiteId(datastream as any) : '') ||
-      props.monitoringSiteId ||
-      ''
-
-    return {
-      key: id || `mapping-${index}`,
-      id,
-      datastream,
-      name: datastream?.name || id || '—',
-      monitoringSiteId,
-      monitoringSiteName:
-        (datastream as DatastreamLike)?.monitoringSite?.name ||
-        workspaceMonitoringSites.value.find((monitoringSite) => monitoringSite.id === monitoringSiteId)?.name ||
-        '',
-    }
-  })
-})
-
-function resolveDatastream(datastream: DatastreamLike, id: string) {
-  if (datastream?.name) return datastream
-  if (!id) return datastream
-  return (
-    allKnownDatastreams.value.find(
-      (candidate) => String(candidate.id) === id
-    ) ?? datastream
-  )
-}
+const mappingRows = computed(() =>
+  [...new Set(rules.value.map((rule) => String(rule.datastreamId ?? '')))]
+    .filter(Boolean)
+    .map((id) => ({ id, key: id }))
+)
 </script>
 
 <style scoped>
@@ -141,46 +81,6 @@ function resolveDatastream(datastream: DatastreamLike, id: string) {
 
 .quality-mapping-target {
   min-width: 0;
-}
-
-.datastream-display {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  min-height: 40px;
-  overflow: hidden;
-  padding: 6px 12px;
-  border: 1px solid #d0c9d8;
-  border-radius: 8px;
-  background: var(--hs-surface);
-  color: #1c1b1f;
-  text-align: left;
-}
-
-.datastream-display__content {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  justify-content: center;
-  min-width: 0;
-}
-
-.target-name {
-  color: #1c1b1f;
-  overflow-wrap: anywhere;
-}
-
-.target-monitoringSite {
-  margin-top: 2px;
-  color: rgba(0, 0, 0, 0.66);
-  overflow-wrap: anywhere;
-}
-
-.target-id {
-  margin-top: 2px;
-  color: rgba(0, 0, 0, 0.55);
-  overflow-wrap: anywhere;
 }
 
 .empty-mappings {

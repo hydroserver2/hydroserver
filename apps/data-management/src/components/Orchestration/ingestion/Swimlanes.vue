@@ -31,34 +31,10 @@
           </div>
 
           <div class="min-w-0 flex items-center">
-            <div
-              class="etl-target-display w-full min-h-[40px] border rounded-[10px] px-3 py-[6px] hs-text-sm flex items-center gap-2 overflow-hidden"
-            >
-              <div class="min-w-0 flex flex-1 flex-col justify-center">
-                <span
-                  class="font-weight-semibold text-[#1c1b1f] hs-text-sm leading-[1.25] [overflow-wrap:anywhere] whitespace-normal"
-                >
-                  {{ resolveTargetName(m) || '—' }}
-                </span>
-                <span
-                  v-if="resolveMonitoringSiteName(m)"
-                  class="text-[rgba(0,0,0,0.66)] hs-text-sm mt-0.5 [overflow-wrap:anywhere] whitespace-normal"
-                >
-                  {{ resolveMonitoringSiteName(m) }}
-                </span>
-                <span
-                  class="text-[rgba(0,0,0,0.55)] hs-text-sm mt-0.5 [overflow-wrap:anywhere] whitespace-normal"
-                >
-                  {{ targetDatastreamId(m) || '—' }}
-                </span>
-              </div>
-              <DatastreamSiteButton
-                :datastream="targetDatastream(m)"
-                :datastream-id="targetDatastreamId(m)"
-                :fallback-monitoring-site-id="resolveMonitoringSiteId(m)"
-                show-menu
-              />
-            </div>
+            <MappingDatastreamCard
+              class="etl-target-display"
+              :datastream-id="m.targetDatastreamId"
+            />
           </div>
         </div>
       </template>
@@ -67,77 +43,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from 'vue'
-import { storeToRefs } from 'pinia'
 import type { EtlMapping } from '@hydroserver/client'
 import { mdiArrowRight } from '@mdi/js'
-import DatastreamSiteButton from '@/components/Orchestration/shared/DatastreamSiteButton.vue'
-import { useOrchestrationStore } from '@/store/orchestration'
-import { useWorkspaceStore } from '@/store/workspaces'
-import { datastreamMonitoringSiteId } from '@/utils/orchestration/datastreams'
+import MappingDatastreamCard from '@/components/Orchestration/shared/MappingDatastreamCard.vue'
+import { useMappingDatastreams } from '@/composables/orchestration/useMappingDatastreams'
 
-const props = defineProps<{
-  mappings: EtlMapping[]
-}>()
-
-const orchestrationStore = useOrchestrationStore()
-const {
-  linkedDatastreams,
-  workspaceDatastreams,
-  draftDatastreams,
-  workspaceMonitoringSites,
-} = storeToRefs(orchestrationStore)
-const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
-const workspaceId = computed(() => selectedWorkspace.value?.id ?? null)
-
-watch(
-  workspaceId,
-  async (id) => {
-    if (!id) return
-    try {
-      await Promise.all([
-        orchestrationStore.ensureWorkspaceDatastreams(id),
-        orchestrationStore.ensureWorkspaceMonitoringSites(id),
-      ])
-    } catch (error) {
-      console.error('Error fetching mapping target details', error)
-    }
-  },
-  { immediate: true }
-)
-
-function targetDatastream(mapping: EtlMapping) {
-  const key = mapping.targetDatastreamId
-  return (
-    workspaceDatastreams.value.find((d) => d.id === key) ||
-    linkedDatastreams.value.find((d) => d.id === key) ||
-    draftDatastreams.value.find((d) => String(d.id) === key) ||
-    null
-  )
-}
-
-function targetDatastreamId(mapping: EtlMapping) {
-  return mapping.targetDatastreamId || ''
-}
-
-function resolveTargetName(mapping: EtlMapping) {
-  return targetDatastream(mapping)?.name || ''
-}
-
-function resolveMonitoringSiteName(mapping: EtlMapping) {
-  const monitoringSiteId = resolveMonitoringSiteId(mapping)
-  if (!monitoringSiteId) return ''
-  return (
-    workspaceMonitoringSites.value.find(
-      (t) => t.id === String(monitoringSiteId)
-    )?.name || ''
-  )
-}
-
-function resolveMonitoringSiteId(mapping: EtlMapping) {
-  const ds = targetDatastream(mapping)
-  return ds ? datastreamMonitoringSiteId(ds as any) : ''
-}
+defineProps<{ mappings: EtlMapping[] }>()
+useMappingDatastreams()
 </script>
 
 <style scoped>
