@@ -224,7 +224,11 @@ import Point from 'ol/geom/Point'
 import { Style, Icon } from 'ol/style'
 import { fromLonLat, toLonLat } from 'ol/proj'
 import { settings } from '@/config/settings'
-import { Extent, isEmpty as extentIsEmpty } from 'ol/extent'
+import {
+  Extent,
+  equals as extentEquals,
+  isEmpty as extentIsEmpty,
+} from 'ol/extent'
 import { fetchLocationData } from '@/utils/maps/location'
 import { createOverlayLayers } from '@/utils/maps/overlays'
 import WebGLVectorLayer from 'ol/layer/WebGLVector'
@@ -757,6 +761,7 @@ async function updateFeatures() {
 
   // 2) clear & add
   if (!vectorSource) return
+  const previousExtent = vectorSource.getExtent()?.slice()
   vectorSource.clear()
   vectorSource.addFeatures(features)
 
@@ -769,8 +774,15 @@ async function updateFeatures() {
     if (props.selectable) updateSelectionMarker(undefined)
   }
 
-  // 3) zoom to the extent of whatever source we used
-  fitViewToMarkers()
+  // Route/selection and color updates can re-emit the same sites. Preserve
+  // the current view unless the markers' geographic bounds actually change.
+  const currentExtent = vectorSource.getExtent()
+  if (
+    currentExtent &&
+    (!previousExtent || !extentEquals(previousExtent, currentExtent))
+  ) {
+    fitViewToMarkers()
+  }
 }
 
 const initializeMap = () => {
