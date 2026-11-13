@@ -6,7 +6,7 @@
   >
     <p
       v-if="monitoringSite?.dataDisclaimer"
-      class="site-datastreams__disclaimer hs-text-sm"
+      class="site-datastreams__disclaimer hs-text-md"
     >
       {{ monitoringSite.dataDisclaimer }}
     </p>
