@@ -226,16 +226,13 @@
             <td class="datastream-actions-cell">
               <div class="datastream-row-actions">
                 <v-btn
-                  variant="text"
+                  variant="outlined"
                   size="small"
-                  color="primary"
-                  :append-icon="mdiChevronRight"
-                  class="datastream-details-button"
-                  :aria-label="`View details for ${item.name || 'datastream'}`"
+                  :aria-label="`View full metadata for ${item.name || 'datastream'}`"
                   :data-testid="`datavis-metadata-${item.id}`"
                   @click.stop="openMetadata(item)"
                 >
-                  <span class="datastream-details-button__label">Details</span>
+                  View full metadata
                 </v-btn>
 
                 <v-menu location="bottom end" attach="body">
@@ -298,7 +295,6 @@ import {
   mdiArrowUp,
   mdiCheck,
   mdiChevronDown,
-  mdiChevronRight,
   mdiDownload,
   mdiDotsVertical,
   mdiMapMarkerOutline,
@@ -1039,11 +1035,6 @@ function updatePlottedDatastreams(
   line-height: 1.4;
 }
 
-.datastream-details-button {
-  min-height: 28px;
-  text-transform: none;
-}
-
 .datastreams-empty {
   padding: var(--hs-space-24);
   color: var(--hs-text-secondary);
@@ -1072,16 +1063,6 @@ function updatePlottedDatastreams(
   .datastream-actions-cell {
     width: 48px;
     padding-right: var(--hs-space-8);
-  }
-
-  .datastream-details-button {
-    min-width: 32px;
-    width: 32px;
-    padding: 0;
-  }
-
-  .datastream-details-button__label {
-    display: none;
   }
 
   .datastream-meta {

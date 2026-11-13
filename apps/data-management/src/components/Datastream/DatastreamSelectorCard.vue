@@ -184,12 +184,10 @@
               </td>
               <td class="datastream-actions-cell">
                 <v-btn
-                  variant="text"
+                  variant="outlined"
                   size="small"
-                  color="primary"
-                  :append-icon="mdiChevronRight"
                   @click.stop="openDetails(datastream)"
-                  >Details</v-btn
+                  >View full metadata</v-btn
                 >
               </td>
             </tr>
@@ -262,7 +260,6 @@ import {
   mdiArrowUp,
   mdiCheck,
   mdiChevronDown,
-  mdiChevronRight,
   mdiInformationOutline,
   mdiSort,
 } from '@mdi/js'
@@ -859,8 +856,7 @@ onMounted(loadFallbackData)
 .datastream-selector-row--linked .datastream-name,
 .datastream-selector-row--linked .datastream-name__thing,
 .datastream-selector-row--linked .datastream-name__separator,
-.datastream-selector-row--linked .datastream-observation-range,
-.datastream-selector-row--linked :deep(.v-btn) {
+.datastream-selector-row--linked .datastream-observation-range {
   color: var(--hs-error);
 }
 .datastream-summary-cell {
