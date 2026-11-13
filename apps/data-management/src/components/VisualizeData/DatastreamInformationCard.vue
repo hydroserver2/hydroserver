@@ -4,6 +4,7 @@
       <v-card-title class="hs-text-md"> Datastream information </v-card-title>
       <v-spacer />
       <v-btn
+        class="datastream-download-button"
         :loading="downloading"
         :prepend-icon="mdiDownload"
         color="on-primary"
@@ -79,3 +80,9 @@ const clearAndPlot = (datastream: Datastream) => {
   plottedDatastreams.value.push(datastream)
 }
 </script>
+
+<style scoped>
+.datastream-download-button {
+  margin-inline-end: var(--hs-space-8);
+}
+</style>
