@@ -73,12 +73,18 @@
       <div class="site-datastreams__table-controls">
         <div class="site-datastreams__filter-header-content">
           <div class="site-datastreams__filters">
-            <v-menu
+            <HsTableFilterMenu
               v-for="filter in filterDefinitions"
               :key="filter.key"
-              :close-on-content-click="false"
-              location="bottom start"
-              attach="body"
+              v-model:search="filterSearches[filter.key]"
+              :title="`Filter by ${filter.label}`"
+              :label="filter.label"
+              :section-label="filter.sectionLabel"
+              :options="filter.options"
+              :selected="parsedSearch.filters[filter.key]"
+              case-insensitive
+              :empty-text="`No ${filter.label.toLowerCase()} found`"
+              @toggle="toggleFilter(filter.key, $event)"
             >
               <template #activator="{ props: menuProps }">
                 <v-btn
@@ -87,8 +93,7 @@
                   size="small"
                   class="site-datastreams__filter-button"
                   :class="{
-                    'site-datastreams__filter-button--active':
-                      filter.selectedCount > 0,
+                    'site-datastreams__filter-button--active': filter.selectedCount > 0,
                   }"
                   :append-icon="mdiChevronDown"
                   :aria-label="`Filter by ${filter.label.toLowerCase()}`"
@@ -102,51 +107,7 @@
                   </span>
                 </v-btn>
               </template>
-
-              <v-list class="site-datastreams__filter-menu" density="compact">
-                <div class="site-datastreams__filter-menu-title">
-                  Filter by {{ filter.label }}
-                </div>
-                <v-text-field
-                  v-model="filterSearches[filter.key]"
-                  class="site-datastreams__filter-search"
-                  :placeholder="`Filter ${filter.label.toLowerCase()}`"
-                  :prepend-inner-icon="mdiMagnify"
-                  density="compact"
-                  hide-details
-                  clearable
-                />
-                <v-list-item
-                  v-for="option in filteredOptions(filter)"
-                  :key="option.value"
-                  @click="toggleFilter(filter.key, option.value)"
-                >
-                  <template #prepend>
-                    <v-checkbox
-                      :model-value="isFilterSelected(filter.key, option.value)"
-                      hide-details
-                      density="compact"
-                      :aria-label="`${filter.label}: ${option.label}`"
-                      @click.stop="toggleFilter(filter.key, option.value)"
-                    />
-                  </template>
-                  <v-list-item-title>{{ option.label }}</v-list-item-title>
-                </v-list-item>
-                <v-list-item
-                  v-if="filter.selectedCount"
-                  class="site-datastreams__clear-filter"
-                  @click="clearFilter(filter.key)"
-                >
-                  <v-list-item-title>Clear filter</v-list-item-title>
-                </v-list-item>
-                <div
-                  v-if="!filteredOptions(filter).length"
-                  class="site-datastreams__filter-empty"
-                >
-                  No {{ filter.label.toLowerCase() }} found
-                </div>
-              </v-list>
-            </v-menu>
+            </HsTableFilterMenu>
           </div>
 
           <v-menu location="bottom end" attach="body">
@@ -699,7 +660,7 @@ import { Datastream, Workspace, type StatusType } from '@hydroserver/client'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import { useTableLogic } from '@/composables/useTableLogic'
 import { Snackbar } from '@/utils/notifications'
-import { HsCopyButton } from '@hydroserver/design-system/vue'
+import { HsTableFilterMenu, HsCopyButton } from '@hydroserver/design-system/vue'
 import { downloadDatastreamCsv } from '@/utils/csvExport'
 import { formatTime } from '@/utils/time'
 import { buildQcEditUrl } from '@/utils/qcLinks'
@@ -790,6 +751,7 @@ type FilterOption = { value: string; label: string }
 type FilterDefinition = {
   key: SiteDatastreamFilterKey
   label: string
+  sectionLabel: string
   options: FilterOption[]
   selectedCount: number
 }
@@ -1011,6 +973,7 @@ const filterOptions = computed<Omit<FilterDefinition, 'selectedCount'>[]>(
     {
       key: 'observed-property',
       label: 'Observed property',
+      sectionLabel: 'Observed properties',
       options: uniqueSorted(
         visibleDatastreams.value.map((item) => item.observedPropertyName)
       ).map(option),
@@ -1018,6 +981,7 @@ const filterOptions = computed<Omit<FilterDefinition, 'selectedCount'>[]>(
     {
       key: 'unit',
       label: 'Unit',
+      sectionLabel: 'Units',
       options: uniqueSorted(
         visibleDatastreams.value.map((item) => item.unitName)
       ).map(option),
@@ -1025,6 +989,7 @@ const filterOptions = computed<Omit<FilterDefinition, 'selectedCount'>[]>(
     {
       key: 'method',
       label: 'Method',
+      sectionLabel: 'Methods',
       options: uniqueSorted(
         visibleDatastreams.value.map((item) => item.methodName)
       ).map(option),
@@ -1032,6 +997,7 @@ const filterOptions = computed<Omit<FilterDefinition, 'selectedCount'>[]>(
     {
       key: 'processing-level',
       label: 'Processing level',
+      sectionLabel: 'Processing levels',
       options: uniqueSorted(
         visibleDatastreams.value.map((item) => item.processingLevelName)
       ).map(option),
@@ -1165,19 +1131,6 @@ function updateSearch(value: string) {
 function clearSearch() {
   search.value = ''
 }
-function filteredOptions(filter: FilterDefinition) {
-  const query = filterSearches[filter.key].trim().toLocaleLowerCase()
-  return query
-    ? filter.options.filter((item) =>
-        item.label.toLocaleLowerCase().includes(query)
-      )
-    : filter.options
-}
-function isFilterSelected(key: SiteDatastreamFilterKey, value: string) {
-  return parsedSearch.value.filters[key].some(
-    (item) => item.toLocaleLowerCase() === value.toLocaleLowerCase()
-  )
-}
 function updateSearchFilters(filters: DatastreamQueryFilters) {
   search.value = serializeDatastreamQuery(
     filters,
@@ -1194,14 +1147,6 @@ function toggleFilter(key: SiteDatastreamFilterKey, value: string) {
   )
   if (index >= 0) filters[key].splice(index, 1)
   else filters[key].push(value)
-  updateSearchFilters(filters)
-}
-function clearFilter(key: SiteDatastreamFilterKey) {
-  const filters = structuredClone(
-    parsedSearch.value.filters
-  ) as DatastreamQueryFilters
-  filters[key] = []
-  filterSearches[key] = ''
   updateSearchFilters(filters)
 }
 function updateSort(sort: DatastreamSort) {
@@ -2685,30 +2630,17 @@ const loadDatastreams = async () => {
   padding: var(--hs-space-16) !important;
   text-align: center;
 }
-.site-datastreams__filter-menu,
 .site-datastreams__sort-menu {
   min-width: 17rem;
   max-height: 20rem;
   padding-block: var(--hs-space-8);
   overflow-y: auto;
 }
-.site-datastreams__filter-menu-title,
 .site-datastreams__sort-menu-title {
   padding: var(--hs-space-8) var(--hs-space-16);
   color: var(--hs-text-secondary);
   font-size: var(--hs-font-sm);
   font-weight: var(--hs-font-weight-semibold);
-}
-.site-datastreams__filter-search {
-  margin: 0 var(--hs-space-12) var(--hs-space-8);
-}
-.site-datastreams__clear-filter {
-  color: rgb(var(--v-theme-primary));
-  border-top: 1px solid var(--hs-border);
-}
-.site-datastreams__filter-empty {
-  padding: var(--hs-space-12) var(--hs-space-16);
-  color: var(--hs-text-secondary);
 }
 .site-datastreams__sort-check--hidden {
   visibility: hidden;

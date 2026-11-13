@@ -1,8 +1,9 @@
 import { createPinia, setActivePinia } from 'pinia'
-import { shallowMount } from '@vue/test-utils'
+import { flushPromises, shallowMount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mdiMapMarkerOutline } from '@mdi/js'
 import { useDataVisStore } from '@/store/dataVisualization'
+import { useWorkspaceStore } from '@/store/workspaces'
 import DataVisDatasetsTable from '../DataVisDatasetsTable.vue'
 
 vi.mock('@/store/observations', () => ({
@@ -70,6 +71,84 @@ describe('DataVisDatasetsTable query hydration', () => {
     expect(store.selectedMonitoringSites.map((item) => item.id)).toEqual([
       site.id,
     ])
+  })
+
+  it('restores every query selection when lookup data arrives after the query', async () => {
+    const store = useDataVisStore()
+    store.tableSearch =
+      'workspace:"River Network" site:"Logan River" observed-property:"Water temperature" unit:"Degrees Celsius" method:"Shielded sensor" processing-level:"Quality controlled"'
+    const wrapper = shallowMount(DataVisDatasetsTable)
+    expect(store.selectedWorkspaces).toEqual([])
+
+    store.workspaces = [{ id: 'workspace-1', name: 'River Network' }] as any
+    store.monitoringSites = [
+      { id: 'site-1', name: 'Logan River', workspaceId: 'workspace-1' },
+    ] as any
+    store.observedProperties = [
+      { id: 'property-1', name: 'Water temperature' },
+    ] as any
+    store.processingLevels = [
+      { id: 'level-1', name: 'Quality controlled' },
+    ] as any
+    store.datastreams = [
+      {
+        id: 'stream-1',
+        name: 'Temperature',
+        monitoringSiteId: 'site-1',
+        observedPropertyId: 'property-1',
+        processingLevelId: 'level-1',
+        unitName: 'Degrees Celsius',
+        methodName: 'Shielded sensor',
+      },
+    ] as any
+    await flushPromises()
+
+    expect(store.selectedWorkspaces.map((item) => item.id)).toEqual([
+      'workspace-1',
+    ])
+    expect(store.selectedMonitoringSites.map((item) => item.id)).toEqual([
+      'site-1',
+    ])
+    expect(store.selectedObservedPropertyNames).toEqual(['Water temperature'])
+    expect(store.selectedUnitNames).toEqual(['Degrees Celsius'])
+    expect(store.selectedMethodNames).toEqual(['Shielded sensor'])
+    expect(store.selectedProcessingLevelNames).toEqual(['Quality controlled'])
+    expect(store.filteredDatastreams.map((item) => item.id)).toEqual([
+      'stream-1',
+    ])
+    wrapper.unmount()
+  })
+
+  it('resolves public workspace filters independently of management memberships', () => {
+    const management = useWorkspaceStore()
+    management.setWorkspaces([
+      { id: 'member-workspace', name: 'My workspace' } as any,
+    ])
+    const store = useDataVisStore()
+    store.workspaces = [
+      { id: 'public-workspace', name: 'Public river network' },
+      ...management.workspaces,
+    ] as any
+    store.monitoringSites = [
+      { id: 'site-1', name: 'Logan River', workspaceId: 'public-workspace' },
+    ] as any
+    store.datastreams = [
+      { id: 'stream-1', name: 'Discharge', monitoringSiteId: 'site-1' },
+    ] as any
+    store.tableSearch = 'workspace:"Public river network"'
+    const wrapper = shallowMount(DataVisDatasetsTable)
+
+    expect(store.selectedWorkspaces.map((item) => item.id)).toEqual([
+      'public-workspace',
+    ])
+    expect(store.filteredDatastreams.map((item) => item.id)).toEqual([
+      'stream-1',
+    ])
+    expect(management.workspaces.map((item) => item.id)).toEqual([
+      'member-workspace',
+    ])
+    expect(management.selectedWorkspace?.id).toBe('member-workspace')
+    wrapper.unmount()
   })
 
   it('links a datastream row to its site details page', () => {

@@ -289,7 +289,6 @@ import {
   mdiSort,
 } from '@mdi/js'
 import { useDataVisStore } from '@/store/dataVisualization'
-import { useWorkspaceStore } from '@/store/workspaces'
 import { downloadDatastreamsCsvZip } from '@/utils/csvExport'
 import { formatTime } from '@/utils/time'
 import {
@@ -327,8 +326,8 @@ const {
   selectedProcessingLevelNames,
   observedProperties,
   processingLevels,
+  workspaces,
 } = storeToRefs(dataVisStore)
-const { workspaces } = storeToRefs(useWorkspaceStore())
 
 const initialFilters: DatastreamQueryFilters = {
   workspace: selectedWorkspaces.value.map((item) => item.name),
@@ -426,8 +425,10 @@ const canonicalValues = (candidates: string[], requested: string[]) => {
 
 // The filter controls are replaced by the selection summary while a
 // datastream is plotted, so keep query hydration in this always-mounted table.
+// Parsing also depends on lookup data, which can arrive after URL restoration.
+// Rehydrate when that data arrives so badges, menu checks, and results agree.
 watch(
-  search,
+  parsedSearch,
   () => {
     const { filters } = parsedSearch.value
     selectedWorkspaces.value = workspaces.value.filter((item) =>

@@ -62,12 +62,17 @@
               <th colspan="2" class="datastream-filter-header">
                 <div class="datastream-filter-header__content">
                   <div class="datastream-header-filters">
-                    <v-menu
+                    <HsTableFilterMenu
                       v-for="filter in filterDefinitions"
                       :key="filter.key"
-                      :close-on-content-click="false"
-                      location="bottom start"
-                      attach="body"
+                      v-model:search="filterSearches[filter.key]"
+                      :title="`Filter by ${filter.label}`"
+                      :label="filter.label"
+                      :options="filter.options"
+                      :selected="parsedSearch.filters[filter.key]"
+                      case-insensitive
+                      :empty-text="`No ${filter.label.toLowerCase()} found`"
+                      @toggle="toggleFilter(filter.key, $event)"
                     >
                       <template #activator="{ props: menuProps }"
                         ><v-btn
@@ -75,67 +80,16 @@
                           variant="text"
                           size="small"
                           :class="{
-                            'datastream-filter-button--active':
-                              filter.selectedCount > 0,
+                            'datastream-filter-button--active': filter.selectedCount > 0,
                           }"
                           :append-icon="mdiChevronDown"
                           >{{ filter.label }}
-                          <span
-                            v-if="filter.selectedCount"
-                            class="filter-count"
-                            >{{ filter.selectedCount }}</span
-                          ></v-btn
+                          <span v-if="filter.selectedCount" class="filter-count">{{
+                            filter.selectedCount
+                          }}</span></v-btn
                         ></template
                       >
-                      <v-list class="datastream-filter-menu" density="compact">
-                        <div class="datastream-filter-title">
-                          Filter by {{ filter.label }}
-                        </div>
-                        <v-text-field
-                          v-model="filterSearches[filter.key]"
-                          class="datastream-filter-search"
-                          :placeholder="`Filter ${filter.label.toLowerCase()}`"
-                          :prepend-inner-icon="mdiMagnify"
-                          density="compact"
-                          hide-details
-                          clearable
-                        />
-                        <v-list-item
-                          v-for="option in filteredOptions(filter)"
-                          :key="option.value"
-                          @click="toggleFilter(filter.key, option.value)"
-                        >
-                          <template #prepend
-                            ><v-checkbox
-                              :model-value="
-                                isFilterSelected(filter.key, option.value)
-                              "
-                              hide-details
-                              density="compact"
-                              @click.stop="
-                                toggleFilter(filter.key, option.value)
-                              "
-                          /></template>
-                          <v-list-item-title>{{
-                            option.label
-                          }}</v-list-item-title>
-                        </v-list-item>
-                        <v-list-item
-                          v-if="filter.selectedCount"
-                          class="filter-clear-item"
-                          @click="clearFilter(filter.key)"
-                          ><v-list-item-title
-                            >Clear filter</v-list-item-title
-                          ></v-list-item
-                        >
-                        <div
-                          v-if="!filteredOptions(filter).length"
-                          class="filter-empty"
-                        >
-                          No {{ filter.label.toLowerCase() }} found
-                        </div>
-                      </v-list>
-                    </v-menu>
+                    </HsTableFilterMenu>
                   </div>
                   <v-menu location="bottom end" attach="body">
                     <template #activator="{ props: menuProps }"
@@ -310,10 +264,12 @@ import {
   mdiChevronDown,
   mdiChevronRight,
   mdiInformationOutline,
-  mdiMagnify,
   mdiSort,
 } from '@mdi/js'
-import { HsQuerySearchInput } from '@hydroserver/design-system/vue'
+import {
+  HsTableFilterMenu,
+  HsQuerySearchInput,
+} from '@hydroserver/design-system/vue'
 import { useWorkspaceStore } from '@/store/workspaces'
 import { useOrchestrationStore } from '@/store/orchestration'
 import { formatTime } from '@/utils/time'
@@ -753,19 +709,6 @@ function setSortKey(key: DatastreamSortKey) {
 function setSortOrder(order: DatastreamSortOrder) {
   updateSort({ key: activeSort.value.key, order })
 }
-function filteredOptions(filter: FilterDefinition) {
-  const query = filterSearches[filter.key].trim().toLocaleLowerCase()
-  return query
-    ? filter.options.filter((item) =>
-        item.label.toLocaleLowerCase().includes(query)
-      )
-    : filter.options
-}
-function isFilterSelected(key: DatastreamQualifierKey, value: string) {
-  return parsedSearch.value.filters[key].some(
-    (item) => item.toLocaleLowerCase() === value.toLocaleLowerCase()
-  )
-}
 function toggleFilter(key: DatastreamQualifierKey, value: string) {
   const filters = structuredClone(
       parsedSearch.value.filters
@@ -775,18 +718,6 @@ function toggleFilter(key: DatastreamQualifierKey, value: string) {
     )
   if (index >= 0) filters[key].splice(index, 1)
   else filters[key].push(value)
-  search.value = serializeDatastreamQuery(
-    filters,
-    parsedSearch.value.text,
-    parsedSearch.value.sort
-  )
-}
-function clearFilter(key: DatastreamQualifierKey) {
-  const filters = structuredClone(
-    parsedSearch.value.filters
-  ) as DatastreamQueryFilters
-  filters[key] = []
-  filterSearches[key] = ''
   search.value = serializeDatastreamQuery(
     filters,
     parsedSearch.value.text,
@@ -978,29 +909,11 @@ onMounted(loadFallbackData)
   background: var(--hs-surface);
   border-top: 1px solid var(--hs-border);
 }
-.datastream-filter-menu {
-  min-width: 18rem;
-  max-height: 20rem;
-  padding-block: var(--hs-space-8);
-  overflow-y: auto;
-}
-.datastream-filter-title,
 .datastream-sort-menu__title {
   padding: var(--hs-space-8) var(--hs-space-16);
   color: var(--hs-text-secondary);
   font-size: var(--hs-font-sm);
   font-weight: var(--hs-font-weight-semibold);
-}
-.datastream-filter-search {
-  margin: 0 var(--hs-space-12) var(--hs-space-8);
-}
-.filter-clear-item {
-  color: rgb(var(--v-theme-primary));
-  border-top: 1px solid var(--hs-border);
-}
-.filter-empty {
-  padding: var(--hs-space-12) var(--hs-space-16);
-  color: var(--hs-text-secondary);
 }
 .datastream-sort-menu {
   min-width: 17rem;

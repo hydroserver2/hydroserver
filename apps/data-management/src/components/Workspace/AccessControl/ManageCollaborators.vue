@@ -175,10 +175,17 @@
         <tr>
           <th>
             <div class="collaborator-header-filters">
-              <v-menu
-                :close-on-content-click="false"
-                location="bottom start"
-                attach="body"
+              <HsTableFilterMenu
+                v-model:search="roleFilterSearch"
+                title="Filter by role"
+                label="Role"
+                section-label="Roles"
+                :options="availableRoles.map((value) => ({ value, label: value }))"
+                :selected="selectedRoles"
+                case-insensitive
+                search-placeholder="Filter roles"
+                empty-text="No roles found"
+                @toggle="toggleRole"
               >
                 <template #activator="{ props: menuProps }">
                   <v-btn-cancel
@@ -186,67 +193,30 @@
                     size="small"
                     class="collaborator-filter-button"
                     :class="{
-                      'collaborator-filter-button--active':
-                        selectedRoles.length,
+                      'collaborator-filter-button--active': selectedRoles.length,
                     }"
                     :append-icon="mdiChevronDown"
                     :aria-label="`Filter by role${selectedRoles.length ? ` (${selectedRoles.length} selected)` : ''}`"
                   >
                     Role
-                    <span
-                      v-if="selectedRoles.length"
-                      class="filter-count hs-label"
-                    >
+                    <span v-if="selectedRoles.length" class="filter-count hs-label">
                       {{ selectedRoles.length }}
                     </span>
                   </v-btn-cancel>
                 </template>
-                <v-list class="collaborator-filter-menu" density="compact">
-                  <div class="collaborator-filter-title hs-subheading">
-                    Filter by role
-                  </div>
-                  <v-text-field
-                    v-model="roleFilterSearch"
-                    class="collaborator-filter-search"
-                    placeholder="Filter roles"
-                    :prepend-inner-icon="mdiMagnify"
-                    density="compact"
-                    hide-details
-                    clearable
-                  />
-                  <v-list-item
-                    v-for="role in filteredRoles"
-                    :key="role"
-                    @click="toggleRole(role)"
-                  >
-                    <template #prepend>
-                      <v-checkbox
-                        :model-value="selectedRoles.includes(role)"
-                        hide-details
-                        density="compact"
-                        :aria-label="`Role: ${role}`"
-                        @click.stop="toggleRole(role)"
-                      />
-                    </template>
-                    <v-list-item-title>{{ role }}</v-list-item-title>
-                  </v-list-item>
-                  <v-list-item
-                    v-if="selectedRoles.length"
-                    class="filter-clear-item"
-                    @click="selectedRoles = []"
-                  >
-                    <v-list-item-title>Clear filter</v-list-item-title>
-                  </v-list-item>
-                  <div v-if="!filteredRoles.length" class="filter-empty">
-                    No roles found
-                  </div>
-                </v-list>
-              </v-menu>
+              </HsTableFilterMenu>
 
-              <v-menu
-                :close-on-content-click="false"
-                location="bottom start"
-                attach="body"
+              <HsTableFilterMenu
+                v-model:search="organizationFilterSearch"
+                title="Filter by organization"
+                label="Organization"
+                section-label="Organizations"
+                :options="availableOrganizations.map((value) => ({ value, label: value }))"
+                :selected="selectedOrganizations"
+                case-insensitive
+                search-placeholder="Filter organizations"
+                empty-text="No organizations found"
+                @toggle="toggleOrganization"
               >
                 <template #activator="{ props: menuProps }">
                   <v-btn-cancel
@@ -254,67 +224,18 @@
                     size="small"
                     class="collaborator-filter-button"
                     :class="{
-                      'collaborator-filter-button--active':
-                        selectedOrganizations.length,
+                      'collaborator-filter-button--active': selectedOrganizations.length,
                     }"
                     :append-icon="mdiChevronDown"
                     :aria-label="`Filter by organization${selectedOrganizations.length ? ` (${selectedOrganizations.length} selected)` : ''}`"
                   >
                     Organization
-                    <span
-                      v-if="selectedOrganizations.length"
-                      class="filter-count"
-                    >
+                    <span v-if="selectedOrganizations.length" class="filter-count">
                       {{ selectedOrganizations.length }}
                     </span>
                   </v-btn-cancel>
                 </template>
-                <v-list class="collaborator-filter-menu" density="compact">
-                  <div class="collaborator-filter-title hs-subheading">
-                    Filter by organization
-                  </div>
-                  <v-text-field
-                    v-model="organizationFilterSearch"
-                    class="collaborator-filter-search"
-                    placeholder="Filter organizations"
-                    :prepend-inner-icon="mdiMagnify"
-                    density="compact"
-                    hide-details
-                    clearable
-                  />
-                  <v-list-item
-                    v-for="organization in filteredOrganizations"
-                    :key="organization"
-                    @click="toggleOrganization(organization)"
-                  >
-                    <template #prepend>
-                      <v-checkbox
-                        :model-value="
-                          selectedOrganizations.includes(organization)
-                        "
-                        hide-details
-                        density="compact"
-                        :aria-label="`Organization: ${organization}`"
-                        @click.stop="toggleOrganization(organization)"
-                      />
-                    </template>
-                    <v-list-item-title>{{ organization }}</v-list-item-title>
-                  </v-list-item>
-                  <v-list-item
-                    v-if="selectedOrganizations.length"
-                    class="filter-clear-item"
-                    @click="selectedOrganizations = []"
-                  >
-                    <v-list-item-title>Clear filter</v-list-item-title>
-                  </v-list-item>
-                  <div
-                    v-if="!filteredOrganizations.length"
-                    class="filter-empty"
-                  >
-                    No organizations found
-                  </div>
-                </v-list>
-              </v-menu>
+              </HsTableFilterMenu>
             </div>
           </th>
           <th class="collaborator-actions-column text-right">Actions</th>
@@ -433,6 +354,7 @@
 </template>
 
 <script setup lang="ts">
+import { HsTableFilterMenu } from '@hydroserver/design-system/vue'
 import { useUserStore } from '@/store/user'
 import { Snackbar } from '@/utils/notifications'
 import { storeToRefs } from 'pinia'
@@ -640,18 +562,6 @@ const availableOrganizations = computed(() =>
     ),
   ].sort((a, b) => a.localeCompare(b))
 )
-const filteredRoles = computed(() => {
-  const query = roleFilterSearch.value.trim().toLocaleLowerCase()
-  return availableRoles.value.filter((role) =>
-    role.toLocaleLowerCase().includes(query)
-  )
-})
-const filteredOrganizations = computed(() => {
-  const query = organizationFilterSearch.value.trim().toLocaleLowerCase()
-  return availableOrganizations.value.filter((organization) =>
-    organization.toLocaleLowerCase().includes(query)
-  )
-})
 const filteredCollaborators = computed(() => {
   const {
     roles: roleValues,
@@ -1100,70 +1010,7 @@ watch(search, (value) => {
   color: rgb(var(--v-theme-on-primary));
   text-align: center;
 }
-.collaborator-filter-menu {
-  min-width: 280px;
-  max-height: 320px;
-  overflow-y: auto;
-  padding: var(--hs-space-8) 0;
-}
-.collaborator-filter-title {
-  padding: var(--hs-space-8) var(--hs-space-16);
-  color: var(--hs-text-primary);
-}
-.collaborator-filter-search {
-  margin: 0 var(--hs-space-12) var(--hs-space-8);
-  height: 30px;
-}
-.collaborator-filter-search :deep(.v-field) {
-  height: 30px;
-  min-height: 30px;
-  border-radius: var(--hs-radius-sm);
-  background: var(--hs-surface);
-  padding-inline-start: 0;
-}
-.collaborator-filter-search :deep(.v-field__outline) {
-  color: var(--hs-input-border);
-  --v-field-border-opacity: 1;
-}
-.collaborator-filter-search :deep(.v-field--focused) {
-  box-shadow: none;
-}
-.collaborator-filter-search :deep(.v-field--focused .v-field__outline) {
-  color: rgb(var(--v-theme-primary));
-  --v-field-border-width: 2px;
-  --v-field-border-opacity: 1;
-}
-.collaborator-filter-search :deep(.v-field__input) {
-  min-height: 30px;
-  padding-top: 0;
-  padding-bottom: 0;
-  font-size: var(--hs-font-sm);
-}
-.collaborator-filter-search :deep(.v-field__prepend-inner) {
-  padding-left: 8px;
-  padding-right: 0;
-}
-.collaborator-filter-search :deep(.v-field__prepend-inner > .v-icon) {
-  width: 16px;
-  font-size: var(--hs-font-md);
-  color: var(--hs-input-border);
-  opacity: 1;
-}
-.collaborator-filter-search :deep(.v-field__append-inner) {
-  padding-right: 8px;
-}
-.collaborator-filter-search :deep(input::placeholder) {
-  color: var(--hs-text-secondary);
-  opacity: 1;
-}
-.filter-empty {
-  padding: var(--hs-space-12) var(--hs-space-16);
-  color: var(--hs-text-secondary);
-}
-.filter-clear-item {
-  border-top: 1px solid var(--hs-border);
-  color: rgb(var(--v-theme-primary));
-}
+
 .collaborator-role-editor {
   max-width: 200px;
   margin-top: var(--hs-space-4);

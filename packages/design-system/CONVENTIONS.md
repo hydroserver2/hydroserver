@@ -78,6 +78,13 @@ already has an answer. Check here first, then the organized token files,
   likely an `Hs*` component or `.hs-*` recipe already covering it.
 - Extend a shared component/recipe when the need is close but not
   exact, rather than forking a parallel implementation in one app.
+- Use `HsTableFilterMenu` for table filter dropdowns. Its title and search
+  stay above the scrollable options, with noun-specific sections such as
+  Selected workspaces and Workspaces. Option rows always use the surface color;
+  only section banners use the background color.
+  Hide section banners when opening a menu without selections.
+  Checkbox state updates immediately; regroup options only when reopening.
+  Remove selections individually rather than adding a clear-all menu action.
 
 ## Adding to the system
 
