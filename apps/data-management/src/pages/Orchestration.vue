@@ -150,6 +150,7 @@
           width="40rem"
         >
           <DeleteDataConnectionCard
+            v-if="openDeleteDataConnection"
             :itemName="selectedDataConnection.name"
             @close="openDeleteDataConnection = false"
             @delete="onDataConnectionDeleted"
