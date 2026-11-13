@@ -18,6 +18,22 @@ describe('DataVisDatasetsTable query hydration', () => {
     setActivePinia(createPinia())
   })
 
+  it('clears plotted datastreams and restores the full table', async () => {
+    const store = useDataVisStore()
+    const datastream = { id: 'stream-1', name: 'Discharge' }
+    store.datastreams = [datastream] as any
+    store.plottedDatastreams = [datastream] as any
+    const wrapper = shallowMount(DataVisDatasetsTable)
+
+    await wrapper.get('[data-testid="toggle-selected-datastreams"]').trigger('click')
+    await wrapper.get('[data-testid="clear-selected-datastreams-button"]').trigger('click')
+
+    expect(store.plottedDatastreams).toEqual([])
+    expect(wrapper.find('[data-testid="clear-selected-datastreams-button"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plot-datastream-stream-1"]').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
   it('filters by a typed multi-word site name without quotes', async () => {
     const store = useDataVisStore()
     const site = {

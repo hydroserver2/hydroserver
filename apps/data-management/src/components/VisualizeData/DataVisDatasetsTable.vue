@@ -65,6 +65,14 @@
                   <v-btn
                     size="small"
                     variant="text"
+                    data-testid="clear-selected-datastreams-button"
+                    @click="clearSelected"
+                  >
+                    Clear selected
+                  </v-btn>
+                  <v-btn
+                    size="small"
+                    variant="text"
                     data-testid="toggle-selected-datastreams"
                     @click="showOnlySelected = !showOnlySelected"
                   >
@@ -895,7 +903,7 @@ function updatePlottedDatastreams(
   font-weight: var(--hs-font-weight-regular);
 }
 
-.datastreams-clear-selection-checkbox {
+.plot-checkbox.datastreams-clear-selection-checkbox {
   flex: 0 0 auto;
   margin: 0;
 }
