@@ -38,6 +38,15 @@ function mountMenu(selected: string[], extra = {}) {
 }
 
 describe('HsTableFilterMenu', () => {
+  it('shows options that arrive after an empty menu opens', async () => {
+    const wrapper = mountMenu([], { options: [] })
+    wrapper.getComponent({ name: 'VMenu' }).vm.$emit('update:modelValue', true)
+    await wrapper.vm.$nextTick()
+    await wrapper.setProps({ options })
+    expect(wrapper.findAll('.hs-table-filter-menu__option')).toHaveLength(3)
+    wrapper.unmount()
+  })
+
   it('omits section banners without selections while keeping the title and search', () => {
     const wrapper = mountMenu([])
     expect(

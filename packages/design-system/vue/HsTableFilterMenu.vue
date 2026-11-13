@@ -146,6 +146,16 @@ const selectedValues = computed(() => new Set(props.selected.map(normalize)))
 const isSelected = (value: string) => selectedValues.value.has(normalize(value))
 const sessionOptions = ref(props.options.map((option) => ({ ...option })))
 const sessionSelected = ref([...props.selected])
+watch(
+  () => props.options,
+  (options) => {
+    // Options can arrive after the menu is opened while its table loads.
+    // Once populated, keep the opening snapshot stable until reopening.
+    if (open.value && !sessionOptions.value.length && options.length) {
+      sessionOptions.value = options.map((option) => ({ ...option }))
+    }
+  }
+)
 const selectedOptions = computed<HsTableFilterOption[]>(() => {
   const byValue = new Map(
     sessionOptions.value.map((option) => [normalize(option.value), option])

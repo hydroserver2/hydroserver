@@ -108,8 +108,29 @@ for (const dismissal of ['close button', 'map click', 'Escape'] as const) {
     if (dismissal === 'close button')
       await card.getByRole('button', { name: 'Close', exact: true }).click()
     else if (dismissal === 'Escape') await page.keyboard.press('Escape')
-    else
-      await map.click({ position: { x: box.width * 0.8, y: box.height * 0.2 } })
+    else {
+      // The site card is now attached to the marker and can cover the old
+      // fixed click position. Pick an unobstructed point away from the card.
+      const point = await map.evaluate((element) => {
+        const bounds = element.getBoundingClientRect()
+        const card = document.querySelector('.site-detail-card')!.getBoundingClientRect()
+        const candidates = [
+          [0.9, 0.8], [0.65, 0.8], [0.9, 0.5], [0.65, 0.5],
+        ]
+        return candidates
+          .map(([x, y]) => ({ x: bounds.left + bounds.width * x, y: bounds.top + bounds.height * y }))
+          .filter(({ x, y }) => {
+            const target = document.elementFromPoint(x, y)
+            return target && element.contains(target) && !target.closest('.ol-overlaycontainer-stopevent, .site-detail-card')
+          })
+          .sort((a, b) =>
+            Math.hypot(b.x - (card.left + card.width / 2), b.y - card.bottom) -
+            Math.hypot(a.x - (card.left + card.width / 2), a.y - card.bottom)
+          )[0]
+      })
+      expect(point, 'An unobstructed map point should be available').toBeTruthy()
+      await page.mouse.click(point!.x, point!.y)
+    }
     await expect(card).toBeHidden()
     await expect(page).not.toHaveURL(/selectedSite=/)
     expect(await settledRasterFrame(canvas)).toBe(beforeDismiss)
