@@ -12,6 +12,14 @@
         <div class="hs-table-actions datastreams-actions">
           <v-btn
             size="small"
+            data-testid="copy-state-url"
+            @click="copyStateUrl"
+            variant="outlined"
+          >
+            Copy state as URL
+          </v-btn>
+          <v-btn
+            size="small"
             variant="text"
             :disabled="detailLevel === 1"
             data-testid="show-less-datastream-details"
@@ -299,6 +307,7 @@ import {
 import { useDataVisStore } from '@/store/dataVisualization'
 import { downloadDatastreamsCsvZip } from '@/utils/csvExport'
 import { formatTime } from '@/utils/time'
+import { Snackbar } from '@/utils/notifications'
 import {
   parseDatastreamQuery,
   serializeDatastreamQuery,
@@ -670,6 +679,15 @@ const downloadSelected = async (datastreams: Datastream[]) => {
 const clearSelected = () => {
   showOnlySelected.value = false
   plottedDatastreams.value = []
+}
+
+const copyStateUrl = async () => {
+  try {
+    await navigator.clipboard.writeText(window.location.href)
+    Snackbar.success('URL copied to clipboard')
+  } catch {
+    Snackbar.error('Failed to copy URL')
+  }
 }
 
 const updateSearch = (value: string) => {

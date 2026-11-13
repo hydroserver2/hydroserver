@@ -18,6 +18,18 @@ describe('DataVisDatasetsTable query hydration', () => {
     setActivePinia(createPinia())
   })
 
+  it('copies the current URL', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } })
+    const wrapper = shallowMount(DataVisDatasetsTable)
+
+    await wrapper.get('[data-testid="copy-state-url"]').trigger('click')
+
+    expect(writeText).toHaveBeenCalledWith(window.location.href)
+    wrapper.unmount()
+    vi.unstubAllGlobals()
+  })
+
   it('clears plotted datastreams and restores the full table', async () => {
     const store = useDataVisStore()
     const datastream = { id: 'stream-1', name: 'Discharge' }
