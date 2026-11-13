@@ -24,16 +24,14 @@
     </div>
 
     <v-btn
-      variant="text"
+      variant="outlined"
       size="small"
-      color="primary"
-      :append-icon="mdiChevronRight"
-      :aria-label="`View details for ${datastream.name || 'datastream'}`"
+      :aria-label="`View full metadata for ${datastream.name || 'datastream'}`"
       class="datastream-result-row__details"
       @mousedown.stop
       @click.stop="$emit('details')"
     >
-      Details
+      View full metadata
     </v-btn>
   </div>
 </template>
@@ -41,7 +39,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Datastream } from '@hydroserver/client'
-import { mdiChevronRight } from '@mdi/js'
 import { formatTime } from '@/utils/time'
 
 const props = defineProps<{
@@ -140,7 +137,6 @@ const observationRange = computed(() => {
 
 .datastream-result-row__details {
   flex: 0 0 auto;
-  min-height: var(--hs-space-24);
 }
 
 @media (max-width: 760px) {

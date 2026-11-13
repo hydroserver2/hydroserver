@@ -80,7 +80,7 @@
                 :run-id="selectedRunId"
                 :initial-task="selectedTask"
                 embedded
-                @close="closeTaskDetailsAndSync"
+                @close="closeTaskDetails"
                 @deleted="onTaskDeleted"
                 @updated="onTaskDetailsChanged"
               />
@@ -150,6 +150,7 @@
           width="40rem"
         >
           <DeleteDataConnectionCard
+            v-if="openDeleteDataConnection"
             :itemName="selectedDataConnection.name"
             @close="openDeleteDataConnection = false"
             @delete="onDataConnectionDeleted"
@@ -816,12 +817,6 @@ const autoSelectSidebarAndSync = async () => {
   await syncSelectedGroupToRoute()
 }
 
-const closeTaskDetailsAndSync = async () => {
-  await closeTaskDetails()
-  await fetchVisibleTasks()
-  await syncSelectedGroupToRoute()
-}
-
 const setActiveTab = async (tab: TabId) => {
   sidebarSearch.value = ''
   await replaceView(tab, selectValidGroupForTab(tab))
@@ -903,28 +898,27 @@ watch(
 
 let routeSelectionSyncRequestId = 0
 
-watch([routeDataConnectionId, routeSiteId, routeView], async () => {
-  const syncRequestId = ++routeSelectionSyncRequestId
-  if (routeWorkspaceDenied.value || loading.value || hasTaskDetails.value) {
-    return
-  }
+// Returning from details can leave the tab and group unchanged. It still needs
+// to load the list, which direct detail links intentionally don't fetch.
+watch(
+  [routeDataConnectionId, routeSiteId, routeView, hasTaskDetails],
+  async () => {
+    const syncRequestId = ++routeSelectionSyncRequestId
+    if (routeWorkspaceDenied.value || loading.value || hasTaskDetails.value) {
+      return
+    }
 
-  if (selectSidebarFromRouteGroup()) {
+    if (selectSidebarFromRouteGroup()) {
+      await fetchVisibleTasks()
+      return
+    }
+
+    autoSelectSidebar()
     await fetchVisibleTasks()
-    return
+    if (syncRequestId !== routeSelectionSyncRequestId) return
+    await syncSelectedGroupToRoute()
   }
-
-  const hasRouteSelection =
-    activeTab.value === 'ingestion'
-      ? !!routeDataConnectionId.value
-      : !!routeSiteId.value
-  if (!hasRouteSelection) return
-
-  autoSelectSidebar()
-  await fetchVisibleTasks()
-  if (syncRequestId !== routeSelectionSyncRequestId) return
-  await syncSelectedGroupToRoute()
-})
+)
 
 const openCreateDialog = () => {
   if (!canCreateDataConnections.value) return

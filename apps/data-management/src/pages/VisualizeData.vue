@@ -56,6 +56,7 @@ const {
   processingLevels,
   observedProperties,
   datastreams,
+  workspaces,
   beginDate,
   endDate,
   dataZoomStart,
@@ -403,15 +404,23 @@ onMounted(async () => {
       processingLevels.value.length > 0 ||
       observedProperties.value.length > 0
 
-    if (!hasBootstrapData) {
-      const res = await hs.datastreams.getVisualizationBootstrap()
-      if (res.ok) {
-        monitoringSites.value = res.data.monitoringSites
-        datastreams.value = res.data.datastreams
-        processingLevels.value = res.data.processingLevels
-        observedProperties.value = res.data.observedProperties
-      }
+    const [bootstrap, workspaceCatalog] = await Promise.all([
+      hasBootstrapData
+        ? Promise.resolve(null)
+        : hs.datastreams.getVisualizationBootstrap(),
+      hs.workspaces.list({ sortby: ['name'], fetch_all: true }),
+    ])
+    if (bootstrap?.ok) {
+      monitoringSites.value = bootstrap.data.monitoringSites
+      datastreams.value = bootstrap.data.datastreams
+      processingLevels.value = bootstrap.data.processingLevels
+      observedProperties.value = bootstrap.data.observedProperties
     }
+    if (!workspaceCatalog.ok)
+      throw new Error(
+        workspaceCatalog.message || 'Unable to load visualization workspaces'
+      )
+    workspaces.value = workspaceCatalog.data
   } catch (error) {
     Snackbar.error('Unable to fetch data from the API.')
     console.error('Unable to fetch data from the API:', error)

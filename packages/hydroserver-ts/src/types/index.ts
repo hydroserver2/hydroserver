@@ -154,7 +154,7 @@ export class Datastream {
     this.processingLevelId = ''
     this.timeAggregationInterval = null
     this.timeAggregationIntervalUnit = 'seconds'
-    this.isPrivate = true
+    this.isPrivate = false
     this.isVisible = true
     this.valueCount = 0
     this.tags = {}

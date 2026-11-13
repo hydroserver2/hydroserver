@@ -23,6 +23,9 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   const datastreams = ref<Datastream[]>([])
   const observedProperties = ref<ObservedProperty[]>([])
   const processingLevels = ref<ProcessingLevel[]>([])
+  // Visualization includes every workspace the API permits the viewer to
+  // read, including public workspaces without a membership.
+  const workspaces = ref<Workspace[]>([])
 
   const selectedMonitoringSites = ref<MonitoringSite[]>([])
   const plottedDatastreams = ref<Datastream[]>([])
@@ -551,6 +554,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     datastreams,
     processingLevels,
     observedProperties,
+    workspaces,
     monitoringSiteById,
     observedPropertyById,
     processingLevelById,

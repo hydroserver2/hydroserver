@@ -372,19 +372,19 @@ label.required-label::after {
   justify-content: center;
   width: 26px;
   height: 26px;
-  color: rgb(var(--v-theme-on-primary));
+  color: rgb(var(--v-theme-on-secondary));
   cursor: pointer;
-  background: rgb(var(--v-theme-primary));
+  background: rgb(var(--v-theme-secondary));
   border: 0;
   border-radius: var(--hs-radius-sm);
 }
 
 .hs-sidebar-action:hover:not(:disabled) {
-  background: rgb(var(--v-theme-primary-darken-1));
+  background: rgb(var(--v-theme-secondary-darken-1));
 }
 
 .hs-sidebar-action:focus-visible {
-  outline: 2px solid rgb(var(--v-theme-primary));
+  outline: 2px solid rgb(var(--v-theme-secondary));
   outline-offset: 2px;
 }
 

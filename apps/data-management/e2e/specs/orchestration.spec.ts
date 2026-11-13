@@ -39,6 +39,8 @@ test.describe('orchestration', () => {
 
     await statusFilter.click()
     await chooseOverlayOption(page, 'OK')
+    await page.keyboard.press('Escape')
+    await expect(page.locator('.hs-table-filter-menu:visible')).toBeHidden()
     await expect(
       page.getByRole('heading', { name: 'No tasks match your filter' })
     ).toBeVisible()
