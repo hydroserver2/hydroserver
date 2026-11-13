@@ -5,9 +5,11 @@ import pytest
 from allauth.account.models import EmailAddress
 from allauth.socialaccount.models import SocialApp
 from django.contrib.sites.models import Site
+from django.core.cache import cache
 from django.urls import reverse
 
 from core.iam.models import User
+from core.iam.templatetags.provider_icons import provider_icon
 
 
 pytestmark = pytest.mark.django_db
@@ -178,3 +180,37 @@ def test_email_signup_with_a_provider_still_creates_an_account(client, utahid):
     assert response.status_code == 302
     user = User.objects.get(email="new-email-choice@example.test")
     assert EmailAddress.objects.filter(user=user, verified=False).exists()
+
+
+@pytest.mark.parametrize(
+    "provider_id, icon, expected",
+    [
+        ("github", None, "/static/provider-icons/github.png"),
+        ("sso", "provider-icons/google.png", "/static/provider-icons/google.png"),
+        ("utahid", None, None),
+    ],
+)
+def test_provider_icon_resolves_existing_files_only(provider_id, icon, expected):
+    cache.clear()
+    app = SocialApp(provider="openid_connect", provider_id=provider_id, settings={"icon": icon} if icon else {})
+
+    assert provider_icon(app) == expected
+
+
+def test_sign_in_buttons_show_icons_only_when_the_file_exists(client, utahid):
+    cache.clear()
+    microsoft = SocialApp.objects.create(
+        provider="openid_connect",
+        provider_id="microsoft",
+        name="Microsoft",
+        client_id="client",
+        settings={"server_url": "https://login.example.test"},
+    )
+    microsoft.sites.add(Site.objects.get_current())
+
+    response = client.get(reverse("account_login"))
+    content = response.content.decode()
+
+    assert content.count('class="auth-provider-icon"') == 1
+    assert '<img src="/static/provider-icons/microsoft.png"' in content
+    assert "Continue with UtahID" in content

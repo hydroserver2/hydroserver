@@ -290,6 +290,24 @@ storing or serving user-uploaded media files in production. Recommended approach
 Since these approaches bypass HydroServer’s internal authorization system, you may need to add additional security 
 controls to protect private media files (for example, by using signed URLs).
 
+### Sign-In Provider Icons
+
+OpenID Connect sign-in buttons show the icon at `provider-icons/<provider ID>.png` in static storage, or text only if
+there's no file. Icons for `github`, `google`, `microsoft`, and `orcid` are included.
+
+To add or replace an icon, publish a small square PNG (about 64 × 64 pixels) to that path during deployment:
+
+| Static storage | Where to put icons |
+| --- | --- |
+| Cloud bucket (S3, Google Cloud Storage) | `provider-icons/` under the static location (e.g. `static/provider-icons/utahid.png`) |
+| Local, published image | A directory mounted at `/app/django/staticfiles/provider-icons`; restart after changes |
+| Local, custom image or development | `django/static/provider-icons/` |
+
+To use another path or format, set `"icon"` in the provider's **Settings**, e.g. `"icon": "provider-icons/cuahsi.svg"`.
+
+New icons can take up to five minutes to appear. `collectstatic --clear` deletes icons published to a bucket, and
+manifest (content-hashed) static storage isn't supported.
+
 ### Email Configuration
 
 HydroServer requires an SMTP server to send emails (e.g., password resets, email verification). For production, use a 

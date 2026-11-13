@@ -279,4 +279,6 @@ To enable authentication through third-party identity providers, do the followin
 - Use **allowConnection** to control whether users can connect the provider to an existing HydroServer account.
 - When omitted, **allowSignUp** defaults to enabled, but **allowConnection** is enabled only when explicitly set to
   `true`.
+- Use **icon** to set an OpenID Connect provider's button icon path. See
+  [Sign-In Provider Icons](/hosting-and-deployment/how-to/setting-up-a-production-deployment.md#sign-in-provider-icons).
 - Assign the default site that the provider can authenticate against.
