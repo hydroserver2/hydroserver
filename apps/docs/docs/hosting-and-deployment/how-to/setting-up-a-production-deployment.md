@@ -88,7 +88,7 @@ HydroServer’s Docker image supports the following environment variables for co
   Example: `redis://127.0.0.1:6379/1`
 
 - **ACCOUNT_SIGNUP_ENABLED**  
-  Whether public account creation is allowed.  
+  Whether public account creation is allowed, by email or through a third-party provider.  
   Example: `True` / `False`
 
 - **ACCOUNT_OWNERSHIP_ENABLED**  
@@ -96,7 +96,7 @@ HydroServer’s Docker image supports the following environment variables for co
   Example: `True` / `False`
 
 - **SOCIALACCOUNT_SIGNUP_ONLY**  
-  If `True`, account sign-up is allowed only via third-party providers.  
+  If `True`, new accounts can only be created through configured third-party providers. 
   Example: `True` / `False`
 
 - **SMTP_URL**  
@@ -289,6 +289,24 @@ storing or serving user-uploaded media files in production. Recommended approach
 
 Since these approaches bypass HydroServer’s internal authorization system, you may need to add additional security 
 controls to protect private media files (for example, by using signed URLs).
+
+### Sign-In Provider Icons
+
+OpenID Connect sign-in buttons show the icon at `provider-icons/<provider ID>.png` in static storage, or text only if
+there's no file. Icons for `github`, `google`, `microsoft`, and `orcid` are included.
+
+To add or replace an icon, publish a small square PNG (about 64 × 64 pixels) to that path during deployment:
+
+| Static storage | Where to put icons |
+| --- | --- |
+| Cloud bucket (S3, Google Cloud Storage) | `provider-icons/` under the static location (e.g. `static/provider-icons/utahid.png`) |
+| Local, published image | A directory mounted at `/app/django/staticfiles/provider-icons`; restart after changes |
+| Local, custom image or development | `django/static/provider-icons/` |
+
+To use another path or format, set `"icon"` in the provider's **Settings**, e.g. `"icon": "provider-icons/cuahsi.svg"`.
+
+New icons can take up to five minutes to appear. `collectstatic --clear` deletes icons published to a bucket, and
+manifest (content-hashed) static storage isn't supported.
 
 ### Email Configuration
 

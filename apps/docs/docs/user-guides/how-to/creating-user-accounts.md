@@ -8,7 +8,7 @@ When you go to a HydroServer instance, you can click the 'Sign up' button in the
 
 <img src="/data-management-app/login-page.png" alt="Sign in to HydroServer page" class="img-white-bg">
 
-If the HydroServer administrator has enabled third-party accounts, their buttons are shown first on the sign-in page, alongside 'Continue with email', and under 'Other sign-up options' on the sign-up page. Choose a provider to create your account with it, or sign up with email.
+If the HydroServer administrator has enabled third-party accounts, the sign-up page shows 'Continue with email' followed by a button for each provider, and the sign-in page shows the provider buttons below the email form. Choose a provider to create your account with it, or continue with email.
 
 To sign up with email, enter your email address and choose a password, and fill out your user information on the **Sign up** form. If you are affiliated with an organization, check 'Affiliated with an organization' and fill out the organization information as well. We recommend completing your user information, because it identifies you to the collaborators on your workspaces. Then click the 'Sign up' button.
 
