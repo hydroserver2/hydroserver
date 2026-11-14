@@ -88,7 +88,7 @@ HydroServer’s Docker image supports the following environment variables for co
   Example: `redis://127.0.0.1:6379/1`
 
 - **ACCOUNT_SIGNUP_ENABLED**  
-  Whether public account creation is allowed.  
+  Whether public account creation is allowed, by email or through a third-party provider.  
   Example: `True` / `False`
 
 - **ACCOUNT_OWNERSHIP_ENABLED**  
@@ -96,7 +96,7 @@ HydroServer’s Docker image supports the following environment variables for co
   Example: `True` / `False`
 
 - **SOCIALACCOUNT_SIGNUP_ONLY**  
-  If `True`, account sign-up is allowed only via third-party providers.  
+  If `True`, new accounts can only be created through configured third-party providers. 
   Example: `True` / `False`
 
 - **SMTP_URL**  

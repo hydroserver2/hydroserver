@@ -85,7 +85,9 @@
     <section class="auth-section">
         <h2 class="hs-subheading">{% trans "Account management" %}</h2>
         <div class="hs-inline-actions">
-            <a href="{% url 'account_change_password' %}" class="hs-link">{% trans "Change password" %}</a>
+            {% if not SOCIALACCOUNT_SIGNUP_ONLY or user.has_usable_password or user.is_staff or user.is_superuser %}
+                <a href="{% url 'account_change_password' %}" class="hs-link">{% trans "Change password" %}</a>
+            {% endif %}
             <a href="{% url 'account_logout' %}" class="hs-link">{% trans "Sign out" %}</a>
             <a href="{% url 'account_delete' %}" class="hs-link hs-link--danger">{% trans "Delete account" %}</a>
         </div>
