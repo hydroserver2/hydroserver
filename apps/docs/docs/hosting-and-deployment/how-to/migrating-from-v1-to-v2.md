@@ -206,6 +206,20 @@ v2.0 has one type, `timeSeriesCoverage`, and every existing datastream is set to
 To keep the v1 values, copy them into datastream tags while still running v1. The tags are carried over by
 [Tags are consolidated](#tags-are-consolidated).
 
+### Datastream data visibility becomes data download restriction
+
+**Table:** `sta_datastream` (`is_visible` field, renamed to `is_restricted`)
+
+In v1, a datastream's **data visibility** setting only hid its observations in the Data Management Web Application,
+and anyone could still retrieve them through the SensorThings API. v2 replaces it with **data download restriction**,
+which every API enforces: the datastream and its metadata stay public, but only the workspace owner and
+collaborators whose role can view observations can download and query its data.
+
+- **Transformation:** Values are inverted, so a datastream with data visibility turned off has its data download
+  restricted after the upgrade. No data is lost.
+- **Behavior change:** Data of datastreams that had data visibility turned off can no longer be downloaded or queried
+  publicly through the SensorThings API or any other API.
+
 ### File attachments become linked resources
 
 **Tables:** `sta_thingfileattachment` and `sta_datastreamfileattachment` (renamed to

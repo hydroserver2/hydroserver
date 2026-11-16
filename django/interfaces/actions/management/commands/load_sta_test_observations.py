@@ -58,7 +58,7 @@ class Command(BaseCommand):
             phenomenon_begin_time=phenomenon_begin_time,
             phenomenon_end_time=phenomenon_end_time,
             is_private=False,
-            is_visible=True,
+            is_restricted=False,
         )
 
         generate_test_timeseries(datastream.id)

@@ -35,7 +35,7 @@ class Datastream(HydroServerBaseModel):
     result_begin_time: Optional[datetime] = None
     result_end_time: Optional[datetime] = None
     is_private: bool = False
-    is_visible: bool = True
+    is_restricted: bool = False
     time_aggregation_interval_unit: Literal["seconds", "minutes", "hours", "days"]
     intended_time_spacing: Optional[float] = None
     intended_time_spacing_unit: Optional[
@@ -52,7 +52,7 @@ class Datastream(HydroServerBaseModel):
 
     _editable_fields: ClassVar[set[str]] = {
         "name", "description", "type", "sampled_medium", "no_data_value", "aggregation_statistic",
-        "time_aggregation_interval", "status", "is_private", "is_visible",
+        "time_aggregation_interval", "status", "is_private", "is_restricted",
         "time_aggregation_interval_unit", "intended_time_spacing", "intended_time_spacing_unit", "monitoring_site_id",
         "method_id", "observed_property_id", "processing_level_id", "unit_id"
     }

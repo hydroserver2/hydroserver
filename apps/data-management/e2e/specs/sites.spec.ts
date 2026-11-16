@@ -666,7 +666,10 @@ test.describe('sites and workspaces', () => {
       })
     ).toBeVisible()
     await expect(
-      datastreamRow.getByRole('button', { name: 'Hide data', exact: true })
+      datastreamRow.getByRole('button', {
+        name: 'Restrict data download',
+        exact: true,
+      })
     ).toBeVisible()
     const datastreamId = await datastreamRow.getAttribute('data-datastream-id')
     const createdDatastream = await page.request.get(
@@ -675,7 +678,7 @@ test.describe('sites and workspaces', () => {
     expect(createdDatastream.ok()).toBeTruthy()
     expect((await createdDatastream.json()).data).toMatchObject({
       isPrivate: false,
-      isVisible: true,
+      isRestricted: false,
     })
 
     await datastreamRow.locator('[data-testid^="datastream-actions-"]').click()
@@ -726,12 +729,12 @@ test.describe('sites and workspaces', () => {
     const datastreamPrivacyToggle = page.getByTestId(
       `datastream-privacy-toggle-${fixtures.datastreams.public.id}`
     )
-    const dataVisibilityToggle = page.getByTestId(
-      `data-visibility-toggle-${fixtures.datastreams.public.id}`
+    const dataRestrictionToggle = page.getByTestId(
+      `data-restriction-toggle-${fixtures.datastreams.public.id}`
     )
 
     await expect(datastreamPrivacyToggle).toBeVisible()
-    await expect(dataVisibilityToggle).toBeVisible()
+    await expect(dataRestrictionToggle).toBeVisible()
 
     await page.getByTestId('site-access-control-button').click()
     await page.getByTestId('site-privacy-checkbox').click()
@@ -800,36 +803,39 @@ test.describe('sites and workspaces', () => {
           `${apiBaseUrl}/api/ogc/collections/datastreams/items/${fixtures.datastreams.public.id}`
         )
         const datastream = await response.json()
-        return datastream.data.isVisible
+        return datastream.data.isRestricted
       })
-      .toBe(true)
+      .toBe(false)
 
-    await dataVisibilityToggle.click()
+    await dataRestrictionToggle.click()
     await expect
       .poll(async () => {
         const response = await page.request.get(
           `${apiBaseUrl}/api/ogc/collections/datastreams/items/${fixtures.datastreams.public.id}`
         )
         const datastream = await response.json()
-        return datastream.data.isVisible
+        return datastream.data.isRestricted
       })
-      .toBe(false)
+      .toBe(true)
     await anonymousPage.goto(`/sites/${fixtures.monitoringSites.public.id}`)
     const anonymousPublicDatastreamRow = datastreamEntriesByName(
       anonymousPage,
       fixtures.datastreams.public.name
     )
     await expect(anonymousPublicDatastreamRow).toHaveCount(1)
-    await dataVisibilityToggle.click()
+    await expect(anonymousPublicDatastreamRow).toContainText(
+      'Data download restricted'
+    )
+    await dataRestrictionToggle.click()
     await expect
       .poll(async () => {
         const response = await page.request.get(
           `${apiBaseUrl}/api/ogc/collections/datastreams/items/${fixtures.datastreams.public.id}`
         )
         const datastream = await response.json()
-        return datastream.data.isVisible
+        return datastream.data.isRestricted
       })
-      .toBe(true)
+      .toBe(false)
 
     await anonymousPage.goto(`/sites/${fixtures.monitoringSites.public.id}`)
     await expect(

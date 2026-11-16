@@ -66,7 +66,7 @@ def _datastream_body(monitoring_site, method, observed_property, processing_leve
         "timeAggregationInterval": 15,
         "timeAggregationIntervalUnit": "minutes",
         "isPrivate": False,
-        "isVisible": True,
+        "isRestricted": False,
     }
     body.update(overrides)
     return body
@@ -291,6 +291,30 @@ def test_get_datastream_returns_public_datastream_for_anonymous(client):
 
     assert response.status_code == 200
     assert response.json()["data"]["id"] == str(datastream.id)
+
+
+def test_get_datastream_returns_restricted_datastream_metadata_for_anonymous(client):
+    """Restriction only gates observations: the datastream, its observation count, and
+    its temporal range stay public."""
+    workspace = WorkspaceFactory()
+    begin = timezone.now() - timedelta(days=1)
+    end = timezone.now()
+    datastream = _make_datastream(
+        workspace,
+        restricted=True,
+        value_count=42,
+        phenomenon_begin_time=begin,
+        phenomenon_end_time=end,
+    )
+
+    response = client.get(_detail_url(datastream.id))
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["isRestricted"] is True
+    assert data["valueCount"] == 42
+    assert data["phenomenonBeginTime"] is not None
+    assert data["phenomenonEndTime"] is not None
 
 
 def test_get_datastream_returns_404_for_private_datastream_when_outsider(client):
@@ -786,6 +810,32 @@ def test_get_datastream_csv_returns_csv_with_observations(client):
     assert "# Type: timeSeriesCoverage" in body
     assert "# ObservationType:" not in body
     assert "# ResultType:" not in body
+
+
+def test_get_datastream_csv_omits_observations_of_restricted_datastream_for_anonymous(client):
+    workspace = WorkspaceFactory()
+    datastream = _make_datastream(workspace, restricted=True)
+    ObservationFactory(datastream=datastream, result=12.5)
+
+    response = client.get(f"{_detail_url(datastream.id)}/csv")
+
+    assert response.status_code == 200
+    body = b"".join(response.streaming_content).decode()
+    assert "12.5" not in body
+
+
+def test_get_datastream_csv_includes_observations_of_restricted_datastream_for_owner(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace, restricted=True)
+    ObservationFactory(datastream=datastream, result=12.5)
+    client.force_login(owner)
+
+    response = client.get(f"{_detail_url(datastream.id)}/csv")
+
+    assert response.status_code == 200
+    body = b"".join(response.streaming_content).decode()
+    assert "12.5" in body
 
 
 # --- linked resources ----------------------------------------------------------------

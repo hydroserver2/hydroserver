@@ -22,7 +22,7 @@
     phenomenon_begin_time: 2025-02-10 01:00:00.000 -0700
     phenomenon_end_time: 2025-02-10 02:00:00.000 -0700
     is_private: False
-    is_visible: True
+    is_restricted: False
 - model: sta.datastreamtag
   pk: 1000000010
   fields:
@@ -54,7 +54,7 @@
     phenomenon_begin_time: 2025-02-10 01:00:00.000 -0700
     phenomenon_end_time: 2025-02-10 02:00:00.000 -0700
     is_private: True
-    is_visible: True
+    is_restricted: False
 - model: sta.datastreamtag
   pk: 1000000011
   fields:
@@ -86,7 +86,7 @@
     phenomenon_begin_time: 2025-02-10 01:00:00.000 -0700
     phenomenon_end_time: 2025-02-10 02:00:00.000 -0700
     is_private: False
-    is_visible: True
+    is_restricted: False
 - model: sta.datastreamtag
   pk: 1000000012
   fields:
@@ -118,7 +118,7 @@
     phenomenon_begin_time: 2025-02-10 01:00:00.000 -0700
     phenomenon_end_time: 2025-02-10 02:00:00.000 -0700
     is_private: True
-    is_visible: True
+    is_restricted: False
 - model: sta.datastreamtag
   pk: 1000000013
   fields:
@@ -150,7 +150,7 @@
     phenomenon_begin_time: 2025-02-10 01:00:00.000 -0700
     phenomenon_end_time: 2025-02-10 02:00:00.000 -0700
     is_private: False
-    is_visible: True
+    is_restricted: False
 - model: sta.datastreamtag
   pk: 1000000014
   fields:
@@ -182,7 +182,7 @@
     phenomenon_begin_time: 2025-02-10 01:00:00.000 -0700
     phenomenon_end_time: 2025-02-10 02:00:00.000 -0700
     is_private: True
-    is_visible: True
+    is_restricted: False
 - model: sta.datastreamtag
   pk: 1000000015
   fields:
@@ -214,7 +214,7 @@
     phenomenon_begin_time: 2025-02-10 01:00:00.000 -0700
     phenomenon_end_time: 2025-02-10 02:00:00.000 -0700
     is_private: False
-    is_visible: True
+    is_restricted: False
 - model: sta.datastreamtag
   pk: 1000000016
   fields:
@@ -246,7 +246,7 @@
     phenomenon_begin_time: 2025-02-10 01:00:00.000 -0700
     phenomenon_end_time: 2025-02-10 02:00:00.000 -0700
     is_private: True
-    is_visible: True
+    is_restricted: False
 - model: sta.datastreamtag
   pk: 1000000017
   fields:
@@ -278,7 +278,7 @@
     phenomenon_begin_time: 2025-02-10 01:00:00.000 -0700
     phenomenon_end_time: 2025-02-10 02:00:00.000 -0700
     is_private: False
-    is_visible: True
+    is_restricted: False
 - model: sta.datastreamtag
   pk: 1000000018
   fields:

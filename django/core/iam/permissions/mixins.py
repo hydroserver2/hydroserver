@@ -1,9 +1,10 @@
 import typing
 
 from types import EllipsisType
+from django.core.exceptions import ImproperlyConfigured
 from django.db.models import BooleanField, Case, Q, QuerySet, Value, When
 
-from .registry import resolve_resource_type
+from .registry import resolve_resource_type, resource_types
 
 if typing.TYPE_CHECKING:
     from ..models import Workspace
@@ -137,7 +138,7 @@ class ResourcePermissionMixin:
             permission_field="can_delete",
         )
 
-    def _permission_q(self, model: type, permission_field: str) -> Q:
+    def _permission_q(self, model: type, permission_field: str, relation: str = "") -> Q:
         """
         Build the Q expression matching rows of the given model this principal
         holds permission_field on ("can_view"/"can_edit"/"can_delete"). Shared
@@ -148,9 +149,29 @@ class ResourcePermissionMixin:
         bypasses — a global, workspace-less vocabulary item is viewable by
         everyone but not editable/deletable by anyone except a superuser,
         matching can_edit/can_delete's single-object behavior.
+
+        relation, when given, is the name of model's foreign key to the model
+        the Q will actually be applied to (e.g. "datastream" to evaluate
+        Observation permission on Datastream rows). Every workspace_field and
+        privacy_chain path of model must pass through that relation; the
+        "<relation>__" prefix is stripped so the paths resolve from the related
+        model instead.
         """
 
         workspace_field = getattr(model, "workspace_field", "workspace")
+        chain = getattr(model, "privacy_chain", [])
+
+        if relation:
+            prefix = f"{relation}__"
+            if workspace_field is None or workspace_field is ... or not all(
+                path.startswith(prefix) for path in (workspace_field, *chain)
+            ):
+                raise ImproperlyConfigured(
+                    f"Cannot evaluate {model.__name__} permission through '{relation}': "
+                    f"its workspace and privacy chain must all pass through that relation."
+                )
+            workspace_field = workspace_field.removeprefix(prefix)
+            chain = [path.removeprefix(prefix) for path in chain]
 
         if workspace_field is None:
             return Q(pk__isnull=False) if permission_field == "can_view" else Q(pk__in=[])
@@ -173,7 +194,6 @@ class ResourcePermissionMixin:
                 q |= Q(**{f"{workspace_field}__isnull": True})
 
         if permission_field == "can_view":
-            chain = getattr(model, "privacy_chain", [])
             if chain:
                 public_q = Q()
                 for field in chain:
@@ -182,13 +202,46 @@ class ResourcePermissionMixin:
 
         return q
 
-    def filter_by_permission(self, queryset: QuerySet, permission_field: str) -> QuerySet:
-        """Narrow queryset to rows this principal holds permission_field on."""
+    def filter_by_permission(
+        self,
+        queryset: QuerySet,
+        permission_field: str,
+        resource_type: "str | type | None" = None,
+    ) -> QuerySet:
+        """
+        Narrow queryset to rows this principal holds permission_field on.
+
+        By default the rows are checked as the queryset's own resource type. Pass
+        resource_type to check them as a related resource type instead, for a
+        resource type whose permission depends only on the queryset's model. For
+        example, filter_by_permission(Datastream.objects, "can_view",
+        resource_type=Observation) returns the datastreams whose observations
+        this principal can view, without touching the Observation table.
+        resource_type must have exactly one foreign key to the queryset's model.
+        """
 
         if self.is_superuser_principal():
             return queryset.all()
 
-        return queryset.filter(self._permission_q(queryset.model, permission_field))
+        if resource_type is None:
+            return queryset.filter(self._permission_q(queryset.model, permission_field))
+
+        model = resource_types[resolve_resource_type(resource_type)]
+        relations = [
+            field.name
+            for field in model._meta.get_fields()  # noqa
+            if field.many_to_one and field.related_model is queryset.model
+        ]
+        if len(relations) != 1:
+            raise ImproperlyConfigured(
+                f"Cannot evaluate {model.__name__} permission on {queryset.model.__name__} rows: "
+                f"expected exactly one foreign key from {model.__name__} to "
+                f"{queryset.model.__name__}, found {len(relations)}."
+            )
+
+        return queryset.filter(
+            self._permission_q(model, permission_field, relation=relations[0])
+        )
 
     def annotate_permissions(self, queryset: QuerySet) -> QuerySet:
         """Annotate queryset rows with can_view/can_edit/can_delete booleans for this principal."""

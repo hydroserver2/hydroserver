@@ -594,7 +594,7 @@ datastream.timeAggregationIntervalUnit = "minutes";
 datastream.intendedTimeSpacing = 15;
 datastream.intendedTimeSpacingUnit = "minutes";
 datastream.isPrivate = false;
-datastream.isVisible = true;
+datastream.isRestricted = false;
 
 const created = await hs.datastreams.createItem(datastream);
 if (!created) throw new Error("Unable to create datastream");

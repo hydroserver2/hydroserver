@@ -151,7 +151,7 @@ discharge_datastream = hs_api.datastreams.create(
     intended_time_spacing_unit='minutes',
     status='Ongoing',
     is_private=False,
-    is_visible=True
+    is_restricted=False
 )
 
 print(f"{discharge_datastream.name}: {discharge_datastream.uid}")

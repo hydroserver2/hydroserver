@@ -64,9 +64,15 @@ test('Map layers honor visibility and opacity, load lazily, and retain choices w
   const setOpacity = async (name: string, opacity: number) => {
     const slider = page.getByRole('slider', { name, exact: true })
     await slider.focus()
+    // Vuetify computes each keypress from the rendered model value, so wait for
+    // every step to render before the next key or a fast press reads a stale
+    // value and the increment is lost.
     await slider.press('Home')
-    for (let step = 0; step < opacity / 10; step++) await slider.press('PageUp')
-    await expect(slider).toHaveAttribute('aria-valuenow', String(opacity))
+    await expect(slider).toHaveAttribute('aria-valuenow', '0')
+    for (let value = 10; value <= opacity; value += 10) {
+      await slider.press('PageUp')
+      await expect(slider).toHaveAttribute('aria-valuenow', String(value))
+    }
     await expect(slider).toHaveAttribute('aria-valuetext', `${opacity}%`)
   }
   const rasterAlpha = () =>
