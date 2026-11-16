@@ -3,7 +3,8 @@
 {% block content_outer %}
 <div class="auth-layout auth-layout--entrance">
     <div class="auth-layout__stack">
-        <a class="auth-back-link" href="{% account_back_url %}">← {% trans "Back to website" %}</a>
+        {% account_back_link as back %}
+        <a class="auth-back-link" href="{{ back.url }}">← {{ back.label }}</a>
         <div class="hs-card">
             {% block card_header %}
                 <div class="auth-card__brand">

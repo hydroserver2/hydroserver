@@ -12,3 +12,10 @@ export type HsQueryQualifier = {
   label: string
   values: readonly string[]
 }
+
+export type HsTableFilterOption = {
+  value: string
+  label: string
+  icon?: string
+  color?: string
+}

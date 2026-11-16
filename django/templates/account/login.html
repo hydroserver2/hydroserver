@@ -10,9 +10,11 @@
     {% element h1 %}
         {% trans "Sign in to HydroServer" %}
     {% endelement %}
-    {% if socialaccount_providers and request.GET.method != "email" and not form.is_bound or SOCIALACCOUNT_ONLY %}
-        {% include "account/snippets/auth_options.html" %}
-    {% elif not SOCIALACCOUNT_ONLY %}
+    {% comment %}
+        With SOCIALACCOUNT_SIGNUP_ONLY, the email form is shown only for admin
+        sign-in, ?method=email, a failed submit, or when no providers exist.
+    {% endcomment %}
+    {% if not SOCIALACCOUNT_SIGNUP_ONLY or not socialaccount_providers or form.is_bound or request.GET.method == "email" or redirect_field_value|slice:":7" == "/admin/" %}
         {% url 'account_login' as email_login_action_url %}
         {% element form form=form method="post" action=email_login_action_url tags="entrance,login" %}
             {% slot body %}
@@ -32,11 +34,10 @@
                 {% endelement %}
             {% endslot %}
         {% endelement %}
-        {% if socialaccount_providers %}
-            <p class="hs-copy auth-alternate-form">
-                <a href="{{ login_url }}">{% trans "Other sign-in options" %}</a>
-            </p>
-        {% endif %}
+        {% include "socialaccount/snippets/login.html" with page_layout="entrance" %}
+    {% else %}
+        {% include "socialaccount/snippets/provider_list.html" with process="login" %}
+        {% include "socialaccount/snippets/login_extra.html" %}
     {% endif %}
     {% if LOGIN_BY_CODE_ENABLED or PASSKEY_LOGIN_ENABLED %}
         {% element hr %}

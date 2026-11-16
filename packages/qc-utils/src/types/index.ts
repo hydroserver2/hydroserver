@@ -591,14 +591,14 @@ export interface Photo {
 export class OAuthProvider {
   id: string;
   name: string;
-  iconLink: string;
+  iconLink: string | null;
   signupEnabled: boolean;
   connectEnabled: boolean;
 
   constructor() {
     this.id = "";
     this.name = "";
-    this.iconLink = "";
+    this.iconLink = null;
     this.signupEnabled = true;
     this.connectEnabled = true;
   }

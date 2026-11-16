@@ -37,11 +37,12 @@ export enum GeoService {
   Google = 'google',
 }
 
-interface MapLayer {
+export interface MapLayer {
   name: string
   source: string
   attribution: string
   priority?: number | null
+  visibleByDefault?: boolean
 }
 
 interface MapConfiguration {

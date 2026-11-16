@@ -114,6 +114,8 @@ class ObservationMixin(SensorThingsUtils):
 
         by_datastream = {}
         for dto in payload:
+            if isinstance(dto.phenomenon_time, str) and "/" in dto.phenomenon_time:
+                raise HttpError(400, "Observation phenomenonTime intervals are not supported.")
             by_datastream.setdefault(dto.datastream_id, []).append(dto)
 
         new_ids = []

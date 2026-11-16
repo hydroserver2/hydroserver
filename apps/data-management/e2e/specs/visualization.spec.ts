@@ -6,6 +6,280 @@ import { readFile } from "node:fs/promises";
 import { PlotlyColors } from "../../src/utils/materialColors";
 
 test.describe("visualization", () => {
+  test("image export supports screen resolution and print size with embedded DPI", async ({
+    page,
+  }, testInfo) => {
+    test.setTimeout(120000);
+    await authenticateSession(page, users.owner.email, users.owner.password);
+    await page.goto(
+      `/visualize-data?datastreams=${fixtures.datastreams.public.id}`
+    );
+    const live = page.locator(".plot-card .js-plotly-plot");
+    await expect(live.locator(".legendtext")).toHaveCount(1);
+    await live.locator('[data-title="Download plot image"]').click();
+    const dialog = page.getByRole("dialog", { name: "Download plot image" });
+    const editor = dialog.getByRole("complementary", { name: "Image settings" });
+    const figure = page.getByTestId("figure-plot");
+    const summary = editor.locator(".figure-export-summary");
+    const downloadButton = dialog.getByRole("button", {
+      name: "Download PNG",
+      exact: true,
+    });
+    const screen = editor.getByRole("button", { name: "Screen", exact: true });
+    const print = editor.getByRole("button", { name: "Print", exact: true });
+    await expect(screen).toHaveAttribute("aria-pressed", "true");
+    expect(Number(await editor.getByRole("spinbutton", { name: "Width", exact: true }).getAttribute("max"))).toBeGreaterThan(6000);
+    await editor.getByRole("combobox", { name: "Resolution" }).press("ArrowDown");
+    await page.getByRole("option", { name: "High · 2×", exact: true }).click();
+    await expect(summary).toContainText("2400 × 1800 px");
+    const screenDownload = page.waitForEvent("download");
+    await downloadButton.click();
+    const screenPath = testInfo.outputPath("screen-2x.png");
+    await (await screenDownload).saveAs(screenPath);
+    const screenPng = await readFile(screenPath);
+    expect([screenPng.readUInt32BE(16), screenPng.readUInt32BE(20)]).toEqual([
+      2400, 1800,
+    ]);
+
+    await print.click();
+    await expect(print).toHaveAttribute("aria-pressed", "true");
+    await expect(summary).toContainText("1800 × 1350 px");
+    await expect(summary).toContainText("6 × 4.5 in · 300 DPI");
+    await expect(
+      editor.getByRole("combobox", { name: "Resolution" })
+    ).toHaveCount(0);
+    await editor
+      .getByRole("combobox", { name: "Units", exact: true })
+      .press("ArrowDown");
+    await page.getByRole("option", { name: "cm", exact: true }).click();
+    const width = editor.getByRole("spinbutton", {
+      name: "Print width",
+      exact: true,
+    });
+    await expect(width).toHaveValue("15.24");
+    await expect(summary).toContainText("1800 × 1350 px");
+    const height = editor.getByRole("spinbutton", {
+      name: "Print height", exact: true,
+    });
+    await expect(height).toHaveValue("11.43");
+    await height.fill("");
+    await expect(height).toHaveValue("");
+    await expect(downloadButton).toBeDisabled();
+    await height.fill("0");
+    await expect(downloadButton).toBeDisabled();
+    await height.fill("10");
+    await expect(width).toHaveValue("15.24");
+    await expect(summary).toContainText("1800 × 1181 px");
+    await expect(
+      editor.getByRole("combobox", { name: "Print size", exact: true })
+    ).toHaveValue("Custom");
+    await width.fill("");
+    await expect(downloadButton).toBeDisabled();
+    await expect(width).toHaveValue("");
+    await width.fill("15.24");
+    await editor
+      .getByRole("combobox", { name: "Print quality", exact: true })
+      .press("ArrowDown");
+    await page.getByRole("option", { name: "Custom DPI", exact: true }).click();
+    const dpi = editor.getByRole("spinbutton", {
+      name: "Custom DPI",
+      exact: true,
+    });
+    await dpi.fill("600");
+    await expect(summary).toContainText("3600 × 2362 px");
+    await expect
+      .poll(() => figure.evaluate((gd: any) => gd._context.plotGlPixelRatio))
+      .toBe(3);
+    await dpi.fill("0");
+    await expect(downloadButton).toBeDisabled();
+    await dpi.fill("1200");
+    await expect(downloadButton).toBeEnabled();
+    await expect(summary).toContainText("7200 × 4724 px");
+    const maximumDpi = Number(await dpi.getAttribute("max"));
+    expect(maximumDpi).toBeGreaterThan(1200);
+    await dpi.fill(String(maximumDpi + 1));
+    await expect(downloadButton).toBeDisabled();
+    await dpi.fill("300");
+    await expect(downloadButton).toBeEnabled();
+    await editor
+      .getByRole("combobox", { name: "Print quality", exact: true })
+      .press("ArrowDown");
+    await page
+      .getByRole("option", { name: "Standard · 300 DPI", exact: true })
+      .click();
+    await expect
+      .poll(() =>
+        figure.evaluate((gd: any) => [
+          gd._fullLayout.width,
+          gd._fullLayout.font.size,
+        ])
+      )
+      .toEqual([1200, 24]);
+    expect(await figure.evaluate((gd: any) => gd._fullLayout.height)).toBeCloseTo(1181 / 1.5);
+    await expect(page.getByRole("listbox")).toBeHidden();
+    await page.screenshot({
+      path: testInfo.outputPath("print-quality-settings.png"),
+    });
+    const printDownload = page.waitForEvent("download");
+    await downloadButton.click();
+    const printPath = testInfo.outputPath("print-300dpi.png");
+    await (await printDownload).saveAs(printPath);
+    const printPng = await readFile(printPath);
+    expect([printPng.readUInt32BE(16), printPng.readUInt32BE(20)]).toEqual([
+      1800, 1181,
+    ]);
+    const resolutions: number[] = [];
+    for (let offset = 8; offset < printPng.length;) {
+      const length = printPng.readUInt32BE(offset);
+      if (printPng.toString("ascii", offset + 4, offset + 8) === "pHYs") {
+        resolutions.push(printPng.readUInt32BE(offset + 8) * 0.0254);
+        expect(printPng.readUInt32BE(offset + 8)).toBe(
+          printPng.readUInt32BE(offset + 12)
+        );
+        expect(printPng[offset + 16]).toBe(1);
+      }
+      offset += length + 12;
+    }
+    expect(resolutions).toHaveLength(1);
+    expect(resolutions[0]).toBeCloseTo(300, 1);
+    await screen.click();
+    await expect(summary).toContainText("2400 × 1800 px");
+    await expect(
+      editor.getByRole("spinbutton", { name: "Width", exact: true })
+    ).toHaveValue("1200");
+    await expect(
+      editor.getByRole("spinbutton", { name: "Height", exact: true })
+    ).toHaveValue("900");
+    await print.click();
+    await expect(height).toHaveValue("10");
+    await expect(width).toHaveValue("15.24");
+    const printSize = editor.getByRole("combobox", { name: "Print size", exact: true });
+    await expect(editor.getByRole("combobox", { name: "Image shape", exact: true })).toHaveCount(0);
+    const sizeExpectations = [
+      { name: "3.5 × 2.5 in", width: "8.89", height: "6.35", pixels: "1050 × 750 px" },
+      { name: "7 × 3.5 in", width: "17.78", height: "8.89", pixels: "2100 × 1050 px" },
+      { name: "6 × 4 in", width: "15.24", height: "10.16", pixels: "1800 × 1200 px" },
+      { name: "4 × 6 in", width: "10.16", height: "15.24", pixels: "1200 × 1800 px" },
+      { name: "5 × 5 in", width: "12.7", height: "12.7", pixels: "1500 × 1500 px" },
+      { name: "7 × 5 in", width: "17.78", height: "12.7", pixels: "2100 × 1500 px" },
+      { name: "5 × 7 in", width: "12.7", height: "17.78", pixels: "1500 × 2100 px" },
+      { name: "8 × 10 in", width: "20.32", height: "25.4", pixels: "2400 × 3000 px" },
+      { name: "8.5 × 11 in", width: "21.59", height: "27.94", pixels: "2550 × 3300 px" },
+    ];
+    for (const size of sizeExpectations) {
+      await printSize.press("ArrowDown");
+      await page.getByRole("option", { name: size.name, exact: true }).click();
+      await expect(width).toHaveValue(size.width);
+      await expect(height).toHaveValue(size.height);
+      await expect(summary).toContainText(size.pixels);
+      await expect(downloadButton).toBeEnabled();
+    }
+    await editor.getByRole("combobox", { name: "Units", exact: true }).press("ArrowDown");
+    await page.getByRole("option", { name: "Inches", exact: true }).click();
+    await expect(width).toHaveValue("8.5");
+    await expect(height).toHaveValue("11");
+    await expect(printSize).toHaveValue("8.5 × 11 in");
+    await printSize.press("ArrowDown");
+    await page.getByRole("option", { name: "6 × 4 in", exact: true }).click();
+    const quality = editor.getByRole("combobox", { name: "Print quality", exact: true });
+    for (const level of [
+      { name: "Mixed artwork · 500 DPI", pixels: "3000 × 2000 px" },
+      { name: "Line art · 1000 DPI", pixels: "6000 × 4000 px" },
+      { name: "Fine line art · 1200 DPI", pixels: "7200 × 4800 px" },
+    ]) {
+      await quality.press("ArrowDown");
+      await page.getByRole("option", { name: level.name, exact: true }).click();
+      await expect(summary).toContainText(level.pixels);
+      await expect(downloadButton).toBeEnabled();
+    }
+    // Every offered size also renders at the highest preset quality on desktop.
+    for (const size of sizeExpectations) {
+      await printSize.press("ArrowDown");
+      await page.getByRole("option", { name: size.name, exact: true }).click();
+      await expect(downloadButton).toBeEnabled();
+    }
+    await printSize.press("ArrowDown");
+    await page.getByRole("option", { name: "6 × 4 in", exact: true }).click();
+    const lineArtDownload = page.waitForEvent("download");
+    await downloadButton.click();
+    const lineArtPath = testInfo.outputPath("hydrograph-1200dpi.png");
+    await (await lineArtDownload).saveAs(lineArtPath);
+    const lineArtPng = await readFile(lineArtPath);
+    expect([lineArtPng.readUInt32BE(16), lineArtPng.readUInt32BE(20)]).toEqual([7200, 4800]);
+    const resolutionOffset = lineArtPng.indexOf("pHYs");
+    expect(resolutionOffset).toBeGreaterThan(0);
+    expect(lineArtPng.readUInt32BE(resolutionOffset + 4) * 0.0254).toBeCloseTo(1200, 1);
+    await printSize.press("ArrowDown");
+    await page.getByRole("option", { name: "8.5 × 11 in", exact: true }).click();
+    const largestDownload = page.waitForEvent("download");
+    await downloadButton.click();
+    const largestPath = testInfo.outputPath("letter-1200dpi.png");
+    await (await largestDownload).saveAs(largestPath);
+    const largestPng = await readFile(largestPath);
+    expect([largestPng.readUInt32BE(16), largestPng.readUInt32BE(20)]).toEqual([10200, 13200]);
+    await printSize.press("ArrowDown");
+    await page.getByRole("option", { name: "6 × 4 in", exact: true }).click();
+    await height.fill("2");
+    await expect(printSize).toHaveValue("Custom");
+    await expect(summary).toContainText("7200 × 2400 px");
+    await screen.click();
+    await expect(editor.getByRole("combobox", { name: "Print size", exact: true })).toHaveCount(0);
+    await editor.getByRole("combobox", { name: "Image shape", exact: true }).press("ArrowDown");
+    await expect(page.getByRole("option", { name: "Widescreen (16:9)", exact: true })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await dialog
+      .getByRole("button", { name: "Reset image", exact: true })
+      .click();
+    await expect(screen).toHaveAttribute("aria-pressed", "true");
+    await expect(summary).toContainText("1200 × 900 px");
+  });
+
+  test("image export menus omit sizes and quality levels beyond browser limits", async ({ page }) => {
+    await page.addInitScript(() => {
+      const original = CanvasRenderingContext2D.prototype.getImageData;
+      CanvasRenderingContext2D.prototype.getImageData = function (
+        sx: number, sy: number, sw: number, sh: number, settings?: ImageDataSettings
+      ) {
+        if (this.canvas.width > 4096 || this.canvas.height > 4096)
+          throw new Error("Simulated canvas dimension limit");
+        return original.call(this, sx, sy, sw, sh, settings);
+      };
+    });
+    await authenticateSession(page, users.owner.email, users.owner.password);
+    await page.goto(`/visualize-data?datastreams=${fixtures.datastreams.public.id}`);
+    const live = page.locator(".plot-card .js-plotly-plot");
+    await expect(live.locator(".legendtext")).toHaveCount(1);
+    await live.locator('[data-title="Download plot image"]').click();
+    const dialog = page.getByRole("dialog", { name: "Download plot image" });
+    const editor = dialog.getByRole("complementary", { name: "Image settings" });
+    await editor.getByRole("button", { name: "Print", exact: true }).click();
+    const quality = editor.getByRole("combobox", { name: "Print quality", exact: true });
+    await quality.press("ArrowDown");
+    await expect(page.getByRole("option", { name: "Fine line art · 1200 DPI", exact: true })).toHaveCount(0);
+    await page.getByRole("option", { name: "Fine detail · 600 DPI", exact: true }).click();
+    const size = editor.getByRole("combobox", { name: "Print size", exact: true });
+    await size.press("ArrowDown");
+    await expect(page.getByRole("option", { name: "8.5 × 11 in", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("option", { name: "8 × 10 in", exact: true })).toHaveCount(0);
+    await page.getByRole("option", { name: "6 × 4 in", exact: true }).click();
+    await expect(dialog.getByRole("button", { name: "Download PNG", exact: true })).toBeEnabled();
+    await quality.press("ArrowDown");
+    await page.getByRole("option", { name: "Standard · 300 DPI", exact: true }).click();
+    await size.press("ArrowDown");
+    await page.getByRole("option", { name: "8.5 × 11 in", exact: true }).click();
+    await quality.press("ArrowDown");
+    await expect(page.getByRole("option", { name: "Fine detail · 600 DPI", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("option", { name: "Mixed artwork · 500 DPI", exact: true })).toHaveCount(0);
+    await page.getByRole("option", { name: "Custom DPI", exact: true }).click();
+    const dpi = editor.getByRole("spinbutton", { name: "Custom DPI", exact: true });
+    await expect(dpi).toHaveAttribute("max", "372");
+    await dpi.fill("373");
+    await expect(dialog.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
+    await expect(editor.getByText(/This DPI exceeds your browser’s export limits/)).toHaveCount(1);
+    await dpi.fill("372");
+    await expect(dialog.getByRole("button", { name: "Download PNG", exact: true })).toBeEnabled();
+  });
+
   test("image preview edits a zoomed snapshot and downloads an image without changing the page", async ({
     page,
   }, testInfo) => {
@@ -74,6 +348,27 @@ test.describe("visualization", () => {
     expect(
       await figure.evaluate((gd: any) => gd._fullLayout.xaxis.range),
     ).toEqual(range);
+    const textSize = dialog.getByRole("spinbutton", { name: "Text size", exact: true });
+    await expect(textSize).toHaveAttribute("type", "number");
+    await expect(textSize).toHaveValue("24");
+    await textSize.press("ArrowUp");
+    await expect(textSize).toHaveValue("25");
+    await textSize.press("ArrowDown");
+    await expect(textSize).toHaveValue("24");
+    await textSize.fill("27.5");
+    await textSize.press("Tab");
+    await expect.poll(() => figure.evaluate((gd: any) => gd._fullLayout.font.size)).toBe(27.5);
+    await dialog.getByRole("button", { name: "Print", exact: true }).click();
+    await expect(textSize).toHaveValue("27.5");
+    await textSize.press("ArrowUp");
+    await expect(textSize).toHaveValue("28");
+    await expect.poll(() => figure.evaluate((gd: any) => gd._fullLayout.font.size)).toBe(28);
+    await textSize.fill("");
+    await expect(dialog.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
+    await textSize.fill("24");
+    await textSize.press("Tab");
+    await expect.poll(() => figure.evaluate((gd: any) => gd._fullLayout.font.size)).toBe(24);
+    await dialog.getByRole("button", { name: "Screen", exact: true }).click();
     const widthField = dialog.getByRole("spinbutton", {
       name: "Width",
       exact: true,

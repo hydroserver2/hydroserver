@@ -408,3 +408,152 @@ def test_derivation_non_overlapping_inputs_load_nothing():
     )
     assert _run(t) == 0
     assert _output_results(ds_out) == []
+
+
+# --- incremental aggregation: DST and calendar grids (#642) ---------------------------------
+
+
+def _ts(value):
+    return pd.Timestamp(value, tz="UTC")
+
+
+def _add_half_hourly_obs(datastream, start, end, value=1.0):
+    """Insert an observation every 30 minutes over [start, end)."""
+    for timestamp in pd.date_range(_ts(start), _ts(end), freq="30min", inclusive="left"):
+        ObservationFactory(datastream=datastream, phenomenon_time=timestamp, result=value)
+
+
+def _set_end_time(datastream, value):
+    datastream.phenomenon_end_time = _ts(value)
+    datastream.save(update_fields=["phenomenon_end_time"])
+
+
+def _make_aggregation(**kwargs):
+    ds_out = DatastreamFactory()
+    ds_in = DatastreamFactory(monitoring_site=ds_out.monitoring_site)
+    params = dict(
+        aggregation_method="sum",
+        output_interval_units="days",
+        output_interval=1,
+        timezone_type="iana",
+        timezone="America/Denver",
+    )
+    params.update(kwargs)
+    transformation = DataProductTransformationFactory(
+        task__monitoring_site=ds_out.monitoring_site,
+        output_datastream=ds_out,
+        transformation_type="aggregation",
+        formula=None,
+        **params,
+    )
+    DataProductTransformationInputFactory(transformation=transformation, datastream=ds_in)
+    return transformation, ds_in, ds_out
+
+
+def _output_rows(ds_out):
+    return list(
+        Observation.objects.filter(datastream=ds_out)
+        .order_by("phenomenon_time")
+        .values_list("phenomenon_time", "result")
+    )
+
+
+def test_aggregation_dst_fall_back():
+    """
+    2026-11-01 is a 25-hour day in America/Denver (06:00Z -> next day 07:00Z). The
+    bucket isn't released until its true end, and the next run starts at 07:00Z.
+    """
+    t, ds_in, ds_out = _make_aggregation()
+    _add_half_hourly_obs(ds_in, "2026-10-31T06:00", "2026-11-03T08:00")
+
+    # Nov 1 is still in progress at 06:30Z (local 23:30 MST).
+    _set_end_time(ds_in, "2026-11-02T06:30")
+    assert _run(t) == 1
+    assert _output_rows(ds_out) == [(_ts("2026-10-31T06:00"), 48.0)]
+
+    _set_end_time(ds_in, "2026-11-02T07:00")
+    assert _run(t) == 1
+    assert _output_rows(ds_out)[-1] == (_ts("2026-11-01T06:00"), 50.0)
+
+    _set_end_time(ds_in, "2026-11-03T07:00")
+    assert _run(t) == 1
+    assert _output_rows(ds_out)[-1] == (_ts("2026-11-02T07:00"), 48.0)
+
+    assert _run(t) == 0
+
+
+def test_aggregation_dst_fall_back_recovers_from_stuck_state():
+    """An output already holding a partial Nov 1 bucket continues with Nov 2."""
+    t, ds_in, ds_out = _make_aggregation()
+    _add_half_hourly_obs(ds_in, "2026-11-01T06:00", "2026-11-03T08:00")
+    ObservationFactory(datastream=ds_out, phenomenon_time=_ts("2026-11-01T06:00"), result=49.0)
+    _set_end_time(ds_out, "2026-11-01T06:00")
+    _set_end_time(ds_in, "2026-11-03T07:00")
+
+    assert _run(t) == 1
+    assert _output_rows(ds_out) == [
+        (_ts("2026-11-01T06:00"), 49.0),
+        (_ts("2026-11-02T07:00"), 48.0),
+    ]
+
+
+def test_aggregation_dst_spring_forward():
+    """2026-03-08 is a 23-hour day in America/Denver; the next run starts at 06:00Z."""
+    t, ds_in, ds_out = _make_aggregation()
+    _add_half_hourly_obs(ds_in, "2026-03-08T07:00", "2026-03-10T07:00")
+
+    _set_end_time(ds_in, "2026-03-09T06:00")
+    assert _run(t) == 1
+    assert _output_rows(ds_out) == [(_ts("2026-03-08T07:00"), 46.0)]
+
+    _set_end_time(ds_in, "2026-03-10T06:00")
+    assert _run(t) == 1
+    assert _output_rows(ds_out)[-1] == (_ts("2026-03-09T06:00"), 48.0)
+
+
+def test_aggregation_dst_transition_at_midnight():
+    """America/Santiago skips 2026-09-06 00:00; the bucket edge resolves to 04:00Z."""
+    t, ds_in, ds_out = _make_aggregation(timezone="America/Santiago")
+    _add_half_hourly_obs(ds_in, "2026-09-05T04:00", "2026-09-07T04:00")
+
+    _set_end_time(ds_in, "2026-09-06T04:00")
+    assert _run(t) == 1
+    assert _output_rows(ds_out) == [(_ts("2026-09-05T04:00"), 48.0)]
+
+    _set_end_time(ds_in, "2026-09-07T03:00")
+    assert _run(t) == 1
+    assert _output_rows(ds_out)[-1] == (_ts("2026-09-06T04:00"), 46.0)
+
+
+def test_aggregation_weekly_buckets_stay_on_one_grid():
+    """New weekly tasks start on Monday, and later runs continue that grid."""
+    t, ds_in, ds_out = _make_aggregation(output_interval_units="weeks", timezone_type=None, timezone=None)
+    _add_half_hourly_obs(ds_in, "2026-01-07T00:00", "2026-02-02T01:00")
+
+    _set_end_time(ds_in, "2026-01-19T00:00")
+    assert _run(t) == 2
+
+    _set_end_time(ds_in, "2026-02-02T00:00")
+    assert _run(t) == 2
+    assert _output_rows(ds_out) == [
+        (_ts("2026-01-05T00:00"), 5 * 48.0),
+        (_ts("2026-01-12T00:00"), 7 * 48.0),
+        (_ts("2026-01-19T00:00"), 7 * 48.0),
+        (_ts("2026-01-26T00:00"), 7 * 48.0),
+    ]
+
+
+def test_aggregation_weekly_continues_existing_output_grid():
+    """Existing weekly outputs on another weekday (here Tuesday) keep that weekday."""
+    t, ds_in, ds_out = _make_aggregation(output_interval_units="weeks", timezone_type=None, timezone=None)
+    _add_half_hourly_obs(ds_in, "2026-01-06T00:00", "2026-01-27T01:00")
+    ObservationFactory(datastream=ds_out, phenomenon_time=_ts("2026-01-06T00:00"), result=7 * 48.0)
+    _set_end_time(ds_out, "2026-01-06T00:00")
+    _set_end_time(ds_in, "2026-01-27T00:00")
+
+    assert _run(t) == 2
+    assert _output_rows(ds_out) == [
+        (_ts("2026-01-06T00:00"), 7 * 48.0),
+        (_ts("2026-01-13T00:00"), 7 * 48.0),
+        (_ts("2026-01-20T00:00"), 7 * 48.0),
+    ]
