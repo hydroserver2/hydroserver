@@ -535,11 +535,7 @@
                       </RouterLink>
                       <span
                         class="datastream-task-link__status"
-                        :title="
-                          displayedTaskStatus(
-                            linkedTasksForDatastream(item.id)[0]
-                          )
-                        "
+                        :title="linkedTasksForDatastream(item.id)[0].status"
                       >
                         <span
                           class="datastream-task-link__dot"
@@ -718,6 +714,7 @@ import {
   getTaskRunStatusText,
   getTaskStatusText,
 } from '@/utils/orchestration/taskRunDetails'
+import { TASK_STATUS_COLORS } from '@/utils/orchestration/taskStatusColors'
 import DatastreamTableInfoCard from './DatastreamTableInfoCard.vue'
 import ObservationsDeleteCard from '../Observation/ObservationsDeleteCard.vue'
 import VisibilityTooltipCard from '@/components/Datastream/VisibilityTooltipCard.vue'
@@ -768,7 +765,6 @@ type LinkedDatastreamTask = {
   icon: string
   iconClass: string
   status: StatusType
-  paused: boolean
   lastRunAt: string | null
   route: {
     name: string
@@ -1405,12 +1401,12 @@ const datastreamTaskLinkClass = (datastreamId: string) => {
   const linkedTasks = linkedTasksForDatastream(datastreamId)
   if (!linkedTasks.length) return 'datastream-task-link--none'
   if (linkedTasks.length > 1) return 'datastream-task-link--conflict'
-  if (linkedTasks[0].paused) return 'datastream-task-link--none'
 
   const statusClass: Record<StatusType, string> = {
     OK: 'datastream-task-link--ok',
     Pending: 'datastream-task-link--pending',
     'Needs attention': 'datastream-task-link--attention',
+    'Violations found': 'datastream-task-link--violations',
     'Behind schedule': 'datastream-task-link--behind',
     Unknown: 'datastream-task-link--none',
     'Loading paused': 'datastream-task-link--none',
@@ -1418,23 +1414,8 @@ const datastreamTaskLinkClass = (datastreamId: string) => {
   return statusClass[linkedTasks[0].status]
 }
 
-const TASK_STATUS_DOT_COLORS: Record<StatusType, string> = {
-  OK: '#357a38',
-  Pending: '#1769aa',
-  'Needs attention': '#c62828',
-  'Behind schedule': '#e65100',
-  Unknown: '#546e7a',
-  'Loading paused': '#546e7a',
-}
-
-const displayedTaskStatus = (task: LinkedDatastreamTask): StatusType =>
-  task.paused && task.status !== 'Needs attention'
-    ? 'Loading paused'
-    : task.status
-
 const taskStatusColor = (task: LinkedDatastreamTask) =>
-  TASK_STATUS_DOT_COLORS[displayedTaskStatus(task)] ??
-  TASK_STATUS_DOT_COLORS.Unknown
+  TASK_STATUS_COLORS[task.status] ?? TASK_STATUS_COLORS.Unknown
 
 const formatRelativeTime = (iso: string | null) => {
   if (!iso) return null
@@ -1502,7 +1483,7 @@ const monitoringLastRunStatus = (task: LinkedMonitoringTask): StatusType =>
   task.lastRunStatus
 
 const monitoringLastRunColor = (task: LinkedMonitoringTask) =>
-  TASK_STATUS_DOT_COLORS[monitoringLastRunStatus(task)]
+  TASK_STATUS_COLORS[monitoringLastRunStatus(task)]
 
 const routeForIngestionTask = (task: any) => {
   const query: Record<string, string> = {
@@ -1576,11 +1557,6 @@ const monitoringViolationCount = (
   return monitoredDatastreamCount === 1 ? totalViolations : null
 }
 
-const taskPaused = (task: any) =>
-  task.schedule
-    ? task.schedule.paused === true || task.schedule.enabled === false
-    : false
-
 const truncateTaskInfoPart = (value: unknown, maxLength = 250) => {
   const text = `${value ?? ''}`.trim()
   return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text
@@ -1609,7 +1585,6 @@ const addLinkedTask = (
     icon: config.icon,
     iconClass: config.iconClass ?? '',
     status: getTaskStatusText(task),
-    paused: taskPaused(task),
     lastRunAt: task.latestRun?.startedAt ?? task.latestRun?.finishedAt ?? null,
     route: config.route,
   })
@@ -1794,7 +1769,6 @@ const monitoringTasksByDatastreamId = computed<
         icon: mdiShieldCheckOutline,
         iconClass: 'datastream-task-link__icon--monitoring',
         status: getTaskStatusText(task),
-        paused: taskPaused(task),
         lastRunAt:
           (task as any).latestRun?.startedAt ??
           (task as any).latestRun?.finishedAt ??
@@ -2219,6 +2193,12 @@ const loadDatastreams = async () => {
 .datastream-task-link--behind {
   border-left-color: #e65100;
   background: #fff3e0;
+  color: rgba(0, 0, 0, 0.87);
+}
+
+.datastream-task-link--violations {
+  border-left-color: var(--hs-warning);
+  background: color-mix(in srgb, var(--hs-warning) 12%, white);
   color: rgba(0, 0, 0, 0.87);
 }
 

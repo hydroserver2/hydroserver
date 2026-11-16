@@ -18,7 +18,7 @@
           <h2 class="task-details-title hs-text-md font-weight-regular">
             {{ task.name }}
           </h2>
-          <TaskStatus :status="statusName" :paused="!task.schedule?.enabled" />
+          <TaskStatus :status="statusName" />
           <span v-if="scheduleText" class="schedule-pill hs-text-2xs">{{
             scheduleText
           }}</span>
@@ -96,7 +96,9 @@
                   @click="runNow"
                 >
                   <v-icon :icon="mdiPlay" size="16" />
-                  <span>{{ runNowRequested ? 'Run requested' : 'Run now' }}</span>
+                  <span>{{
+                    runNowRequested ? 'Run requested' : 'Run now'
+                  }}</span>
                 </button>
               </span>
             </template>
@@ -210,7 +212,11 @@ async function loadMappings() {
   mappingsLoaded.value = true
 }
 
-watch(() => task.value?.id, () => void loadMappings(), { immediate: true })
+watch(
+  () => task.value?.id,
+  () => void loadMappings(),
+  { immediate: true }
+)
 
 function onTaskUpdated() {
   closeEditTaskDialog()

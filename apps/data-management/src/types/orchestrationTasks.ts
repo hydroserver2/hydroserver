@@ -6,9 +6,11 @@ import type {
   TaskExpanded,
   TaskRun,
   TaskSchedule,
+  StatusType,
 } from '@hydroserver/client'
 
 export type TaskSummary = {
+  status?: StatusType
   id: string
   name: string
   description?: string | null
@@ -23,11 +25,9 @@ export type TaskSummary = {
 export type Task = TaskExpanded | TaskSummary
 
 export type DataProductTask =
-  | DataProductTaskExpanded
-  | DataProductTaskContract.SummaryResponse
+  DataProductTaskExpanded | DataProductTaskContract.SummaryResponse
 
 export type MonitoringTask =
-  | MonitoringTaskExpanded
-  | MonitoringTaskContract.SummaryResponse
+  MonitoringTaskExpanded | MonitoringTaskContract.SummaryResponse
 
 export type AnyTask = Task | DataProductTask | MonitoringTask

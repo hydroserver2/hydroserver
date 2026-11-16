@@ -14,6 +14,7 @@ describe('useOrchestrationTaskRows', () => {
         {
           id: 'etl-1',
           name: 'CSV load',
+          status: 'Behind schedule',
           dataConnectionId: 'dc-1',
           mappingCount: 1,
           latestRun: {
@@ -41,9 +42,10 @@ describe('useOrchestrationTaskRows', () => {
         {
           id: 'mon-1',
           name: 'Quality check',
+          status: 'Violations found',
           monitoringSiteId: 'monitoringSite-3',
           latestRun: {
-            status: 'FAILURE',
+            status: 'SUCCESS',
             result: { rulesViolated: 2 },
           },
           schedule: null,
@@ -87,8 +89,7 @@ describe('useOrchestrationTaskRows', () => {
       id: 'mon-1',
       kind: 'monitoring',
       monitoringSiteId: 'monitoringSite-3',
-      statusName: 'Needs attention',
-      statusSort: 'Needs attention',
+      statusName: 'Violations found',
       qualityRuleCount: 3,
       monitoringRulesViolated: 2,
       noWorkWarning: null,
@@ -217,6 +218,7 @@ describe('useOrchestrationTaskRows', () => {
         {
           id: 'mon-ok',
           name: 'Quality OK',
+          status: 'OK',
           monitoringSiteId: 'monitoringSite-1',
           latestRun: {
             id: 'run-ok',
@@ -233,7 +235,6 @@ describe('useOrchestrationTaskRows', () => {
 
     expect(rows.monitoringTaskRows.value[0]).toMatchObject({
       statusName: 'OK',
-      statusSort: 'OK',
       lastRunAt: '2026-03-13T12:00:00Z',
     })
   })

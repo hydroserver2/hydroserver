@@ -8,6 +8,7 @@ from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.services.orchestration import require_orchestration_enabled
 from interfaces.auth.security import session_auth, oidc_task_read_auth, oidc_task_write_auth, oidc_task_run_auth, apikey_auth, basic_auth
 from processing.orchestration.models import TaskRun
+from processing.orchestration.status import run_status_expression
 from interfaces.api.services.monitoring.task import MonitoringTaskAPIService
 from processing.monitoring.tasks import run_monitoring_task
 from interfaces.api.schemas import PaginatedResponse, ItemResponse, CreatedResponse
@@ -186,6 +187,8 @@ def trigger_monitoring_task(
 
     run_link = build_self_link(request, request.path_info.removesuffix("/trigger") + f"/runs/{run.id}")
     response["Location"] = run_link.href
+
+    run = TaskRun.objects.annotate(display_status=run_status_expression()).get(pk=run.pk)
 
     return 202, {"data": run, "links": [run_link]}
 

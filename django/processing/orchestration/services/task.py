@@ -13,6 +13,7 @@ from core.iam.permissions.anonymous import AnonymousPrincipal
 from interfaces.api.http.errors import PermissionDeniedError, NotFoundError
 from interfaces.api.service import APIService
 from processing.orchestration.models import Task, TaskRun
+from processing.orchestration.status import run_status_expression
 from processing.orchestration.services.scheduling import SchedulingService
 
 
@@ -115,7 +116,7 @@ class TaskService(SchedulingService, Generic[T]):
         task = self.get(task=task, action="view", principal=principal)
 
         try:
-            return TaskRun.objects.get(pk=run, task=task)
+            return TaskRun.objects.annotate(display_status=run_status_expression()).get(pk=run, task=task)
         except TaskRun.DoesNotExist:
             raise NotFoundError(f"TaskRun with ID {run} does not exist.")
 
@@ -139,7 +140,7 @@ class TaskService(SchedulingService, Generic[T]):
 
         task = self.get(task=task, action="view", principal=principal)
 
-        queryset = TaskRun.objects.filter(task=task)
+        queryset = TaskRun.objects.filter(task=task).annotate(display_status=run_status_expression())
 
         if status is not Unset:
             queryset = queryset.filter(status__in=status)
@@ -186,6 +187,7 @@ class TaskService(SchedulingService, Generic[T]):
         "latest_run_finished_at": "finished_at",
         "latest_run_message": "message",
         "latest_run_result": "result",
+        "latest_run_display_status": "display_status",
     }
 
     @classmethod
@@ -199,7 +201,11 @@ class TaskService(SchedulingService, Generic[T]):
         without the per-row subqueries.
         """
 
-        latest = TaskRun.objects.filter(task_id=OuterRef("pk")).order_by("-started_at", "-id")
+        latest = (
+            TaskRun.objects.filter(task_id=OuterRef("pk"))
+            .annotate(display_status=run_status_expression())
+            .order_by("-started_at", "-id")
+        )
         selected = cls.latest_run_field_map if fields is None else {
             name: source for name, source in cls.latest_run_field_map.items() if name in fields
         }
@@ -226,6 +232,7 @@ class TaskService(SchedulingService, Generic[T]):
                 run.task_id: run
                 for run in TaskRun.objects
                 .filter(task_id__in=task_ids)
+                .annotate(display_status=run_status_expression())
                 .order_by("task_id", "-started_at", "-id")
                 .distinct("task_id")
             }

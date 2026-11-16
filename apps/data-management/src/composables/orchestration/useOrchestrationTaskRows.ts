@@ -7,7 +7,6 @@ import type {
   Task,
 } from '@/types/orchestrationTasks'
 import {
-  getDisplayedTaskStatus,
   getMonitoringRulesViolated,
   getTaskNextRunAt,
   getTaskRunMessage,
@@ -68,7 +67,6 @@ const buildRowBase = (
     schedule,
     latestRun,
     statusName: getTaskStatusText(task as any),
-    statusSort: getDisplayedTaskStatus(task as any),
     lastRun: latestRun?.startedAt ? formatTime(latestRun.startedAt) : '-',
     nextRun: nextRunAt ? formatTime(nextRunAt) : '-',
     lastRunAt: latestRun?.startedAt ?? null,
@@ -82,13 +80,15 @@ const buildRowBase = (
 }
 
 const dataConnectionIdOf = (t: Task): string | null =>
-  'dataConnectionId' in t ? t.dataConnectionId : t.dataConnection?.id ?? null
+  'dataConnectionId' in t ? t.dataConnectionId : (t.dataConnection?.id ?? null)
 
 const mappingCountOf = (t: Task): number =>
   'mappingCount' in t ? t.mappingCount : 0
 
-const monitoringSiteIdOf = (t: DataProductTask | MonitoringTask): string | null =>
-  'monitoringSiteId' in t ? t.monitoringSiteId : t.monitoringSite?.id ?? null
+const monitoringSiteIdOf = (
+  t: DataProductTask | MonitoringTask
+): string | null =>
+  'monitoringSiteId' in t ? t.monitoringSiteId : (t.monitoringSite?.id ?? null)
 
 const resolveDataProductTaskType = (
   t: DataProductTask
@@ -233,7 +233,7 @@ export function useOrchestrationTaskRows(inputs: Inputs) {
       let cmp = 0
       if (sortKey.value === 'name') cmp = compareText(a.name, b.name)
       else if (sortKey.value === 'status')
-        cmp = compareText(a.statusSort, b.statusSort)
+        cmp = compareText(a.statusName, b.statusName)
       else if (sortKey.value === 'lastRunAt')
         cmp = compareNullableDate(a.lastRunAt, b.lastRunAt)
       else if (sortKey.value === 'nextRunAt')

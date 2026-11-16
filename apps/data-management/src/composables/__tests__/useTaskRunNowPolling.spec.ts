@@ -70,4 +70,44 @@ describe('useTaskRunNowPolling', () => {
     })
     expect(polling.runNowTriggeredByTaskId['mon-1']).toBe(false)
   })
+
+  it('refreshes backend task statuses after triggering and completing a run', async () => {
+    const task = {
+      id: 'mon-1',
+      name: 'Quality task',
+      status: 'Needs attention',
+    }
+    const monitoringTasks = ref([task] as any)
+    const pending = { id: 'run-1', status: 'PENDING', displayStatus: 'Pending' }
+    const completed = {
+      id: 'run-1',
+      status: 'SUCCESS',
+      displayStatus: 'Violations found',
+    }
+    serviceMocks.runTask.mockResolvedValue({ ok: true, data: pending })
+    serviceMocks.getTaskRun.mockResolvedValue({ ok: true, data: completed })
+    serviceMocks.getItem
+      .mockResolvedValueOnce({ ...task, status: 'Pending', latestRun: pending })
+      .mockResolvedValueOnce({
+        ...task,
+        status: 'Violations found',
+        latestRun: completed,
+      })
+
+    const polling = useTaskRunNowPolling({
+      lists: {
+        etl: ref([]),
+        dataProduct: ref([]),
+        monitoring: monitoringTasks,
+      },
+      currentWorkspaceId: () => 'workspace-1',
+    })
+
+    await polling.runTaskNow('monitoring', task.id)
+    expect(monitoringTasks.value[0].status).toBe('Pending')
+    await vi.advanceTimersByTimeAsync(3000)
+    expect(monitoringTasks.value[0].status).toBe('Violations found')
+    expect(serviceMocks.getItem).toHaveBeenCalledTimes(2)
+    expect(polling.runNowTriggeredByTaskId[task.id]).toBe(false)
+  })
 })

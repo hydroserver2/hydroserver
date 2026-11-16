@@ -130,7 +130,11 @@ const makeDataProductTask = () => ({
   id: 'product-task-1',
   name: 'Rating curve task',
   description: null,
-  monitoringSite: { id: 'monitoringSite-1', name: 'Site 1', workspaceId: 'workspace-1' },
+  monitoringSite: {
+    id: 'monitoringSite-1',
+    name: 'Site 1',
+    workspaceId: 'workspace-1',
+  },
   transformationTypes: ['rating_curve'],
   latestRun: null,
   schedule: {
@@ -169,7 +173,11 @@ const makeMonitoringTask = () => ({
   id: 'monitoring-task-1',
   name: 'Quality task',
   description: null,
-  monitoringSite: { id: 'monitoringSite-1', name: 'Site 1', workspaceId: 'workspace-1' },
+  monitoringSite: {
+    id: 'monitoringSite-1',
+    name: 'Site 1',
+    workspaceId: 'workspace-1',
+  },
   ruleTypeCounts: {},
   latestRun: null,
   schedule: null,
@@ -269,34 +277,39 @@ describe('Task detail components', () => {
     expect(monitoringGetMock).not.toHaveBeenCalled()
   })
 
-  // it('uses the data-product task service when pausing a data-product task', async () => {
-  //   const { default: SimpleProductTaskDetails } = await import(
-  //     '@/components/Orchestration/data-products/SimpleProductTaskDetails.vue'
-  //   )
-  //   await seedWorkspace()
+  it('reloads the backend status after pausing a task', async () => {
+    await seedWorkspace()
+    const { useWorkspaceStore } = await import('@/store/workspaces')
+    useWorkspaceStore().selectedWorkspace = useWorkspaceStore().workspaces[0]
+    const task = makeDataProductTask()
+    dataProductGetMock
+      .mockResolvedValueOnce({ ok: true, data: { ...task, status: 'OK' } })
+      .mockResolvedValueOnce({
+        ok: true,
+        data: {
+          ...task,
+          schedule: { ...task.schedule, enabled: false },
+          status: 'Violations found',
+        },
+      })
+    const wrapper = shallowMount(SimpleProductTaskDetails as any, {
+      props: { taskLabel: 'rating curve', taskId: task.id, embedded: true },
+      global: { stubs: globalStubs },
+    })
+    await flushPromises()
 
-  //   const wrapper = shallowMount(SimpleProductTaskDetails as any, {
-  //     props: {
-  //       taskLabel: 'rating curve',
-  //       taskId: 'product-task-1',
-  //       embedded: true,
-  //     },
-  //     global: {
-  //       stubs: globalStubs,
-  //     },
-  //   })
-  //   await flushPromises()
+    await (wrapper.vm as any).togglePaused()
+    await flushPromises()
 
-  //   await (wrapper.vm as any).togglePaused()
-  //   await flushPromises()
-
-  //   expect(dataProductUpdateMock).toHaveBeenCalledWith(
-  //     expect.objectContaining({
-  //       id: 'product-task-1',
-  //       schedule: expect.objectContaining({ enabled: false }),
-  //     })
-  //   )
-  // })
+    expect(dataProductUpdateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: task.id,
+        schedule: expect.objectContaining({ enabled: false }),
+      })
+    )
+    expect(dataProductGetMock).toHaveBeenCalledTimes(2)
+    expect((wrapper.vm as any).statusName).toBe('Violations found')
+  })
 
   it('loads ingestion details in the ingestion component', async () => {
     await seedWorkspace()

@@ -11,6 +11,7 @@ from core.iam.models import ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.sta.models import MonitoringSite
 from processing.orchestration.services import TaskService
+from processing.orchestration.status import annotate_task_status
 from processing.products.models import DataProductTask, DataProductTransformation
 from interfaces.api.http.errors import PermissionDeniedError, NotFoundError
 from interfaces.api.service import APIService
@@ -69,7 +70,7 @@ class DataProductTaskAPIService(TaskService[DataProductTask], APIService):
         requested_includes = self.resolve_include_set(include)
         task = super().get(task=task, action=action, principal=principal)
 
-        queryset = self.annotate_latest_run(self.task_model.objects).select_related(
+        queryset = annotate_task_status(self.annotate_latest_run(self.task_model.objects)).select_related(
             "periodic_task__crontab", "periodic_task__interval"
         )
         if requested_includes:
@@ -133,6 +134,14 @@ class DataProductTaskAPIService(TaskService[DataProductTask], APIService):
         queryset = self.task_model.objects
 
         sortby = sortby or []
+
+        if (
+            properties is None or "status" in properties or "status" in filtering
+            or any(term.lstrip("-") == "status" for term in sortby)
+        ):
+            queryset = annotate_task_status(queryset)
+        if "status" in filtering:
+            queryset = self.apply_filters(queryset, "status", filtering["status"])
 
         if "latest_run_status" in filtering or any(
             to_snake(term.lstrip("-")) in self.latest_run_filter_fields for term in sortby

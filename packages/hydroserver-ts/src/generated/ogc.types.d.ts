@@ -2615,7 +2615,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "latestRun" | "transformationTypes" | "name" | "description")[];
+            properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "status" | "latestRun" | "transformationTypes" | "name" | "description")[];
         };
         /** DataProductTaskPatchBody */
         DataProductTaskPatchBody: {
@@ -2695,7 +2695,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "latestRun" | "transformationTypes" | "name" | "description")[];
+            properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "status" | "latestRun" | "transformationTypes" | "name" | "description")[];
             /**
              * Q
              * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
@@ -2712,7 +2712,13 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "+id" | "+name" | "+monitoringSiteId" | "+monitoringSiteName" | "+workspaceId" | "+workspaceName" | "+latestRunStatus" | "+latestRunStartedAt" | "+latestRunFinishedAt")[];
+            sortby: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "status" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-status" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "+id" | "+name" | "+monitoringSiteId" | "+monitoringSiteName" | "+workspaceId" | "+workspaceName" | "+status" | "+latestRunStatus" | "+latestRunStartedAt" | "+latestRunFinishedAt")[];
+            /**
+             * Status
+             * @description Tasks with this display status.
+             * @default []
+             */
+            status: ("OK" | "Pending" | "Needs attention" | "Violations found" | "Behind schedule" | "Loading paused" | "Unknown")[];
             /**
              * Transformationtype
              * @description Data product tasks with a transformation of this type: `aggregation`, `derivation`, or `rating_curve`.
@@ -2745,6 +2751,12 @@ export interface components {
             /** Name */
             name: string;
             schedule?: components["schemas"]["ScheduleResponse"] | null;
+            /**
+             * Status
+             * @default Unknown
+             * @enum {string}
+             */
+            status: "OK" | "Pending" | "Needs attention" | "Violations found" | "Behind schedule" | "Loading paused" | "Unknown";
             /**
              * Transformationtypes
              * @default []
@@ -3624,7 +3636,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "workspaceId" | "dataConnectionId" | "schedule" | "latestRun" | "mappingCount" | "name" | "description" | "taskVariables")[];
+            properties?: ("id" | "workspaceId" | "dataConnectionId" | "schedule" | "status" | "latestRun" | "mappingCount" | "name" | "description" | "taskVariables")[];
         };
         /** EtlTaskPatchBody */
         EtlTaskPatchBody: {
@@ -3729,7 +3741,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "workspaceId" | "dataConnectionId" | "schedule" | "latestRun" | "mappingCount" | "name" | "description" | "taskVariables")[];
+            properties?: ("id" | "workspaceId" | "dataConnectionId" | "schedule" | "status" | "latestRun" | "mappingCount" | "name" | "description" | "taskVariables")[];
             /**
              * Q
              * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
@@ -3740,7 +3752,13 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("id" | "name" | "dataConnectionId" | "dataConnectionName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-dataConnectionId" | "-dataConnectionName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "+id" | "+name" | "+dataConnectionId" | "+dataConnectionName" | "+workspaceId" | "+workspaceName" | "+latestRunStatus" | "+latestRunStartedAt" | "+latestRunFinishedAt")[];
+            sortby: ("id" | "name" | "dataConnectionId" | "dataConnectionName" | "workspaceId" | "workspaceName" | "status" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-dataConnectionId" | "-dataConnectionName" | "-workspaceId" | "-workspaceName" | "-status" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "+id" | "+name" | "+dataConnectionId" | "+dataConnectionName" | "+workspaceId" | "+workspaceName" | "+status" | "+latestRunStatus" | "+latestRunStartedAt" | "+latestRunFinishedAt")[];
+            /**
+             * Status
+             * @description Tasks with this display status.
+             * @default []
+             */
+            status: ("OK" | "Pending" | "Needs attention" | "Violations found" | "Behind schedule" | "Loading paused" | "Unknown")[];
             /**
              * Workspaceid
              * @description ETL tasks in this workspace. Matches `id` in `workspaces`.
@@ -3772,6 +3790,12 @@ export interface components {
             /** Name */
             name: string;
             schedule?: components["schemas"]["ScheduleResponse"] | null;
+            /**
+             * Status
+             * @default Unknown
+             * @enum {string}
+             */
+            status: "OK" | "Pending" | "Needs attention" | "Violations found" | "Behind schedule" | "Loading paused" | "Unknown";
             /**
              * Taskvariables
              * @default {}
@@ -5358,7 +5382,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "latestRun" | "ruleTypeCounts" | "recipients" | "name" | "description")[];
+            properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "status" | "latestRun" | "ruleTypeCounts" | "recipients" | "name" | "description")[];
         };
         /** MonitoringTaskPatchBody */
         MonitoringTaskPatchBody: {
@@ -5439,7 +5463,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "latestRun" | "ruleTypeCounts" | "recipients" | "name" | "description")[];
+            properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "status" | "latestRun" | "ruleTypeCounts" | "recipients" | "name" | "description")[];
             /**
              * Q
              * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
@@ -5456,7 +5480,13 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "+id" | "+name" | "+monitoringSiteId" | "+monitoringSiteName" | "+workspaceId" | "+workspaceName" | "+latestRunStatus" | "+latestRunStartedAt" | "+latestRunFinishedAt")[];
+            sortby: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "status" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-status" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "+id" | "+name" | "+monitoringSiteId" | "+monitoringSiteName" | "+workspaceId" | "+workspaceName" | "+status" | "+latestRunStatus" | "+latestRunStartedAt" | "+latestRunFinishedAt")[];
+            /**
+             * Status
+             * @description Tasks with this display status.
+             * @default []
+             */
+            status: ("OK" | "Pending" | "Needs attention" | "Violations found" | "Behind schedule" | "Loading paused" | "Unknown")[];
             /**
              * Workspaceid
              * @description Monitoring tasks in this workspace. Matches `id` in `workspaces`.
@@ -5495,6 +5525,12 @@ export interface components {
                 [key: string]: number;
             };
             schedule?: components["schemas"]["ScheduleResponse"] | null;
+            /**
+             * Status
+             * @default Unknown
+             * @enum {string}
+             */
+            status: "OK" | "Pending" | "Needs attention" | "Violations found" | "Behind schedule" | "Loading paused" | "Unknown";
             /**
              * Workspaceid
              * Format: uuid
@@ -7496,7 +7532,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "status" | "message" | "result" | "startedAt" | "finishedAt")[];
+            properties?: ("id" | "status" | "displayStatus" | "message" | "result" | "startedAt" | "finishedAt")[];
             /**
              * Sortby
              * @description Select one or more fields to sort the response by.
@@ -7522,6 +7558,11 @@ export interface components {
         };
         /** TaskRunResponse */
         TaskRunResponse: {
+            /**
+             * Displaystatus
+             * @enum {string}
+             */
+            displayStatus: "OK" | "Pending" | "Needs attention" | "Violations found" | "Behind schedule" | "Loading paused" | "Unknown";
             /** Finishedat */
             finishedAt?: string | null;
             /**
@@ -8622,7 +8663,7 @@ export interface operations {
                 /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
                 datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "latestRun" | "transformationTypes" | "name" | "description")[];
+                properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "status" | "latestRun" | "transformationTypes" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "monitoringSite"[];
                 /** @description Number of items to skip. */
@@ -8630,13 +8671,15 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "+id" | "+name" | "+monitoringSiteId" | "+monitoringSiteName" | "+workspaceId" | "+workspaceName" | "+latestRunStatus" | "+latestRunStartedAt" | "+latestRunFinishedAt")[];
+                sortby?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "status" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-status" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "+id" | "+name" | "+monitoringSiteId" | "+monitoringSiteName" | "+workspaceId" | "+workspaceName" | "+status" | "+latestRunStatus" | "+latestRunStartedAt" | "+latestRunFinishedAt")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Data product tasks for this monitoring site. Matches `id` in `monitoring-sites`. */
                 monitoringSiteId?: string[];
                 /** @description Data product tasks in this workspace. Matches `id` in `workspaces`. */
                 workspaceId?: string[];
+                /** @description Tasks with this display status. */
+                status?: ("OK" | "Pending" | "Needs attention" | "Violations found" | "Behind schedule" | "Loading paused" | "Unknown")[];
                 /** @description Data product tasks whose latest run has this status: `PENDING`, `STARTED`, `SUCCESS`, or `FAILURE`. `null` matches tasks that have never run. */
                 latestRunStatus?: (string | "null")[];
                 /** @description Data product tasks with a transformation of this type: `aggregation`, `derivation`, or `rating_curve`. */
@@ -8749,7 +8792,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "latestRun" | "transformationTypes" | "name" | "description")[];
+                properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "status" | "latestRun" | "transformationTypes" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "monitoringSite"[];
                 /** @description Response format. Overrides the Accept header. */
@@ -8913,7 +8956,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "status" | "message" | "result" | "startedAt" | "finishedAt")[];
+                properties?: ("id" | "status" | "displayStatus" | "message" | "result" | "startedAt" | "finishedAt")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: string | null;
                 /** @description Number of items to skip. */
@@ -10953,7 +10996,7 @@ export interface operations {
                 /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
                 datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "dataConnectionId" | "schedule" | "latestRun" | "mappingCount" | "name" | "description" | "taskVariables")[];
+                properties?: ("id" | "workspaceId" | "dataConnectionId" | "schedule" | "status" | "latestRun" | "mappingCount" | "name" | "description" | "taskVariables")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "dataConnection"[];
                 /** @description Number of items to skip. */
@@ -10961,7 +11004,7 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("id" | "name" | "dataConnectionId" | "dataConnectionName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-dataConnectionId" | "-dataConnectionName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "+id" | "+name" | "+dataConnectionId" | "+dataConnectionName" | "+workspaceId" | "+workspaceName" | "+latestRunStatus" | "+latestRunStartedAt" | "+latestRunFinishedAt")[];
+                sortby?: ("id" | "name" | "dataConnectionId" | "dataConnectionName" | "workspaceId" | "workspaceName" | "status" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-dataConnectionId" | "-dataConnectionName" | "-workspaceId" | "-workspaceName" | "-status" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "+id" | "+name" | "+dataConnectionId" | "+dataConnectionName" | "+workspaceId" | "+workspaceName" | "+status" | "+latestRunStatus" | "+latestRunStartedAt" | "+latestRunFinishedAt")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description ETL tasks with a mapping that loads data into a datastream at this monitoring site. Matches `id` in `monitoring-sites`. */
@@ -10970,6 +11013,8 @@ export interface operations {
                 workspaceId?: string[];
                 /** @description ETL tasks that use this data connection. Matches `id` in `etl-data-connections`. */
                 dataConnectionId?: string[];
+                /** @description Tasks with this display status. */
+                status?: ("OK" | "Pending" | "Needs attention" | "Violations found" | "Behind schedule" | "Loading paused" | "Unknown")[];
                 /** @description ETL tasks whose latest run has this status: `PENDING`, `STARTED`, `SUCCESS`, or `FAILURE`. `null` matches tasks that have never run. */
                 latestRunStatus?: (string | "null")[];
                 /** @description ETL tasks whose latest run started at or after this RFC 3339 date-time. */
@@ -11082,7 +11127,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "dataConnectionId" | "schedule" | "latestRun" | "mappingCount" | "name" | "description" | "taskVariables")[];
+                properties?: ("id" | "workspaceId" | "dataConnectionId" | "schedule" | "status" | "latestRun" | "mappingCount" | "name" | "description" | "taskVariables")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "dataConnection"[];
                 /** @description Response format. Overrides the Accept header. */
@@ -11246,7 +11291,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "status" | "message" | "result" | "startedAt" | "finishedAt")[];
+                properties?: ("id" | "status" | "displayStatus" | "message" | "result" | "startedAt" | "finishedAt")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: string | null;
                 /** @description Number of items to skip. */
@@ -13513,7 +13558,7 @@ export interface operations {
                 /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
                 datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "latestRun" | "ruleTypeCounts" | "recipients" | "name" | "description")[];
+                properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "status" | "latestRun" | "ruleTypeCounts" | "recipients" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "monitoringSite"[];
                 /** @description Number of items to skip. */
@@ -13521,13 +13566,15 @@ export interface operations {
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "+id" | "+name" | "+monitoringSiteId" | "+monitoringSiteName" | "+workspaceId" | "+workspaceName" | "+latestRunStatus" | "+latestRunStartedAt" | "+latestRunFinishedAt")[];
+                sortby?: ("id" | "name" | "monitoringSiteId" | "monitoringSiteName" | "workspaceId" | "workspaceName" | "status" | "latestRunStatus" | "latestRunStartedAt" | "latestRunFinishedAt" | "-id" | "-name" | "-monitoringSiteId" | "-monitoringSiteName" | "-workspaceId" | "-workspaceName" | "-status" | "-latestRunStatus" | "-latestRunStartedAt" | "-latestRunFinishedAt" | "+id" | "+name" | "+monitoringSiteId" | "+monitoringSiteName" | "+workspaceId" | "+workspaceName" | "+status" | "+latestRunStatus" | "+latestRunStartedAt" | "+latestRunFinishedAt")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Monitoring tasks for this monitoring site. Matches `id` in `monitoring-sites`. */
                 monitoringSiteId?: string[];
                 /** @description Monitoring tasks in this workspace. Matches `id` in `workspaces`. */
                 workspaceId?: string[];
+                /** @description Tasks with this display status. */
+                status?: ("OK" | "Pending" | "Needs attention" | "Violations found" | "Behind schedule" | "Loading paused" | "Unknown")[];
                 /** @description Monitoring tasks whose latest run has this status: `PENDING`, `STARTED`, `SUCCESS`, or `FAILURE`. `null` matches tasks that have never run. */
                 latestRunStatus?: (string | "null")[];
                 /** @description Monitoring tasks with a rule that checks this datastream. Matches `id` in `datastreams`. */
@@ -13636,7 +13683,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "latestRun" | "ruleTypeCounts" | "recipients" | "name" | "description")[];
+                properties?: ("id" | "workspaceId" | "monitoringSiteId" | "schedule" | "status" | "latestRun" | "ruleTypeCounts" | "recipients" | "name" | "description")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: "monitoringSite"[];
                 /** @description Response format. Overrides the Accept header. */
@@ -13800,7 +13847,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "status" | "message" | "result" | "startedAt" | "finishedAt")[];
+                properties?: ("id" | "status" | "displayStatus" | "message" | "result" | "startedAt" | "finishedAt")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: string | null;
                 /** @description Number of items to skip. */

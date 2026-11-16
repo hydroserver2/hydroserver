@@ -74,13 +74,13 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
     }
   }
 
-  const refreshAfterCompletion = async (kind: TaskKind, taskId: string) => {
+  const refreshTask = async (kind: TaskKind, taskId: string) => {
     try {
       const svc = serviceForKind(kind)
       const updated = (await svc.getItem(taskId)) as any
       if (updated) upsertTask(kind, updated)
     } catch (error) {
-      console.error('Error refreshing task after run completion', error)
+      console.error('Error refreshing task status', error)
     }
   }
 
@@ -116,7 +116,7 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
       try {
         const runResponse = await svc.getTaskRun(taskId, requestedRunId)
         const updatedRun = runResponse.ok
-          ? (runResponse.data as TaskRun) ?? null
+          ? ((runResponse.data as TaskRun) ?? null)
           : null
 
         if (workspaceId !== currentWorkspaceId()) {
@@ -132,7 +132,7 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
             runNowTriggeredByTaskId[taskId] = false
             stopPollingFor(taskId)
             if (status && TERMINAL_STATUSES.includes(status)) {
-              await refreshAfterCompletion(kind, taskId)
+              await refreshTask(kind, taskId)
             }
             return
           }
@@ -193,9 +193,7 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
         if (updated) {
           upsertTask(kind, updated)
           const latestRun = (updated as any).latestRun as
-            | TaskRun
-            | null
-            | undefined
+            TaskRun | null | undefined
 
           if (latestRun?.id) {
             if (ACTIVE_RUN_STATUSES.has(latestRun.status)) {
@@ -229,10 +227,11 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
         throw new Error(response.message || 'Unable to run task now.')
       }
       const requestedRun = response.ok
-        ? (response.data as TaskRun) ?? null
+        ? ((response.data as TaskRun) ?? null)
         : null
       if (requestedRun?.id) {
         syncLatestRun(kind, taskId, requestedRun)
+        await refreshTask(kind, taskId)
         startPollingTaskRun(kind, taskId, requestedRun.id, startedAt)
       } else {
         runNowTriggeredByTaskId[taskId] = false

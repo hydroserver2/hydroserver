@@ -3,13 +3,10 @@ import {
   mdiDatabaseArrowDownOutline,
   mdiShieldCheckOutline,
 } from '@mdi/js'
-import type { TaskRun, TaskSchedule } from '@hydroserver/client'
+import type { StatusType, TaskRun, TaskSchedule } from '@hydroserver/client'
 import type { AnyTask } from '@/types/orchestrationTasks'
 import hs from '@hydroserver/client'
-import {
-  getDisplayedTaskStatus,
-  getTaskStatusText,
-} from '@/utils/orchestration/taskRunDetails'
+import { TASK_STATUS_COLORS } from '@/utils/orchestration/taskStatusColors'
 
 export type TabId = 'ingestion' | 'aggregation' | 'quality'
 export type TaskKind = 'etl' | 'dataProduct' | 'monitoring'
@@ -17,10 +14,7 @@ export type SortKey = 'name' | 'status' | 'lastRunAt' | 'nextRunAt' | 'taskType'
 export type SortDir = 'asc' | 'desc'
 
 export type DataProductTaskType =
-  | 'Aggregation'
-  | 'Derivation'
-  | 'Rating curve'
-  | null
+  'Aggregation' | 'Derivation' | 'Rating curve' | null
 
 export type TaskNoWorkWarning = {
   label: string
@@ -52,8 +46,7 @@ export type TaskRow = {
   name: string
   schedule: TaskSchedule | null
   latestRun: TaskRun | null | undefined
-  statusName: ReturnType<typeof getTaskStatusText>
-  statusSort: ReturnType<typeof getDisplayedTaskStatus>
+  statusName: StatusType
   lastRun: string
   nextRun: string
   lastRunAt: string | null
@@ -123,25 +116,24 @@ export const TAB_META: Record<
 export const STATUS_OPTIONS = [
   { title: 'OK', value: 'OK' },
   { title: 'Needs attention', value: 'Needs attention' },
+  { title: 'Violations found', value: 'Violations found' },
   { title: 'Behind schedule', value: 'Behind schedule' },
   { title: 'Loading paused', value: 'Loading paused' },
   { title: 'Pending', value: 'Pending' },
   { title: 'Unknown', value: 'Unknown' },
 ] as const
 
+export const getTaskStatusOptions = (tab: TabId) =>
+  STATUS_OPTIONS.filter(
+    ({ value }) => tab === 'quality' || value !== 'Violations found'
+  )
+
 export const READ_ONLY_TOOLTIP =
   'You have read-only access to this workspace. Ask an editor or owner to make changes.'
 
-export const DOT_PALETTE: Record<string, string> = {
-  'Needs attention': '#B71C1C',
-  'Behind schedule': '#BF360C',
-  'Loading paused': '#546E7A',
-  Pending: '#1565C0',
-  OK: '#2E7D32',
-}
-
-const DOT_PRIORITY: readonly string[] = [
+const DOT_PRIORITY: readonly StatusType[] = [
   'Needs attention',
+  'Violations found',
   'Behind schedule',
   'Loading paused',
   'Pending',
@@ -149,11 +141,15 @@ const DOT_PRIORITY: readonly string[] = [
 ]
 
 export const DOT_EMPTY = '#CAC4D0'
-export const DOT_DEFAULT_OK = '#2E7D32'
-const ISSUE_STATUSES = new Set(['Needs attention', 'Behind schedule'])
+export const DOT_DEFAULT_OK = TASK_STATUS_COLORS.OK
+const ISSUE_STATUSES = new Set<StatusType>([
+  'Needs attention',
+  'Violations found',
+  'Behind schedule',
+])
 
 export const taskHasIssue = (row: TaskRow): boolean =>
-  ISSUE_STATUSES.has(row.statusSort)
+  ISSUE_STATUSES.has(row.statusName)
 
 export const countTaskIssues = (rows: TaskRow[]): number =>
   rows.filter(taskHasIssue).length
@@ -161,8 +157,8 @@ export const countTaskIssues = (rows: TaskRow[]): number =>
 export const worstDotColor = (rows: TaskRow[]): string => {
   if (rows.length === 0) return DOT_EMPTY
   for (const status of DOT_PRIORITY) {
-    if (rows.some((r) => r.statusSort === status)) {
-      return DOT_PALETTE[status] ?? DOT_DEFAULT_OK
+    if (rows.some((r) => r.statusName === status)) {
+      return TASK_STATUS_COLORS[status]
     }
   }
   return DOT_DEFAULT_OK

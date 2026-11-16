@@ -11,6 +11,7 @@ from core.iam.models import ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.sta.models import MonitoringSite
 from processing.orchestration.services import TaskService
+from processing.orchestration.status import annotate_task_status
 from processing.monitoring.models import MonitoringTask, MonitoringRule, MonitoringNotificationRecipient
 from interfaces.api.http.errors import PermissionDeniedError, NotFoundError
 from interfaces.api.service import APIService
@@ -70,7 +71,7 @@ class MonitoringTaskAPIService(TaskService[MonitoringTask], APIService):
         task = super().get(task=task, action=action, principal=principal)
 
         queryset = (
-            self.annotate_latest_run(self.task_model.objects)
+            annotate_task_status(self.annotate_latest_run(self.task_model.objects))
             .select_related("periodic_task__crontab", "periodic_task__interval")
             .prefetch_related("recipients")
         )
@@ -136,6 +137,14 @@ class MonitoringTaskAPIService(TaskService[MonitoringTask], APIService):
         queryset = self.task_model.objects
 
         sortby = sortby or []
+
+        if (
+            properties is None or "status" in properties or "status" in filtering
+            or any(term.lstrip("-") == "status" for term in sortby)
+        ):
+            queryset = annotate_task_status(queryset)
+        if "status" in filtering:
+            queryset = self.apply_filters(queryset, "status", filtering["status"])
 
         if "latest_run_status" in filtering or any(
             to_snake(term.lstrip("-")) in self.latest_run_filter_fields for term in sortby

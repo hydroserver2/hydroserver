@@ -3,6 +3,7 @@ import type { DataConnection } from './data-connection.model'
 export class Task {
   id = ''
   name = ''
+  status?: StatusType = 'Unknown'
   description: string | null = null
   taskVariables: Record<string, unknown> = {}
   dataConnectionId = ''
@@ -17,6 +18,7 @@ export class Task {
 export interface TaskExpanded {
   id: string
   name: string
+  status?: StatusType
   description?: string | null
   taskVariables: Record<string, unknown>
   dataConnection: DataConnection
@@ -31,6 +33,7 @@ export type TaskRunResult = Record<string, unknown>
 
 export type TaskRun = {
   status: string
+  displayStatus?: StatusType
   message?: string | null
   result: TaskRunResult | null
   startedAt?: string
@@ -51,6 +54,7 @@ export const TASK_STATUS_OPTIONS = [
   { color: 'green', title: 'OK' },
   { color: 'blue', title: 'Pending' },
   { color: 'red', title: 'Needs attention' },
+  { color: 'warning', title: 'Violations found' },
   { color: 'orange-darken-4', title: 'Behind schedule' },
   { color: 'gray', title: 'Unknown' },
   { color: 'gray', title: 'Loading paused' },

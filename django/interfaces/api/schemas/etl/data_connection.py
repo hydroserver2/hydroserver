@@ -7,7 +7,7 @@ from ninja import Field, Query, Schema
 from django.utils import timezone
 
 from core.types import Unset
-from processing.orchestration.attention import attention_filter, latest_run_status_subquery
+from processing.orchestration.status import ISSUE_STATUSES, annotate_task_status
 from interfaces.api.schemas import (
     BaseGetResponse,
     BasePostBody,
@@ -301,9 +301,7 @@ class DataConnectionResponse(BaseGetResponse, ItemId):
 
         now = timezone.now()
 
-        return obj.etl_tasks.annotate(
-            latest_run_status=latest_run_status_subquery()
-        ).filter(attention_filter(now)).count()
+        return annotate_task_status(obj.etl_tasks, now=now).filter(status__in=ISSUE_STATUSES).count()
 
 
 class DataConnectionPostBody(BasePostBody):

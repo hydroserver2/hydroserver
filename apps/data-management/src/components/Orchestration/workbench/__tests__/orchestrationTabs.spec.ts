@@ -25,17 +25,20 @@ describe('orchestration tab helpers', () => {
 
   it('counts issue rows and chooses the highest-priority status color', () => {
     const rows = [
-      { statusSort: 'OK' },
-      { statusSort: 'Behind schedule' },
-      { statusSort: 'Needs attention' },
-      { statusSort: 'Pending' },
+      { statusName: 'OK' },
+      { statusName: 'Behind schedule' },
+      { statusName: 'Needs attention' },
+      { statusName: 'Pending' },
+      { statusName: 'Violations found' },
     ] as any[]
 
     expect(taskHasIssue(rows[0])).toBe(false)
     expect(taskHasIssue(rows[1])).toBe(true)
-    expect(countTaskIssues(rows)).toBe(2)
+    expect(countTaskIssues(rows)).toBe(3)
+    expect(taskHasIssue(rows[4])).toBe(true)
+    expect(worstDotColor([rows[4]])).toBe('var(--hs-warning)')
     expect(worstDotColor([])).toBe('#CAC4D0')
     expect(worstDotColor(rows)).toBe('#B71C1C')
-    expect(worstDotColor([{ statusSort: 'Unexpected' }] as any)).toBe('#2E7D32')
+    expect(worstDotColor([{ statusName: 'Unexpected' }] as any)).toBe('#2E7D32')
   })
 })

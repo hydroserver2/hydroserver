@@ -1232,6 +1232,7 @@
                 "workspaceId",
                 "monitoringSiteId",
                 "schedule",
+                "status",
                 "latestRun",
                 "transformationTypes",
                 "name",
@@ -1434,6 +1435,7 @@
                 "workspaceId",
                 "monitoringSiteId",
                 "schedule",
+                "status",
                 "latestRun",
                 "transformationTypes",
                 "name",
@@ -1485,6 +1487,7 @@
                 "monitoringSiteName",
                 "workspaceId",
                 "workspaceName",
+                "status",
                 "latestRunStatus",
                 "latestRunStartedAt",
                 "latestRunFinishedAt",
@@ -1494,6 +1497,7 @@
                 "-monitoringSiteName",
                 "-workspaceId",
                 "-workspaceName",
+                "-status",
                 "-latestRunStatus",
                 "-latestRunStartedAt",
                 "-latestRunFinishedAt",
@@ -1503,6 +1507,7 @@
                 "+monitoringSiteName",
                 "+workspaceId",
                 "+workspaceName",
+                "+status",
                 "+latestRunStatus",
                 "+latestRunStartedAt",
                 "+latestRunFinishedAt"
@@ -1510,6 +1515,24 @@
               "type": "string"
             },
             "title": "Sortby",
+            "type": "array"
+          },
+          "status": {
+            "default": [],
+            "description": "Tasks with this display status.",
+            "items": {
+              "enum": [
+                "OK",
+                "Pending",
+                "Needs attention",
+                "Violations found",
+                "Behind schedule",
+                "Loading paused",
+                "Unknown"
+              ],
+              "type": "string"
+            },
+            "title": "Status",
             "type": "array"
           },
           "transformationType": {
@@ -1582,6 +1605,20 @@
                 "type": "null"
               }
             ]
+          },
+          "status": {
+            "default": "Unknown",
+            "enum": [
+              "OK",
+              "Pending",
+              "Needs attention",
+              "Violations found",
+              "Behind schedule",
+              "Loading paused",
+              "Unknown"
+            ],
+            "title": "Status",
+            "type": "string"
           },
           "transformationTypes": {
             "default": [],
@@ -3809,6 +3846,7 @@
                 "workspaceId",
                 "dataConnectionId",
                 "schedule",
+                "status",
                 "latestRun",
                 "mappingCount",
                 "name",
@@ -4077,6 +4115,7 @@
                 "workspaceId",
                 "dataConnectionId",
                 "schedule",
+                "status",
                 "latestRun",
                 "mappingCount",
                 "name",
@@ -4111,6 +4150,7 @@
                 "dataConnectionName",
                 "workspaceId",
                 "workspaceName",
+                "status",
                 "latestRunStatus",
                 "latestRunStartedAt",
                 "latestRunFinishedAt",
@@ -4120,6 +4160,7 @@
                 "-dataConnectionName",
                 "-workspaceId",
                 "-workspaceName",
+                "-status",
                 "-latestRunStatus",
                 "-latestRunStartedAt",
                 "-latestRunFinishedAt",
@@ -4129,6 +4170,7 @@
                 "+dataConnectionName",
                 "+workspaceId",
                 "+workspaceName",
+                "+status",
                 "+latestRunStatus",
                 "+latestRunStartedAt",
                 "+latestRunFinishedAt"
@@ -4136,6 +4178,24 @@
               "type": "string"
             },
             "title": "Sortby",
+            "type": "array"
+          },
+          "status": {
+            "default": [],
+            "description": "Tasks with this display status.",
+            "items": {
+              "enum": [
+                "OK",
+                "Pending",
+                "Needs attention",
+                "Violations found",
+                "Behind schedule",
+                "Loading paused",
+                "Unknown"
+              ],
+              "type": "string"
+            },
+            "title": "Status",
             "type": "array"
           },
           "workspaceId": {
@@ -4204,6 +4264,20 @@
                 "type": "null"
               }
             ]
+          },
+          "status": {
+            "default": "Unknown",
+            "enum": [
+              "OK",
+              "Pending",
+              "Needs attention",
+              "Violations found",
+              "Behind schedule",
+              "Loading paused",
+              "Unknown"
+            ],
+            "title": "Status",
+            "type": "string"
           },
           "taskVariables": {
             "additionalProperties": true,
@@ -8933,6 +9007,7 @@
                 "workspaceId",
                 "monitoringSiteId",
                 "schedule",
+                "status",
                 "latestRun",
                 "ruleTypeCounts",
                 "recipients",
@@ -9141,6 +9216,7 @@
                 "workspaceId",
                 "monitoringSiteId",
                 "schedule",
+                "status",
                 "latestRun",
                 "ruleTypeCounts",
                 "recipients",
@@ -9184,6 +9260,7 @@
                 "monitoringSiteName",
                 "workspaceId",
                 "workspaceName",
+                "status",
                 "latestRunStatus",
                 "latestRunStartedAt",
                 "latestRunFinishedAt",
@@ -9193,6 +9270,7 @@
                 "-monitoringSiteName",
                 "-workspaceId",
                 "-workspaceName",
+                "-status",
                 "-latestRunStatus",
                 "-latestRunStartedAt",
                 "-latestRunFinishedAt",
@@ -9202,6 +9280,7 @@
                 "+monitoringSiteName",
                 "+workspaceId",
                 "+workspaceName",
+                "+status",
                 "+latestRunStatus",
                 "+latestRunStartedAt",
                 "+latestRunFinishedAt"
@@ -9209,6 +9288,24 @@
               "type": "string"
             },
             "title": "Sortby",
+            "type": "array"
+          },
+          "status": {
+            "default": [],
+            "description": "Tasks with this display status.",
+            "items": {
+              "enum": [
+                "OK",
+                "Pending",
+                "Needs attention",
+                "Violations found",
+                "Behind schedule",
+                "Loading paused",
+                "Unknown"
+              ],
+              "type": "string"
+            },
+            "title": "Status",
             "type": "array"
           },
           "workspaceId": {
@@ -9288,6 +9385,20 @@
                 "type": "null"
               }
             ]
+          },
+          "status": {
+            "default": "Unknown",
+            "enum": [
+              "OK",
+              "Pending",
+              "Needs attention",
+              "Violations found",
+              "Behind schedule",
+              "Loading paused",
+              "Unknown"
+            ],
+            "title": "Status",
+            "type": "string"
           },
           "workspaceId": {
             "format": "uuid",
@@ -15039,6 +15150,7 @@
               "enum": [
                 "id",
                 "status",
+                "displayStatus",
                 "message",
                 "result",
                 "startedAt",
@@ -15125,6 +15237,19 @@
       },
       "TaskRunResponse": {
         "properties": {
+          "displayStatus": {
+            "enum": [
+              "OK",
+              "Pending",
+              "Needs attention",
+              "Violations found",
+              "Behind schedule",
+              "Loading paused",
+              "Unknown"
+            ],
+            "title": "Displaystatus",
+            "type": "string"
+          },
           "finishedAt": {
             "anyOf": [
               {
@@ -15184,6 +15309,7 @@
         },
         "required": [
           "id",
+          "displayStatus",
           "status",
           "startedAt"
         ],
@@ -17837,6 +17963,7 @@
                   "workspaceId",
                   "monitoringSiteId",
                   "schedule",
+                  "status",
                   "latestRun",
                   "transformationTypes",
                   "name",
@@ -17919,6 +18046,7 @@
                   "monitoringSiteName",
                   "workspaceId",
                   "workspaceName",
+                  "status",
                   "latestRunStatus",
                   "latestRunStartedAt",
                   "latestRunFinishedAt",
@@ -17928,6 +18056,7 @@
                   "-monitoringSiteName",
                   "-workspaceId",
                   "-workspaceName",
+                  "-status",
                   "-latestRunStatus",
                   "-latestRunStartedAt",
                   "-latestRunFinishedAt",
@@ -17937,6 +18066,7 @@
                   "+monitoringSiteName",
                   "+workspaceId",
                   "+workspaceName",
+                  "+status",
                   "+latestRunStatus",
                   "+latestRunStartedAt",
                   "+latestRunFinishedAt"
@@ -17995,6 +18125,30 @@
                 "type": "string"
               },
               "title": "Workspaceid",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Tasks with this display status.",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Tasks with this display status.",
+              "items": {
+                "enum": [
+                  "OK",
+                  "Pending",
+                  "Needs attention",
+                  "Violations found",
+                  "Behind schedule",
+                  "Loading paused",
+                  "Unknown"
+                ],
+                "type": "string"
+              },
+              "title": "Status",
               "type": "array"
             }
           },
@@ -18350,6 +18504,7 @@
                   "workspaceId",
                   "monitoringSiteId",
                   "schedule",
+                  "status",
                   "latestRun",
                   "transformationTypes",
                   "name",
@@ -18585,6 +18740,7 @@
                 "enum": [
                   "id",
                   "status",
+                  "displayStatus",
                   "message",
                   "result",
                   "startedAt",
@@ -23579,6 +23735,7 @@
                   "workspaceId",
                   "dataConnectionId",
                   "schedule",
+                  "status",
                   "latestRun",
                   "mappingCount",
                   "name",
@@ -23662,6 +23819,7 @@
                   "dataConnectionName",
                   "workspaceId",
                   "workspaceName",
+                  "status",
                   "latestRunStatus",
                   "latestRunStartedAt",
                   "latestRunFinishedAt",
@@ -23671,6 +23829,7 @@
                   "-dataConnectionName",
                   "-workspaceId",
                   "-workspaceName",
+                  "-status",
                   "-latestRunStatus",
                   "-latestRunStartedAt",
                   "-latestRunFinishedAt",
@@ -23680,6 +23839,7 @@
                   "+dataConnectionName",
                   "+workspaceId",
                   "+workspaceName",
+                  "+status",
                   "+latestRunStatus",
                   "+latestRunStartedAt",
                   "+latestRunFinishedAt"
@@ -23754,6 +23914,30 @@
                 "type": "string"
               },
               "title": "Dataconnectionid",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Tasks with this display status.",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Tasks with this display status.",
+              "items": {
+                "enum": [
+                  "OK",
+                  "Pending",
+                  "Needs attention",
+                  "Violations found",
+                  "Behind schedule",
+                  "Loading paused",
+                  "Unknown"
+                ],
+                "type": "string"
+              },
+              "title": "Status",
               "type": "array"
             }
           },
@@ -24126,6 +24310,7 @@
                   "workspaceId",
                   "dataConnectionId",
                   "schedule",
+                  "status",
                   "latestRun",
                   "mappingCount",
                   "name",
@@ -24362,6 +24547,7 @@
                 "enum": [
                   "id",
                   "status",
+                  "displayStatus",
                   "message",
                   "result",
                   "startedAt",
@@ -29873,6 +30059,7 @@
                   "workspaceId",
                   "monitoringSiteId",
                   "schedule",
+                  "status",
                   "latestRun",
                   "ruleTypeCounts",
                   "recipients",
@@ -29956,6 +30143,7 @@
                   "monitoringSiteName",
                   "workspaceId",
                   "workspaceName",
+                  "status",
                   "latestRunStatus",
                   "latestRunStartedAt",
                   "latestRunFinishedAt",
@@ -29965,6 +30153,7 @@
                   "-monitoringSiteName",
                   "-workspaceId",
                   "-workspaceName",
+                  "-status",
                   "-latestRunStatus",
                   "-latestRunStartedAt",
                   "-latestRunFinishedAt",
@@ -29974,6 +30163,7 @@
                   "+monitoringSiteName",
                   "+workspaceId",
                   "+workspaceName",
+                  "+status",
                   "+latestRunStatus",
                   "+latestRunStartedAt",
                   "+latestRunFinishedAt"
@@ -30032,6 +30222,30 @@
                 "type": "string"
               },
               "title": "Workspaceid",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Tasks with this display status.",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Tasks with this display status.",
+              "items": {
+                "enum": [
+                  "OK",
+                  "Pending",
+                  "Needs attention",
+                  "Violations found",
+                  "Behind schedule",
+                  "Loading paused",
+                  "Unknown"
+                ],
+                "type": "string"
+              },
+              "title": "Status",
               "type": "array"
             }
           },
@@ -30347,6 +30561,7 @@
                   "workspaceId",
                   "monitoringSiteId",
                   "schedule",
+                  "status",
                   "latestRun",
                   "ruleTypeCounts",
                   "recipients",
@@ -30583,6 +30798,7 @@
                 "enum": [
                   "id",
                   "status",
+                  "displayStatus",
                   "message",
                   "result",
                   "startedAt",

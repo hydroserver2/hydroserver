@@ -33,7 +33,7 @@ from interfaces.api.schemas.sta.monitoring_site import (
     MonitoringSiteSortByFields,
     MONITORING_SITE_INCLUDE_RELATIONS,
 )
-from processing.orchestration.attention import attention_filter, latest_run_status_subquery
+from processing.orchestration.status import ISSUE_STATUSES, annotate_task_status
 from processing.products.models import DataProductTask
 from processing.monitoring.models import MonitoringTask
 
@@ -309,9 +309,8 @@ class MonitoringSiteAPIService(APIService):
             tasks = task_model.objects.filter(monitoring_site_id=OuterRef("pk"))
             if attention_only:
                 tasks = (
-                    tasks
-                    .annotate(latest_run_status=latest_run_status_subquery())
-                    .filter(attention_filter(now))
+                    annotate_task_status(tasks, now=now)
+                    .filter(status__in=ISSUE_STATUSES)
                 )
 
             return Coalesce(

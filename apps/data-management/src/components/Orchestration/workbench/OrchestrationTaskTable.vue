@@ -37,10 +37,10 @@
                 <span
                   v-bind="tooltipProps"
                   class="task-status-icon"
-                  :style="{ color: taskStatusColor(task.statusSort) }"
-                  :aria-label="task.statusSort"
+                  :style="{ color: taskStatusColor(task.statusName) }"
+                  :aria-label="task.statusName"
                 >
-                  <v-icon :icon="taskStatusIcon(task.statusSort)" size="20" />
+                  <v-icon :icon="taskStatusIcon(task.statusName)" size="20" />
                 </span>
               </template>
               <span>{{
@@ -261,6 +261,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { mdiAlert, mdiChevronRight, mdiPause, mdiPlay } from '@mdi/js'
 import NoScheduleIcon from '@/components/Orchestration/shared/NoScheduleIcon.vue'
@@ -268,7 +269,7 @@ import { useOrchestrationStore } from '@/store/orchestration'
 import {
   DATA_PRODUCT_TYPE_OPTIONS,
   READ_ONLY_TOOLTIP,
-  STATUS_OPTIONS,
+  getTaskStatusOptions,
   type DataProductTaskType,
   type TaskRow,
 } from './orchestrationTabs'
@@ -306,11 +307,13 @@ const emit = defineEmits<{
 
 const { activeTab } = storeToRefs(useOrchestrationStore())
 
-const statusOptions = STATUS_OPTIONS.map((status) => ({
-  ...status,
-  icon: taskStatusIcon(status.value),
-  color: taskStatusColor(status.value),
-}))
+const statusOptions = computed(() =>
+  getTaskStatusOptions(activeTab.value).map((status) => ({
+    ...status,
+    icon: taskStatusIcon(status.value),
+    color: taskStatusColor(status.value),
+  }))
+)
 
 const taskTypeOptions = DATA_PRODUCT_TYPE_OPTIONS.map((taskType) => ({
   title: taskType,

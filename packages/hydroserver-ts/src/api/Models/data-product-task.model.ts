@@ -1,9 +1,10 @@
-import type { TaskRun, TaskSchedule } from './task.model'
+import type { StatusType, TaskRun, TaskSchedule } from './task.model'
 import type { TransformationType } from '../services/data-product-transformation.types'
 
 export class DataProductTask {
   id = ''
   name = ''
+  status?: StatusType = 'Unknown'
   description: string | null = null
   monitoringSiteId = ''
   transformationTypes: TransformationType[] = []
@@ -17,6 +18,7 @@ export class DataProductTask {
 export interface DataProductTaskExpanded {
   id: string
   name: string
+  status?: StatusType
   description?: string | null
   monitoringSite: { id: string; name: string; [key: string]: unknown }
   transformationTypes: TransformationType[]

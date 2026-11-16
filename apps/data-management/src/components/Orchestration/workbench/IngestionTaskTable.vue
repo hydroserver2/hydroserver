@@ -24,10 +24,10 @@
                 <span
                   v-bind="tooltipProps"
                   class="task-status-icon"
-                  :style="{ color: taskStatusColor(task.statusSort) }"
-                  :aria-label="task.statusSort"
+                  :style="{ color: taskStatusColor(task.statusName) }"
+                  :aria-label="task.statusName"
                 >
-                  <v-icon :icon="taskStatusIcon(task.statusSort)" size="20" />
+                  <v-icon :icon="taskStatusIcon(task.statusName)" size="20" />
                 </span>
               </template>
               <span>{{
@@ -145,7 +145,7 @@
 <script setup lang="ts">
 import { mdiAlert, mdiChevronRight, mdiPause, mdiPlay } from '@mdi/js'
 import NoScheduleIcon from '@/components/Orchestration/shared/NoScheduleIcon.vue'
-import { STATUS_OPTIONS, type TaskRow } from './orchestrationTabs'
+import { getTaskStatusOptions, type TaskRow } from './orchestrationTabs'
 import { taskStatusColor, taskStatusIcon } from './taskPresentation'
 import TaskTableFilter from './TaskTableFilter.vue'
 import {
@@ -170,7 +170,7 @@ const emit = defineEmits<{
   'open-task': [task: TaskRow]
 }>()
 
-const statusOptions = STATUS_OPTIONS.map((status) => ({
+const statusOptions = getTaskStatusOptions('ingestion').map((status) => ({
   ...status,
   icon: taskStatusIcon(status.value),
   color: taskStatusColor(status.value),
