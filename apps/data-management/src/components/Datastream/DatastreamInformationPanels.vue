@@ -188,7 +188,7 @@ onMounted(async () => {
     },
     { label: 'Tags', value: datastreamTags },
     { label: 'Is Private', value: d.isPrivate ? 'Yes' : 'No' },
-    { label: 'Is Visible', value: d.isVisible ? 'Yes' : 'No' },
+    { label: 'Data Download', value: d.isRestricted ? 'Restricted' : 'Allowed' },
   ]
 
   const op = d.observedProperty

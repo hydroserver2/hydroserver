@@ -128,7 +128,7 @@ export class Datastream {
   methodId: string
   processingLevelId: string
   isPrivate: boolean
-  isVisible: boolean
+  isRestricted: boolean
   phenomenonBeginTime?: string | null
   phenomenonEndTime?: string | null
   intendedTimeSpacing?: number
@@ -155,7 +155,7 @@ export class Datastream {
     this.timeAggregationInterval = null
     this.timeAggregationIntervalUnit = 'seconds'
     this.isPrivate = true
-    this.isVisible = true
+    this.isRestricted = false
     this.valueCount = 0
     this.tags = {}
   }
@@ -171,7 +171,7 @@ export interface DatastreamExtended {
   noDataValue: number
   aggregationStatistic: string
   isPrivate: boolean
-  isVisible: boolean
+  isRestricted: boolean
   phenomenonBeginTime?: string | null
   phenomenonEndTime?: string | null
   intendedTimeSpacing?: number

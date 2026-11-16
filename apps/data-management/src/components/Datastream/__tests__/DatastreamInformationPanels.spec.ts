@@ -41,7 +41,7 @@ const mergedDatastream = {
   timeAggregationIntervalUnit: 'minutes',
   tags: {},
   isPrivate: false,
-  isVisible: true,
+  isRestricted: false,
   workspace: { id: 'ws-1', name: 'Acme Workspace' },
   monitoringSite: {
     id: 'ms-1',

@@ -114,7 +114,7 @@ class DatastreamService(HydroServerBaseService):
         status: Optional[str] = None,
         type: Literal["timeSeriesCoverage"] = "timeSeriesCoverage",
         is_private: bool = False,
-        is_visible: bool = True,
+        is_restricted: bool = False,
         tags: Optional[Dict[str, str]] = None,
         uid: Optional[UUID] = None,
     ) -> "Datastream":
@@ -139,7 +139,7 @@ class DatastreamService(HydroServerBaseService):
             "intendedTimeSpacingUnit": intended_time_spacing_unit,
             "status": status,
             "isPrivate": is_private,
-            "isVisible": is_visible,
+            "isRestricted": is_restricted,
             "tags": tags or {},
         }
 
@@ -174,7 +174,7 @@ class DatastreamService(HydroServerBaseService):
         ] = ...,
         status: Optional[str] = ...,
         is_private: bool = ...,
-        is_visible: bool = ...,
+        is_restricted: bool = ...,
         tags: Dict[str, Optional[str]] = ...,
     ) -> "Datastream":
         """Update a datastream."""
@@ -201,7 +201,7 @@ class DatastreamService(HydroServerBaseService):
             "intendedTimeSpacingUnit": intended_time_spacing_unit,
             "status": status,
             "isPrivate": is_private,
-            "isVisible": is_visible,
+            "isRestricted": is_restricted,
             "tags": tags,
         }
 

@@ -23,7 +23,7 @@ const makeSource = (overrides: Partial<Datastream> = {}): Datastream =>
     methodId: 'method-1',
     processingLevelId: 'pl-raw',
     isPrivate: false,
-    isVisible: true,
+    isRestricted: false,
     timeAggregationInterval: null,
     valueCount: 1000,
     phenomenonBeginTime: '2024-01-01T00:00:00Z',

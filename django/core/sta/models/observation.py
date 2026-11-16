@@ -59,7 +59,8 @@ class ObservationQuerySet(models.QuerySet):
 
 
 @register_resource_type(workspace_field="datastream__monitoring_site__workspace", privacy_chain=[
-    "datastream__is_private", "datastream__monitoring_site__is_private",
+    "datastream__is_private", "datastream__is_restricted",
+    "datastream__monitoring_site__is_private",
     "datastream__monitoring_site__workspace__is_private"
 ])
 class Observation(models.Model):

@@ -7,7 +7,7 @@ from datetime import datetime
 from psycopg.errors import UniqueViolation
 from django.http import HttpResponse
 from django.contrib.auth import get_user_model
-from django.db.models import Q, Count, Max, Func, F, Sum
+from django.db.models import Q, Count, Exists, Max, Func, F, OuterRef, Sum
 from django.db.utils import IntegrityError
 
 from core.iam.models import ServiceAccount
@@ -128,10 +128,14 @@ class ObservationAPIService(APIService):
         bbox: Optional[BoundingBox] = None,
     ) -> int:
         """
-        Exact observation count for the given datastreams (or every datastream the
-        principal can view if none are given), optionally limited to datastreams whose
-        monitoring site lies inside a bounding box, via Datastream's maintained value_count
-        rather than a COUNT(*) over Observation.
+        Exact observation count for the given datastreams (or every datastream whose
+        observations the principal can view if none are given), optionally limited to
+        datastreams whose monitoring site lies inside a bounding box, via Datastream's
+        maintained value_count rather than a COUNT(*) over Observation.
+
+        Datastreams are matched on Observation view permission rather than Datastream
+        view permission, so restricted datastreams (public, but with private observations)
+        don't count toward observations the principal can't see.
         """
 
         queryset = (
@@ -140,7 +144,13 @@ class ObservationAPIService(APIService):
             else Datastream.objects
         )
         queryset = DatastreamAPIService.apply_site_bbox(principal, queryset, bbox)
-        queryset = principal.filter_by_permission(queryset, "can_view")
+        queryset = queryset.filter(
+            Exists(
+                principal.filter_by_permission(
+                    Observation.objects.filter(datastream=OuterRef("pk")), "can_view"
+                )
+            )
+        )
 
         return queryset.aggregate(total=Sum("value_count"))["total"] or 0
 

@@ -61,10 +61,12 @@ By default, workspaces, sites, and datastreams are public. However, each has a v
 
 3. **Datastream Privacy**: This setting is about who can see a specific datastream at your site. Even if your site is public, you might want to keep certain datastreams of that site private. When this setting is on, it means that only the workspace owners and collaborators can view this particular datastream's details and data. Datastream privacy can be set using the buttons to the right of the datastream on the site's landing page.
 
-4. **Datastream Data Visibility**: This is a convenience setting for controlling visibility of data in the Data Management Web Application. When a datastream is public, its metadata will be visible to the public. However this setting enables datastream observations to be hidden. **Note**: Observations can still be retrieved by anyone through the SensorThings API regardless of this setting.
+4. **Datastream Data Download Restriction**: When this setting is on, the public can't download or query the datastream's data, through the Data Management Web Application or any API, including the SensorThings API and CSV downloads. The datastream and its metadata stay public, including its observation count and the time range its observations cover, so guests can see that the data exists and request it from the datastream owner. Only the workspace owner and collaborators whose role can view observations can download and query the data. Data download restriction can be set using the buttons to the right of the datastream on the site's landing page.
 
 HydroServer checks privacy at all three levels. A datastream and its observations are publicly accessible only when its workspace, monitoring site, and the datastream itself are all public.
 
-Making a site private blocks public access to its datastreams and observations. Each datastream keeps its own privacy (`datastream.isPrivate`) and data visibility (`datastream.isVisible`) settings.
+Making a site private blocks public access to its datastreams and observations. Each datastream keeps its own privacy (`datastream.isPrivate`) and data download restriction (`datastream.isRestricted`) settings.
 
-For example, if you make the site public again and its workspace is also public, datastreams that were public before become publicly accessible again. Datastreams marked private stay private. The saved data visibility setting still controls whether observations are shown in the Data Management Web Application.
+For example, if you make the site public again and its workspace is also public, datastreams that were public before become publicly accessible again. Datastreams marked private stay private, and datastreams with restricted data download stay restricted.
+
+Datastream privacy and data download restriction are independent settings. A private datastream hides its data whether or not its data download is restricted, but its restriction setting is kept. If you make a datastream private and then public again, its data download restriction is unchanged.

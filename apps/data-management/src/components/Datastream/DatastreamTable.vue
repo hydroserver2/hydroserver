@@ -251,7 +251,7 @@
                   class="site-datastreams__private-data"
                 >
                   <v-icon :icon="mdiLock" size="16" />
-                  Data is private
+                  Data available on request
                 </div>
                 <div v-else class="site-datastreams__observations">
                   <Sparkline
@@ -307,25 +307,26 @@
                   <template #activator="{ props: tooltipProps }">
                     <v-btn-icon
                       v-bind="tooltipProps"
-                      :icon="item.isVisible ? mdiFileEyeOutline : mdiFileRemove"
+                      :icon="item.isRestricted ? mdiFileRemove : mdiFileEyeOutline"
                       size="small"
-                      :color="item.isVisible ? 'success' : 'error'"
-                      :data-testid="`data-visibility-toggle-${item.id}`"
-                      :aria-label="`${item.isVisible ? 'Hide' : 'Show'} data`"
-                      @click="toggleDataVisibility(item)"
+                      :color="item.isRestricted ? 'error' : 'success'"
+                      :data-testid="`data-restriction-toggle-${item.id}`"
+                      :aria-label="`${item.isRestricted ? 'Allow' : 'Restrict'} data download`"
+                      @click="toggleDataRestriction(item)"
                     />
                   </template>
                   <VisibilityTooltipCard
-                    title="Observations are currently"
+                    title="Data download is currently"
                     :items="[
                       {
                         label: 'Clicking this will',
-                        value: item.isVisible
-                          ? 'Hide data for this datastream from guests of your site while keeping the datastream metadata publicly visible.'
-                          : 'Make the observations and metadata for this datastream visible to guests of your site.',
+                        value: item.isRestricted
+                          ? 'Allow guests of your site to download and query data for this datastream.'
+                          : 'Restrict data download and query for this datastream. Its metadata, observation count, and time range stay public. Guests must contact you to get the data.',
                       },
                     ]"
-                    :is-visible="item.isVisible"
+                    :is-visible="!item.isRestricted"
+                    :status-labels="['Allowed', 'Restricted']"
                   />
                 </v-tooltip>
 
@@ -368,11 +369,7 @@
 
                 <v-tooltip
                   v-if="
-                    !hasPermission(
-                      PermissionResource.Datastream,
-                      PermissionAction.View,
-                      workspace
-                    ) && !item.isVisible
+                    !canViewData(item)
                   "
                   bottom
                   :open-delay="100"
@@ -384,7 +381,10 @@
                       color="error"
                     />
                   </template>
-                  <span>The data for this datastream is private</span>
+                  <span>
+                    Data download and query are restricted for this
+                    datastream. Contact the datastream owner to request access.
+                  </span>
                 </v-tooltip>
 
                 <v-menu v-else>
@@ -1234,9 +1234,9 @@ function formatObservationCount(value: number | string | null | undefined) {
 }
 function canViewData(datastream: Datastream) {
   return (
-    datastream.isVisible ||
+    !datastream.isRestricted ||
     hasPermission(
-      PermissionResource.Datastream,
+      PermissionResource.Observation,
       PermissionAction.View,
       props.workspace
     )
@@ -1876,24 +1876,18 @@ const onDownload = async (datastreamId: string) => {
   }
 }
 
-async function toggleDataVisibility(computedDatastream: Datastream) {
+async function toggleDataRestriction(computedDatastream: Datastream) {
   // mutate the original
   const datastream = items.value.find((d) => d.id === computedDatastream.id)
   if (!datastream) return
 
-  const previousIsVisible = datastream.isVisible
-  const previousIsPrivate = datastream.isPrivate
-  datastream.isVisible = !datastream.isVisible
-  if (datastream.isVisible) datastream.isPrivate = false
+  const previousIsRestricted = datastream.isRestricted
+  datastream.isRestricted = !datastream.isRestricted
   const didPersist = await patchDatastream({
     id: datastream.id,
-    isPrivate: datastream.isPrivate,
-    isVisible: datastream.isVisible,
+    isRestricted: datastream.isRestricted,
   })
-  if (!didPersist) {
-    datastream.isVisible = previousIsVisible
-    datastream.isPrivate = previousIsPrivate
-  }
+  if (!didPersist) datastream.isRestricted = previousIsRestricted
 }
 
 async function toggleVisibility(computedDatastream: Datastream) {
@@ -1901,19 +1895,13 @@ async function toggleVisibility(computedDatastream: Datastream) {
   const datastream = items.value.find((d) => d.id === computedDatastream.id)
   if (!datastream) return
 
-  const previousIsVisible = datastream.isVisible
   const previousIsPrivate = datastream.isPrivate
   datastream.isPrivate = !datastream.isPrivate
-  datastream.isVisible = !datastream.isPrivate
   const didPersist = await patchDatastream({
     id: datastream.id,
     isPrivate: datastream.isPrivate,
-    isVisible: datastream.isVisible,
   })
-  if (!didPersist) {
-    datastream.isVisible = previousIsVisible
-    datastream.isPrivate = previousIsPrivate
-  }
+  if (!didPersist) datastream.isPrivate = previousIsPrivate
 }
 
 const patchDatastream = async <T extends { id: string }>(patchBody: T) => {
