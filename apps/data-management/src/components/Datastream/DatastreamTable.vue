@@ -2198,8 +2198,8 @@ const loadDatastreams = async () => {
 
 .datastream-task-link--violations {
   border-left-color: var(--hs-warning);
-  background: color-mix(in srgb, var(--hs-warning) 12%, white);
-  color: rgba(0, 0, 0, 0.87);
+  background: color-mix(in srgb, var(--hs-warning) 12%, var(--hs-surface));
+  color: var(--hs-text-primary);
 }
 
 .datastream-task-link--none {

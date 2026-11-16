@@ -2,13 +2,13 @@ import type { StatusType } from '@hydroserver/client'
 
 // The one place task statuses get a color. Statuses come from the API.
 export const TASK_STATUS_COLORS: Record<StatusType, string> = {
-  OK: '#2E7D32',
-  Pending: '#1565C0',
-  'Needs attention': '#B71C1C',
+  OK: 'var(--hs-success)',
+  Pending: 'var(--hs-primary)',
+  'Needs attention': 'var(--hs-danger)',
   'Violations found': 'var(--hs-warning)',
-  'Behind schedule': '#BF360C',
-  'Loading paused': '#546E7A',
-  Unknown: '#6B7280',
+  'Behind schedule': 'var(--hs-warning)',
+  'Loading paused': 'var(--hs-text-secondary)',
+  Unknown: 'var(--hs-default)',
 }
 
 export const taskStatusColor = (status: unknown): string =>

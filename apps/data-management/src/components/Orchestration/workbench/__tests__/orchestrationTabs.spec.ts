@@ -38,7 +38,9 @@ describe('orchestration tab helpers', () => {
     expect(taskHasIssue(rows[4])).toBe(true)
     expect(worstDotColor([rows[4]])).toBe('var(--hs-warning)')
     expect(worstDotColor([])).toBe('#CAC4D0')
-    expect(worstDotColor(rows)).toBe('#B71C1C')
-    expect(worstDotColor([{ statusName: 'Unexpected' }] as any)).toBe('#2E7D32')
+    expect(worstDotColor(rows)).toBe('var(--hs-danger)')
+    expect(worstDotColor([{ statusName: 'Unexpected' }] as any)).toBe(
+      'var(--hs-success)'
+    )
   })
 })

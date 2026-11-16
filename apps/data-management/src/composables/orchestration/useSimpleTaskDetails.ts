@@ -218,6 +218,7 @@ export function useSimpleTaskDetails(
             runNowRequested.value = false
             stopPollingRun(runId)
             await refreshTask()
+            emit('updated')
             return
           }
         }

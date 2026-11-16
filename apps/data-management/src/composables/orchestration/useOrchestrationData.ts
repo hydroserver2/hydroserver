@@ -1,9 +1,15 @@
 import { computed, ref, type Ref } from 'vue'
-import hs, { DataConnection, MonitoringSiteTaskSummary } from '@hydroserver/client'
+import hs, {
+  DataConnection,
+  MonitoringSiteTaskSummary,
+} from '@hydroserver/client'
 import { storeToRefs } from 'pinia'
 import { useOrchestrationStore } from '@/store/orchestration'
 import { useWorkspaceStore } from '@/store/workspaces'
-import type { TabId } from '@/components/Orchestration/workbench/orchestrationTabs'
+import type {
+  TabId,
+  TaskKind,
+} from '@/components/Orchestration/workbench/orchestrationTabs'
 import type {
   DataProductTask,
   Task,
@@ -33,6 +39,7 @@ export function useOrchestrationData() {
 
   let fetchRequestId = 0
   let taskRequestId = 0
+  const summaryRequestIds = { etl: 0, site: 0 }
 
   const invalidateTaskRequests = () => {
     taskRequestId += 1
@@ -79,7 +86,7 @@ export function useOrchestrationData() {
 
       dataConnections.value = dcItems
       monitoringSites.value = taskSummaryResponse.ok
-        ? taskSummaryResponse.data ?? []
+        ? (taskSummaryResponse.data ?? [])
         : []
       clearTaskLists()
     } catch (error) {
@@ -101,6 +108,38 @@ export function useOrchestrationData() {
       workspaceId: requestedWorkspaceId,
       sortby: 'name',
     } as any)
+  }
+
+  // Status changes update badges without clearing the selected group's tasks.
+  const refreshTaskSummaries = async (
+    kind: TaskKind,
+    requestedWorkspaceId = selectedWorkspaceId.value
+  ) => {
+    if (!requestedWorkspaceId) return
+    const key = kind === 'etl' ? 'etl' : 'site'
+    const requestId = ++summaryRequestIds[key]
+    const fetchId = fetchRequestId
+    const response =
+      kind === 'etl'
+        ? await hs.dataConnections.list({
+            workspaceId: [requestedWorkspaceId],
+            sortby: ['name'],
+            fetch_all: true,
+          })
+        : await hs.monitoringSites.listTaskSummaries({
+            workspaceId: [requestedWorkspaceId],
+          })
+    if (
+      selectedWorkspaceId.value !== requestedWorkspaceId ||
+      requestId !== summaryRequestIds[key] ||
+      fetchId !== fetchRequestId
+    )
+      return
+    if (!response.ok)
+      throw new Error(response.message || 'Unable to refresh task summaries.')
+    if (kind === 'etl')
+      dataConnections.value = response.data as DataConnection[]
+    else monitoringSites.value = response.data as MonitoringSiteTaskSummary[]
   }
 
   const fetchTasksForGroup = async (
@@ -181,6 +220,7 @@ export function useOrchestrationData() {
     loadedTaskGroup,
     fetchAll,
     refreshDataConnections,
+    refreshTaskSummaries,
     fetchTasksForGroup,
   }
 }
@@ -188,6 +228,4 @@ export function useOrchestrationData() {
 export type OrchestrationData = ReturnType<typeof useOrchestrationData>
 
 export type TaskListRef =
-  | Ref<Task[]>
-  | Ref<DataProductTask[]>
-  | Ref<MonitoringTask[]>
+  Ref<Task[]> | Ref<DataProductTask[]> | Ref<MonitoringTask[]>

@@ -283,6 +283,7 @@ const {
   loadedTaskGroup,
   fetchAll,
   refreshDataConnections,
+  refreshTaskSummaries,
   fetchTasksForGroup,
 } = useOrchestrationData()
 
@@ -367,6 +368,7 @@ const {
     monitoring: monitoringTasks,
   },
   currentWorkspaceId: () => selectedWorkspaceId.value!,
+  onTaskStatusChanged: refreshTaskSummaries,
 })
 
 const { etlTaskRows, dataProductTaskRows, monitoringTaskRows, activeTaskRows } =

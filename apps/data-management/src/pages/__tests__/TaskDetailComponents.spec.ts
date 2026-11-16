@@ -331,6 +331,49 @@ describe('Task detail components', () => {
     expect(wrapper.text()).toContain('Ingestion task')
   })
 
+  it('notifies the orchestration page to refresh badges after a quality run completes', async () => {
+    vi.useFakeTimers()
+    const { default: hs } = await import('@hydroserver/client')
+    const task = makeMonitoringTask()
+    const pending = { id: 'run-1', status: 'PENDING', result: null }
+    const completed = {
+      ...pending,
+      status: 'SUCCESS',
+      displayStatus: 'Violations found',
+    }
+    monitoringGetMock
+      .mockResolvedValueOnce({
+        ok: true,
+        data: { ...task, status: 'Pending', latestRun: pending },
+      })
+      .mockResolvedValue({
+        ok: true,
+        data: { ...task, status: 'Violations found', latestRun: completed },
+      })
+    vi.mocked(hs.monitoringTasks.getTaskRuns).mockResolvedValue({
+      ok: true,
+      data: [pending],
+    } as any)
+    vi.mocked(hs.monitoringTasks.getTaskRun).mockResolvedValue({
+      ok: true,
+      data: completed,
+    } as any)
+    const wrapper = shallowMount(QualityTaskDetails as any, {
+      props: { taskId: task.id, embedded: true },
+      global: { stubs: globalStubs },
+    })
+    try {
+      await flushPromises()
+      await vi.advanceTimersByTimeAsync(3000)
+
+      expect((wrapper.vm as any).task.status).toBe('Violations found')
+      expect(wrapper.emitted('updated')).toHaveLength(1)
+    } finally {
+      wrapper.unmount()
+      vi.useRealTimers()
+    }
+  })
+
   it('closes the ingestion delete dialog when deletion is cancelled', async () => {
     await seedWorkspace()
 
