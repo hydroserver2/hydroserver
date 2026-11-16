@@ -1,5 +1,6 @@
 {% load allauth %}
 <a href="{{ attrs.href }}"
    class="hs-button hs-button--full hs-button--outline">
+    {% if attrs.icon %}<img src="{{ attrs.icon }}" alt="" class="auth-provider-icon">{% endif %}
     Continue with {{ attrs.name }}
 </a>

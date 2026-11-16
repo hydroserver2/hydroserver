@@ -8,9 +8,9 @@
     {% element h1 %}
         {% trans "Sign up" %}
     {% endelement %}
-    {% if socialaccount_providers and request.GET.method != "email" and not form.is_bound or SOCIALACCOUNT_ONLY %}
+    {% if socialaccount_providers and request.GET.method != "email" and not form.is_bound or SOCIALACCOUNT_SIGNUP_ONLY %}
         {% include "account/snippets/auth_options.html" %}
-    {% elif not SOCIALACCOUNT_ONLY %}
+    {% else %}
         {% url 'account_signup' as action_url %}
         {% element form form=form method="post" action=action_url tags="entrance,signup" %}
             {% slot body %}
@@ -44,7 +44,7 @@
     </a>
     {% endsetvar %}
     <p class="hs-copy auth-alternate-form">
-        {% blocktranslate %}Already have an account? {{ link }}sign in{{ end_link }}.{% endblocktranslate %}
+        {% blocktranslate %}Already have an account? {{ link }}Sign in{{ end_link }}.{% endblocktranslate %}
     </p>
 {% endblock content %}
 {% block extra_body %}

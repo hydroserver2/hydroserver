@@ -246,7 +246,7 @@ HydroServer can act as an OpenID Connect provider, so third-party apps can sign 
 APIs on their behalf. To register an app:
 
 - Navigate to **OpenID Connect IdP** > **Clients** > **Add Client**.
-- Enter the app's client ID and name. The name is shown to users on the consent screen.
+- Enter the app's client ID and name. The name is shown to users on the consent screen and in the sign-in page.
 - Choose the client type. Use **Public** for browser and mobile apps that can't keep a secret, and **Confidential**
   for server-side apps.
 - Add the grant types (usually `authorization_code`, plus `refresh_token` if the app should renew tokens), the
@@ -279,4 +279,6 @@ To enable authentication through third-party identity providers, do the followin
 - Use **allowConnection** to control whether users can connect the provider to an existing HydroServer account.
 - When omitted, **allowSignUp** defaults to enabled, but **allowConnection** is enabled only when explicitly set to
   `true`.
+- Use **icon** to set an OpenID Connect provider's button icon path. See
+  [Sign-In Provider Icons](/hosting-and-deployment/how-to/setting-up-a-production-deployment.md#sign-in-provider-icons).
 - Assign the default site that the provider can authenticate against.
