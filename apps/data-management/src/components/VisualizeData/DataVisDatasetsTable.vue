@@ -12,6 +12,14 @@
         <div class="hs-table-actions datastreams-actions">
           <v-btn
             size="small"
+            data-testid="copy-state-url"
+            @click="copyStateUrl"
+            variant="outlined"
+          >
+            Copy state as URL
+          </v-btn>
+          <v-btn
+            size="small"
             variant="text"
             :disabled="detailLevel === 1"
             data-testid="show-less-datastream-details"
@@ -62,6 +70,14 @@
                 </div>
 
                 <div class="datastream-selection-actions">
+                  <v-btn
+                    size="small"
+                    variant="text"
+                    data-testid="clear-selected-datastreams-button"
+                    @click="clearSelected"
+                  >
+                    Clear selected
+                  </v-btn>
                   <v-btn
                     size="small"
                     variant="text"
@@ -210,16 +226,13 @@
             <td class="datastream-actions-cell">
               <div class="datastream-row-actions">
                 <v-btn
-                  variant="text"
+                  variant="outlined"
                   size="small"
-                  color="primary"
-                  :append-icon="mdiChevronRight"
-                  class="datastream-details-button"
-                  :aria-label="`View details for ${item.name || 'datastream'}`"
+                  :aria-label="`View full metadata for ${item.name || 'datastream'}`"
                   :data-testid="`datavis-metadata-${item.id}`"
                   @click.stop="openMetadata(item)"
                 >
-                  <span class="datastream-details-button__label">Details</span>
+                  View full metadata
                 </v-btn>
 
                 <v-menu location="bottom end" attach="body">
@@ -282,16 +295,15 @@ import {
   mdiArrowUp,
   mdiCheck,
   mdiChevronDown,
-  mdiChevronRight,
   mdiDownload,
   mdiDotsVertical,
   mdiMapMarkerOutline,
   mdiSort,
 } from '@mdi/js'
 import { useDataVisStore } from '@/store/dataVisualization'
-import { useWorkspaceStore } from '@/store/workspaces'
 import { downloadDatastreamsCsvZip } from '@/utils/csvExport'
 import { formatTime } from '@/utils/time'
+import { Snackbar } from '@/utils/notifications'
 import {
   parseDatastreamQuery,
   serializeDatastreamQuery,
@@ -327,8 +339,8 @@ const {
   selectedProcessingLevelNames,
   observedProperties,
   processingLevels,
+  workspaces,
 } = storeToRefs(dataVisStore)
-const { workspaces } = storeToRefs(useWorkspaceStore())
 
 const initialFilters: DatastreamQueryFilters = {
   workspace: selectedWorkspaces.value.map((item) => item.name),
@@ -426,8 +438,10 @@ const canonicalValues = (candidates: string[], requested: string[]) => {
 
 // The filter controls are replaced by the selection summary while a
 // datastream is plotted, so keep query hydration in this always-mounted table.
+// Parsing also depends on lookup data, which can arrive after URL restoration.
+// Rehydrate when that data arrives so badges, menu checks, and results agree.
 watch(
-  search,
+  parsedSearch,
   () => {
     const { filters } = parsedSearch.value
     selectedWorkspaces.value = workspaces.value.filter((item) =>
@@ -663,6 +677,15 @@ const clearSelected = () => {
   plottedDatastreams.value = []
 }
 
+const copyStateUrl = async () => {
+  try {
+    await navigator.clipboard.writeText(window.location.href)
+    Snackbar.success('URL copied to clipboard')
+  } catch {
+    Snackbar.error('Failed to copy URL')
+  }
+}
+
 const updateSearch = (value: string) => {
   if (value === search.value) return
 
@@ -894,7 +917,7 @@ function updatePlottedDatastreams(
   font-weight: var(--hs-font-weight-regular);
 }
 
-.datastreams-clear-selection-checkbox {
+.plot-checkbox.datastreams-clear-selection-checkbox {
   flex: 0 0 auto;
   margin: 0;
 }
@@ -1012,11 +1035,6 @@ function updatePlottedDatastreams(
   line-height: 1.4;
 }
 
-.datastream-details-button {
-  min-height: 28px;
-  text-transform: none;
-}
-
 .datastreams-empty {
   padding: var(--hs-space-24);
   color: var(--hs-text-secondary);
@@ -1045,16 +1063,6 @@ function updatePlottedDatastreams(
   .datastream-actions-cell {
     width: 48px;
     padding-right: var(--hs-space-8);
-  }
-
-  .datastream-details-button {
-    min-width: 32px;
-    width: 32px;
-    padding: 0;
-  }
-
-  .datastream-details-button__label {
-    display: none;
   }
 
   .datastream-meta {

@@ -1,6 +1,9 @@
+from urllib.parse import urlencode
+
 import pytest
 
 from allauth.account.models import EmailAddress
+from allauth.idp.oidc.models import Client
 from django.contrib.messages import get_messages
 from django.test import RequestFactory, override_settings
 from django.urls import reverse
@@ -8,52 +11,100 @@ from django.urls import reverse
 from core.iam.models import User, UserType
 from core.iam.templatetags.account_navigation import (
     RETURN_URL_SESSION_KEY,
-    account_back_url,
+    account_back_link,
 )
 
 
 pytestmark = pytest.mark.django_db
 
+WEB_CLIENT_URL = "https://app.example.test"
+CALLBACK = "https://third-party.example.test/callback"
 
-@override_settings(WEB_CLIENT_URL="https://app.example.test")
-def test_account_back_url_uses_the_calling_app_destination():
-    request = RequestFactory().get(
-        "/accounts/login/?next=https://app.example.test/browse"
+
+@pytest.fixture
+def oidc_client():
+    return Client.objects.create(
+        id="third-party",
+        name="Third Party App",
+        redirect_uris=f"{CALLBACK}\n{CALLBACK}?tenant=1",
     )
 
-    assert account_back_url({"request": request}) == "https://app.example.test/browse"
+
+def authorize_url(**params):
+    return f"{reverse('idp:oidc:authorization')}?{urlencode(params)}"
 
 
-@override_settings(WEB_CLIENT_URL="https://app.example.test")
-def test_account_back_url_rejects_untrusted_destinations_and_uses_web_client():
-    request = RequestFactory().get(
-        "/accounts/login/?next=https://untrusted.example.test/"
-    )
-
-    assert account_back_url({"request": request}) == "https://app.example.test"
-
-
-@override_settings(WEB_CLIENT_URL="http://127.0.0.1:1203")
-def test_account_back_url_uses_web_client_when_no_destination_is_supplied():
-    request = RequestFactory().get("/accounts/password/reset/")
-
-    assert account_back_url({"request": request}) == "http://127.0.0.1:1203"
-
-
-@override_settings(
-    WEB_CLIENT_URL="http://127.0.0.1:1203",
-    ACCOUNT_RETURN_URL_ALLOWED_HOSTS={"localhost:1203"},
+@pytest.mark.parametrize(
+    "next_url, expected_url, expected_label",
+    [
+        (f"{WEB_CLIENT_URL}/browse", f"{WEB_CLIENT_URL}/browse", "Go back to HydroServer"),
+        ("/accounts/profile/", "/accounts/profile/", "Go back to HydroServer"),
+        ("http://localhost:1203/workspaces", "http://localhost:1203/workspaces", "Go back"),
+        ("https://untrusted.example.test/", WEB_CLIENT_URL, "Go back to HydroServer"),
+        (None, WEB_CLIENT_URL, "Go back to HydroServer"),
+    ],
 )
-def test_account_back_url_accepts_configured_calling_app_host():
-    request = RequestFactory().get(
-        "/accounts/profile/?next=http://localhost:1203/workspaces"
-    )
+def test_account_back_link_labels_the_return_destination(
+    settings, next_url, expected_url, expected_label
+):
+    settings.WEB_CLIENT_URL = WEB_CLIENT_URL
+    settings.ACCOUNT_RETURN_URL_ALLOWED_HOSTS = {"localhost:1203"}
+    request = RequestFactory().get("/accounts/login/", {"next": next_url} if next_url else {})
 
-    assert account_back_url({"request": request}) == "http://localhost:1203/workspaces"
+    assert account_back_link({"request": request}) == {
+        "url": expected_url,
+        "label": expected_label,
+    }
+
+
+@pytest.mark.parametrize(
+    "params, expected_url, expected_label",
+    [
+        (
+            {"client_id": "third-party", "redirect_uri": CALLBACK, "state": "xyz"},
+            f"{CALLBACK}?error=access_denied&state=xyz",
+            "Go back to Third Party App",
+        ),
+        (
+            {"client_id": "third-party", "redirect_uri": CALLBACK},
+            f"{CALLBACK}?error=access_denied",
+            "Go back to Third Party App",
+        ),
+        (
+            {"client_id": "third-party", "redirect_uri": f"{CALLBACK}?tenant=1"},
+            f"{CALLBACK}?tenant=1&error=access_denied",
+            "Go back to Third Party App",
+        ),
+        (
+            {"client_id": "third-party", "redirect_uri": "https://evil.example.test/"},
+            WEB_CLIENT_URL,
+            "Go back to HydroServer",
+        ),
+        (
+            {"client_id": "unknown", "redirect_uri": CALLBACK},
+            WEB_CLIENT_URL,
+            "Go back to HydroServer",
+        ),
+    ],
+)
+@pytest.mark.parametrize("on_consent_page", [False, True])
+def test_account_back_link_cancels_oidc_sign_in(
+    settings, oidc_client, params, expected_url, expected_label, on_consent_page
+):
+    settings.WEB_CLIENT_URL = WEB_CLIENT_URL
+    if on_consent_page:
+        request = RequestFactory().get(authorize_url(**params))
+    else:
+        request = RequestFactory().get("/accounts/login/", {"next": authorize_url(**params)})
+
+    assert account_back_link({"request": request}) == {
+        "url": expected_url,
+        "label": expected_label,
+    }
 
 
 @override_settings(WEB_CLIENT_URL="http://127.0.0.1:1203")
-def test_account_flow_preserves_frontend_destination_for_the_go_back_link(client):
+def test_account_flow_preserves_the_go_back_link(client, oidc_client):
     destination = "http://127.0.0.1:1203/browse?tab=sites#recent"
 
     login_response = client.get(reverse("account_login"), {"next": destination})
@@ -62,6 +113,14 @@ def test_account_flow_preserves_frontend_destination_for_the_go_back_link(client
     assert login_response.status_code == 200
     assert client.session[RETURN_URL_SESSION_KEY] == destination
     assert b'href="http://127.0.0.1:1203/browse?tab=sites#recent"' in reset_response.content
+    assert b"Go back to HydroServer" in reset_response.content
+
+    next_url = authorize_url(client_id="third-party", redirect_uri=CALLBACK, state="xyz")
+    client.get(reverse("account_login"), {"next": next_url})
+    reset_response = client.get(reverse("account_reset_password"))
+
+    assert b"Go back to Third Party App" in reset_response.content
+    assert f'href="{CALLBACK}?error=access_denied&amp;state=xyz"'.encode() in reset_response.content
 
 
 @override_settings(WEB_CLIENT_URL="http://127.0.0.1:1203")

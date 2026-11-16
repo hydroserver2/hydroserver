@@ -1,11 +1,16 @@
 <template>
   <div class="datavis-header-filters">
-    <v-menu
+    <HsTableFilterMenu
       v-for="filter in filterDefinitions"
       :key="filter.key"
-      :close-on-content-click="false"
-      location="bottom start"
-      attach="body"
+      v-model:search="filterSearches[filter.key]"
+      :title="`Filter by ${filter.label}`"
+      :label="filter.label"
+      :options="filter.options"
+      :selected="parsedQuery.filters[filter.key]"
+      case-insensitive
+      :empty-text="`No ${filter.label.toLowerCase()} found`"
+      @toggle="toggleFilter(filter.key, $event)"
     >
       <template #activator="{ props: menuProps }">
         <v-btn
@@ -27,56 +32,16 @@
           </span>
         </v-btn>
       </template>
-
-      <v-list class="datavis-filter-menu" density="compact">
-        <div class="datavis-filter-title">Filter by {{ filter.label }}</div>
-        <v-text-field
-          v-model="filterSearches[filter.key]"
-          class="datavis-filter-search"
-          :placeholder="`Filter ${filter.label.toLowerCase()}`"
-          :prepend-inner-icon="mdiMagnify"
-          variant="outlined"
-          density="compact"
-          hide-details
-          clearable
-        />
-        <v-list-item
-          v-for="option in filteredOptions(filter)"
-          :key="option.value"
-          @click="toggleFilter(filter.key, option.value)"
-        >
-          <template #prepend>
-            <v-checkbox
-              :model-value="isFilterSelected(filter.key, option.value)"
-              hide-details
-              density="compact"
-              :aria-label="`${filter.label}: ${option.label}`"
-              @click.stop="toggleFilter(filter.key, option.value)"
-            />
-          </template>
-          <v-list-item-title>{{ option.label }}</v-list-item-title>
-        </v-list-item>
-        <v-list-item
-          v-if="filter.selectedCount"
-          class="filter-clear-item"
-          @click="clearFilter(filter.key)"
-        >
-          <v-list-item-title>Clear filter</v-list-item-title>
-        </v-list-item>
-        <div v-if="!filteredOptions(filter).length" class="filter-empty">
-          No {{ filter.label.toLowerCase() }} found
-        </div>
-      </v-list>
-    </v-menu>
+    </HsTableFilterMenu>
   </div>
 </template>
 
 <script setup lang="ts">
+import { HsTableFilterMenu } from '@hydroserver/design-system/vue'
 import { computed, reactive } from 'vue'
 import { storeToRefs } from 'pinia'
-import { mdiChevronDown, mdiMagnify } from '@mdi/js'
+import { mdiChevronDown } from '@mdi/js'
 import { useDataVisStore } from '@/store/dataVisualization'
-import { useWorkspaceStore } from '@/store/workspaces'
 import {
   parseDatastreamQuery,
   serializeDatastreamQuery,
@@ -102,20 +67,8 @@ const {
   matchesSelectedMonitoringSite,
   matchesSelectedWorkspace,
 } = dataVisStore
-const {
-  monitoringSites,
-  datastreams,
-  observedProperties,
-  processingLevels,
-  selectedMonitoringSites,
-  selectedWorkspaces,
-  selectedObservedPropertyNames,
-  selectedUnitNames,
-  selectedMethodNames,
-  selectedProcessingLevelNames,
-  tableSearch,
-} = storeToRefs(dataVisStore)
-const { workspaces } = storeToRefs(useWorkspaceStore())
+const { monitoringSites, datastreams, tableSearch, workspaces } =
+  storeToRefs(dataVisStore)
 
 const filterSearches = reactive<Record<FilterKey, string>>({
   workspace: '',
@@ -250,7 +203,7 @@ const filterDefinitions = computed<FilterDefinition[]>(() => [
       value: item.name,
       label: item.name,
     })),
-    selectedCount: selectedWorkspaces.value.length,
+    selectedCount: parsedQuery.value.filters.workspace.length,
   },
   {
     key: 'site',
@@ -259,7 +212,7 @@ const filterDefinitions = computed<FilterDefinition[]>(() => [
       value: item.name,
       label: item.name,
     })),
-    selectedCount: selectedMonitoringSites.value.length,
+    selectedCount: parsedQuery.value.filters.site.length,
   },
   {
     key: 'observed-property',
@@ -268,7 +221,7 @@ const filterDefinitions = computed<FilterDefinition[]>(() => [
       value: item,
       label: item,
     })),
-    selectedCount: selectedObservedPropertyNames.value.length,
+    selectedCount: parsedQuery.value.filters['observed-property'].length,
   },
   {
     key: 'unit',
@@ -277,7 +230,7 @@ const filterDefinitions = computed<FilterDefinition[]>(() => [
       value: item,
       label: item,
     })),
-    selectedCount: selectedUnitNames.value.length,
+    selectedCount: parsedQuery.value.filters.unit.length,
   },
   {
     key: 'method',
@@ -286,7 +239,7 @@ const filterDefinitions = computed<FilterDefinition[]>(() => [
       value: item,
       label: item,
     })),
-    selectedCount: selectedMethodNames.value.length,
+    selectedCount: parsedQuery.value.filters.method.length,
   },
   {
     key: 'processing-level',
@@ -295,24 +248,9 @@ const filterDefinitions = computed<FilterDefinition[]>(() => [
       value: item,
       label: item,
     })),
-    selectedCount: selectedProcessingLevelNames.value.length,
+    selectedCount: parsedQuery.value.filters['processing-level'].length,
   },
 ])
-
-const filteredOptions = (filter: FilterDefinition) => {
-  const query = filterSearches[filter.key].trim().toLocaleLowerCase()
-  if (!query) return filter.options
-  return filter.options.filter((option) =>
-    option.label.toLocaleLowerCase().includes(query)
-  )
-}
-
-const isFilterSelected = (key: FilterKey, value: string) => {
-  const normalized = value.toLocaleLowerCase()
-  return parsedQuery.value.filters[key].some(
-    (item) => item.toLocaleLowerCase() === normalized
-  )
-}
 
 const toggleFilter = (key: FilterKey, value: string) => {
   const filters = Object.fromEntries(
@@ -332,21 +270,6 @@ const toggleFilter = (key: FilterKey, value: string) => {
     parsedQuery.value.text,
     parsedQuery.value.sort
   )
-}
-
-const clearFilter = (key: FilterKey) => {
-  const filters = Object.fromEntries(
-    Object.entries(parsedQuery.value.filters).map(([filterKey, values]) => [
-      filterKey,
-      filterKey === key ? [] : [...values],
-    ])
-  ) as DatastreamQueryFilters
-  tableSearch.value = serializeDatastreamQuery(
-    filters,
-    parsedQuery.value.text,
-    parsedQuery.value.sort
-  )
-  filterSearches[key] = ''
 }
 </script>
 
@@ -378,86 +301,5 @@ const clearFilter = (key: FilterKey) => {
   text-align: center;
   background: rgb(var(--v-theme-primary));
   border-radius: var(--hs-radius-pill);
-}
-
-.datavis-filter-menu {
-  min-width: 280px;
-  max-width: 360px;
-  max-height: 320px;
-  padding: var(--hs-space-8) 0;
-  overflow-y: auto;
-}
-
-.datavis-filter-title {
-  padding: var(--hs-space-8) var(--hs-space-16);
-  color: var(--hs-text-primary);
-  font-size: var(--hs-font-md);
-  font-weight: var(--hs-font-weight-semibold);
-}
-
-.datavis-filter-search {
-  height: 30px;
-  margin: 0 var(--hs-space-12) var(--hs-space-8);
-}
-
-.datavis-filter-search :deep(.v-field) {
-  height: 30px;
-  min-height: 30px;
-  padding-inline-start: 0;
-  background: var(--hs-surface);
-  border-radius: var(--hs-radius-sm);
-}
-
-.datavis-filter-search :deep(.v-field__outline) {
-  color: var(--hs-input-border);
-  --v-field-border-opacity: 1;
-}
-
-.datavis-filter-search :deep(.v-field--focused) {
-  box-shadow: none;
-}
-
-.datavis-filter-search :deep(.v-field--focused .v-field__outline) {
-  color: rgb(var(--v-theme-primary));
-  --v-field-border-width: 2px;
-  --v-field-border-opacity: 1;
-}
-
-.datavis-filter-search :deep(.v-field__input) {
-  min-height: 30px;
-  padding-top: 0;
-  padding-bottom: 0;
-  font-size: var(--hs-font-sm);
-}
-
-.datavis-filter-search :deep(.v-field__prepend-inner) {
-  padding-right: 0;
-  padding-left: var(--hs-space-8);
-}
-
-.datavis-filter-search :deep(.v-field__prepend-inner > .v-icon) {
-  width: 16px;
-  color: var(--hs-input-border);
-  font-size: var(--hs-font-md);
-  opacity: 1;
-}
-
-.datavis-filter-search :deep(.v-field__append-inner) {
-  padding-right: var(--hs-space-8);
-}
-
-.datavis-filter-search :deep(input::placeholder) {
-  color: var(--hs-text-secondary);
-  opacity: 1;
-}
-
-.filter-empty {
-  padding: var(--hs-space-12) var(--hs-space-16);
-  color: var(--hs-text-secondary);
-}
-
-.filter-clear-item {
-  color: rgb(var(--v-theme-primary));
-  border-top: 1px solid var(--hs-border);
 }
 </style>

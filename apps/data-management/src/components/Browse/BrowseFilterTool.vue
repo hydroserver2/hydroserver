@@ -1123,6 +1123,9 @@ watch(markerColorMode, (mode) => {
   align-content: flex-start;
   gap: var(--hs-space-6);
   max-height: 102px;
+  padding: var(--hs-space-8);
+  border-radius: var(--hs-radius-md);
+  background: var(--hs-background);
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -1146,6 +1149,7 @@ watch(markerColorMode, (mode) => {
   padding-inline: var(--hs-space-10);
   color: var(--hs-text-secondary);
   border-color: var(--hs-border);
+  background: var(--hs-surface);
   font-size: var(--hs-font-sm);
   font-weight: var(--hs-font-weight-semibold);
 }
@@ -1156,11 +1160,9 @@ watch(markerColorMode, (mode) => {
 }
 
 .filter-pill.selected {
-  /* The theme's actual primary, not a hand-picked near-miss blue — the
-     border/background right below already correctly used it. */
-  color: rgb(var(--v-theme-primary));
-  border-color: rgba(33, 150, 243, 0.38);
-  background: rgba(33, 150, 243, 0.1);
+  color: var(--hs-primary);
+  border-color: var(--hs-primary);
+  background: color-mix(in srgb, var(--hs-primary) 10%, var(--hs-surface));
 }
 
 .reset-filters-btn {

@@ -659,6 +659,27 @@ test.describe('sites and workspaces', () => {
 
     const datastreamRow = datastreamEntriesByName(page, datastreamName).first()
     await expect(datastreamRow).toBeVisible()
+    await expect(
+      datastreamRow.getByRole('button', {
+        name: 'Make datastream private',
+        exact: true,
+      })
+    ).toBeVisible()
+    await expect(
+      datastreamRow.getByRole('button', {
+        name: 'Restrict data download',
+        exact: true,
+      })
+    ).toBeVisible()
+    const datastreamId = await datastreamRow.getAttribute('data-datastream-id')
+    const createdDatastream = await page.request.get(
+      `${apiBaseUrl}/api/ogc/collections/datastreams/items/${datastreamId}`
+    )
+    expect(createdDatastream.ok()).toBeTruthy()
+    expect((await createdDatastream.json()).data).toMatchObject({
+      isPrivate: false,
+      isRestricted: false,
+    })
 
     await datastreamRow.locator('[data-testid^="datastream-actions-"]').click()
     await page.getByText('Edit datastream metadata').click()
