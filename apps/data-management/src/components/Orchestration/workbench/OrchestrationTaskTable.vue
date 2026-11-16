@@ -11,7 +11,6 @@
                 :options="statusOptions"
                 :selected="statusFilter"
                 @toggle="emit('toggle-status', $event)"
-                @clear="emit('clear-status')"
               />
               <TaskTableFilter
                 v-if="activeTab === 'aggregation'"
@@ -21,7 +20,6 @@
                 :selected="taskTypeFilter"
                 show-checkboxes
                 @toggle="emit('toggle-task-type', $event)"
-                @clear="emit('clear-task-type')"
               />
             </div>
           </th>
@@ -296,9 +294,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'toggle-status': [status: string]
-  'clear-status': []
   'toggle-task-type': [taskType: string]
-  'clear-task-type': []
   'toggle-paused': [task: TaskRow]
   'run-now': [task: TaskRow]
   'open-task': [task: TaskRow]

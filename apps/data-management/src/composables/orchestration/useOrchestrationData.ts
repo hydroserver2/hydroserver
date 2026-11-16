@@ -128,6 +128,9 @@ export function useOrchestrationData() {
 
     const requestId = ++taskRequestId
     taskLoading.value = true
+    // The previous group's cache no longer represents the displayed list.
+    // Returning to it during this request must fetch and invalidate this request.
+    loadedTaskGroup.value = null
     clearTaskListForTab(tab)
 
     try {
