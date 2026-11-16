@@ -7,7 +7,7 @@ from datetime import datetime
 from psycopg.errors import UniqueViolation
 from django.http import HttpResponse
 from django.contrib.auth import get_user_model
-from django.db.models import Q, Count, Exists, Max, Func, F, OuterRef, Sum
+from django.db.models import Q, Count, Max, Func, F, Sum
 from django.db.utils import IntegrityError
 
 from core.iam.models import ServiceAccount
@@ -134,8 +134,9 @@ class ObservationAPIService(APIService):
         maintained value_count rather than a COUNT(*) over Observation.
 
         Datastreams are matched on Observation view permission rather than Datastream
-        view permission, so restricted datastreams (public, but with private observations)
-        don't count toward observations the principal can't see.
+        view permission, so datastreams with restricted data download don't count toward
+        observations the principal can't see. The permission is evaluated on the datastream
+        rows themselves, so the Observation table is never read.
         """
 
         queryset = (
@@ -144,12 +145,8 @@ class ObservationAPIService(APIService):
             else Datastream.objects
         )
         queryset = DatastreamAPIService.apply_site_bbox(principal, queryset, bbox)
-        queryset = queryset.filter(
-            Exists(
-                principal.filter_by_permission(
-                    Observation.objects.filter(datastream=OuterRef("pk")), "can_view"
-                )
-            )
+        queryset = principal.filter_by_permission(
+            queryset, "can_view", resource_type=Observation
         )
 
         return queryset.aggregate(total=Sum("value_count"))["total"] or 0

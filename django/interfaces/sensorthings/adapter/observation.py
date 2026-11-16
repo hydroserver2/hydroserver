@@ -1,7 +1,7 @@
 import math
 from datetime import datetime, timezone
 from ninja.errors import HttpError
-from django.db.models import Exists, Min, Max, Count, F, OuterRef, Sum
+from django.db.models import Min, Max, Count, F, Sum
 from django.db.utils import IntegrityError, DatabaseError, DataError
 from psycopg.errors import UniqueViolation
 from sensorthings.types import Absent
@@ -64,13 +64,8 @@ class ObservationMixin(SensorThingsUtils):
             }
         else:
             if count and not filters:
-                entity_count = Datastream.objects.filter(
-                    Exists(
-                        principal.filter_by_permission(
-                            Observation.objects.filter(datastream=OuterRef("pk")),
-                            "can_view",
-                        )
-                    )
+                entity_count = principal.filter_by_permission(
+                    Datastream.objects, "can_view", resource_type=Observation
                 ).aggregate(total=Sum("value_count"))["total"] or 0
             elif count:
                 entity_count = observations.count() if count else None
