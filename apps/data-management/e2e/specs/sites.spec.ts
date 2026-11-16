@@ -803,7 +803,7 @@ test.describe('sites and workspaces', () => {
     )
     await expect(anonymousPublicDatastreamRow).toHaveCount(1)
     await expect(anonymousPublicDatastreamRow).toContainText(
-      'Data available on request'
+      'Data download restricted'
     )
     await dataRestrictionToggle.click()
     await expect

@@ -39,7 +39,7 @@ It's assumed in a HydroServer setup that you want your data to be publicly viewa
 
 3. **Datastream Privacy**: This setting is about who can see a specific datastream at your site. Even if your site is public, you might want to keep certain datastreams of that site private. When this setting is on, it means that only the workspace owners and collaborators can view this particular datastream's details and data.
 
-4. **Datastream Data Download Restriction**: When this setting is on, the public can't download or query the datastream's data, through the Data Management Web Application or any API, including the SensorThings API and CSV downloads. The datastream and its metadata stay public, including its observation count and the time range its observations cover, so guests can see that the data exists and request it from the datastream owner. Only the workspace owner and collaborators whose role can view observations can download and query the data.
+4. **Datastream Data Download Restriction**: When this setting is on, the public can't download or query the datastream's data, through the Data Management Web Application or any API, including the SensorThings API and CSV downloads. The datastream and its metadata stay public, including its observation count and the time range its observations cover, so guests can see that the data exists, but can't download or query it. Only the workspace owner and collaborators whose role can view observations can download and query the data.
 
 HydroServer checks privacy at all three levels. A datastream and its observations are publicly accessible only when its workspace, monitoring site, and the datastream itself are all public.
 

@@ -251,7 +251,7 @@
                   class="site-datastreams__private-data"
                 >
                   <v-icon :icon="mdiLock" size="16" />
-                  Data available on request
+                  Data download restricted
                 </div>
                 <div v-else class="site-datastreams__observations">
                   <Sparkline
@@ -322,7 +322,7 @@
                         label: 'Clicking this will',
                         value: item.isRestricted
                           ? 'Allow guests of your site to download and query data for this datastream.'
-                          : 'Restrict data download and query for this datastream. Its metadata, observation count, and time range stay public. Guests must contact you to get the data.',
+                          : 'Restrict data download and query for this datastream. Its metadata, observation count, and time range stay public, but only you and collaborators with permission to view observations can get the data.',
                       },
                     ]"
                     :is-visible="!item.isRestricted"
@@ -383,7 +383,7 @@
                   </template>
                   <span>
                     Data download and query are restricted for this
-                    datastream. Contact the datastream owner to request access.
+                    datastream.
                   </span>
                 </v-tooltip>
 
