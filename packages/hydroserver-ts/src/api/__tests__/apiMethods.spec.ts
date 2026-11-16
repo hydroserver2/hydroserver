@@ -432,9 +432,10 @@ describe('access token retries', () => {
     expect(response.status).toBe(401)
     expect(fetchMock).toHaveBeenCalledTimes(2)
     expect(onUnauthorized).toHaveBeenCalledTimes(1)
+    expect(onUnauthorized).toHaveBeenCalledWith(true)
   })
 
-  it('does not retry a 401 for a request sent without a token', async () => {
+  it('reports a 401 for a request sent without a token, without retrying', async () => {
     const onUnauthorized = vi.fn()
     registerUnauthorizedHandler(onUnauthorized)
     const fetchMock = vi.fn().mockImplementation(async () => unauthorized())
@@ -443,7 +444,7 @@ describe('access token retries', () => {
     await apiMethods.fetch(endpoint)
 
     expect(fetchMock).toHaveBeenCalledTimes(1)
-    expect(onUnauthorized).not.toHaveBeenCalled()
+    expect(onUnauthorized).toHaveBeenCalledWith(false)
   })
 
   it('does not retry a 401 when the provider has no token', async () => {
@@ -456,7 +457,7 @@ describe('access token retries', () => {
     await apiMethods.fetch(endpoint)
 
     expect(fetchMock).toHaveBeenCalledTimes(1)
-    expect(onUnauthorized).not.toHaveBeenCalled()
+    expect(onUnauthorized).toHaveBeenCalledWith(false)
   })
 
   it('does not resend a streamed body', async () => {
