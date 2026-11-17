@@ -20,7 +20,6 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-free": "^7.2.0",
     "@hydroserver/client": "file:../../packages/hydroserver-ts",
     "@mdi/js": "^7.4.47",
     "@uwrl/qc-utils": "file:../../packages/qc-utils",
