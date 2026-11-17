@@ -1,7 +1,9 @@
 import { flushPromises, shallowMount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useOrchestrationStore } from '@/store/orchestration'
+import { useWorkspaceStore } from '@/store/workspaces'
+import hs from '@hydroserver/client'
 import { routes } from '@/router/routes'
 
 const { routeMock, replaceMock } = vi.hoisted(() => ({
@@ -158,8 +160,9 @@ const stubs = {
     template: '<div />',
   },
   OrchestrationNavRail: {
+    props: ['tabs'],
     template:
-      '<nav data-testid="nav-rail"><button data-testid="aggregation-tab" @click="$emit(\'select-tab\', \'aggregation\')" /></nav>',
+      '<nav data-testid="nav-rail"><span data-testid="quality-issues">{{ tabs.find(tab => tab.id === \'quality\').issues }}</span><button data-testid="aggregation-tab" @click="$emit(\'select-tab\', \'aggregation\')" /></nav>',
   },
   OrchestrationContextSidebar: {
     template: '<aside />',
@@ -208,6 +211,96 @@ describe('Orchestration page', () => {
     routeMock.query = {}
     replaceMock.mockReset()
   })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it.each([
+    [0, 'Violations found', 1],
+    [1, 'OK', 0],
+  ] as const)(
+    'updates the quality badge from %i after a run becomes %s',
+    async (initialIssues, status, finalIssues) => {
+      vi.useFakeTimers()
+      const workspace = { id: 'workspace-1', name: 'Workspace' } as any
+      useWorkspaceStore().workspaces = [workspace]
+      useWorkspaceStore().selectedWorkspace = workspace
+      useOrchestrationStore().activeTab = 'quality'
+      routeMock.params = { view: 'quality' }
+      const summary = {
+        id: 'site-1',
+        name: 'Site',
+        monitoringTaskCount: 1,
+        monitoringTaskAttentionCount: initialIssues,
+        productTaskCount: 0,
+        productTaskAttentionCount: 0,
+      }
+      const task = {
+        id: 'mon-1',
+        name: 'Quality task',
+        monitoringSiteId: 'site-1',
+        status: initialIssues ? 'Violations found' : 'OK',
+      }
+      const pending = {
+        id: 'run-1',
+        status: 'PENDING',
+        displayStatus: 'Pending',
+      }
+      const completed = {
+        id: 'run-1',
+        status: 'SUCCESS',
+        displayStatus: status,
+      }
+      vi.mocked(hs.dataConnections.listAllItems).mockResolvedValue([])
+      vi.mocked(hs.monitoringSites.listTaskSummaries).mockResolvedValue({
+        ok: true,
+        data: [summary],
+      } as any)
+      vi.mocked(hs.monitoringTasks.listAllItems).mockResolvedValue([
+        task,
+      ] as any)
+      vi.mocked(hs.monitoringTasks.runTask).mockResolvedValue({
+        ok: true,
+        data: pending,
+      } as any)
+      vi.mocked(hs.monitoringTasks.getTaskRun).mockResolvedValue({
+        ok: true,
+        data: completed,
+      } as any)
+      vi.mocked(hs.monitoringTasks.getItem)
+        .mockResolvedValueOnce({
+          ...task,
+          status: 'Pending',
+          latestRun: pending,
+        } as any)
+        .mockResolvedValueOnce({ ...task, status, latestRun: completed } as any)
+      const { default: Orchestration } =
+        await import('@/pages/Orchestration.vue')
+      const wrapper = shallowMount(Orchestration, { global: { stubs } })
+      try {
+        await flushPromises()
+        expect(wrapper.get('[data-testid="quality-issues"]').text()).toBe(
+          String(initialIssues)
+        )
+        const vm = wrapper.vm as any
+        await vm.runTaskNow('monitoring', task.id)
+        vi.mocked(hs.monitoringSites.listTaskSummaries).mockResolvedValue({
+          ok: true,
+          data: [{ ...summary, monitoringTaskAttentionCount: finalIssues }],
+        } as any)
+        await vi.advanceTimersByTimeAsync(3000)
+
+        expect(vm.monitoringTasks[0].status).toBe(status)
+        expect(wrapper.get('[data-testid="quality-issues"]').text()).toBe(
+          String(finalIssues)
+        )
+        expect(vm.monitoringTasks).toHaveLength(1)
+      } finally {
+        wrapper.unmount()
+      }
+    }
+  )
 
   it('keeps the nav rail and shows guidance when no workspace is selected', async () => {
     const { default: Orchestration } = await import('@/pages/Orchestration.vue')

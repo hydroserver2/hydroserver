@@ -13,6 +13,7 @@ from interfaces.api.schemas import (
     sortby_array_schema,
 )
 from interfaces.api.schemas.base import ItemId
+from processing.orchestration.status import TaskStatus
 
 
 _sortby_fields = ("id", "status", "startedAt", "finishedAt")
@@ -21,7 +22,7 @@ TaskRunSortByFields = Literal[
 ]
 
 TaskRunPropertyName = Literal[
-    "id", "status", "message", "result", "startedAt", "finishedAt"
+    "id", "status", "displayStatus", "message", "result", "startedAt", "finishedAt"
 ]
 
 
@@ -62,6 +63,7 @@ class TaskRunQueryParameters(CollectionQueryParameters):
 
 
 class TaskRunResponse(BaseGetResponse, ItemId):
+    display_status: TaskStatus
     status: Literal["PENDING", "STARTED", "SUCCESS", "FAILURE"]
     message: str | None = None
     result: dict | None = None
@@ -78,6 +80,7 @@ def resolve_latest_run(obj):
     return {
         "id": obj.latest_run_id,
         "status": obj.latest_run_status,
+        "display_status": obj.latest_run_display_status,
         "started_at": obj.latest_run_started_at,
         "finished_at": obj.latest_run_finished_at,
         "message": obj.latest_run_message,

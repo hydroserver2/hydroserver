@@ -1,6 +1,7 @@
 import { StatusType, TaskRun } from '@hydroserver/client'
 
 type TaskStatusLike = {
+  status?: StatusType
   latestRun?: TaskRun | null
   schedule?: {
     paused?: boolean | null
@@ -46,9 +47,6 @@ const firstNumber = (...values: unknown[]): number | undefined => {
 const getRuntimeVariables = (result: TaskRunResultLike) =>
   asObject(result.runtimeVariables ?? result.runtime_variables)
 
-const getTargetResults = (result: TaskRunResultLike) =>
-  asObject(result.targetResults ?? result.target_results)
-
 const parseDate = (value?: string | null) => {
   if (!value) return null
   const date = new Date(value)
@@ -79,12 +77,12 @@ export const getTaskRunMessage = (run?: TaskRun | null) => {
     (run.status === 'SUCCESS'
       ? 'Run completed successfully.'
       : run.status === 'PENDING'
-      ? 'Run queued.'
-      : run.status === 'STARTED' || run.status === 'RUNNING'
-      ? 'Run in progress.'
-      : run.status === 'FAILURE'
-      ? 'Run failed.'
-      : '–')
+        ? 'Run queued.'
+        : run.status === 'STARTED' || run.status === 'RUNNING'
+          ? 'Run in progress.'
+          : run.status === 'FAILURE'
+            ? 'Run failed.'
+            : '–')
   )
 }
 
@@ -153,71 +151,10 @@ export const getMonitoringRulesViolated = (run?: TaskRun | null) => {
   return firstNumber(result.rulesViolated, result.rules_violated) ?? 0
 }
 
-export const taskRunHasFailures = (run?: TaskRun | null) => {
-  if (!run) return false
-  if (run.status === 'FAILURE') return true
+// Display statuses are provided by the API; result details and the browser's
+// clock must not change how tasks are classified.
+export const getTaskRunStatusText = (run?: TaskRun | null): StatusType =>
+  run?.displayStatus ?? 'Unknown'
 
-  const result = getTaskRunResult(run)
-  if (getMonitoringRulesViolated(run) > 0) return true
-
-  const failureCount = firstNumber(
-    (run as any).failureCount,
-    result.failureCount,
-    result.failure_count
-  )
-  if (failureCount !== undefined) return failureCount > 0
-
-  const targetResults = getTargetResults(result)
-  if (!targetResults) return false
-
-  return Object.values(targetResults).some((target) => {
-    const targetRecord = asObject(target)
-    return firstString(targetRecord?.status)?.toLowerCase() === 'failed'
-  })
-}
-
-export const getTaskRunStatusText = (run?: TaskRun | null): StatusType => {
-  if (!run) return 'Unknown'
-  if (taskRunHasFailures(run)) return 'Needs attention'
-  if (run.status === 'SUCCESS') return 'OK'
-  if (run.status === 'PENDING' || run.status === 'STARTED') return 'Pending'
-  return 'Unknown'
-}
-
-export const getTaskStatusText = (task?: TaskStatusLike | null): StatusType => {
-  if (!task) return 'Unknown'
-
-  const { latestRun, schedule } = task
-  if (!schedule) {
-    if (!latestRun) return 'Pending'
-    if (latestRun.status === 'PENDING' || latestRun.status === 'STARTED') {
-      return 'Pending'
-    }
-    return taskRunHasFailures(latestRun) ? 'Needs attention' : 'OK'
-  }
-
-  if (!latestRun) return 'Pending'
-  if (taskRunHasFailures(latestRun)) return 'Needs attention'
-  if (latestRun.status === 'PENDING' || latestRun.status === 'STARTED') {
-    return 'Pending'
-  }
-
-  const next = getTaskNextRunAt(task)
-  if (next) {
-    return next.getTime() < Date.now() ? 'Behind schedule' : 'OK'
-  }
-
-  return 'Unknown'
-}
-
-export const getDisplayedTaskStatus = (
-  task?: TaskStatusLike | null
-): StatusType => {
-  const status = getTaskStatusText(task)
-  const isPaused =
-    task?.schedule?.paused === true || task?.schedule?.enabled === false
-  if (isPaused && status !== 'Needs attention') {
-    return 'Loading paused'
-  }
-  return status
-}
+export const getTaskStatusText = (task?: TaskStatusLike | null): StatusType =>
+  task?.status ?? 'Unknown'

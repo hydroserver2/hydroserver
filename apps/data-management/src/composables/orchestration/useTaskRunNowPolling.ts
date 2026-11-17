@@ -1,6 +1,7 @@
 import { onBeforeUnmount, reactive, type Ref } from 'vue'
 import type { TaskRun } from '@hydroserver/client'
 import { isOrchestrationEnabled } from '@/composables/orchestration/orchestrationAvailability'
+import { Snackbar } from '@/utils/notifications'
 import {
   serviceForKind,
   type TaskKind,
@@ -26,12 +27,18 @@ type Lists = {
 type Options = {
   lists: Lists
   currentWorkspaceId: () => string
+  onTaskStatusChanged?: (kind: TaskKind, workspaceId: string) => Promise<void>
 }
 
-export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
+export function useTaskRunNowPolling({
+  lists,
+  currentWorkspaceId,
+  onTaskStatusChanged,
+}: Options) {
   const runNowTriggeredByTaskId = reactive<Record<string, boolean>>({})
   const taskPollTimeouts = new Map<string, number>()
   const runNowStartedAt = new Map<string, number>()
+  let pollingGeneration = 0
 
   const listFor = (kind: TaskKind) => {
     if (kind === 'etl') return lists.etl
@@ -66,6 +73,7 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
   }
 
   const stopAll = () => {
+    pollingGeneration += 1
     taskPollTimeouts.forEach((id) => window.clearTimeout(id))
     taskPollTimeouts.clear()
     runNowStartedAt.clear()
@@ -74,14 +82,60 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
     }
   }
 
-  const refreshAfterCompletion = async (kind: TaskKind, taskId: string) => {
+  const refreshTask = async (
+    kind: TaskKind,
+    taskId: string,
+    workspaceId = currentWorkspaceId(),
+    generation = pollingGeneration
+  ): Promise<boolean> => {
     try {
       const svc = serviceForKind(kind)
       const updated = (await svc.getItem(taskId)) as any
-      if (updated) upsertTask(kind, updated)
+      if (
+        workspaceId !== currentWorkspaceId() ||
+        generation !== pollingGeneration
+      )
+        return true
+      if (!updated) return false
+      upsertTask(kind, updated)
+      await onTaskStatusChanged?.(kind, workspaceId)
+      return true
     } catch (error) {
-      console.error('Error refreshing task after run completion', error)
+      console.error('Error refreshing task status', error)
+      return false
     }
+  }
+
+  const retryTaskRefresh = async (
+    kind: TaskKind,
+    taskId: string,
+    workspaceId: string,
+    generation: number,
+    startedAt = Date.now()
+  ) => {
+    if (
+      workspaceId !== currentWorkspaceId() ||
+      generation !== pollingGeneration
+    )
+      return
+    const refreshed = await refreshTask(kind, taskId, workspaceId, generation)
+    if (
+      workspaceId !== currentWorkspaceId() ||
+      generation !== pollingGeneration
+    )
+      return
+    if (refreshed) return
+    if (Date.now() - startedAt >= POLL_DURATION_MS) {
+      Snackbar.error(
+        'Unable to refresh task status. Reload the page to try again.'
+      )
+      return
+    }
+    const timeoutId = window.setTimeout(() => {
+      taskPollTimeouts.delete(taskId)
+      void retryTaskRefresh(kind, taskId, workspaceId, generation, startedAt)
+    }, POLL_INTERVAL_MS)
+    taskPollTimeouts.set(taskId, timeoutId)
   }
 
   const schedulePoll = (
@@ -89,7 +143,8 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
     taskId: string,
     requestedRunId: string,
     startedAt: number,
-    workspaceId = currentWorkspaceId()
+    workspaceId = currentWorkspaceId(),
+    generation = pollingGeneration
   ) => {
     stopPollingFor(taskId)
 
@@ -101,7 +156,11 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
     const svc = serviceForKind(kind)
 
     const timeoutId = window.setTimeout(async () => {
-      if (workspaceId !== currentWorkspaceId()) {
+      if (
+        workspaceId !== currentWorkspaceId() ||
+        generation !== pollingGeneration
+      ) {
+        if (generation !== pollingGeneration) return
         runNowTriggeredByTaskId[taskId] = false
         stopPollingFor(taskId)
         return
@@ -116,10 +175,14 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
       try {
         const runResponse = await svc.getTaskRun(taskId, requestedRunId)
         const updatedRun = runResponse.ok
-          ? (runResponse.data as TaskRun) ?? null
+          ? ((runResponse.data as TaskRun) ?? null)
           : null
 
-        if (workspaceId !== currentWorkspaceId()) {
+        if (
+          workspaceId !== currentWorkspaceId() ||
+          generation !== pollingGeneration
+        ) {
+          if (generation !== pollingGeneration) return
           runNowTriggeredByTaskId[taskId] = false
           stopPollingFor(taskId)
           return
@@ -132,7 +195,7 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
             runNowTriggeredByTaskId[taskId] = false
             stopPollingFor(taskId)
             if (status && TERMINAL_STATUSES.includes(status)) {
-              await refreshAfterCompletion(kind, taskId)
+              await retryTaskRefresh(kind, taskId, workspaceId, generation)
             }
             return
           }
@@ -141,7 +204,15 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
         console.error('Error polling task status', error)
       }
 
-      schedulePoll(kind, taskId, requestedRunId, startedAt, workspaceId)
+      if (generation === pollingGeneration)
+        schedulePoll(
+          kind,
+          taskId,
+          requestedRunId,
+          startedAt,
+          workspaceId,
+          generation
+        )
     }, POLL_INTERVAL_MS)
 
     taskPollTimeouts.set(taskId, timeoutId)
@@ -162,7 +233,8 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
     kind: TaskKind,
     taskId: string,
     startedAt = Date.now(),
-    workspaceId = currentWorkspaceId()
+    workspaceId = currentWorkspaceId(),
+    generation = pollingGeneration
   ) => {
     stopPollingFor(taskId)
     runNowTriggeredByTaskId[taskId] = true
@@ -175,7 +247,11 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
 
     const svc = serviceForKind(kind)
     const timeoutId = window.setTimeout(async () => {
-      if (workspaceId !== currentWorkspaceId()) {
+      if (
+        workspaceId !== currentWorkspaceId() ||
+        generation !== pollingGeneration
+      ) {
+        if (generation !== pollingGeneration) return
         runNowTriggeredByTaskId[taskId] = false
         stopPollingFor(taskId)
         return
@@ -184,7 +260,11 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
       try {
         const updated = (await svc.getItem(taskId)) as AnyTask | null
 
-        if (workspaceId !== currentWorkspaceId()) {
+        if (
+          workspaceId !== currentWorkspaceId() ||
+          generation !== pollingGeneration
+        ) {
+          if (generation !== pollingGeneration) return
           runNowTriggeredByTaskId[taskId] = false
           stopPollingFor(taskId)
           return
@@ -193,9 +273,7 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
         if (updated) {
           upsertTask(kind, updated)
           const latestRun = (updated as any).latestRun as
-            | TaskRun
-            | null
-            | undefined
+            TaskRun | null | undefined
 
           if (latestRun?.id) {
             if (ACTIVE_RUN_STATUSES.has(latestRun.status)) {
@@ -203,6 +281,7 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
             } else {
               runNowTriggeredByTaskId[taskId] = false
               stopPollingFor(taskId)
+              await retryTaskRefresh(kind, taskId, workspaceId, generation)
             }
             return
           }
@@ -211,7 +290,14 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
         console.error('Error polling task for latest run', error)
       }
 
-      startPollingForLatestRun(kind, taskId, startedAt, workspaceId)
+      if (generation === pollingGeneration)
+        startPollingForLatestRun(
+          kind,
+          taskId,
+          startedAt,
+          workspaceId,
+          generation
+        )
     }, POLL_INTERVAL_MS)
 
     taskPollTimeouts.set(taskId, timeoutId)
@@ -219,20 +305,33 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
 
   const runTaskNow = async (kind: TaskKind, taskId: string) => {
     if (!isOrchestrationEnabled()) return
+    const workspaceId = currentWorkspaceId()
+    const generation = pollingGeneration
     runNowTriggeredByTaskId[taskId] = true
     const startedAt = Date.now()
     runNowStartedAt.set(taskId, startedAt)
     try {
       const svc = serviceForKind(kind)
       const response = await svc.runTask(taskId)
+      if (
+        workspaceId !== currentWorkspaceId() ||
+        generation !== pollingGeneration
+      )
+        return
       if (!response.ok) {
         throw new Error(response.message || 'Unable to run task now.')
       }
       const requestedRun = response.ok
-        ? (response.data as TaskRun) ?? null
+        ? ((response.data as TaskRun) ?? null)
         : null
       if (requestedRun?.id) {
         syncLatestRun(kind, taskId, requestedRun)
+        await refreshTask(kind, taskId, workspaceId, generation)
+        if (
+          workspaceId !== currentWorkspaceId() ||
+          generation !== pollingGeneration
+        )
+          return
         startPollingTaskRun(kind, taskId, requestedRun.id, startedAt)
       } else {
         runNowTriggeredByTaskId[taskId] = false
@@ -250,13 +349,14 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
     taskId: string,
     schedule: NonNullable<AnyTask['schedule']>
   ) => {
+    const workspaceId = currentWorkspaceId()
+    const generation = pollingGeneration
     const previousEnabled = !!schedule.enabled
     schedule.enabled = !previousEnabled
     try {
       const svc = serviceForKind(kind)
       await svc.update({ id: taskId, schedule } as any)
-      const updated = (await svc.getItem(taskId)) as any
-      if (updated) upsertTask(kind, updated)
+      await retryTaskRefresh(kind, taskId, workspaceId, generation)
     } catch (error) {
       schedule.enabled = previousEnabled
       console.error('Error toggling task paused state', error)

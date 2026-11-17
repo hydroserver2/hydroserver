@@ -27,6 +27,7 @@ from interfaces.api.schemas.orchestration.schedule import (
 )
 from interfaces.api.schemas.orchestration.run import TaskRunResponse, resolve_latest_run
 from interfaces.api.schemas.base import ItemId
+from processing.orchestration.status import TaskStatus
 
 
 class MonitoringTaskFields(Schema):
@@ -50,6 +51,7 @@ _sortby_fields = (
     "monitoringSiteName",
     "workspaceId",
     "workspaceName",
+    "status",
     "latestRunStatus",
     "latestRunStartedAt",
     "latestRunFinishedAt",
@@ -63,6 +65,7 @@ _property_fields = (
     "workspaceId",
     "monitoringSiteId",
     "schedule",
+    "status",
     "latestRun",
     "ruleTypeCounts",
     "recipients",
@@ -116,6 +119,7 @@ class MonitoringTaskQueryParameters(MonitoringTaskFilterFields, CollectionQueryP
         description="Monitoring tasks in this workspace. Matches `id` in `workspaces`.",
         alias="workspaceId",
     )
+    status: list[TaskStatus] = Query([], description="Tasks with this display status.")
     latest_run_status: list[str | Literal["null"]] = Query(
         [],
         description="Monitoring tasks whose latest run has this status: `PENDING`, `STARTED`, `SUCCESS`, or "
@@ -134,6 +138,7 @@ class MonitoringTaskQueryParameters(MonitoringTaskFilterFields, CollectionQueryP
 
 
 class MonitoringTaskResponse(BaseGetResponse, MonitoringTaskFields, ItemId):
+    status: TaskStatus = "Unknown"
     workspace_id: uuid.UUID = Field(
         ..., validation_alias=AliasChoices("workspaceId", AliasPath("monitoring_site", "workspace_id"))
     )

@@ -27,6 +27,7 @@ from interfaces.api.schemas.orchestration.schedule import (
 )
 from interfaces.api.schemas.orchestration.run import TaskRunResponse, resolve_latest_run
 from interfaces.api.schemas.base import ItemId
+from processing.orchestration.status import TaskStatus
 
 
 class EtlTaskFields(Schema):
@@ -51,6 +52,7 @@ _sortby_fields = (
     "dataConnectionName",
     "workspaceId",
     "workspaceName",
+    "status",
     "latestRunStatus",
     "latestRunStartedAt",
     "latestRunFinishedAt",
@@ -62,6 +64,7 @@ _property_fields = (
     "workspaceId",
     "dataConnectionId",
     "schedule",
+    "status",
     "latestRun",
     "mappingCount",
     *(to_camel(name) for name in EtlTaskFields.model_fields),
@@ -115,6 +118,7 @@ class EtlTaskQueryParameters(EtlTaskFilterFields, CollectionQueryParameters, Ext
     data_connection_id: list[uuid.UUID] = Query(
         [], description="ETL tasks that use this data connection. Matches `id` in `etl-data-connections`."
     )
+    status: list[TaskStatus] = Query([], description="Tasks with this display status.")
     latest_run_status: list[str | Literal["null"]] = Query(
         [],
         description="ETL tasks whose latest run has this status: `PENDING`, `STARTED`, `SUCCESS`, or "
@@ -135,6 +139,7 @@ class EtlTaskQueryParameters(EtlTaskFilterFields, CollectionQueryParameters, Ext
 
 
 class EtlTaskResponse(BaseGetResponse, EtlTaskFields, ItemId):
+    status: TaskStatus = "Unknown"
     workspace_id: uuid.UUID = Field(
         ..., validation_alias=AliasChoices("workspaceId", AliasPath("data_connection", "workspace_id"))
     )

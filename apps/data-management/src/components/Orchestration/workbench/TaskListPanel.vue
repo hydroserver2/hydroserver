@@ -204,7 +204,7 @@ import IngestionTaskTable from './IngestionTaskTable.vue'
 import OrchestrationTaskTable from './OrchestrationTaskTable.vue'
 import {
   DATA_PRODUCT_TYPE_OPTIONS,
-  STATUS_OPTIONS,
+  getTaskStatusOptions,
   TAB_META,
   type DataProductTaskType,
   type TaskRow,
@@ -250,12 +250,13 @@ const accent = computed(() =>
     : TAB_META[activeTab.value].accent
 )
 const accentLight = computed(() => TAB_META[activeTab.value].accentLight)
+const statusOptions = computed(() => getTaskStatusOptions(activeTab.value))
 
 const searchQualifiers = computed(() => [
   {
     key: 'status',
     label: 'Status',
-    values: STATUS_OPTIONS.map(({ value }) => value),
+    values: statusOptions.value.map(({ value }) => value),
   },
   ...(activeTab.value === 'aggregation'
     ? [
@@ -281,10 +282,10 @@ const qualifierValues = (query: string, key: string) => {
 }
 
 watch(
-  taskSearch,
-  (query) => {
+  [taskSearch, statusOptions],
+  ([query]) => {
     const selectedStatuses = qualifierValues(query, 'status')
-    statusFilter.value = STATUS_OPTIONS.filter(({ value }) =>
+    statusFilter.value = statusOptions.value.filter(({ value }) =>
       selectedStatuses.includes(value.toLocaleLowerCase())
     ).map(({ value }) => value)
 

@@ -1,32 +1,18 @@
 <template>
   <v-chip :color="chipColor" density="compact" class="ma-0 pa-2">
-    {{ chipText }}
+    {{ status }}
   </v-chip>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { TASK_STATUS_OPTIONS, StatusType } from '@hydroserver/client'
+import type { StatusType } from '@hydroserver/client'
+import { taskStatusColor } from '@/utils/orchestration/taskStatusColors'
 
 interface Props {
   status: StatusType
-  paused: boolean | undefined
 }
 const props = defineProps<Props>()
 
-const chipColor = computed(() => {
-  if (props.paused && props.status !== 'Needs attention') {
-    return 'gray'
-  }
-  return (
-    TASK_STATUS_OPTIONS.find((s) => s.title === props.status)?.color ?? 'gray'
-  )
-})
-
-const chipText = computed(() => {
-  if (props.paused && props.status !== 'Needs attention') {
-    return 'Loading paused'
-  }
-  return props.status
-})
+const chipColor = computed(() => taskStatusColor(props.status))
 </script>

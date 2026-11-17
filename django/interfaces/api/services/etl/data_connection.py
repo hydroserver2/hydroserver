@@ -16,7 +16,7 @@ from core.iam.models import ServiceAccount, Workspace
 from core.iam.permissions.anonymous import AnonymousPrincipal
 from interfaces.api.http.errors import BadRequestError, PermissionDeniedError, NotFoundError
 from interfaces.api.service import APIService
-from processing.orchestration.attention import attention_filter, latest_run_status_subquery
+from processing.orchestration.status import ISSUE_STATUSES, annotate_task_status
 from processing.orchestration.services import SchedulingService
 from processing.etl.models import (
     DataConnection, EtlTask, Payload, PlaceholderVariable,
@@ -59,10 +59,10 @@ class DataConnectionAPIService(SchedulingService, APIService):
         )
         attention_count_subquery = Coalesce(
             Subquery(
-                EtlTask.objects
-                .filter(data_connection_id=OuterRef("pk"))
-                .annotate(latest_run_status=latest_run_status_subquery())
-                .filter(attention_filter(now))
+                annotate_task_status(
+                    EtlTask.objects.filter(data_connection_id=OuterRef("pk")), now=now
+                )
+                .filter(status__in=ISSUE_STATUSES)
                 .values("data_connection_id")
                 .annotate(count=Count("pk"))
                 .values("count"),

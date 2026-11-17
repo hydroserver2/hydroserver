@@ -22,7 +22,6 @@
           <div class="run-entry-top-left">
             <TaskStatus
               :status="getRunStatusText(run.raw)"
-              :paused="false"
               class="run-entry-status"
             />
           </div>

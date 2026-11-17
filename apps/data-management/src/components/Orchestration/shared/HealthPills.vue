@@ -27,9 +27,10 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { taskStatusColor } from '@/utils/orchestration/taskStatusColors'
 
 interface Props {
-  tasks: Array<{ statusSort?: string | null }>
+  tasks: Array<{ statusName?: string | null }>
   interactive?: boolean
   activeStatuses?: string[]
 }
@@ -42,25 +43,16 @@ defineEmits<{
   (e: 'toggle-status', status: string): void
 }>()
 
-const STATUS_COLORS: Record<string, string> = {
-  OK: '#2E7D32',
-  'Behind schedule': '#BF360C',
-  'Needs attention': '#B71C1C',
-  'Loading paused': '#546E7A',
-  Pending: '#1565C0',
-  Unknown: '#9E9E9E',
-}
-
 const pills = computed(() => {
   const counts = new Map<string, number>()
   for (const task of props.tasks) {
-    const key = task.statusSort || 'Unknown'
+    const key = task.statusName || 'Unknown'
     counts.set(key, (counts.get(key) ?? 0) + 1)
   }
   return Array.from(counts.entries()).map(([status, count]) => ({
     status,
     count,
-    color: STATUS_COLORS[status] ?? '#9E9E9E',
+    color: taskStatusColor(status),
   }))
 })
 </script>
@@ -87,7 +79,9 @@ const pills = computed(() => {
   padding: 2px 8px;
   cursor: pointer;
   font-family: inherit;
-  transition: background 0.12s ease, border-color 0.12s ease;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease;
 }
 .pill--interactive:hover {
   background: color-mix(in srgb, currentColor 10%, transparent);

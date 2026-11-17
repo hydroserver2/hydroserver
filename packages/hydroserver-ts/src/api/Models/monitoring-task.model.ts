@@ -1,4 +1,4 @@
-import type { TaskRun, TaskSchedule } from './task.model'
+import type { StatusType, TaskRun, TaskSchedule } from './task.model'
 
 export type MonitoringRuleType =
   | 'range'
@@ -23,6 +23,7 @@ export interface MonitoringRule {
 export class MonitoringTask {
   id = ''
   name = ''
+  status?: StatusType = 'Unknown'
   description: string | null = null
   recipients: string[] = []
   monitoringSiteId = ''
@@ -37,6 +38,7 @@ export class MonitoringTask {
 export interface MonitoringTaskExpanded {
   id: string
   name: string
+  status?: StatusType
   description?: string | null
   recipients: string[]
   monitoringSite: { id: string; name: string; [key: string]: unknown }

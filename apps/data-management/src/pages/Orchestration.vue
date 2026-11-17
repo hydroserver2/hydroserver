@@ -250,13 +250,13 @@ import {
   READ_ONLY_TOOLTIP,
   countTaskIssues,
   worstDotColor,
-  DOT_PALETTE,
   DOT_EMPTY,
   DOT_DEFAULT_OK,
   type TabDefinition,
   type TabId,
   type TaskRow,
 } from '@/components/Orchestration/workbench/orchestrationTabs'
+import { TASK_STATUS_COLORS } from '@/utils/orchestration/taskStatusColors'
 
 const {
   view: routeView,
@@ -284,6 +284,7 @@ const {
   loadedTaskGroup,
   fetchAll,
   refreshDataConnections,
+  refreshTaskSummaries,
   fetchTasksForGroup,
 } = useOrchestrationData()
 
@@ -368,6 +369,7 @@ const {
     monitoring: monitoringTasks,
   },
   currentWorkspaceId: () => selectedWorkspaceId.value!,
+  onTaskStatusChanged: refreshTaskSummaries,
 })
 
 const { etlTaskRows, dataProductTaskRows, monitoringTaskRows, activeTaskRows } =
@@ -491,7 +493,7 @@ const monitoringTaskAttentionCount = (
 
 const summaryDotColor = (total: number, issues: number) => {
   if (total === 0) return DOT_EMPTY
-  if (issues > 0) return DOT_PALETTE['Needs attention']
+  if (issues > 0) return TASK_STATUS_COLORS['Needs attention']
   return DOT_DEFAULT_OK
 }
 
@@ -638,12 +640,12 @@ const searchedVisibleTasks = computed<TaskRow[]>(() => {
   )
   return visibleTasks.value.filter((t) => {
     if (filters.size > 0) {
-      const bucket = t.statusSort ?? 'Unknown'
+      const bucket = t.statusName ?? 'Unknown'
       if (!filters.has(bucket)) return false
     }
     if (
       queryStatuses.size > 0 &&
-      !queryStatuses.has((t.statusSort ?? 'Unknown').toLowerCase())
+      !queryStatuses.has((t.statusName ?? 'Unknown').toLowerCase())
     ) {
       return false
     }
@@ -669,7 +671,6 @@ const searchedVisibleTasks = computed<TaskRow[]>(() => {
     const haystack = [
       t.name,
       t.statusName,
-      t.statusSort,
       t.lastRun,
       t.nextRun,
       t.taskType,

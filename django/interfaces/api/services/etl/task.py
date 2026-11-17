@@ -13,6 +13,7 @@ from interfaces.api.http.errors import PermissionDeniedError, NotFoundError
 from interfaces.api.service import APIService
 from interfaces.api.services.orchestration import require_orchestration_enabled
 from processing.orchestration.services import TaskService
+from processing.orchestration.status import annotate_task_status
 from processing.etl.models import EtlTask, DataConnection
 from interfaces.api.schemas.etl.task import (
     EtlTaskSortByFields,
@@ -58,7 +59,7 @@ class EtlTaskAPIService(TaskService[EtlTask], APIService):
         task = super().get(task=task, action=action, principal=principal)
 
         queryset = (
-            self.annotate_latest_run(self.task_model.objects)
+            annotate_task_status(self.annotate_latest_run(self.task_model.objects))
             .annotate(mapping_count=Count("etl_mappings", distinct=True))
             .select_related("periodic_task__crontab", "periodic_task__interval")
         )
@@ -101,6 +102,14 @@ class EtlTaskAPIService(TaskService[EtlTask], APIService):
         queryset = self.task_model.objects
 
         sortby = sortby or []
+
+        if (
+            properties is None or "status" in properties or "status" in filtering
+            or any(term.lstrip("-") == "status" for term in sortby)
+        ):
+            queryset = annotate_task_status(queryset)
+        if "status" in filtering:
+            queryset = self.apply_filters(queryset, "status", filtering["status"])
 
         latest_run_fields = [
             "latest_run_status", "latest_run_started_at_min", "latest_run_started_at_max",

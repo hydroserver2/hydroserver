@@ -18,7 +18,7 @@ vi.mock(
 const task = {
   id: 'task-1',
   name: 'Example task',
-  statusSort: 'OK',
+  statusName: 'OK',
   lastRun: 'Never',
   nextRun: 'Not scheduled',
   schedule: null,

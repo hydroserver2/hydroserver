@@ -16,7 +16,6 @@ import {
   isOrchestrationEnabled,
 } from '@/composables/orchestration/orchestrationAvailability'
 import {
-  getDisplayedTaskStatus,
   getMonitoringRunViolations,
   getTaskRunMessage,
   getTaskRunRuntimeUrl,
@@ -96,13 +95,13 @@ export function useSimpleTaskDetails(
     'You have read-only access to this workspace. Ask an editor or owner to make changes.'
 
   const backLabel = computed(
-    () => task.value?.dataConnection?.name ?? task.value?.monitoringSite?.name ?? 'Back'
+    () =>
+      task.value?.dataConnection?.name ??
+      task.value?.monitoringSite?.name ??
+      'Back'
   )
   const statusName = computed(() =>
     task.value ? getTaskStatusText(task.value) : 'Unknown'
-  )
-  const statusSort = computed(() =>
-    task.value ? getDisplayedTaskStatus(task.value) : 'Unknown'
   )
   const scheduleText = computed(() => {
     const schedule = task.value?.schedule
@@ -218,6 +217,8 @@ export function useSimpleTaskDetails(
           if (!ACTIVE_RUN_STATUSES.has(updatedRun.status)) {
             runNowRequested.value = false
             stopPollingRun(runId)
+            await refreshTask()
+            emit('updated')
             return
           }
         }
@@ -231,16 +232,20 @@ export function useSimpleTaskDetails(
     runPollTimeouts.set(runId, timeoutId)
   }
 
+  async function refreshTask(id = task.value?.id ?? taskId.value) {
+    const response = await service.get(id, {
+      include: [includeForKind],
+    } as any)
+    if (!response.ok)
+      throw new Error(response.message || 'Unable to load task.')
+    task.value = response.data
+  }
+
   async function load() {
     if (!taskId.value) return
     loading.value = true
     try {
-      const response = await service.get(taskId.value, {
-        include: [includeForKind],
-      } as any)
-      if (!response.ok)
-        throw new Error(response.message || 'Unable to load task.')
-      task.value = response.data
+      await refreshTask(taskId.value)
       if (
         task.value?.latestRun?.id &&
         ACTIVE_RUN_STATUSES.has(task.value.latestRun.status)
@@ -294,7 +299,7 @@ export function useSimpleTaskDetails(
       Snackbar.error(response.message || 'Unable to update schedule.')
       return
     }
-    task.value = { ...task.value, schedule }
+    await refreshTask()
     emit('updated')
   }
 
@@ -309,6 +314,7 @@ export function useSimpleTaskDetails(
         task.value.latestRun = response.data
         upsertRun(response.data)
         pollRunUntilComplete(response.data.id)
+        await refreshTask()
       }
       Snackbar.success('Run requested.')
     } catch (error: any) {
@@ -363,7 +369,6 @@ export function useSimpleTaskDetails(
     readOnlyTooltip,
     backLabel,
     statusName,
-    statusSort,
     scheduleText,
     pauseDisabledReason,
     runNowDisabledReason,
