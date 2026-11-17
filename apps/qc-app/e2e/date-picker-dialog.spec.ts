@@ -6,6 +6,7 @@
  */
 
 import { expect, test } from '@playwright/test'
+import { mdiCalendarBlank } from '@mdi/js'
 import { installMocks } from './support/mocks'
 import { openOp, setupEditView, waitForSelection } from './support/app'
 
@@ -16,7 +17,11 @@ test.describe('date picker dialog', () => {
     await openOp(page, 'datetimeRange')
     await waitForSelection(page, 1)
 
-    await page.locator('.mdi-calendar-blank').first().click()
+    await page
+      .locator('.v-icon')
+      .filter({ has: page.locator(`svg path[d="${mdiCalendarBlank}"]`) })
+      .first()
+      .click()
 
     const card = page.locator('.date-picker-card')
     await expect(card).toBeVisible()
