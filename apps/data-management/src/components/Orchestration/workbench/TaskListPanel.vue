@@ -148,44 +148,43 @@
       <small>{{ emptyTasksMessage }}</small>
     </HsEmptyState>
 
-    <HsEmptyState
-      v-else-if="sortedVisibleTasks.length === 0"
-      compact
-      title="No tasks match your filter"
-    >
-      <small
-        >Clear search, status, or task type filters to see all tasks.</small
+    <template v-else>
+      <IngestionTaskTable
+        v-if="activeTab === 'ingestion'"
+        :tasks="sortedVisibleTasks"
+        :status-filter="statusFilter"
+        :can-edit="canEdit"
+        :accent="accent"
+        @toggle-status="toggleStatusFilter"
+        @toggle-paused="emit('toggle-paused', $event)"
+        @run-now="emit('run-now', $event)"
+        @open-task="emit('open-task', $event)"
+      />
+
+      <OrchestrationTaskTable
+        v-else
+        :tasks="sortedVisibleTasks"
+        :status-filter="statusFilter"
+        :task-type-filter="taskTypeFilter"
+        :can-edit="canEdit"
+        :accent="accent"
+        @toggle-status="toggleStatusFilter"
+        @toggle-task-type="toggleTaskTypeFilter"
+        @toggle-paused="emit('toggle-paused', $event)"
+        @run-now="emit('run-now', $event)"
+        @open-task="emit('open-task', $event)"
+      />
+
+      <HsEmptyState
+        v-if="sortedVisibleTasks.length === 0"
+        compact
+        title="No tasks match your filter"
       >
-    </HsEmptyState>
-
-    <IngestionTaskTable
-      v-else-if="activeTab === 'ingestion'"
-      :tasks="sortedVisibleTasks"
-      :status-filter="statusFilter"
-      :can-edit="canEdit"
-      :accent="accent"
-      @toggle-status="toggleStatusFilter"
-      @clear-status="clearStatusFilter"
-      @toggle-paused="emit('toggle-paused', $event)"
-      @run-now="emit('run-now', $event)"
-      @open-task="emit('open-task', $event)"
-    />
-
-    <OrchestrationTaskTable
-      v-else
-      :tasks="sortedVisibleTasks"
-      :status-filter="statusFilter"
-      :task-type-filter="taskTypeFilter"
-      :can-edit="canEdit"
-      :accent="accent"
-      @toggle-status="toggleStatusFilter"
-      @clear-status="clearStatusFilter"
-      @toggle-task-type="toggleTaskTypeFilter"
-      @clear-task-type="clearTaskTypeFilter"
-      @toggle-paused="emit('toggle-paused', $event)"
-      @run-now="emit('run-now', $event)"
-      @open-task="emit('open-task', $event)"
-    />
+        <small
+          >Adjust your search or deselect a filter to see more tasks.</small
+        >
+      </HsEmptyState>
+    </template>
   </HsDetailPanel>
 </template>
 
@@ -314,10 +313,6 @@ const toggleStatusFilter = (status: string) => {
     .join(' ')
 }
 
-const clearStatusFilter = () => {
-  statusFilter.value.slice().forEach(toggleStatusFilter)
-}
-
 const toggleTaskTypeFilter = (taskType: string) => {
   const typedTaskType = taskType as NonNullable<DataProductTaskType>
   const next = new Set(taskTypeFilter.value)
@@ -334,10 +329,6 @@ const toggleTaskTypeFilter = (taskType: string) => {
   taskSearch.value = [typeQuery, searchWithoutTaskTypes]
     .filter(Boolean)
     .join(' ')
-}
-
-const clearTaskTypeFilter = () => {
-  taskTypeFilter.value.slice().forEach(toggleTaskTypeFilter)
 }
 </script>
 

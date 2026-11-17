@@ -1,8 +1,19 @@
 {% extends "socialaccount/base_entrance.html" %}
-{% load i18n allauth %}
+{% load i18n allauth static provider_icons %}
 {% block head_title %}
     {% trans "Continue with a provider" %}
 {% endblock head_title %}
+{% block card_header %}
+    <div class="auth-card__brand">
+        <img src="{% static 'img/icon-color-thick.svg' %}" alt="HydroServer" class="auth-card__logo">
+        {% with icon=provider.app|provider_icon %}
+            {% if icon %}
+                <span class="auth-card__connector" aria-hidden="true">↔</span>
+                <img src="{{ icon }}" alt="{{ provider.name }}" class="auth-card__logo">
+            {% endif %}
+        {% endwith %}
+    </div>
+{% endblock card_header %}
 {% block content %}
     {% if process == "connect" %}
         {% element h1 %}

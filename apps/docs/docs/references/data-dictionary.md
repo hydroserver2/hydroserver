@@ -34,7 +34,7 @@ A Datastream groups a collection of Observations measuring the same ObservedProp
 | M        | observedPropertyId           | A foreign key identifier for the ObservedProperty associated with the Datastream.                                  | UUID      |
 | M        | unitId                        | A foreign key identifier for the Unit used for Observations within the Datastream.                                 | UUID      |
 | M        | processingLevelId            | A foreign key identifier indicating the ProcessingLevel for the Datastream.                                        | UUID      |
-| O        | type                           | How the Datastream's Observations are arranged. One of `timeSeriesCoverage` (one Observation per time). Defaults to `timeSeriesCoverage`. Allowed values are defined by HydroServer, not by a controlled vocabulary table. | String    |
+| M        | type                           | How the Datastream's Observations are arranged. One of `timeSeriesCoverage` (one Observation per time). Defaults to `timeSeriesCoverage`. Allowed values are defined by HydroServer, not by a controlled vocabulary table. | String    |
 | O        | status                         | A text value indicating the status of the Datastream.                                                              | String    |
 | O        | observedArea                  | The spatial extent associated with the Datastream. This field exists in the database but is currently unused.      | String    |
 | M        | sampledMedium                 | The environmental medium sampled by the Datastream.                                                                | String    |
@@ -50,7 +50,7 @@ A Datastream groups a collection of Observations measuring the same ObservedProp
 | O        | resultBeginTime              | The timestamp of the first Observation in the Datastream. This field remains in the model but is currently unused. | Datetime  |
 | O        | resultEndTime                | The timestamp of the last Observation in the Datastream. This field remains in the model but is currently unused.  | Datetime  |
 | M        | isPrivate                     | An access control flag indicating whether the Datastream metadata and data are private by default.                 | Boolean   |
-| M        | isVisible                     | An access control flag indicating whether the Datastream should be shown in normal data-discovery responses.       | Boolean   |
+| M        | isRestricted                  | An access control flag indicating whether data download and query are restricted for the Datastream. The Datastream and its metadata stay public, but its Observations are only available to workspace collaborators with permission to view them. Defaults to `false`. | Boolean   |
 | M        | tags                           | Custom key-value metadata for the Datastream, stored as a JSON object of non-empty string keys and values. Defaults to `{}`. | JSON      |
 
 ## Observation

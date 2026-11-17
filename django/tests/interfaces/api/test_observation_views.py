@@ -634,6 +634,123 @@ def test_get_observation_returns_404_for_nonexistent_observation(client):
     assert response.status_code == 404
 
 
+# --- restricted datastreams ------------------------------------------------------------
+
+
+def _restricted_datastream_with_observations(workspace, count=2):
+    """A public datastream with is_restricted=True whose maintained value_count
+    matches its observations, so count shortcuts are exercised realistically."""
+
+    datastream = _make_datastream(workspace, restricted=True)
+    observations = ObservationFactory.create_batch(count, datastream=datastream)
+    datastream.value_count = count
+    datastream.save(update_fields=["value_count"])
+    return datastream, observations
+
+
+def _observation_viewer_collaborator(workspace):
+    role = RoleFactory(workspace=workspace)
+    PermissionFactory(role=role, resource_type="Observation", can_view=True)
+    return CollaboratorFactory(workspace=workspace, role=role)
+
+
+def test_get_observations_excludes_restricted_datastream_observations_for_anonymous(client):
+    workspace = WorkspaceFactory()
+    datastream, _ = _restricted_datastream_with_observations(workspace)
+
+    response = client.get(_observations_url(datastream.id))
+
+    assert response.status_code == 200
+    assert response.json()["data"] == []
+    assert response.json()["meta"]["numberMatched"] == 0
+
+
+def test_get_observations_excludes_restricted_datastream_observations_for_outsider(client):
+    workspace = WorkspaceFactory()
+    datastream, _ = _restricted_datastream_with_observations(workspace)
+    client.force_login(UserFactory())
+
+    response = client.get(_observations_url(datastream.id))
+
+    assert response.status_code == 200
+    assert response.json()["data"] == []
+    assert response.json()["meta"]["numberMatched"] == 0
+
+
+def test_get_observations_unfiltered_count_excludes_restricted_datastreams_for_anonymous(client):
+    workspace = WorkspaceFactory()
+    _restricted_datastream_with_observations(workspace, count=3)
+    open_datastream = _make_datastream(workspace)
+    open_observations = ObservationFactory.create_batch(2, datastream=open_datastream)
+    open_datastream.value_count = 2
+    open_datastream.save(update_fields=["value_count"])
+
+    response = client.get(_observations_url())
+
+    assert response.status_code == 200
+    assert {o["id"] for o in response.json()["data"]} == {str(o.id) for o in open_observations}
+    assert response.json()["meta"]["numberMatched"] == 2
+
+
+def test_get_observations_includes_restricted_datastream_observations_for_owner(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream, observations = _restricted_datastream_with_observations(workspace)
+    client.force_login(owner)
+
+    response = client.get(_observations_url(datastream.id))
+
+    assert response.status_code == 200
+    assert {o["id"] for o in response.json()["data"]} == {str(o.id) for o in observations}
+    assert response.json()["meta"]["numberMatched"] == 2
+
+
+def test_get_observations_includes_restricted_datastream_observations_for_observation_viewer(client):
+    workspace = WorkspaceFactory()
+    datastream, observations = _restricted_datastream_with_observations(workspace)
+    collaborator = _observation_viewer_collaborator(workspace)
+    client.force_login(collaborator.user)
+
+    response = client.get(_observations_url(datastream.id))
+
+    assert response.status_code == 200
+    assert {o["id"] for o in response.json()["data"]} == {str(o.id) for o in observations}
+    assert response.json()["meta"]["numberMatched"] == 2
+
+
+def test_get_observations_excludes_restricted_observations_for_collaborator_without_observation_view(client):
+    workspace = WorkspaceFactory()
+    datastream, _ = _restricted_datastream_with_observations(workspace)
+    collaborator = _collaborator_without_observation_permissions(workspace)
+    client.force_login(collaborator.user)
+
+    response = client.get(_observations_url(datastream.id))
+
+    assert response.status_code == 200
+    assert response.json()["data"] == []
+    assert response.json()["meta"]["numberMatched"] == 0
+
+
+def test_get_observation_returns_404_for_restricted_datastream_observation_when_anonymous(client):
+    workspace = WorkspaceFactory()
+    _, observations = _restricted_datastream_with_observations(workspace, count=1)
+
+    response = client.get(_detail_url(observations[0].id))
+
+    assert response.status_code == 404
+
+
+def test_get_observation_returns_200_for_restricted_datastream_observation_when_owner(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    _, observations = _restricted_datastream_with_observations(workspace, count=1)
+    client.force_login(owner)
+
+    response = client.get(_detail_url(observations[0].id))
+
+    assert response.status_code == 200
+
+
 # --- delete_observation ----------------------------------------------------------------
 
 

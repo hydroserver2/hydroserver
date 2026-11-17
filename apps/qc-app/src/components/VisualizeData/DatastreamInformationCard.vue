@@ -322,7 +322,7 @@ const generalItems = computed(() => [
   { label: 'Time Aggregation Interval Unit', value: d.value.timeAggregationIntervalUnit },
   { label: 'Tags', value: tags.value },
   { label: 'Is Private', value: d.value.isPrivate ? 'Yes' : 'No' },
-  { label: 'Is Visible', value: d.value.isVisible ? 'Yes' : 'No' },
+  { label: 'Data Download', value: d.value.isRestricted ? 'Restricted' : 'Allowed' },
 ])
 
 const locationItems = computed(() => {

@@ -65,7 +65,7 @@ class ObservationMixin(SensorThingsUtils):
         else:
             if count and not filters:
                 entity_count = principal.filter_by_permission(
-                    Datastream.objects, "can_view"
+                    Datastream.objects, "can_view", resource_type=Observation
                 ).aggregate(total=Sum("value_count"))["total"] or 0
             elif count:
                 entity_count = observations.count() if count else None

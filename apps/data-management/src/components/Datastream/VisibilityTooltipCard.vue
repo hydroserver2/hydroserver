@@ -22,7 +22,7 @@
             :color="isVisible ? 'green' : 'deep-orange-darken-4'"
             text-color="black"
           >
-            {{ isVisible ? 'Visible' : 'Hidden' }}
+            {{ isVisible ? statusLabels[0] : statusLabels[1] }}
           </v-chip>
         </v-col>
       </v-row>
@@ -56,10 +56,15 @@ interface KV {
   value: string | number | null
 }
 
-defineProps<{
-  title: string
-  subtitle?: KV
-  items: KV[]
-  isVisible: boolean
-}>()
+withDefaults(
+  defineProps<{
+    title: string
+    subtitle?: KV
+    items: KV[]
+    isVisible: boolean
+    /** Chip text for the [visible, not visible] states. */
+    statusLabels?: [string, string]
+  }>(),
+  { subtitle: undefined, statusLabels: () => ['Visible', 'Hidden'] }
+)
 </script>

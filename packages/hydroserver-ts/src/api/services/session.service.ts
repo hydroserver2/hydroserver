@@ -56,6 +56,15 @@ export class SessionService {
     return this.getAccountUrl('/accounts/profile/', returnTo)
   }
 
+  /**
+   * The session sign-in page with a return destination. For signing in
+   * without leaving the current page, for example in a new tab after the
+   * session expired.
+   */
+  getAccountLoginUrl(returnTo = this.getCurrentPath()): string {
+    return this.getAccountUrl('/accounts/login/', returnTo)
+  }
+
   /** @deprecated Use getAccountSignupUrl() to choose a return destination. */
   get accountSignupUrl(): string {
     return this.getAccountSignupUrl()
@@ -105,7 +114,7 @@ export class SessionService {
     this.assertNotTokenMode()
     if (!this._client.oidc) {
       if (!isBrowser()) return
-      window.location.assign(this.getAccountUrl('/accounts/login/', returnTo))
+      window.location.assign(this.getAccountLoginUrl(returnTo))
       return
     }
 

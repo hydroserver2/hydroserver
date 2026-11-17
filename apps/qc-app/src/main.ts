@@ -46,8 +46,11 @@ async function initializeApp() {
 
   // Wire the singleton into the app's pre-existing pinia ref so every
   // `useHydroServer().hs` call site keeps working without churn.
-  const { hs: hsRef } = storeToRefs(useHydroServer())
+  const { hs: hsRef, sessionExpired } = storeToRefs(useHydroServer())
   hsRef.value = hs
+  hs.on('session:expired', () => {
+    sessionExpired.value = true
+  })
 
   // Rehydrate the authenticated user. Suppress the expected 401 before
   // the user logs in by gating the request on the session snapshot.

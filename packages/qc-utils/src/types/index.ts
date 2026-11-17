@@ -380,7 +380,7 @@ export class Datastream {
   methodId: string;
   processingLevelId: string;
   isPrivate: boolean;
-  isVisible: boolean;
+  isRestricted: boolean;
   phenomenonBeginTime?: string | null;
   phenomenonEndTime?: string | null;
   intendedTimeSpacing?: number;
@@ -407,7 +407,7 @@ export class Datastream {
     this.timeAggregationInterval = null;
     this.timeAggregationIntervalUnit = "seconds";
     this.isPrivate = true;
-    this.isVisible = true;
+    this.isRestricted = false;
     this.valueCount = 0;
   }
 }
@@ -422,7 +422,7 @@ export interface DatastreamExtended {
   noDataValue: number;
   aggregationStatistic: string;
   isPrivate: boolean;
-  isVisible: boolean;
+  isRestricted: boolean;
   phenomenonBeginTime?: string | null;
   phenomenonEndTime?: string | null;
   intendedTimeSpacing?: number;
@@ -591,14 +591,14 @@ export interface Photo {
 export class OAuthProvider {
   id: string;
   name: string;
-  iconLink: string;
+  iconLink: string | null;
   signupEnabled: boolean;
   connectEnabled: boolean;
 
   constructor() {
     this.id = "";
     this.name = "";
-    this.iconLink = "";
+    this.iconLink = null;
     this.signupEnabled = true;
     this.connectEnabled = true;
   }

@@ -118,6 +118,7 @@ for every field in v2.
 | Datastreams, data product tasks, monitoring tasks, rating curves | `thingId` | `monitoringSiteId` |
 | Datastreams | `sensorId`, `fileAttachments` | `methodId`, `linkedResources` |
 | | `observationType`, `resultType` | `type` (optional, defaults to `timeSeriesCoverage`). See [Datastream types](#datastream-types). |
+| | `isVisible` | `isRestricted`, with the opposite value. See [Restricted Data Download](#restricted-data-download). |
 | Methods (Sensors) | `methodCode`, `methodType`, `methodLink` | `code`, `type`, `definition` |
 | | `manufacturer`, `model`, `modelLink` | `sensorModelManufacturer`, `sensorModel`, `sensorModelDefinition` |
 | | `encodingType` | Removed |
@@ -143,6 +144,19 @@ unless your administrator saved them as tags before upgrading. See
   `sortby=type`.
 - Datastream CSV downloads have a `# Type:` header line instead of `# ObservationType:` and `# ResultType:`.
 
+### Restricted Data Download
+
+A datastream's `isVisible` is replaced by `isRestricted`, which has the opposite value: a datastream that had
+`isVisible: false` now has `isRestricted: true`. In v1, `isVisible` only hid observations in the Data Management Web
+Application. In v2, `isRestricted` restricts data download and query in every API: the datastream and its metadata,
+including `valueCount`, `phenomenonBeginTime`, and `phenomenonEndTime`, stay public, but its observations are only
+returned to the workspace owner and collaborators whose role can view observations. `isRestricted` and `isPrivate`
+are independent, and changing one never changes the other.
+
+- Send and read `isRestricted` instead of `isVisible`, and sort with `sortby=isRestricted`.
+- If a datastream's data download is restricted and you can't access its data, observation requests return none of
+  its observations and their `numberMatched` doesn't count them. This includes the SensorThings API and CSV downloads.
+
 ## SensorThings API
 
 The SensorThings API's paths and query options haven't changed, but its entities now come from v2's data model. See
@@ -155,7 +169,8 @@ The SensorThings API's paths and query options haven't changed, but its entities
 - **Sensors:** each Sensor is a method. Its `encodingType` is always `application/json`, and its `metadata` keeps the
   same keys as v1.
 - **Datastreams:** in each Datastream's `properties`, `fileAttachments` is now `linkedResources`, `resultType` is now
-  `type`, and `processingLevelCode` can be `null`. An ObservedProperty's `variableCode` can also be `null`.
+  `type`, `isVisible` is now `isRestricted` (see [Restricted Data Download](#restricted-data-download)), and
+  `processingLevelCode` can be `null`. An ObservedProperty's `variableCode` can also be `null`.
 - **Observation type:** every Datastream's `observationType` is
   `http://www.opengis.net/def/observationType/OGC-OM/2.0/OM_Measurement`, and `$filter` on `observationType` compares
   against that value.

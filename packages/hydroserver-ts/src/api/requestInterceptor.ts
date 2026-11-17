@@ -3,7 +3,10 @@ import { getCSRFToken } from './getCSRFToken'
 export type AccessTokenProvider = () => Promise<string | null>
 
 let accessTokenProvider: AccessTokenProvider | null = null
-let unauthorizedHandler: (() => void) | null = null
+/** Called with whether the rejected request carried an access token. */
+export type UnauthorizedHandler = (sentToken: boolean) => void
+
+let unauthorizedHandler: UnauthorizedHandler | null = null
 
 export function registerAccessTokenProvider(
   provider: AccessTokenProvider | null
@@ -11,12 +14,14 @@ export function registerAccessTokenProvider(
   accessTokenProvider = provider
 }
 
-export function registerUnauthorizedHandler(handler: (() => void) | null) {
+export function registerUnauthorizedHandler(
+  handler: UnauthorizedHandler | null
+) {
   unauthorizedHandler = handler
 }
 
-export function notifyUnauthorized() {
-  unauthorizedHandler?.()
+export function notifyUnauthorized(sentToken: boolean) {
+  unauthorizedHandler?.(sentToken)
 }
 
 export interface RequestOptions extends Omit<RequestInit, 'body'> {

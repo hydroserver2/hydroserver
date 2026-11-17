@@ -32,6 +32,9 @@ describe('SessionService account URLs', () => {
       expect(client.session.getAccountProfileUrl('/settings')).toBe(
         'https://api.example.test/accounts/profile/?next=https%3A%2F%2Fapp.example.test%2Fsettings'
       )
+      expect(client.session.getAccountLoginUrl('/qc/')).toBe(
+        'https://api.example.test/accounts/login/?next=https%3A%2F%2Fapp.example.test%2Fqc%2F'
+      )
     } finally {
       if (originalLocation) {
         Object.defineProperty(globalThis, 'location', originalLocation)
@@ -174,6 +177,23 @@ describe('HydroServer.initialize() request setup', () => {
     expect(new Headers(init.headers).get('Authorization')).toBe('Bearer token-123')
   })
 
+  it('leaves onUnauthorized alone for a request sent without a token', async () => {
+    const onUnauthorized = vi.fn()
+    await HydroServer.initialize({
+      host: 'https://api.example.test',
+      accessTokenProvider: async () => null,
+      onUnauthorized,
+    })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation(async () => new Response(null, { status: 401 }))
+    )
+
+    await apiMethods.fetch(endpoint)
+
+    expect(onUnauthorized).not.toHaveBeenCalled()
+  })
+
   it('calls onUnauthorized when a token is rejected after a retry', async () => {
     const onUnauthorized = vi.fn()
     await HydroServer.initialize({
@@ -189,6 +209,59 @@ describe('HydroServer.initialize() request setup', () => {
     await apiMethods.fetch(endpoint)
 
     expect(onUnauthorized).toHaveBeenCalledTimes(1)
+  })
+
+  describe('signed in with a session cookie', () => {
+    const signedIn = (user: unknown) =>
+      vi.stubGlobal('document', {
+        cookie: '',
+        getElementById: (id: string) =>
+          id === 'current-user' ? { textContent: JSON.stringify(user) } : null,
+      })
+    const rejectAll = () =>
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockImplementation(async () => new Response(null, { status: 401 }))
+      )
+
+    it('reports each request rejected after the session ended', async () => {
+      signedIn({ id: '1', email: 'owner@example.com' })
+      const onUnauthorized = vi.fn()
+      const expired = vi.fn()
+      const client = await HydroServer.initialize({
+        host: 'https://api.example.test',
+        onUnauthorized,
+      })
+      client.on('session:expired', expired)
+      expect(client.session.isAuthenticated).toBe(true)
+      rejectAll()
+
+      const response = await apiMethods.post(endpoint, {})
+      await apiMethods.fetch(endpoint)
+
+      expect(response.status).toBe(401)
+      expect(onUnauthorized).toHaveBeenCalledTimes(2)
+      expect(expired).toHaveBeenCalledTimes(2)
+      // Signing in again restores the same session, so the user is kept.
+      expect(client.session.isAuthenticated).toBe(true)
+    })
+
+    it('stays quiet about a 401 when nobody was signed in', async () => {
+      signedIn(null)
+      const onUnauthorized = vi.fn()
+      const expired = vi.fn()
+      const client = await HydroServer.initialize({
+        host: 'https://api.example.test',
+        onUnauthorized,
+      })
+      client.on('session:expired', expired)
+      rejectAll()
+
+      await apiMethods.fetch(endpoint)
+
+      expect(onUnauthorized).not.toHaveBeenCalled()
+      expect(expired).not.toHaveBeenCalled()
+    })
   })
 
   it('reads the configured CSRF cookie name', async () => {

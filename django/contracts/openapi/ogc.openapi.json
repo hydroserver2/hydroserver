@@ -2309,7 +2309,7 @@
                 "timeAggregationInterval",
                 "status",
                 "isPrivate",
-                "isVisible",
+                "isRestricted",
                 "timeAggregationIntervalUnit",
                 "intendedTimeSpacing",
                 "intendedTimeSpacingUnit",
@@ -2378,8 +2378,8 @@
             "title": "Isprivate",
             "type": "boolean"
           },
-          "isVisible": {
-            "title": "Isvisible",
+          "isRestricted": {
+            "title": "Isrestricted",
             "type": "boolean"
           },
           "methodId": {
@@ -2527,9 +2527,9 @@
             "title": "Isprivate",
             "type": "boolean"
           },
-          "isVisible": {
-            "default": true,
-            "title": "Isvisible",
+          "isRestricted": {
+            "default": false,
+            "title": "Isrestricted",
             "type": "boolean"
           },
           "methodId": {
@@ -2673,9 +2673,9 @@
             "title": "Isprivate",
             "type": "boolean"
           },
-          "isVisible": {
-            "default": true,
-            "title": "Isvisible",
+          "isRestricted": {
+            "default": false,
+            "title": "Isrestricted",
             "type": "boolean"
           },
           "linkedResources": {
@@ -2980,7 +2980,7 @@
                 "timeAggregationInterval",
                 "status",
                 "isPrivate",
-                "isVisible",
+                "isRestricted",
                 "timeAggregationIntervalUnit",
                 "intendedTimeSpacing",
                 "intendedTimeSpacingUnit",
@@ -3043,7 +3043,7 @@
                 "sampledMedium",
                 "status",
                 "isPrivate",
-                "isVisible",
+                "isRestricted",
                 "aggregationStatistic",
                 "valueCount",
                 "phenomenonBeginTime",
@@ -3055,7 +3055,7 @@
                 "-sampledMedium",
                 "-status",
                 "-isPrivate",
-                "-isVisible",
+                "-isRestricted",
                 "-aggregationStatistic",
                 "-valueCount",
                 "-phenomenonBeginTime",
@@ -3067,7 +3067,7 @@
                 "+sampledMedium",
                 "+status",
                 "+isPrivate",
-                "+isVisible",
+                "+isRestricted",
                 "+aggregationStatistic",
                 "+valueCount",
                 "+phenomenonBeginTime",
@@ -3214,9 +3214,9 @@
             "title": "Isprivate",
             "type": "boolean"
           },
-          "isVisible": {
-            "default": true,
-            "title": "Isvisible",
+          "isRestricted": {
+            "default": false,
+            "title": "Isrestricted",
             "type": "boolean"
           },
           "linkedResources": {
@@ -16483,7 +16483,7 @@
   "info": {
     "description": "HydroServer's primary API for creating, managing, and retrieving hydrologic data and metadata: workspaces and\ntheir access control, monitoring sites, datastreams, and observations, the metadata and controlled vocabularies\nthat describe them, and the Job Orchestration System tasks that load, derive, and monitor data.\n\nThe API implements [OGC API - Features](https://ogcapi.ogc.org/features/). Each type of resource is a\ncollection listed at `/collections`, with its items at `/collections/{collectionId}/items`, and `/conformance`\nlists the standards the API conforms to.\n\n## Additional Documentation\n\n- [Using the Data Management API](https://hydroserver.org/user-guides/how-to/using-the-data-management-api): paging,\n  filtering, response formats, creating, updating, and deleting items, and errors, with examples\n- [Authenticating](https://hydroserver.org/references/hydroserver-apis#authenticating) with API keys, OIDC access tokens,\n  email and password, or browser sessions\n- [Data model](https://hydroserver.org/references/data-model) and [data dictionary](https://hydroserver.org/references/data-dictionary)\n- [HydroServer APIs](https://hydroserver.org/references/hydroserver-apis), including HydroServer's SensorThings API",
     "title": "HydroServer Data Management API",
-    "version": "2.0.0b9"
+    "version": "2.0.0b10"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -20408,7 +20408,7 @@
                   "timeAggregationInterval",
                   "status",
                   "isPrivate",
-                  "isVisible",
+                  "isRestricted",
                   "timeAggregationIntervalUnit",
                   "intendedTimeSpacing",
                   "intendedTimeSpacingUnit",
@@ -20509,7 +20509,7 @@
                   "sampledMedium",
                   "status",
                   "isPrivate",
-                  "isVisible",
+                  "isRestricted",
                   "aggregationStatistic",
                   "valueCount",
                   "phenomenonBeginTime",
@@ -20521,7 +20521,7 @@
                   "-sampledMedium",
                   "-status",
                   "-isPrivate",
-                  "-isVisible",
+                  "-isRestricted",
                   "-aggregationStatistic",
                   "-valueCount",
                   "-phenomenonBeginTime",
@@ -20533,7 +20533,7 @@
                   "+sampledMedium",
                   "+status",
                   "+isPrivate",
-                  "+isVisible",
+                  "+isRestricted",
                   "+aggregationStatistic",
                   "+valueCount",
                   "+phenomenonBeginTime",
@@ -21050,7 +21050,7 @@
                   "timeAggregationInterval",
                   "status",
                   "isPrivate",
-                  "isVisible",
+                  "isRestricted",
                   "timeAggregationIntervalUnit",
                   "intendedTimeSpacing",
                   "intendedTimeSpacingUnit",

@@ -155,10 +155,17 @@
           <tr>
             <th>
               <div class="service-account-header-filters">
-                <v-menu
-                  :close-on-content-click="false"
-                  location="bottom start"
-                  attach="body"
+                <HsTableFilterMenu
+                  v-model:search="roleFilterSearch"
+                  title="Filter by role"
+                  label="Role"
+                  section-label="Roles"
+                  :options="availableRoles.map((value) => ({ value, label: value }))"
+                  :selected="selectedRoles"
+                  case-insensitive
+                  search-placeholder="Filter roles"
+                  empty-text="No roles found"
+                  @toggle="toggleRole"
                 >
                   <template #activator="{ props: menuProps }">
                     <v-btn-cancel
@@ -166,62 +173,18 @@
                       size="small"
                       class="service-account-filter-button"
                       :class="{
-                        'service-account-filter-button--active':
-                          selectedRoles.length,
+                        'service-account-filter-button--active': selectedRoles.length,
                       }"
                       :append-icon="mdiChevronDown"
                       :aria-label="`Filter by role${selectedRoles.length ? ` (${selectedRoles.length} selected)` : ''}`"
                     >
                       Role
-                      <span
-                        v-if="selectedRoles.length"
-                        class="filter-count hs-label"
-                      >
+                      <span v-if="selectedRoles.length" class="filter-count hs-label">
                         {{ selectedRoles.length }}
                       </span>
                     </v-btn-cancel>
                   </template>
-                  <v-list class="service-account-filter-menu" density="compact">
-                    <div class="service-account-filter-title hs-subheading">
-                      Filter by role
-                    </div>
-                    <v-text-field
-                      v-model="roleFilterSearch"
-                      class="service-account-filter-search"
-                      placeholder="Filter roles"
-                      :prepend-inner-icon="mdiMagnify"
-                      density="compact"
-                      hide-details
-                      clearable
-                    />
-                    <v-list-item
-                      v-for="role in filteredRoles"
-                      :key="role"
-                      @click="toggleRole(role)"
-                    >
-                      <template #prepend>
-                        <v-checkbox
-                          :model-value="selectedRoles.includes(role)"
-                          hide-details
-                          density="compact"
-                          :aria-label="`Role: ${role}`"
-                          @click.stop="toggleRole(role)"
-                        />
-                      </template>
-                      <v-list-item-title>{{ role }}</v-list-item-title>
-                    </v-list-item>
-                    <v-list-item
-                      v-if="selectedRoles.length"
-                      class="filter-clear-item"
-                      @click="selectedRoles = []"
-                    >
-                      <v-list-item-title>Clear filter</v-list-item-title>
-                    </v-list-item>
-                    <div v-if="!filteredRoles.length" class="filter-empty">
-                      No roles found
-                    </div>
-                  </v-list>
-                </v-menu>
+                </HsTableFilterMenu>
               </div>
             </th>
             <th class="service-account-actions-column text-right">Actions</th>
@@ -383,6 +346,7 @@
 </template>
 
 <script setup lang="ts">
+import { HsTableFilterMenu } from '@hydroserver/design-system/vue'
 import hs, {
   ServiceAccount,
   CollaboratorRole,
@@ -620,12 +584,6 @@ const availableRoles = computed(() =>
     ),
   ].sort((a, b) => a.localeCompare(b))
 )
-const filteredRoles = computed(() => {
-  const query = roleFilterSearch.value.trim().toLocaleLowerCase()
-  return availableRoles.value.filter((role) =>
-    role.toLocaleLowerCase().includes(query)
-  )
-})
 const filteredItems = computed(() => {
   const { roles: roleValues, text } = parsedQuery.value
   const query = text.toLocaleLowerCase()
@@ -977,70 +935,7 @@ watch(search, (value) => {
   color: rgb(var(--v-theme-on-primary));
   text-align: center;
 }
-.service-account-filter-menu {
-  min-width: 280px;
-  max-height: 320px;
-  overflow-y: auto;
-  padding: var(--hs-space-8) 0;
-}
-.service-account-filter-title {
-  padding: var(--hs-space-8) var(--hs-space-16);
-  color: var(--hs-text-primary);
-}
-.service-account-filter-search {
-  margin: 0 var(--hs-space-12) var(--hs-space-8);
-  height: 30px;
-}
-.service-account-filter-search :deep(.v-field) {
-  height: 30px;
-  min-height: 30px;
-  border-radius: var(--hs-radius-sm);
-  background: var(--hs-surface);
-  padding-inline-start: 0;
-}
-.service-account-filter-search :deep(.v-field__outline) {
-  color: var(--hs-input-border);
-  --v-field-border-opacity: 1;
-}
-.service-account-filter-search :deep(.v-field--focused) {
-  box-shadow: none;
-}
-.service-account-filter-search :deep(.v-field--focused .v-field__outline) {
-  color: rgb(var(--v-theme-primary));
-  --v-field-border-width: 2px;
-  --v-field-border-opacity: 1;
-}
-.service-account-filter-search :deep(.v-field__input) {
-  min-height: 30px;
-  padding-top: 0;
-  padding-bottom: 0;
-  font-size: var(--hs-font-sm);
-}
-.service-account-filter-search :deep(.v-field__prepend-inner) {
-  padding-left: 8px;
-  padding-right: 0;
-}
-.service-account-filter-search :deep(.v-field__prepend-inner > .v-icon) {
-  width: 16px;
-  font-size: var(--hs-font-md);
-  color: var(--hs-input-border);
-  opacity: 1;
-}
-.service-account-filter-search :deep(.v-field__append-inner) {
-  padding-right: 8px;
-}
-.service-account-filter-search :deep(input::placeholder) {
-  color: var(--hs-text-secondary);
-  opacity: 1;
-}
-.filter-empty {
-  padding: var(--hs-space-12) var(--hs-space-16);
-  color: var(--hs-text-secondary);
-}
-.filter-clear-item {
-  border-top: 1px solid var(--hs-border);
-  color: rgb(var(--v-theme-primary));
-}
+
 .service-accounts-table-card {
   display: flex;
   flex: 1;

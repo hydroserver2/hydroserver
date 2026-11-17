@@ -41,6 +41,54 @@ def test_get_observation_returns_200(client):
     assert response.json()["@iot.id"] == str(observation.id)
 
 
+# --- restricted datastreams --------------------------------------------------------------
+
+
+def _restricted_and_open_observations(owner=None):
+    workspace = WorkspaceFactory(owner=owner) if owner else WorkspaceFactory()
+    restricted = DatastreamFactory(
+        monitoring_site=MonitoringSiteFactory(workspace=workspace), restricted=True, value_count=1
+    )
+    open_ = DatastreamFactory(
+        monitoring_site=MonitoringSiteFactory(workspace=workspace), value_count=1
+    )
+    return ObservationFactory(datastream=restricted), ObservationFactory(datastream=open_)
+
+
+def test_get_observations_excludes_restricted_datastream_observations_for_anonymous(client):
+    restricted_observation, open_observation = _restricted_and_open_observations()
+
+    response = client.get(f"{OBSERVATIONS_URL}?$count=true")
+
+    assert response.status_code == 200
+    ids = [o["@iot.id"] for o in response.json()["value"]]
+    assert str(open_observation.id) in ids
+    assert str(restricted_observation.id) not in ids
+    assert response.json()["@iot.count"] == 1
+
+
+def test_get_observations_includes_restricted_datastream_observations_for_owner(client):
+    owner = UserFactory()
+    restricted_observation, open_observation = _restricted_and_open_observations(owner)
+    client.force_login(owner)
+
+    response = client.get(f"{OBSERVATIONS_URL}?$count=true")
+
+    assert response.status_code == 200
+    ids = [o["@iot.id"] for o in response.json()["value"]]
+    assert str(open_observation.id) in ids
+    assert str(restricted_observation.id) in ids
+    assert response.json()["@iot.count"] == 2
+
+
+def test_get_observation_returns_404_for_restricted_datastream_observation_when_anonymous(client):
+    restricted_observation, _ = _restricted_and_open_observations()
+
+    response = client.get(_detail_url(restricted_observation.id))
+
+    assert response.status_code == 404
+
+
 # --- create_observation_entity (POST /Observations) -------------------------------------
 
 

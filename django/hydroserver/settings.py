@@ -150,6 +150,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "core.iam.auth.context_processors.account_settings",
             ],
         },
     },
@@ -237,6 +238,10 @@ ACCOUNT_LOGIN_METHODS = {"email"}
 ACCOUNT_SESSION_REMEMBER = True
 ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
 ACCOUNT_SIGNUP_FORM_CLASS = "core.iam.auth.forms.UserSignupForm"
+ACCOUNT_FORMS = {
+    "signup": "core.iam.auth.account_forms.SignupForm",
+    "set_password": "core.iam.auth.account_forms.SetPasswordForm",
+}
 
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 ACCOUNT_EMAIL_VERIFICATION_BY_CODE_ENABLED = True

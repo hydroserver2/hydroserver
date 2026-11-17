@@ -81,11 +81,6 @@ test('email login returns to the requested orchestration workspace without a den
   await page.context().clearCookies()
   await page.reload()
   await expect(page).toHaveURL(/\/accounts\/login\//)
-  const emailOption = page.getByRole('link', {
-    name: 'Continue with email',
-    exact: true,
-  })
-  if (await emailOption.isVisible()) await emailOption.click()
   await page.getByLabel('Email').fill(users.owner.email)
   await page.getByLabel('Password').fill(users.owner.password)
   const startup = await holdWorkspaces(page)
