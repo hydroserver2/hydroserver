@@ -3,7 +3,7 @@
     <v-card-title>Shift datetimes</v-card-title>
     <v-card-subtitle>
       <span class="selected-count-badge">
-        <v-icon icon="mdi-vector-selection" size="14" />
+        <v-icon :icon="mdiVectorSelection" size="14" />
         {{ selectedData?.length }} point{{
           selectedData?.length === 1 ? '' : 's'
         }}
@@ -62,7 +62,7 @@
           size="x-small"
           variant="tonal"
           color="primary"
-          :prepend-icon="chip.active ? 'mdi-check' : undefined"
+          :prepend-icon="chip.active ? mdiCheck : undefined"
           @click="applySnap(chip)"
         >
           {{ chip.label }}
@@ -93,6 +93,7 @@
 </template>
 
 <script setup lang="ts">
+import { mdiCheck, mdiVectorSelection } from '@mdi/js'
 import { computed, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'

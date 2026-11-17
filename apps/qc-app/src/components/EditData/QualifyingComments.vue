@@ -3,7 +3,7 @@
     <v-card-title>Qualifying comments</v-card-title>
     <v-card-subtitle>
       <span class="selected-count-badge">
-        <v-icon icon="mdi-vector-selection" size="14" />
+        <v-icon :icon="mdiVectorSelection" size="14" />
         {{ selectedData?.length ?? 0 }} point{{
           selectedData?.length === 1 ? '' : 's'
         }}
@@ -34,7 +34,7 @@
         <v-btn
           size="x-small"
           variant="text"
-          prepend-icon="mdi-plus"
+          :prepend-icon="mdiPlus"
           @click="openNewQualifier = true"
         >
           New qualifier
@@ -105,6 +105,7 @@
 </template>
 
 <script setup lang="ts">
+import { mdiPlus, mdiVectorSelection } from '@mdi/js'
 import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'

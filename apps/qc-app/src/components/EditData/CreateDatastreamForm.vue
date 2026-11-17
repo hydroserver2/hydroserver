@@ -47,7 +47,7 @@
         size="small"
         variant="text"
         color="primary"
-        prepend-icon="mdi-plus"
+        :prepend-icon="mdiPlus"
         @click="showAddLevel = true"
       >
         Add processing level
@@ -180,6 +180,7 @@
 </template>
 
 <script setup lang="ts">
+import { mdiPlus } from '@mdi/js'
 import { computed, ref } from 'vue'
 import type { Datastream } from '@hydroserver/client'
 import type { CreateManagedDatastreamSpec } from '@/composables/useCreateManagedDatastream'

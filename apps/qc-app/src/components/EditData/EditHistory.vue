@@ -12,9 +12,9 @@
       <v-icon
         v-if="collapsible"
         size="16"
-        :icon="isCollapsed ? 'mdi-chevron-right' : 'mdi-chevron-down'"
+        :icon="isCollapsed ? mdiChevronRight : mdiChevronDown"
       />
-      <v-icon icon="mdi-history" color="primary" size="16" />
+      <v-icon :icon="mdiHistory" color="primary" size="16" />
       <span class="text-body-small font-weight-medium">Edit history</span>
       <v-chip
         v-if="editCount"
@@ -37,7 +37,7 @@
             size="x-small"
             variant="text"
             density="comfortable"
-            icon="mdi-undo-variant"
+            :icon="mdiUndoVariant"
             :disabled="isUpdating || isReadOnly || !canUndo"
             @click.stop="onUndo"
           />
@@ -53,7 +53,7 @@
             size="x-small"
             variant="text"
             density="comfortable"
-            icon="mdi-redo-variant"
+            :icon="mdiRedoVariant"
             :disabled="isUpdating || isReadOnly || !canRedo"
             @click.stop="onRedo"
           />
@@ -69,7 +69,7 @@
             size="x-small"
             variant="text"
             density="comfortable"
-            icon="mdi-tray-arrow-down"
+            :icon="mdiTrayArrowDown"
             :disabled="isUpdating || !editCount"
             @click.stop="onSaveHistory"
           />
@@ -84,7 +84,7 @@
             size="x-small"
             variant="text"
             density="comfortable"
-            icon="mdi-open-in-new"
+            :icon="mdiOpenInNew"
             @click.stop="emit('pop-out')"
           />
         </template>
@@ -113,8 +113,8 @@
               <v-icon
                 :icon="
                   selectedSeries?.data.isLoading
-                    ? 'mdi-progress-download'
-                    : 'mdi-database-check'
+                    ? mdiProgressDownload
+                    : mdiDatabaseCheck
                 "
                 size="16"
                 :color="selectedSeries?.data.isLoading ? 'grey' : 'success'"
@@ -173,8 +173,8 @@
                     density="comfortable"
                     :icon="
                       snapshotShown(SNAPSHOT_BASELINE_INDEX)
-                        ? 'mdi-chart-line-variant'
-                        : 'mdi-chart-line'
+                        ? mdiChartLineVariant
+                        : mdiChartLine
                     "
                     :color="
                       snapshotShown(SNAPSHOT_BASELINE_INDEX) ? 'primary' : undefined
@@ -200,7 +200,7 @@
                     size="x-small"
                     variant="text"
                     density="comfortable"
-                    icon="mdi-cloud-download-outline"
+                    :icon="mdiCloudDownloadOutline"
                     :disabled="isUpdating"
                     @click.stop="onReload"
                   />
@@ -215,7 +215,7 @@
               class="edit-history__preview d-flex align-center ga-2 px-3 py-2"
               data-testid="history-preview-banner"
             >
-              <v-icon icon="mdi-eye-outline" size="16" color="primary" />
+              <v-icon :icon="mdiEyeOutline" size="16" color="primary" />
               <span class="text-body-small flex-grow-1">
                 Previewing
                 {{
@@ -249,7 +249,7 @@
             </div>
 
             <div v-else-if="editCount === 0" class="pa-4 text-center">
-              <v-icon icon="mdi-clock-outline" size="28" color="grey" class="mb-2" />
+              <v-icon :icon="mdiClockOutline" size="28" color="grey" class="mb-2" />
               <div class="text-body-small text-medium-emphasis">
                 Edit operations will appear here.
               </div>
@@ -285,7 +285,7 @@
                   >
                     <v-icon
                       :icon="
-                        openIndex === index ? 'mdi-chevron-down' : 'mdi-chevron-right'
+                        openIndex === index ? mdiChevronDown : mdiChevronRight
                       "
                       size="16"
                     />
@@ -321,7 +321,7 @@
                           <v-icon
                             v-bind="tp"
                             :data-testid="`history-comment-badge-${index}`"
-                            icon="mdi-comment-text-outline"
+                            :icon="mdiCommentTextOutline"
                             size="14"
                             color="primary"
                             class="flex-shrink-0"
@@ -361,7 +361,7 @@
                         <v-icon
                           v-bind="tp"
                           :data-testid="`history-failed-${index}`"
-                          icon="mdi-alert-circle"
+                          :icon="mdiAlertCircle"
                           size="14"
                           color="error"
                         />
@@ -404,8 +404,8 @@
                           density="comfortable"
                           :icon="
                             snapshotShown(index)
-                              ? 'mdi-chart-line-variant'
-                              : 'mdi-chart-line'
+                              ? mdiChartLineVariant
+                              : mdiChartLine
                           "
                           :color="snapshotShown(index) ? 'primary' : undefined"
                           :disabled="isBuilding || entry.execution?.inFlight"
@@ -429,7 +429,7 @@
                           size="x-small"
                           variant="text"
                           density="comfortable"
-                          icon="mdi-undo-variant"
+                          :icon="mdiUndoVariant"
                           color="error"
                           :disabled="isUpdating"
                           @click.stop="onUndo"
@@ -474,6 +474,24 @@
 </template>
 
 <script setup lang="ts">
+import {
+  mdiAlertCircle,
+  mdiChartLine,
+  mdiChartLineVariant,
+  mdiChevronDown,
+  mdiChevronRight,
+  mdiClockOutline,
+  mdiCloudDownloadOutline,
+  mdiCommentTextOutline,
+  mdiDatabaseCheck,
+  mdiEyeOutline,
+  mdiHistory,
+  mdiOpenInNew,
+  mdiProgressDownload,
+  mdiRedoVariant,
+  mdiTrayArrowDown,
+  mdiUndoVariant,
+} from '@mdi/js'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { usePlotlyStore } from '@/store/plotly'

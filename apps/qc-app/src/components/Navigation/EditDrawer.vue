@@ -6,7 +6,7 @@
         class="edit-drawer__locked d-flex align-start ga-2 px-3 py-2 text-body-small text-medium-emphasis"
         data-testid="edit-drawer-read-only"
       >
-        <v-icon icon="mdi-lock-outline" size="16" class="mt-1" />
+        <v-icon :icon="mdiLockOutline" size="16" class="mt-1" />
         <span>
           Viewing a committed session. Operations are unavailable until you
           return to the current session or start a new one.
@@ -22,9 +22,9 @@
       >
         <v-icon
           size="16"
-          :icon="filterCollapsed ? 'mdi-chevron-right' : 'mdi-chevron-down'"
+          :icon="filterCollapsed ? mdiChevronRight : mdiChevronDown"
         />
-        <v-icon icon="mdi-filter-variant" color="primary" size="16" />
+        <v-icon :icon="mdiFilterVariant" color="primary" size="16" />
         <span class="text-body-small font-weight-medium">Filter Data</span>
       </div>
       <v-list v-show="!filterCollapsed" class="py-2" density="compact" nav>
@@ -64,9 +64,9 @@
       >
         <v-icon
           size="16"
-          :icon="editCollapsed ? 'mdi-chevron-right' : 'mdi-chevron-down'"
+          :icon="editCollapsed ? mdiChevronRight : mdiChevronDown"
         />
-        <v-icon icon="mdi-pencil" color="primary" size="16" />
+        <v-icon :icon="mdiPencil" color="primary" size="16" />
         <span class="text-body-small font-weight-medium">Edit Data</span>
       </div>
       <v-list v-show="!editCollapsed" class="py-2" density="compact" nav>
@@ -106,9 +106,9 @@
       >
         <v-icon
           size="16"
-          :icon="addCollapsed ? 'mdi-chevron-right' : 'mdi-chevron-down'"
+          :icon="addCollapsed ? mdiChevronRight : mdiChevronDown"
         />
-        <v-icon icon="mdi-plus-circle-outline" color="primary" size="16" />
+        <v-icon :icon="mdiPlusCircleOutline" color="primary" size="16" />
         <span class="text-body-small font-weight-medium">Add Data</span>
       </div>
       <v-list v-show="!addCollapsed" class="py-2" density="compact" nav>
@@ -140,6 +140,14 @@
 </template>
 
 <script setup lang="ts">
+import {
+  mdiChevronDown,
+  mdiChevronRight,
+  mdiFilterVariant,
+  mdiLockOutline,
+  mdiPencil,
+  mdiPlusCircleOutline,
+} from '@mdi/js'
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'

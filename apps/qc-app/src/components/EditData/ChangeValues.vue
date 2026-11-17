@@ -3,7 +3,7 @@
     <v-card-title>Change values</v-card-title>
     <v-card-subtitle>
       <span class="selected-count-badge">
-        <v-icon icon="mdi-vector-selection" size="14" />
+        <v-icon :icon="mdiVectorSelection" size="14" />
         {{ selectedData?.length }} point{{
           selectedData?.length === 1 ? '' : 's'
         }}
@@ -23,19 +23,19 @@
         class="mb-3 d-flex"
       >
         <v-btn title="Add" class="flex-grow-1" style="min-width: 0">
-          <v-icon color="green">mdi-plus</v-icon>
+          <v-icon color="green" :icon="mdiPlus" />
         </v-btn>
         <v-btn title="Subtract" class="flex-grow-1" style="min-width: 0">
-          <v-icon color="red">mdi-minus</v-icon>
+          <v-icon color="red" :icon="mdiMinus" />
         </v-btn>
         <v-btn title="Multiply" class="flex-grow-1" style="min-width: 0">
-          <v-icon color="blue">mdi-multiplication</v-icon>
+          <v-icon color="blue" :icon="mdiMultiplication" />
         </v-btn>
         <v-btn title="Divide" class="flex-grow-1" style="min-width: 0">
-          <v-icon color="orange">mdi-division</v-icon>
+          <v-icon color="orange" :icon="mdiDivision" />
         </v-btn>
         <v-btn title="Assign" class="flex-grow-1" style="min-width: 0">
-          <v-icon>mdi-equal</v-icon>
+          <v-icon :icon="mdiEqual" />
         </v-btn>
       </v-btn-toggle>
 
@@ -70,6 +70,14 @@
 </template>
 
 <script setup lang="ts">
+import {
+  mdiDivision,
+  mdiEqual,
+  mdiMinus,
+  mdiMultiplication,
+  mdiPlus,
+  mdiVectorSelection,
+} from '@mdi/js'
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'

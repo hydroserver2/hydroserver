@@ -7,7 +7,7 @@
           size="x-small"
           variant="tonal"
           color="primary"
-          prepend-icon="mdi-plus"
+          :prepend-icon="mdiPlus"
           @click="addRow"
         >
           Row
@@ -27,7 +27,7 @@
               </v-chip>
               <v-spacer />
               <v-btn
-                icon="mdi-close"
+                :icon="mdiClose"
                 size="x-small"
                 variant="text"
                 color="error"
@@ -83,6 +83,7 @@
 </template>
 
 <script setup lang="ts">
+import { mdiClose, mdiPlus } from '@mdi/js'
 import { computed, onMounted, ref, type Ref } from 'vue'
 import { requiredNumber } from '@/utils/rules'
 import { VForm } from 'vuetify/components'

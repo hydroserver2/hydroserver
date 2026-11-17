@@ -43,7 +43,7 @@
           variant="tonal"
           color="primary"
           :prepend-icon="
-            matchesIntendedCadence ? 'mdi-check' : 'mdi-link-variant'
+            matchesIntendedCadence ? mdiCheck : mdiLinkVariant
           "
           @click="applyIntendedCadence"
         >
@@ -55,7 +55,7 @@
           size="x-small"
           variant="tonal"
           color="primary"
-          :prepend-icon="chip.active ? 'mdi-check' : undefined"
+          :prepend-icon="chip.active ? mdiCheck : undefined"
           @click="applyFillSnap(chip)"
         >
           {{ chip.label }}
@@ -101,7 +101,7 @@
         v-if="overLimit"
         class="mt-4"
         color="error"
-        icon="mdi-alert-octagon-outline"
+        :icon="mdiAlertOctagonOutline"
         variant="tonal"
         density="compact"
         data-testid="fill-gaps-over-limit"
@@ -120,8 +120,8 @@
         :color="plannedInsertions > 0 ? 'info' : 'success'"
         :icon="
           plannedInsertions > 0
-            ? 'mdi-magnify-scan'
-            : 'mdi-check-circle-outline'
+            ? mdiMagnifyScan
+            : mdiCheckCircleOutline
         "
         variant="tonal"
         density="compact"
@@ -157,7 +157,7 @@
       <v-btn
         variant="tonal"
         color="primary"
-        prepend-icon="mdi-selection-ellipse-arrow-inside"
+        :prepend-icon="mdiSelectionEllipseArrowInside"
         :disabled="gapCount === 0"
         @click="reselectGaps"
       >
@@ -183,6 +183,16 @@
 </template>
 
 <script setup lang="ts">
+import {
+  mdiAlertCircleOutline,
+  mdiAlertOctagonOutline,
+  mdiAlertOutline,
+  mdiCheck,
+  mdiCheckCircleOutline,
+  mdiLinkVariant,
+  mdiMagnifyScan,
+  mdiSelectionEllipseArrowInside,
+} from '@mdi/js'
 import {
   computed,
   onBeforeUnmount,
@@ -345,7 +355,7 @@ const cadenceWarning = computed<CadenceWarning | null>(() => {
   const d = fillDeltaMs.value
   if (t && d && d > t) {
     return {
-      icon: 'mdi-alert-outline',
+      icon: mdiAlertOutline,
       text: 'Fill cadence is larger than the gap threshold: gaps just above the threshold will get no fill points. Choose a finer cadence if that matters.',
     }
   }
@@ -355,7 +365,7 @@ const cadenceWarning = computed<CadenceWarning | null>(() => {
     const isCleanRatio = Math.abs(ratio - Math.round(ratio)) < 1e-6
     if (!isCleanRatio) {
       return {
-        icon: 'mdi-alert-circle-outline',
+        icon: mdiAlertCircleOutline,
         text: `Fill cadence doesn't divide evenly into the datastream's intended spacing (${i.amount} ${i.unit.toLowerCase()}). Inserted points won't align to the existing grid.`,
       }
     }

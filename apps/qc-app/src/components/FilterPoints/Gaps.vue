@@ -20,7 +20,7 @@
       <v-btn
         variant="tonal"
         color="primary"
-        prepend-icon="mdi-selection-ellipse-arrow-inside"
+        :prepend-icon="mdiSelectionEllipseArrowInside"
         :disabled="gapCount === 0"
         @click="reselectGaps"
       >
@@ -31,6 +31,7 @@
 </template>
 
 <script setup lang="ts">
+import { mdiSelectionEllipseArrowInside } from '@mdi/js'
 import { computed, onMounted, useTemplateRef } from 'vue'
 import { useDataSelection } from '@/composables/useDataSelection'
 import GapFinder from '@/components/FilterPoints/GapFinder.vue'

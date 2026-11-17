@@ -6,7 +6,7 @@
       :model-value="dateInput"
       @blur="handleDateBlur"
       placeholder="MM/DD/YYYY"
-      append-inner-icon="mdi-calendar-blank"
+      :append-inner-icon="mdiCalendarBlank"
       @click:append-inner="showDateDialog = true"
       hide-details
       density="compact"
@@ -17,7 +17,7 @@
       :model-value="timeInput"
       @blur="handleTimeBlur"
       :placeholder="seconds ? 'HH:MM:SS' : 'HH:MM'"
-      prepend-inner-icon="mdi-clock-outline"
+      :prepend-inner-icon="mdiClockOutline"
       :suffix="zone"
       :title="`Time zone: ${zoneDescription}`"
       hide-details
@@ -36,7 +36,7 @@
         </span>
         <v-spacer />
         <v-btn
-          icon="mdi-close"
+          :icon="mdiClose"
           variant="text"
           size="small"
           density="comfortable"
@@ -55,6 +55,7 @@
 </template>
 
 <script setup lang="ts">
+import { mdiCalendarBlank, mdiClockOutline, mdiClose } from '@mdi/js'
 import {
   computed,
   nextTick,

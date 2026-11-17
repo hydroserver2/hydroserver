@@ -2,7 +2,7 @@
   <div class="datasets-table d-flex flex-column">
     <v-toolbar flat density="compact" class="datasets-table__toolbar px-2">
       <div class="d-flex align-center ga-2" style="min-width: 0">
-        <v-icon icon="mdi-database" color="primary" size="18" />
+        <v-icon :icon="mdiDatabase" color="primary" size="18" />
         <span class="text-body-medium font-weight-bold">Datastreams</span>
         <v-chip
           size="x-small"
@@ -18,7 +18,7 @@
         class="mx-3 flex-grow-1"
         clearable
         v-model="search"
-        prepend-inner-icon="mdi-magnify"
+        :prepend-inner-icon="mdiMagnify"
         placeholder="Search datastreams…"
         hide-details
         density="compact"
@@ -29,7 +29,7 @@
         <template #activator="{ props: menuProps }">
           <v-btn
             v-bind="menuProps"
-            icon="mdi-dots-vertical"
+            :icon="mdiDotsVertical"
             size="small"
             variant="text"
             aria-label="Table options"
@@ -40,7 +40,7 @@
         <v-card min-width="260" class="py-1">
           <v-list density="compact" nav>
             <v-list-item
-              prepend-icon="mdi-close-circle-outline"
+              :prepend-icon="mdiCloseCircleOutline"
               :disabled="!canClearPlot"
               @click="onClearPlot"
             >
@@ -49,7 +49,7 @@
 
             <v-list-item
               :prepend-icon="
-                showOnlySelected ? 'mdi-filter' : 'mdi-filter-outline'
+                showOnlySelected ? mdiFilter : mdiFilterOutline
               "
               @click="showOnlySelected = !showOnlySelected"
             >
@@ -59,7 +59,7 @@
             </v-list-item>
 
             <v-list-item
-              prepend-icon="mdi-download"
+              :prepend-icon="mdiDownload"
               :disabled="!plottedSeries.length || downloading"
               @click="downloadSelected(plottedSeries)"
             >
@@ -71,7 +71,7 @@
             <v-divider class="my-1" />
 
             <v-list-item
-              prepend-icon="mdi-sort-variant-remove"
+              :prepend-icon="mdiSortVariantRemove"
               @click="resetSort"
             >
               <v-list-item-title>Reset sort</v-list-item-title>
@@ -118,7 +118,7 @@
       >
         <template #header.plot>
           <v-icon
-            icon="mdi-chart-line"
+            :icon="mdiChartLine"
             size="18"
             title="Plot"
             aria-label="Plot"
@@ -155,10 +155,10 @@
                   <v-icon
                     :icon="
                       isPartial(item)
-                        ? 'mdi-checkbox-intermediate'
+                        ? mdiCheckboxIntermediate
                         : isChecked(item)
-                          ? 'mdi-checkbox-marked'
-                          : 'mdi-checkbox-blank-outline'
+                          ? mdiCheckboxMarked
+                          : mdiCheckboxBlankOutline
                     "
                     size="20"
                   />
@@ -181,7 +181,7 @@
           <!-- The row being edited ends its session here instead. -->
           <span v-if="isEditing(item)" @click.stop>
             <v-btn
-              prepend-icon="mdi-close"
+              :prepend-icon="mdiClose"
               size="small"
               variant="tonal"
               density="comfortable"
@@ -205,7 +205,7 @@
               <!-- A disabled button passes clicks to this wrapper; keep them off the row. -->
               <span v-bind="tooltipProps" @click.stop>
                 <v-btn
-                  prepend-icon="mdi-pencil"
+                  :prepend-icon="mdiPencil"
                   size="small"
                   variant="tonal"
                   color="primary"
@@ -231,7 +231,7 @@
               color="primary"
               variant="flat"
               label
-              prepend-icon="mdi-pencil"
+              :prepend-icon="mdiPencil"
               class="flex-shrink-0"
               :title="`Editing ${qcDatastream?.name ?? item.name}`"
             >
@@ -266,14 +266,14 @@
 
         <template #no-data>
           <div v-if="search" class="datasets-table__empty d-flex flex-column align-center justify-center text-center">
-            <v-icon icon="mdi-magnify-close" size="32" class="mb-2" />
+            <v-icon :icon="mdiMagnifyClose" size="32" class="mb-2" />
             <div class="text-body-medium mb-1">No matches for "{{ search }}"</div>
             <div class="text-body-small text-medium-emphasis">
               Try a shorter search term or clear it to see all datastreams.
             </div>
           </div>
           <div v-else class="datasets-table__empty d-flex flex-column align-center justify-center text-center">
-            <v-icon icon="mdi-database-search-outline" size="32" class="mb-2" />
+            <v-icon :icon="mdiDatabaseSearchOutline" size="32" class="mb-2" />
             <div class="text-body-medium mb-1">No datastreams to show</div>
             <div class="text-body-small text-medium-emphasis">
               Adjust the filters in the left drawer or clear the search.
@@ -311,6 +311,24 @@
 </template>
 
 <script setup lang="ts">
+import {
+  mdiChartLine,
+  mdiCheckboxBlankOutline,
+  mdiCheckboxIntermediate,
+  mdiCheckboxMarked,
+  mdiClose,
+  mdiCloseCircleOutline,
+  mdiDatabase,
+  mdiDatabaseSearchOutline,
+  mdiDotsVertical,
+  mdiDownload,
+  mdiFilter,
+  mdiFilterOutline,
+  mdiMagnify,
+  mdiMagnifyClose,
+  mdiPencil,
+  mdiSortVariantRemove,
+} from '@mdi/js'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { storeToRefs } from 'pinia'
 import { computed, reactive, ref } from 'vue'

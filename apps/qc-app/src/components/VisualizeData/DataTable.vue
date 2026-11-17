@@ -2,7 +2,7 @@
   <div class="data-table d-flex flex-column fill-height">
     <div class="data-table__toolbar px-4 py-2 d-flex align-center flex-wrap">
       <div class="d-flex align-center flex-shrink-0">
-        <v-icon icon="mdi-table-edit" class="mr-2" color="primary" size="20" />
+        <v-icon :icon="mdiTableEdit" class="mr-2" color="primary" size="20" />
         <div class="d-flex flex-column">
           <span class="text-title-small font-weight-bold lh-1">
             Observations
@@ -28,7 +28,7 @@
           size="small"
           variant="tonal"
           color="grey-darken-1"
-          prepend-icon="mdi-format-list-numbered"
+          :prepend-icon="mdiFormatListNumbered"
         >
           {{ rowCount.toLocaleString() }} row{{ rowCount === 1 ? '' : 's' }}
         </v-chip>
@@ -40,7 +40,7 @@
           size="small"
           color="warning"
           variant="tonal"
-          prepend-icon="mdi-pencil-circle"
+          :prepend-icon="mdiPencilCircle"
         >
           {{ pendingEditCount }} unsaved
         </v-chip>
@@ -50,7 +50,7 @@
           variant="text"
           size="small"
           color="grey-darken-1"
-          prepend-icon="mdi-undo-variant"
+          :prepend-icon="mdiUndoVariant"
           @click="discardEdits"
         >
           Discard
@@ -67,7 +67,7 @@
           color="primary"
           variant="flat"
           size="small"
-          prepend-icon="mdi-content-save-outline"
+          :prepend-icon="mdiContentSaveOutline"
           @click="onSaveChanges"
         >
           Save changes
@@ -158,6 +158,13 @@
 </template>
 
 <script setup lang="ts">
+import {
+  mdiContentSaveOutline,
+  mdiFormatListNumbered,
+  mdiPencilCircle,
+  mdiTableEdit,
+  mdiUndoVariant,
+} from '@mdi/js'
 import {
   computed,
   nextTick,

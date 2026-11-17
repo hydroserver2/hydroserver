@@ -11,7 +11,7 @@
           size="x-small"
           variant="text"
           density="comfortable"
-          icon="mdi-chevron-right"
+          :icon="mdiChevronRight"
           title="Expand filters"
           @click="drawerCollapsed = false"
         />
@@ -20,14 +20,14 @@
 
     <template v-else>
       <div class="select-drawer__header px-3 py-1 d-flex align-center ga-1">
-        <v-icon icon="mdi-tune" color="primary" size="16" />
+        <v-icon :icon="mdiTune" color="primary" size="16" />
         <span class="text-body-small font-weight-medium">Filters</span>
         <v-spacer />
         <v-btn
           size="x-small"
           variant="text"
           density="comfortable"
-          icon="mdi-chevron-left"
+          :icon="mdiChevronLeft"
           title="Collapse filters"
           @click="drawerCollapsed = true"
         />
@@ -45,9 +45,9 @@
       >
         <v-icon
           size="16"
-          :icon="filtersCollapsed ? 'mdi-chevron-right' : 'mdi-chevron-down'"
+          :icon="filtersCollapsed ? mdiChevronRight : mdiChevronDown"
         />
-        <v-icon icon="mdi-filter-variant" color="primary" size="16" />
+        <v-icon :icon="mdiFilterVariant" color="primary" size="16" />
         <span class="text-body-small font-weight-medium">Datastream filters</span>
       </div>
       <div
@@ -69,6 +69,13 @@
 </template>
 
 <script setup lang="ts">
+import {
+  mdiChevronDown,
+  mdiChevronLeft,
+  mdiChevronRight,
+  mdiFilterVariant,
+  mdiTune,
+} from '@mdi/js'
 import DatastreamFilters from '@/components/VisualizeData/DatastreamFilters.vue'
 import { useResizable, usePersistedFlag } from '@/composables/useResizable'
 

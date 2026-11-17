@@ -11,8 +11,8 @@
         :color="selectedCount > 0 ? 'info' : 'success'"
         :icon="
           selectedCount > 0
-            ? 'mdi-selection-ellipse-arrow-inside'
-            : 'mdi-check-circle-outline'
+            ? mdiSelectionEllipseArrowInside
+            : mdiCheckCircleOutline
         "
         variant="tonal"
         density="compact"
@@ -40,6 +40,7 @@
 </template>
 
 <script setup lang="ts">
+import { mdiCheckCircleOutline, mdiSelectionEllipseArrowInside } from '@mdi/js'
 import { computed, ref, useTemplateRef, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { EnumFilterOperations } from '@uwrl/qc-utils'

@@ -87,7 +87,7 @@
             @click.prevent="onSwitchWorkspace"
           >
             <span class="rail-pill rail-pill-secondary">
-              <v-icon icon="mdi-briefcase-outline" size="22" />
+              <v-icon :icon="mdiBriefcaseOutline" size="22" />
             </span>
             <span class="rail-label">Workspaces</span>
           </button>
@@ -108,7 +108,7 @@
             @click.prevent="onLogout"
           >
             <span class="rail-pill rail-pill-secondary">
-              <v-icon icon="mdi-logout" size="22" />
+              <v-icon :icon="mdiLogout" size="22" />
             </span>
             <span class="rail-label">Log out</span>
           </button>
@@ -122,6 +122,12 @@
 </template>
 
 <script setup lang="ts">
+import {
+  mdiBriefcaseOutline,
+  mdiCursorDefaultClickOutline,
+  mdiLogout,
+  mdiPencil,
+} from '@mdi/js'
 import { ref } from 'vue'
 import HydroServerIcon from '@/assets/icon-color-thick.svg'
 import SelectDrawer from '@/components/Navigation/SelectDrawer.vue'
@@ -153,8 +159,8 @@ async function goHome() {
 }
 
 const items = ref([
-  { title: 'Select', icon: 'mdi-cursor-default-click-outline' },
-  { title: 'Edit', icon: 'mdi-pencil' },
+  { title: 'Select', icon: mdiCursorDefaultClickOutline },
+  { title: 'Edit', icon: mdiPencil },
 ])
 
 // Switching views never ends the session, so neither item prompts: Select

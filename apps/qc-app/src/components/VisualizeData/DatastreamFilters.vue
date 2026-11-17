@@ -11,7 +11,7 @@
         size="x-small"
         variant="text"
         density="compact"
-        prepend-icon="mdi-close-circle-outline"
+        :prepend-icon="mdiCloseCircleOutline"
         @click="clearFilters"
       >
         Clear
@@ -20,7 +20,7 @@
 
     <v-expansion-panels v-model="panels" multiple variant="accordion">
       <FilterPanel
-        icon="mdi-map-marker-outline"
+        :icon="mdiMapMarkerOutline"
         label="Sites"
         :total="sortedMonitoringSites.length"
         :selected-count="selectedMonitoringSites.length"
@@ -49,7 +49,7 @@
       </FilterPanel>
 
       <FilterPanel
-        icon="mdi-chart-bell-curve-cumulative"
+        :icon="mdiChartBellCurveCumulative"
         label="Observed properties"
         :total="sortedObservedPropertyNames.length"
         :selected-count="selectedObservedPropertyNames.length"
@@ -77,7 +77,7 @@
       </FilterPanel>
 
       <FilterPanel
-        icon="mdi-layers-triple-outline"
+        :icon="mdiLayersTripleOutline"
         label="Processing levels"
         :total="sortedProcessingLevelNames.length"
         :selected-count="selectedProcessingLevelNames.length"
@@ -108,6 +108,12 @@
 </template>
 
 <script setup lang="ts">
+import {
+  mdiChartBellCurveCumulative,
+  mdiCloseCircleOutline,
+  mdiLayersTripleOutline,
+  mdiMapMarkerOutline,
+} from '@mdi/js'
 import { computed, ref, watch } from 'vue'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { storeToRefs } from 'pinia'

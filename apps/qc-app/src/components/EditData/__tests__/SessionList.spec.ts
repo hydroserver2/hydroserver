@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import type { Pinia } from 'pinia'
 import { createTestPinia } from '@/utils/test/pinia'
 import { createTestVuetify } from '@/utils/test/vuetify'
+import { mdiCheck, mdiPencil } from '@mdi/js'
 import { useHydroServer } from '@/store/hydroserver'
 import { makeQcFake } from '@/services/qualityControl/__tests__/qcServiceFake'
 import { useQcSessionStore } from '@/store/qcSession'
@@ -78,11 +79,11 @@ describe('SessionList', () => {
     await flushPromises()
     const marker = (id: string) => wrapper.find(`[data-testid="session-${id}"]`)
     expect(marker(committedId).classes()).toContain('qc-timeline__item--done')
-    expect(marker(committedId).find('.mdi-check').exists()).toBe(true)
+    expect(marker(committedId).find(`svg path[d="${mdiCheck}"]`).exists()).toBe(true)
     expect(marker(inProgressId).classes()).toContain(
       'qc-timeline__item--active'
     )
-    expect(marker(inProgressId).find('.mdi-pencil').exists()).toBe(true)
+    expect(marker(inProgressId).find(`svg path[d="${mdiPencil}"]`).exists()).toBe(true)
   })
 
   it('lists sessions oldest first, so the most recent is at the bottom', async () => {

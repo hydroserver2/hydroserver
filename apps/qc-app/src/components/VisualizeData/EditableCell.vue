@@ -30,7 +30,7 @@
         @mousedown.prevent
         @click="commit"
       >
-        <v-icon icon="mdi-check" size="16" />
+        <v-icon :icon="mdiCheck" size="16" />
       </button>
       <button
         type="button"
@@ -40,7 +40,7 @@
         @mousedown.prevent
         @click="cancel"
       >
-        <v-icon icon="mdi-close" size="16" />
+        <v-icon :icon="mdiClose" size="16" />
       </button>
     </div>
     <span
@@ -74,13 +74,14 @@
         aria-label="Revert staged edit"
         @click.stop="$emit('clear')"
       >
-        <v-icon icon="mdi-undo-variant" size="14" />
+        <v-icon :icon="mdiUndoVariant" size="14" />
       </button>
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
+import { mdiCheck, mdiClose, mdiUndoVariant } from '@mdi/js'
 import { nextTick, ref, watch } from 'vue'
 
 const props = defineProps<{

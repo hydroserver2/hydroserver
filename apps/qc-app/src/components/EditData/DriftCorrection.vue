@@ -2,7 +2,7 @@
   <v-card>
     <v-card-title>Drift correction</v-card-title>
     <v-card-subtitle v-if="selectedGroups.length">
-      <v-icon icon="mdi-chart-sankey" size="14" class="mr-1" />
+      <v-icon :icon="mdiChartSankey" size="14" class="mr-1" />
       {{ selectedGroups.length }} consecutive group{{
         selectedGroups.length === 1 ? '' : 's'
       }}
@@ -95,6 +95,7 @@
 </template>
 
 <script setup lang="ts">
+import { mdiChartSankey } from '@mdi/js'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { EnumEditOperations } from '@uwrl/qc-utils'

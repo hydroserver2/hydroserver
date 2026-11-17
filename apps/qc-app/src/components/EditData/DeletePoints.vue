@@ -3,7 +3,7 @@
     <v-card-title>Delete points</v-card-title>
     <v-card-subtitle>
       <span class="selected-count-badge">
-        <v-icon icon="mdi-vector-selection" size="14" />
+        <v-icon :icon="mdiVectorSelection" size="14" />
         <span class="text-error font-weight-bold">
           {{ selectedData?.length }}
         </span>
@@ -31,7 +31,7 @@
       <v-btn
         color="error"
         variant="flat"
-        prepend-icon="mdi-trash-can-outline"
+        :prepend-icon="mdiTrashCanOutline"
         :disabled="isUpdating || !selectedData?.length"
         @click="onDeleteDataPoints"
       >
@@ -42,6 +42,7 @@
 </template>
 
 <script setup lang="ts">
+import { mdiTrashCanOutline, mdiVectorSelection } from '@mdi/js'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { EnumEditOperations } from '@uwrl/qc-utils'

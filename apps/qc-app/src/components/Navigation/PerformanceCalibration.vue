@@ -16,14 +16,14 @@
             data-testid="calibration-button"
           >
             <span class="rail-pill rail-pill-secondary">
-              <v-icon icon="mdi-speedometer" size="22" />
+              <v-icon :icon="mdiSpeedometer" size="22" />
             </span>
             <span class="rail-label">Performance</span>
           </button>
           <v-list-item
             v-else
             v-bind="{ ...menuProps, ...tipProps }"
-            prepend-icon="mdi-speedometer"
+            :prepend-icon="mdiSpeedometer"
             data-testid="calibration-button"
           />
         </template>
@@ -33,7 +33,7 @@
 
     <v-card max-width="440">
       <v-card-title class="text-title-medium d-flex align-center ga-2">
-        <v-icon icon="mdi-speedometer" size="20" />
+        <v-icon :icon="mdiSpeedometer" size="20" />
         Performance calibration
       </v-card-title>
       <v-divider />
@@ -57,7 +57,7 @@
             variant="tonal"
             color="primary"
             :loading="running"
-            prepend-icon="mdi-refresh"
+            :prepend-icon="mdiRefresh"
             @click="recalibrate"
           >
             Recalibrate
@@ -202,6 +202,7 @@
 </template>
 
 <script setup lang="ts">
+import { mdiRefresh, mdiSpeedometer } from '@mdi/js'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import {
   ensureCalibration,

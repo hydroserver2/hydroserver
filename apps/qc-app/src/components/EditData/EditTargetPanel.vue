@@ -5,7 +5,7 @@
     class="edit-target-panel"
   >
     <div class="edit-target-panel__header d-flex align-center ga-1 px-3 py-1">
-      <v-icon icon="mdi-pencil" color="primary" size="16" />
+      <v-icon :icon="mdiPencil" color="primary" size="16" />
       <span class="text-body-small font-weight-medium">Editing</span>
     </div>
 
@@ -26,7 +26,7 @@
 
       <div class="d-flex align-center ga-2">
         <v-icon
-          :icon="unsavedEditCount ? 'mdi-content-save-alert-outline' : 'mdi-check-circle-outline'"
+          :icon="unsavedEditCount ? mdiContentSaveAlertOutline : mdiCheckCircleOutline"
           :color="unsavedEditCount ? 'warning' : 'success'"
           size="16"
         />
@@ -48,7 +48,7 @@
         size="small"
         variant="flat"
         color="primary"
-        prepend-icon="mdi-pencil"
+        :prepend-icon="mdiPencil"
         block
         @click="openEditor"
       >
@@ -59,6 +59,11 @@
 </template>
 
 <script setup lang="ts">
+import {
+  mdiCheckCircleOutline,
+  mdiContentSaveAlertOutline,
+  mdiPencil,
+} from '@mdi/js'
 /**
  * What the Select view says about an open edit session: the managed
  * datastream, its session window, whether anything is unsaved, and the way

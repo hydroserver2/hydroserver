@@ -7,7 +7,7 @@
       <div
         class="d-flex align-center flex-wrap ga-3 px-4 py-3"
       >
-        <v-icon icon="mdi-chart-line" color="primary" size="24" class="mr-1" />
+        <v-icon :icon="mdiChartLine" color="primary" size="24" class="mr-1" />
         <div class="d-flex flex-column flex-1-1-auto" style="min-width: 0">
           <span class="text-title-medium font-weight-bold">
             <template v-if="plottedDatastreams.length">
@@ -92,7 +92,7 @@
           size="x-small"
           variant="text"
           density="comfortable"
-          :icon="drawerCollapsed ? 'mdi-chevron-right' : 'mdi-chevron-left'"
+          :icon="drawerCollapsed ? mdiChevronRight : mdiChevronLeft"
           :title="drawerCollapsed ? 'Expand operations' : 'Collapse operations'"
           @click="drawerCollapsed = !drawerCollapsed"
         />
@@ -145,7 +145,7 @@
             size="x-small"
             variant="text"
             density="comfortable"
-            icon="mdi-chevron-left"
+            :icon="mdiChevronLeft"
             title="Expand panel"
             @click="auxCollapsed = false"
           />
@@ -160,7 +160,7 @@
             size="x-small"
             variant="text"
             density="comfortable"
-            icon="mdi-chevron-right"
+            :icon="mdiChevronRight"
             title="Collapse panel"
             @click="auxCollapsed = true"
           />
@@ -179,10 +179,10 @@
             <v-icon
               size="16"
               :icon="
-                plottedCollapsed ? 'mdi-chevron-right' : 'mdi-chevron-down'
+                plottedCollapsed ? mdiChevronRight : mdiChevronDown
               "
             />
-            <v-icon icon="mdi-chart-line" color="primary" size="16" />
+            <v-icon :icon="mdiChartLine" color="primary" size="16" />
             <span class="text-body-small font-weight-medium">
               Plotted Datastreams
             </span>
@@ -236,7 +236,7 @@
                     size="small"
                     variant="flat"
                     color="primary"
-                    prepend-icon="mdi-content-save-outline"
+                    :prepend-icon="mdiContentSaveOutline"
                     :disabled="saveDisabled"
                     :loading="isSavingDraft"
                     @click="onSaveDraft"
@@ -248,7 +248,7 @@
                     size="small"
                     variant="tonal"
                     color="error"
-                    prepend-icon="mdi-backup-restore"
+                    :prepend-icon="mdiBackupRestore"
                     :disabled="!hasUnsavedChanges || isUpdating || isSavingDraft || isCommitting"
                     :loading="isDiscarding"
                     title="Drop every edit made since the last save"
@@ -261,7 +261,7 @@
                     size="small"
                     variant="flat"
                     color="success"
-                    prepend-icon="mdi-cloud-check-outline"
+                    :prepend-icon="mdiCloudCheckOutline"
                     :disabled="commitDisabled"
                     :loading="isCommitting"
                     :title="commitTitle"
@@ -276,7 +276,7 @@
                   size="small"
                   variant="flat"
                   color="primary"
-                  prepend-icon="mdi-plus"
+                  :prepend-icon="mdiPlus"
                   :disabled="!canEditWorkspace"
                   :title="
                     canEditWorkspace
@@ -292,7 +292,7 @@
                   data-testid="exit-close-btn"
                   size="small"
                   variant="tonal"
-                  prepend-icon="mdi-close"
+                  :prepend-icon="mdiClose"
                   :disabled="isSavingDraft || isCommitting"
                   @click="requestClose"
                 >
@@ -343,7 +343,7 @@
       <v-card rounded="lg">
         <div class="d-flex align-center ga-3 px-6 pt-5 pb-2">
           <v-avatar color="success" variant="tonal" size="40">
-            <v-icon icon="mdi-cloud-check-outline" size="22" />
+            <v-icon :icon="mdiCloudCheckOutline" size="22" />
           </v-avatar>
           <div class="d-flex flex-column">
             <div class="text-title-large font-weight-bold">Commit session to datastream?</div>
@@ -375,7 +375,7 @@
           <v-btn
             color="success"
             variant="flat"
-            prepend-icon="mdi-cloud-check-outline"
+            :prepend-icon="mdiCloudCheckOutline"
             :loading="isCommitting"
             @click="onCommit"
           >
@@ -389,7 +389,7 @@
       <v-card rounded="lg" data-testid="view-session-confirm">
         <div class="d-flex align-center ga-3 px-6 pt-5 pb-2">
           <v-avatar color="warning" variant="tonal" size="40">
-            <v-icon icon="mdi-content-save-alert-outline" size="22" />
+            <v-icon :icon="mdiContentSaveAlertOutline" size="22" />
           </v-avatar>
           <div class="d-flex flex-column">
             <div class="text-title-large font-weight-bold">Discard unsaved edits?</div>
@@ -423,7 +423,7 @@
       <v-card rounded="lg">
         <div class="d-flex align-center ga-3 px-6 pt-5 pb-2">
           <v-avatar color="error" variant="tonal" size="40">
-            <v-icon icon="mdi-backup-restore" size="22" />
+            <v-icon :icon="mdiBackupRestore" size="22" />
           </v-avatar>
           <div class="d-flex flex-column">
             <div class="text-title-large font-weight-bold">Discard unsaved edits?</div>
@@ -444,7 +444,7 @@
           <v-btn
             color="error"
             variant="flat"
-            prepend-icon="mdi-backup-restore"
+            :prepend-icon="mdiBackupRestore"
             data-testid="confirm-discard-btn"
             :loading="isDiscarding"
             @click="onDiscardUnsaved"
@@ -467,6 +467,18 @@
 </template>
 
 <script setup lang="ts">
+import {
+  mdiBackupRestore,
+  mdiChartLine,
+  mdiChevronDown,
+  mdiChevronLeft,
+  mdiChevronRight,
+  mdiClose,
+  mdiCloudCheckOutline,
+  mdiContentSaveAlertOutline,
+  mdiContentSaveOutline,
+  mdiPlus,
+} from '@mdi/js'
 import DataVisDatasetsTable from '@/components/VisualizeData/DataVisDatasetsTable.vue'
 import DataVisualization from '@/components/VisualizeData/DataVisualization.vue'
 import EditHistory from '@/components/EditData/EditHistory.vue'

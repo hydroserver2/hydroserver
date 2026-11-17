@@ -1,6 +1,7 @@
 import { mount, flushPromises } from '@vue/test-utils'
 import { describe, it, expect, afterEach } from 'vitest'
 import { createTestVuetify } from '@/utils/test/vuetify'
+import { mdiCheck, mdiPencil } from '@mdi/js'
 import StartEditingDialog from '@/components/EditData/StartEditingDialog.vue'
 ;(globalThis as any).ResizeObserver ||= class {
   observe() {}
@@ -132,9 +133,9 @@ describe('StartEditingDialog', () => {
     expect(w.findAll('.v-timeline-item[data-testid^="chooser-session-"]'))
       .toHaveLength(2)
     expect(item('s-1').classes()).toContain('qc-timeline__item--active')
-    expect(item('s-1').find('.mdi-pencil').exists()).toBe(true)
+    expect(item('s-1').find(`svg path[d="${mdiPencil}"]`).exists()).toBe(true)
     expect(item('s-0').classes()).toContain('qc-timeline__item--done')
-    expect(item('s-0').find('.mdi-check').exists()).toBe(true)
+    expect(item('s-0').find(`svg path[d="${mdiCheck}"]`).exists()).toBe(true)
   })
 
   it('offers delete only on the in-progress session', () => {
