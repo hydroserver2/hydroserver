@@ -532,6 +532,29 @@ def test_create_derivation_transformation_returns_400_when_formula_missing(clien
     assert response.status_code == 400
 
 
+@pytest.mark.parametrize(
+    "profile_side, role",
+    [("output", "transformation outputs"), ("input", "transformation inputs")],
+)
+def test_create_transformation_returns_400_for_profile_datastream(client, profile_side, role):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task, monitoring_site = _make_task_with_monitoring_site(workspace)
+    output_ds = DatastreamFactory(monitoring_site=monitoring_site, profile=profile_side == "output")
+    input_ds = DatastreamFactory(monitoring_site=monitoring_site, profile=profile_side == "input")
+    client.force_login(owner)
+
+    response = client.post(
+        TRANSFORMATIONS_URL,
+        data=_derivation_body(task, output_ds, input_ds),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+    assert f"not supported as {role}" in response.json()["message"]
+    assert not DataProductTransformation.objects.filter(output_datastream=output_ds).exists()
+
+
 def test_create_transformation_returns_409_for_etl_mapped_output_datastream(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)

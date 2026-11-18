@@ -168,6 +168,15 @@ class Datastream(models.Model):
                     f"The provided {label} cannot be associated with this datastream"
                 )
 
+    def ensure_time_series(self, role: str):
+        """
+        Rejects profile coverage datastreams where a feature only supports time series, such as ETL, data products,
+        quality control and monitoring, which all assume one value per timestamp.
+        """
+
+        if self.type != TIME_SERIES_COVERAGE:
+            raise ValidationError(f"Profile coverage datastreams are not supported as {role}.")
+
     def delete(self, *args, **kwargs):
         return type(self).objects.filter(pk=self.pk).delete()
 

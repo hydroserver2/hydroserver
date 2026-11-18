@@ -471,6 +471,19 @@ def test_create_monitoring_rule_returns_400_when_range_rule_missing_bounds(clien
     assert response.status_code == 400
 
 
+def test_create_monitoring_rule_returns_400_for_profile_datastream(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task, _ = _make_task_with_datastream(workspace)
+    profile = DatastreamFactory(monitoring_site=task.monitoring_site, profile=True)
+    client.force_login(owner)
+
+    response = client.post(RULES_URL, data=_rule_body(task.id, profile.id), content_type="application/json")
+
+    assert response.status_code == 400
+    assert "not supported as monitoring rule datastreams" in response.json()["message"]
+
+
 def test_create_monitoring_rule_returns_409_for_duplicate_rule_type_on_datastream(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
