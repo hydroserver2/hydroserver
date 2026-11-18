@@ -39,31 +39,45 @@
       <v-img :src="navbarLogo.src" alt="Logo" width="146" height="62" />
     </a>
 
-    <template v-if="compactNavigation" v-slot:append>
-      <v-app-bar-nav-icon
-        class="mx-2"
-        data-testid="mobile-nav-button"
-        @click.stop="drawer = !drawer"
-      />
-    </template>
+    <v-app-bar-nav-icon
+      v-if="compactNavigation"
+      class="compact-nav-toggle mx-2"
+      data-testid="mobile-nav-button"
+      aria-label="Toggle navigation menu"
+      :aria-expanded="drawer"
+      @click.stop="drawer = !drawer"
+    />
 
-    <template v-if="!compactNavigation">
-      <div
-        v-for="(path, index) of visiblePaths()"
-        :key="path.label"
-        class="main-nav-item-wrapper"
-        :class="{ 'main-nav-item-wrapper--first': index === 0 }"
-      >
-        <MainNavItem
-          :label="path.label"
-          :to="path.attrs?.to"
-          :href="path.attrs?.href"
-          :active="isNavItemActive(path)"
-          :on-click="path.onClick"
-        />
+    <div
+      class="navbar-desktop"
+      :class="{ 'navbar-desktop--compact': compactNavigation }"
+      :inert="compactNavigation ? true : undefined"
+      :aria-hidden="compactNavigation ? true : undefined"
+    >
+      <div ref="navigationContainer" class="main-navigation">
+        <div ref="navigationLinks" class="main-navigation-links">
+          <div
+            v-for="(path, index) of visiblePaths()"
+            :key="path.label"
+            class="main-nav-item-wrapper"
+            :class="{
+              'main-nav-item-wrapper--first': index === 0,
+              'main-nav-item-wrapper--overflow':
+                path === aboutPath && aboutInMenu,
+            }"
+            :inert="path === aboutPath && aboutInMenu ? true : undefined"
+            :aria-hidden="path === aboutPath && aboutInMenu ? true : undefined"
+          >
+            <MainNavItem
+              :label="path.label"
+              :to="path.attrs?.to"
+              :href="path.attrs?.href"
+              :active="isNavItemActive(path)"
+              :on-click="path.onClick"
+            />
+          </div>
+        </div>
       </div>
-
-      <v-spacer />
 
       <template v-if="hs.session.isAuthenticated">
         <v-btn
@@ -78,7 +92,7 @@
             }}</span>
           </v-avatar>
 
-          <v-menu bottom left activator="parent">
+          <v-menu v-if="!compactNavigation" bottom left activator="parent">
             <v-list class="pa-0" min-width="200">
               <v-list-item
                 :prepend-icon="mdiAccountCircle"
@@ -88,6 +102,7 @@
               />
 
               <v-list-item
+                v-if="aboutInMenu"
                 :prepend-icon="mdiInformation"
                 :to="{ path: '/about' }"
                 data-testid="about-menu-item"
@@ -124,7 +139,7 @@
           >Sign up</v-btn
         >
       </template>
-    </template>
+    </div>
   </v-app-bar>
 
   <v-navigation-drawer
@@ -137,6 +152,7 @@
       <div v-for="path of visiblePaths()" :key="path.label">
         <v-list-item
           v-bind="path.attrs || {}"
+          :data-testid="path === aboutPath ? 'about-drawer-item' : undefined"
           :title="path.label"
           :prepend-icon="path.icon"
           :value="path.attrs?.to || path.attrs?.href || path.label"
@@ -154,12 +170,6 @@
           :prepend-icon="mdiAccountCircle"
           data-testid="account-drawer-item"
           >Account</v-list-item
-        >
-        <v-list-item
-          to="/about"
-          :prepend-icon="mdiInformation"
-          data-testid="about-drawer-item"
-          >About</v-list-item
         >
         <v-list-item
           v-if="user.isStaff"
@@ -193,7 +203,7 @@
 
 <script setup lang="ts">
 import { Snackbar } from '@/utils/notifications'
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { useUserStore } from '@/store/user'
@@ -214,7 +224,6 @@ import {
   mdiMapMarkerOutline,
   mdiMenuClose,
   mdiMenuOpen,
-  mdiShieldCheckOutline,
   mdiShieldEditOutline,
   mdiTransitConnectionVariant,
   mdiViewDashboardOutline,
@@ -229,18 +238,53 @@ const adminDashboardUrl = hs.resolveUrl('/admin/')
 
 const sidebar = useSidebarStore()
 const drawer = ref(false)
-const compactNavigation = ref(false)
+const smallScreen = ref(false)
+const mainLinksOverflow = ref(false)
+const compactNavigation = computed(
+  () => smallScreen.value || mainLinksOverflow.value
+)
+const navigationContainer = ref<HTMLElement>()
+const navigationLinks = ref<HTMLElement>()
+const aboutInMenu = ref(false)
 let compactNavigationQuery: MediaQueryList | undefined
 
+watch(
+  [navigationContainer, navigationLinks],
+  ([container, links], _, onCleanup) => {
+    if (!container || !links) return
+
+    const updateAboutOverflow = () => {
+      // Keep About's space measurable while it is hidden so growing the bar
+      // restores the link without oscillating between the bar and menu.
+      const availableWidth = container.getBoundingClientRect().width
+      const requiredWidth = links.getBoundingClientRect().width
+      const aboutWidth =
+        links.lastElementChild?.getBoundingClientRect().width ?? 0
+      aboutInMenu.value =
+        hs.session.isAuthenticated && requiredWidth > availableWidth
+      // Guests have no account menu, so keep About with the other links when
+      // deciding whether the full navigation needs to move into the drawer.
+      mainLinksOverflow.value =
+        requiredWidth - (hs.session.isAuthenticated ? aboutWidth : 0) >
+        availableWidth
+    }
+    const observer = new ResizeObserver(updateAboutOverflow)
+    observer.observe(container)
+    observer.observe(links)
+    updateAboutOverflow()
+    onCleanup(() => observer.disconnect())
+  },
+  { flush: 'post' }
+)
+
 function updateCompactNavigation() {
-  compactNavigation.value = compactNavigationQuery?.matches ?? false
+  smallScreen.value = compactNavigationQuery?.matches ?? false
 }
 
 onMounted(() => {
-  // The full authenticated navigation needs more room than Vuetify's 960px
-  // small-screen breakpoint, but comfortably fits below its 1280px medium
-  // breakpoint. Collapse at the bar's measured content boundary instead.
-  compactNavigationQuery = window.matchMedia('(max-width: 1099px)')
+  // The shorter labels let the main links stay in the bar down to Vuetify's
+  // small-screen breakpoint; About overflows into the account menu first.
+  compactNavigationQuery = window.matchMedia('(max-width: 959px)')
   updateCompactNavigation()
   compactNavigationQuery.addEventListener('change', updateCompactNavigation)
 })
@@ -269,17 +313,15 @@ type NavItem = {
 }
 
 // The base nav items, before filtering out anything that requires a login.
-// "About" isn't here - when logged in it lives in the account menu instead,
-// and is appended back to the end of the bar for logged-out visitors below.
 const basePaths: NavItem[] = [
   {
     attrs: { to: '/workspaces' },
-    label: 'Manage workspaces',
+    label: 'Workspaces',
     icon: mdiBriefcaseOutline,
   },
   {
     attrs: { to: '/browse' },
-    label: 'Browse monitoring sites',
+    label: 'Monitoring Sites',
     icon: mdiMapMarkerOutline,
   },
   {
@@ -328,8 +370,7 @@ function visiblePaths(): NavItem[] {
       authenticated || !(item.requiresAuth || itemRequiresAuth(item.attrs))
   )
 
-  // Logged-in visitors reach About through the account menu instead.
-  if (!authenticated) items.push(aboutPath)
+  items.push(aboutPath)
 
   return items
 }
@@ -368,6 +409,7 @@ async function onLogout() {
   box-shadow: none !important;
 }
 .navbar-home-link {
+  flex-shrink: 0;
   width: 160px;
   height: 64px;
   margin: 0 0 0 4px;
@@ -378,8 +420,37 @@ async function onLogout() {
   cursor: pointer;
   line-height: 0;
 }
+.main-navigation {
+  flex: 1;
+  min-width: 0;
+  align-self: stretch;
+  overflow: hidden;
+}
+.navbar-desktop {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-self: stretch;
+  align-items: center;
+}
+.navbar-desktop--compact {
+  /* Preserve the link measurements while the drawer is in use. */
+  visibility: hidden;
+}
+.compact-nav-toggle {
+  position: absolute;
+  right: 0;
+}
+.main-navigation-links {
+  display: flex;
+  width: max-content;
+  height: 100%;
+}
 .main-nav-item-wrapper--first {
-  margin-left: -6px;
+  margin-left: calc(-1 * var(--hs-space-6));
+}
+.main-nav-item-wrapper--overflow {
+  visibility: hidden;
 }
 .account-menu-btn {
   margin-right: var(--hs-space-8);

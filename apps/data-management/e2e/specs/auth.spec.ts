@@ -32,12 +32,28 @@ test.describe('authentication', () => {
     await expect(
       page.getByRole('button', { name: 'Quality control' })
     ).toBeVisible()
+    const aboutLink = page.locator('header').getByRole('link', {
+      name: 'About',
+      exact: true,
+    })
+    await expect(aboutLink).toBeVisible()
 
-    await page.setViewportSize({ width: 1050, height: 720 })
+    await page.setViewportSize({ width: 960, height: 720 })
+    await expect(aboutLink).toBeHidden()
+    await page.getByTestId('account-menu-button').click()
+    await expect(page.getByTestId('about-menu-item')).toBeVisible()
+    await page.keyboard.press('Escape')
+
+    await page.setViewportSize({ width: 900, height: 720 })
     await expect(
       page.getByRole('button', { name: 'Quality control' })
     ).toHaveCount(0)
     await expect(page.getByTestId('mobile-nav-button')).toBeVisible()
+    await page.getByTestId('mobile-nav-button').click()
+    await expect(page.getByTestId('about-drawer-item')).toBeVisible()
+
+    await page.setViewportSize({ width: 1100, height: 720 })
+    await expect(aboutLink).toBeVisible()
   })
 
   test('authenticated users can log out from the account menu', async ({

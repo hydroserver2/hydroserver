@@ -28,7 +28,7 @@ test.describe('sites and workspaces', () => {
     await authenticateSession(page, users.owner.email, users.owner.password)
     await page.goto('/browse')
     await page
-      .getByRole('link', { name: 'Manage workspaces', exact: true })
+      .getByRole('link', { name: 'Workspaces', exact: true })
       .click()
     await expect(page).toHaveURL(/\/workspaces/)
 
@@ -36,7 +36,7 @@ test.describe('sites and workspaces', () => {
     await deleteWorkspaceFromManagePage(page, workspaceName)
 
     await page
-      .getByRole('link', { name: 'Browse monitoring sites', exact: true })
+      .getByRole('link', { name: 'Monitoring Sites', exact: true })
       .click()
     await expect(page).toHaveURL(/\/browse$/)
     await expect(
