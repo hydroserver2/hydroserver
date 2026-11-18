@@ -57,6 +57,7 @@ const {
   observedProperties,
   units,
   methods,
+  workspaces,
   beginDate,
   endDate,
   dataZoomStart,
@@ -415,6 +416,15 @@ onMounted(async () => {
         hs.methods.listAllItems(),
       ])
     }
+    const workspaceCatalog = await hs.workspaces.list({
+      sortby: ['name'],
+      fetch_all: true,
+    })
+    if (!workspaceCatalog.ok)
+      throw new Error(
+        workspaceCatalog.message || 'Unable to load visualization workspaces'
+      )
+    workspaces.value = workspaceCatalog.data
     await parseUrlAndSetState()
   } catch (error) {
     Snackbar.error('Unable to fetch data from the API.')

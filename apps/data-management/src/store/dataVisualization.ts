@@ -27,6 +27,8 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   const processingLevels = ref<ProcessingLevel[]>([])
   const units = ref<Unit[]>([])
   const methods = ref<Method[]>([])
+  // Includes public workspaces independently of management memberships.
+  const workspaces = ref<Workspace[]>([])
 
   const selectedMonitoringSites = ref<MonitoringSite[]>([])
   const plottedDatastreams = ref<Datastream[]>([])
@@ -70,12 +72,12 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   const tableHeaders = reactive([
     { title: 'Plot', key: 'plot', visible: true },
     {
-      title: 'Number Observations',
+      title: 'Number of observations',
       key: 'valueCount',
       visible: false,
     },
     {
-      title: 'Date Last Updated',
+      title: 'Date last updated',
       key: 'phenomenonEndTime',
       visible: false,
     },
@@ -456,6 +458,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     observedProperties,
     units,
     methods,
+    workspaces,
     monitoringSiteById,
     datastreamFilters,
     selectedMonitoringSites,

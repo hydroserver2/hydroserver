@@ -55,6 +55,14 @@
             />
           </div>
         </div>
+        <div
+          v-if="takenTime !== null"
+          class="text-body-small text-error mt-3"
+          data-testid="add-points-collision"
+        >
+          A point already exists at {{ formatDateTime(takenTime) }}. Pick a
+          different datetime.
+        </div>
       </v-card-text>
 
       <v-card-actions>
@@ -62,7 +70,7 @@
         <v-btn
           color="primary"
           variant="flat"
-          :disabled="!form?.isValid || isUpdating"
+          :disabled="!form?.isValid || isUpdating || takenTime !== null"
           @click="onAddDataPoints"
         >
           Add {{ dataPoints.length }} point{{
@@ -75,7 +83,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, type Ref } from 'vue'
+import { computed, onMounted, ref, type Ref } from 'vue'
 import { requiredNumber } from '@/utils/rules'
 import { VForm } from 'vuetify/components'
 import { storeToRefs } from 'pinia'
@@ -86,6 +94,7 @@ import { useUIStore } from '@/store/userInterface'
 import DatePickerField from '@/components/VisualizeData/DatePickerField.vue'
 import { intendedSpacingMs } from '@/utils/plotting/plotly'
 import { useFilterDispatch } from '@/composables/useFilterDispatch'
+import { formatDateTime } from '@/utils/time'
 
 const { selectedSeries, isUpdating } = storeToRefs(usePlotlyStore())
 const { selectedData } = storeToRefs(useDataVisStore())
@@ -104,26 +113,43 @@ const dataPoints: Ref<NewPoint[]> = ref([])
 
 const defaultValue = () => Number(noDataValue.value) || 0
 
-const pickFirstDatetime = (): Date => {
-  const dt = intendedSpacingMs() ?? 0
+// Without an intended spacing, step by the gap before the anchor point so
+// the proposed time isn't the anchor's own.
+const spacingAt = (index: number | null): number => {
+  const intended = intendedSpacingMs()
+  if (intended) return intended
   const dataX = selectedSeries.value?.data.dataX
-  let anchor: number | null = null
-  if (selectedData.value?.length && dataX) {
-    const lastIdx = selectedData.value[selectedData.value.length - 1] as number
-    const ts = dataX[lastIdx] as number | undefined
-    if (Number.isFinite(ts)) anchor = ts as number
+  if (dataX && index != null && index > 0) {
+    const gap = (dataX[index] as number) - (dataX[index - 1] as number)
+    if (gap > 0) return gap
   }
-  if (anchor == null && dataX?.length) {
-    anchor = dataX[dataX.length - 1] as number
-  }
-  if (anchor == null) anchor = Date.now()
-  return new Date(anchor + dt)
+  return 60_000
 }
 
+const pickFirstDatetime = (): Date => {
+  const dataX = selectedSeries.value?.data.dataX
+  let anchorIdx: number | null = null
+  if (selectedData.value?.length && dataX) {
+    const lastIdx = selectedData.value[selectedData.value.length - 1] as number
+    if (Number.isFinite(dataX[lastIdx])) anchorIdx = lastIdx
+  }
+  if (anchorIdx == null && dataX?.length) anchorIdx = dataX.length - 1
+  if (anchorIdx == null || !dataX) return new Date()
+  return new Date((dataX[anchorIdx] as number) + spacingAt(anchorIdx))
+}
+
+// The first taken timestamp among the rows, or null.
+const takenTime = computed(() => {
+  const record = selectedSeries.value?.data
+  if (!record || !dataPoints.value.length) return null
+  return record.findTimeCollision(dataPoints.value.map((p) => p.dt.getTime()))
+})
+
 const addRow = () => {
-  const dt = intendedSpacingMs() ?? 0
   const last = dataPoints.value[dataPoints.value.length - 1]
-  const nextDt = last ? new Date(last.dt.getTime() + dt) : pickFirstDatetime()
+  const nextDt = last
+    ? new Date(last.dt.getTime() + spacingAt(null))
+    : pickFirstDatetime()
   dataPoints.value.push({ dt: nextDt, value: defaultValue() })
   form.value?.validate()
 }

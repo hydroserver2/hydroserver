@@ -28,7 +28,7 @@ test.describe('sites and workspaces', () => {
     await authenticateSession(page, users.owner.email, users.owner.password)
     await page.goto('/browse')
     await page
-      .getByRole('link', { name: 'Manage workspaces', exact: true })
+      .getByRole('link', { name: 'Workspaces', exact: true })
       .click()
     await expect(page).toHaveURL(/\/workspaces/)
 
@@ -36,7 +36,7 @@ test.describe('sites and workspaces', () => {
     await deleteWorkspaceFromManagePage(page, workspaceName)
 
     await page
-      .getByRole('link', { name: 'Browse monitoring sites', exact: true })
+      .getByRole('link', { name: 'Monitoring Sites', exact: true })
       .click()
     await expect(page).toHaveURL(/\/browse$/)
     await expect(
@@ -255,7 +255,7 @@ test.describe('sites and workspaces', () => {
     await page.goto('/browse')
 
     await expect(
-      page.getByRole('button', { name: 'Create Site', exact: true })
+      page.getByRole('button', { name: 'Create site', exact: true })
     ).toBeVisible()
 
     const siteRow = page.locator(
@@ -283,12 +283,12 @@ test.describe('sites and workspaces', () => {
     await expect(siteRow).toHaveClass(/selected/)
     await expect(siteRowActions).toHaveCSS('opacity', '1')
 
-    await page.getByRole('button', { name: 'Hide Filters' }).click()
+    await page.getByRole('button', { name: 'Hide filters' }).click()
     await expect(
       page.getByRole('textbox', { name: 'Search sites' })
     ).toBeHidden()
     await expect(siteRow).toBeVisible()
-    await page.getByRole('button', { name: 'Show Filters' }).click()
+    await page.getByRole('button', { name: 'Show filters' }).click()
     await expect(
       page.getByRole('textbox', { name: 'Search sites' })
     ).toBeVisible()
@@ -298,7 +298,7 @@ test.describe('sites and workspaces', () => {
       .click()
     const editDialog = page.getByRole('dialog')
     await expect(
-      editDialog.getByText('Edit Site', { exact: true })
+      editDialog.getByText('Edit site', { exact: true })
     ).toBeVisible()
     await editDialog.getByRole('button', { name: 'Cancel' }).click()
     await expect(editDialog).toBeHidden()
@@ -308,7 +308,7 @@ test.describe('sites and workspaces', () => {
       .click()
     const deleteDialog = page.getByRole('dialog')
     await expect(
-      deleteDialog.getByText('Confirm Deletion', { exact: true })
+      deleteDialog.getByText('Confirm deletion', { exact: true })
     ).toBeVisible()
     await expect(
       deleteDialog.locator('.v-toolbar.bg-red-darken-4')
@@ -449,12 +449,12 @@ test.describe('sites and workspaces', () => {
     await chooseOverlayOption(page, fixtures.workspaces.public.name)
     const siteFormDialog = page.getByRole('dialog')
 
-    await page.getByLabel('Site Code').fill(siteCode)
-    await page.getByLabel('Site Name').fill(siteName)
+    await page.getByLabel('Site code').fill(siteCode)
+    await page.getByLabel('Site name').fill(siteName)
     await page
-      .getByLabel('Site Description')
+      .getByLabel('Site description')
       .fill('Temporary site created by the Playwright release coverage suite.')
-    await fillCombobox(page, 'Select Site Type', 'Lake')
+    await fillCombobox(page, 'Select site type', 'Lake')
     await page.getByLabel('Latitude').fill('41.7501')
     await page.getByLabel('Longitude').fill('-111.8102')
     await page.getByLabel('Elevation (m)').fill('1380')
@@ -488,7 +488,7 @@ test.describe('sites and workspaces', () => {
     await createdSiteRow
       .getByRole('button', { name: `Edit ${siteName}` })
       .click()
-    await page.getByLabel('Site Name').fill(updatedSiteName)
+    await page.getByLabel('Site name').fill(updatedSiteName)
     await page.getByRole('button', { name: 'Save' }).click()
 
     const updatedSiteRow = page
@@ -518,25 +518,25 @@ test.describe('sites and workspaces', () => {
     await page.goto(`/sites/${fixtures.monitoringSites.mutablePublic.id}`)
 
     await page.getByTestId('edit-site-button').click()
-    await page.getByLabel('State/Province/Region').fill(unsavedProvince)
+    await page.getByLabel('State/province/region').fill(unsavedProvince)
     await page.getByRole('button', { name: 'Cancel' }).click()
 
     await expect(page.getByText(unsavedProvince, { exact: true })).toHaveCount(0)
 
     await page.getByTestId('edit-site-button').click()
-    await expect(page.getByLabel('State/Province/Region')).not.toHaveValue(
+    await expect(page.getByLabel('State/province/region')).not.toHaveValue(
       unsavedProvince
     )
     await page.getByRole('button', { name: 'Cancel' }).click()
 
     await page.getByTestId('edit-site-button').click()
-    await page.getByLabel('County/District').fill(unsavedCounty)
+    await page.getByLabel('County/district').fill(unsavedCounty)
     await page.keyboard.press('Escape')
 
     await expect(page.getByText(unsavedCounty, { exact: true })).toHaveCount(0)
 
     await page.getByTestId('edit-site-button').click()
-    await expect(page.getByLabel('County/District')).not.toHaveValue(
+    await expect(page.getByLabel('County/district')).not.toHaveValue(
       unsavedCounty
     )
     await page.getByRole('button', { name: 'Cancel' }).click()
@@ -573,7 +573,7 @@ test.describe('sites and workspaces', () => {
     ).toBeVisible()
 
     await page.getByTestId('edit-site-button').click()
-    await page.getByLabel('Site Name').fill(renamedSiteName)
+    await page.getByLabel('Site name').fill(renamedSiteName)
     await page.getByRole('button', { name: 'Save' }).click()
 
     await expect(
@@ -659,6 +659,27 @@ test.describe('sites and workspaces', () => {
 
     const datastreamRow = datastreamEntriesByName(page, datastreamName).first()
     await expect(datastreamRow).toBeVisible()
+    await expect(
+      datastreamRow.getByRole('button', {
+        name: 'Make datastream private',
+        exact: true,
+      })
+    ).toBeVisible()
+    await expect(
+      datastreamRow.getByRole('button', {
+        name: 'Restrict data download',
+        exact: true,
+      })
+    ).toBeVisible()
+    const datastreamId = await datastreamRow.getAttribute('data-datastream-id')
+    const createdDatastream = await page.request.get(
+      `${apiBaseUrl}/api/ogc/collections/datastreams/items/${datastreamId}`
+    )
+    expect(createdDatastream.ok()).toBeTruthy()
+    expect((await createdDatastream.json()).data).toMatchObject({
+      isPrivate: false,
+      isRestricted: false,
+    })
 
     await datastreamRow.locator('[data-testid^="datastream-actions-"]').click()
     await page.getByText('Edit datastream metadata').click()
@@ -708,12 +729,12 @@ test.describe('sites and workspaces', () => {
     const datastreamPrivacyToggle = page.getByTestId(
       `datastream-privacy-toggle-${fixtures.datastreams.public.id}`
     )
-    const dataVisibilityToggle = page.getByTestId(
-      `data-visibility-toggle-${fixtures.datastreams.public.id}`
+    const dataRestrictionToggle = page.getByTestId(
+      `data-restriction-toggle-${fixtures.datastreams.public.id}`
     )
 
     await expect(datastreamPrivacyToggle).toBeVisible()
-    await expect(dataVisibilityToggle).toBeVisible()
+    await expect(dataRestrictionToggle).toBeVisible()
 
     await page.getByTestId('site-access-control-button').click()
     await page.getByTestId('site-privacy-checkbox').click()
@@ -782,36 +803,39 @@ test.describe('sites and workspaces', () => {
           `${apiBaseUrl}/api/ogc/collections/datastreams/items/${fixtures.datastreams.public.id}`
         )
         const datastream = await response.json()
-        return datastream.data.isVisible
+        return datastream.data.isRestricted
       })
-      .toBe(true)
+      .toBe(false)
 
-    await dataVisibilityToggle.click()
+    await dataRestrictionToggle.click()
     await expect
       .poll(async () => {
         const response = await page.request.get(
           `${apiBaseUrl}/api/ogc/collections/datastreams/items/${fixtures.datastreams.public.id}`
         )
         const datastream = await response.json()
-        return datastream.data.isVisible
+        return datastream.data.isRestricted
       })
-      .toBe(false)
+      .toBe(true)
     await anonymousPage.goto(`/sites/${fixtures.monitoringSites.public.id}`)
     const anonymousPublicDatastreamRow = datastreamEntriesByName(
       anonymousPage,
       fixtures.datastreams.public.name
     )
     await expect(anonymousPublicDatastreamRow).toHaveCount(1)
-    await dataVisibilityToggle.click()
+    await expect(anonymousPublicDatastreamRow).toContainText(
+      'Data download restricted'
+    )
+    await dataRestrictionToggle.click()
     await expect
       .poll(async () => {
         const response = await page.request.get(
           `${apiBaseUrl}/api/ogc/collections/datastreams/items/${fixtures.datastreams.public.id}`
         )
         const datastream = await response.json()
-        return datastream.data.isVisible
+        return datastream.data.isRestricted
       })
-      .toBe(true)
+      .toBe(false)
 
     await anonymousPage.goto(`/sites/${fixtures.monitoringSites.public.id}`)
     await expect(
@@ -858,7 +882,7 @@ test.describe('sites and workspaces', () => {
     await expect(
       metadataDialog.getByText('General', { exact: true })
     ).toBeVisible()
-    await metadataDialog.getByText('Observed Property', { exact: true }).click()
+    await metadataDialog.getByText('Observed property', { exact: true }).click()
     await expect(metadataDialog.getByText('Code')).toBeVisible()
 
     const csvDownload = page.waitForEvent('download')

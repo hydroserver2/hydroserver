@@ -143,6 +143,39 @@ describe('useOrchestrationData', () => {
     expect(data.taskLoading.value).toBe(false)
   })
 
+  it('reloads the original group when switching back before another group finishes loading', async () => {
+    let resolveOther!: (items: unknown[]) => void
+    tasksListMock
+      .mockResolvedValueOnce([{ id: 'etl-original' }])
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveOther = resolve
+        })
+      )
+      .mockResolvedValueOnce([{ id: 'etl-original' }])
+
+    const data = useOrchestrationData()
+    await data.fetchTasksForGroup('ingestion', 'dc-1', 'workspace-1')
+    const otherLoad = data.fetchTasksForGroup(
+      'ingestion',
+      'dc-2',
+      'workspace-1'
+    )
+    await data.fetchTasksForGroup('ingestion', 'dc-1', 'workspace-1')
+
+    expect(data.workspaceTasks.value.map((item) => item.id)).toEqual([
+      'etl-original',
+    ])
+    resolveOther([{ id: 'etl-other' }])
+    await otherLoad
+
+    expect(data.workspaceTasks.value.map((item) => item.id)).toEqual([
+      'etl-original',
+    ])
+    expect(data.loadedTaskGroup.value?.groupId).toBe('dc-1')
+    expect(data.taskLoading.value).toBe(false)
+  })
+
   it('invalidates a pending task request when workspace summaries reload', async () => {
     let resolveTasks!: (items: unknown[]) => void
     tasksListMock.mockReturnValueOnce(

@@ -128,7 +128,7 @@ export class Datastream {
   methodId: string
   processingLevelId: string
   isPrivate: boolean
-  isVisible: boolean
+  isRestricted: boolean
   phenomenonBeginTime?: string | null
   phenomenonEndTime?: string | null
   intendedTimeSpacing?: number
@@ -154,8 +154,8 @@ export class Datastream {
     this.processingLevelId = ''
     this.timeAggregationInterval = null
     this.timeAggregationIntervalUnit = 'seconds'
-    this.isPrivate = true
-    this.isVisible = true
+    this.isPrivate = false
+    this.isRestricted = false
     this.valueCount = 0
     this.tags = {}
   }
@@ -171,7 +171,7 @@ export interface DatastreamExtended {
   noDataValue: number
   aggregationStatistic: string
   isPrivate: boolean
-  isVisible: boolean
+  isRestricted: boolean
   phenomenonBeginTime?: string | null
   phenomenonEndTime?: string | null
   intendedTimeSpacing?: number
@@ -437,14 +437,14 @@ export interface LinkedResource {
 export class OAuthProvider {
   id: string
   name: string
-  iconLink: string
+  iconLink: string | null
   signupEnabled: boolean
   connectEnabled: boolean
 
   constructor() {
     this.id = ''
     this.name = ''
-    this.iconLink = ''
+    this.iconLink = null
     this.signupEnabled = true
     this.connectEnabled = true
   }

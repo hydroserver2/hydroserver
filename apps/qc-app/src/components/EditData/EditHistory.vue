@@ -222,7 +222,7 @@
                   previewIndex < 0
                     ? 'the starting state'
                     : `step ${previewIndex + 1} of ${editCount}`
-                }}. Editing waits until you are back on the latest step.
+                }}. Editing and committing wait until you are back on the latest step.
               </span>
               <v-btn
                 data-testid="history-back-to-latest-btn"

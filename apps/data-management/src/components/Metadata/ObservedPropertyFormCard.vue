@@ -2,7 +2,7 @@
   <v-card>
     <v-toolbar flat color="primary">
       <v-card-title>
-        {{ isEdit ? 'Edit' : 'Add' }} Observed Property
+        {{ isEdit ? 'Edit' : 'Add' }} observed property
       </v-card-title>
     </v-toolbar>
     <v-divider />
@@ -40,7 +40,7 @@
           :items="vocabularyStore.observedPropertyTypes"
           v-model="item.type"
           class="required-label"
-          label="Variable Type"
+          label="Variable type"
           :rules="rules.requiredAndMaxLength255"
         />
 

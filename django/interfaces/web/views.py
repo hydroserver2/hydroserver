@@ -2,6 +2,7 @@ from allauth.socialaccount.models import SocialApp
 from django.templatetags.static import static
 from django.shortcuts import render
 from django.conf import settings
+from core.iam.templatetags.provider_icons import provider_icon
 from core.web.models import InstanceConfiguration, MapLayer, ContactInformation
 
 
@@ -10,6 +11,7 @@ def get_app_settings_context():
     contact_information = ContactInformation.objects.all()
     map_layers = MapLayer.objects.all()
     social_apps = SocialApp.objects.all()
+    static_prefix = settings.PROXY_BASE_URL if settings.STATIC_STORAGE_IS_LOCAL and not settings.STATIC_HOST else ""
 
     return {
         "authenticationConfiguration": {
@@ -19,8 +21,11 @@ def get_app_settings_context():
                 {
                     "id": social_app.provider_id,
                     "name": social_app.name,
-                    "iconLink": f"{settings.PROXY_BASE_URL if settings.STATIC_STORAGE_IS_LOCAL and not settings.STATIC_HOST else ''}"
-                    f"{static(f'providers/{social_app.provider_id}.png')}",
+                    "iconLink": (
+                        (f"{static_prefix}{icon}" if (icon := provider_icon(social_app)) else None)
+                        if social_app.provider == "openid_connect"
+                        else f"{static_prefix}{static(f'providers/{social_app.provider_id}.png')}"
+                    ),
                     "signupEnabled": (
                         True
                         if social_app.settings.get("allowSignUp") is not False
@@ -81,6 +86,7 @@ def get_app_settings_context():
                     "source": map_layer.source,
                     "attribution": map_layer.attribution,
                     "priority": map_layer.priority,
+                    "visibleByDefault": map_layer.visible_by_default,
                 }
                 for map_layer in map_layers
                 if map_layer.type == "overlay"

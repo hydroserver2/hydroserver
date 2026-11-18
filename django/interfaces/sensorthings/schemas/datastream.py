@@ -24,7 +24,7 @@ class DatastreamProperties(BaseModel):
         "seconds", "minutes", "hours", "days"
     ]
     is_private: bool
-    is_visible: bool
+    is_restricted: bool
     workspace: WorkspaceProperties
     linked_resources: dict[str, str]
     tags: dict[str, str]

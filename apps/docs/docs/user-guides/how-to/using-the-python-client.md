@@ -529,7 +529,7 @@ Result-qualifier creation accepts `name` and `description` by position or by key
 | `result_begin_time` | `datetime \| None` | No | Maintained from observations |
 | `result_end_time` | `datetime \| None` | No | Maintained from observations |
 | `is_private` | `bool` | Yes | |
-| `is_visible` | `bool` | Yes | |
+| `is_restricted` | `bool` | Yes | Restricts data download and query for the datastream |
 | `monitoring_site_id` | `UUID` | Yes | |
 | `method_id` | `UUID` | Yes | |
 | `observed_property_id` | `UUID` | Yes | |
@@ -566,7 +566,7 @@ hs_api.datastreams.create(name, description, monitoring_site, method, observed_p
                           aggregation_statistic, time_aggregation_interval,
                           time_aggregation_interval_unit, intended_time_spacing=None,
                           intended_time_spacing_unit=None, status=None,
-                          type="timeSeriesCoverage", is_private=False, is_visible=True, tags=None, uid=None) -> Datastream
+                          type="timeSeriesCoverage", is_private=False, is_restricted=False, tags=None, uid=None) -> Datastream
 hs_api.datastreams.update(uid, name=..., description=..., monitoring_site=..., method=...,
                           observed_property=..., processing_level=..., unit=..., ...) -> Datastream
 hs_api.datastreams.delete(uid) -> None

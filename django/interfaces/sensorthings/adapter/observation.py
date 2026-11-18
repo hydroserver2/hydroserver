@@ -65,7 +65,7 @@ class ObservationMixin(SensorThingsUtils):
         else:
             if count and not filters:
                 entity_count = principal.filter_by_permission(
-                    Datastream.objects, "can_view"
+                    Datastream.objects, "can_view", resource_type=Observation
                 ).aggregate(total=Sum("value_count"))["total"] or 0
             elif count:
                 entity_count = observations.count() if count else None
@@ -114,6 +114,8 @@ class ObservationMixin(SensorThingsUtils):
 
         by_datastream = {}
         for dto in payload:
+            if isinstance(dto.phenomenon_time, str) and "/" in dto.phenomenon_time:
+                raise HttpError(400, "Observation phenomenonTime intervals are not supported.")
             by_datastream.setdefault(dto.datastream_id, []).append(dto)
 
         new_ids = []

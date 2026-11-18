@@ -53,7 +53,7 @@ const { target } = defineProps<{ target: Timestamp; color: string }>()
 
 const FORMAT_OPTIONS = [
   { title: 'ISO 8601', value: 'ISO8601' },
-  { title: 'Custom Format', value: 'custom' },
+  { title: 'Custom format', value: 'custom' },
 ] as const
 
 const customFormatCache = ref(target.customFormat)

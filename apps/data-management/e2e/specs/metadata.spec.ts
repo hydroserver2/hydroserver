@@ -223,8 +223,8 @@ test.describe('metadata management', () => {
 
     await expect(page.getByLabel('Name', { exact: true })).toHaveCount(0)
 
-    const manufacturerField = page.getByLabel('Sensor Model Manufacturer')
-    const modelField = page.getByLabel('Sensor Model', { exact: true })
+    const manufacturerField = page.getByLabel('Sensor model manufacturer')
+    const modelField = page.getByLabel('Sensor model', { exact: true })
     await page.getByRole('button', { name: 'Save' }).click()
     await expect(page.getByText('This field is required.')).toHaveCount(2)
 
@@ -263,7 +263,7 @@ test.describe('metadata management', () => {
       .getByRole('button', { name: /Add new observed property/i })
       .click()
 
-    await fillCombobox(page, 'Variable Type', 'E2E Variable Type')
+    await fillCombobox(page, 'Variable type', 'E2E Variable Type')
     await page
       .getByLabel('Definition')
       .fill('https://www.example.com/e2e-observed-property')
@@ -370,7 +370,7 @@ test.describe('metadata management', () => {
     await page.getByRole('tab', { name: 'Units' }).click()
     await workspaceTable.getByRole('button', { name: /Add new unit/i }).click()
 
-    await fillCombobox(page, 'Unit Type', 'E2E Unit Type')
+    await fillCombobox(page, 'Unit type', 'E2E Unit Type')
     await page.getByLabel('Symbol').fill(`e2e${stamp}`)
     await page
       .getByLabel('Definition')

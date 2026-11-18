@@ -126,11 +126,24 @@ Use **Website Configuration** > **Map Layers** to add basemap and overlay option
 | --- | --- |
 | **Name** | Sets the display name shown to users. |
 | **Type** | Classifies the layer as a **Basemap** or **Overlay**. |
-| **Priority** | Controls layer ordering when multiple layers are available. |
-| **Source** | Stores the map tile or layer source URL used by the frontend map. |
+| **Priority** | Larger priority numbers render on top of smaller numbers; for example, priority 10 renders on top of priority 5. Equal priorities sort by name. All overlays stay above the basemap and below site markers. |
+| **Visible by default** | Turns an overlay on when a map first loads. Ignored for basemaps. Defaults to off. |
+| **Source** | XYZ raster tile URL containing `{z}`, `{x}`, and `{y}` placeholders. Overlays also accept ArcGIS `VectorTileServer` URLs or their `resources/styles/root.json` URL. |
 | **Attribution** | Sets the attribution text required by the layer provider. |
 
 After creating a basemap or satellite layer, return to **Map Configuration** to select it as a default layer.
+
+The map's **Overlays** control lists the topmost overlay first and lets users turn each overlay on or off. Enabled overlays show their attribution in the map's attribution control. Hidden overlays do not request tiles; ArcGIS metadata and styles load when the overlay is first enabled. Choices apply to the current map and reset to the administrator's defaults when a new map loads.
+
+The **Base Map** menu and each overlay have an **Opacity** slider, from 0% (transparent) to 100% (fully opaque). Adjustments update the map immediately and leave site markers at their normal opacity. Opacity is retained while switching basemaps or toggling overlays in the current map, and resets to 100% when a new map loads. Opacity controls are muted and disabled while an overlay is off; turning it back on restores the selected opacity and makes the slider adjustable again.
+
+For example, to add the NetFlowlines stream network, create a layer with **Type** set to **Overlay**, supply its provider attribution, and use this **Source**:
+
+```text
+https://tiles.arcgis.com/tiles/ZzrwjTRez6FJiOq4/arcgis/rest/services/NetFlowlinesVTPK/VectorTileServer?f=json
+```
+
+ArcGIS overlays use the service's published style and Web Mercator tile grid. Both a service URL ending in `VectorTileServer` and the `?f=json` form are supported. Public services must allow access from the browser. WMS, WMTS, and unstyled vector tile templates are not supported.
 
 ### Contact Information
 
@@ -233,7 +246,7 @@ HydroServer can act as an OpenID Connect provider, so third-party apps can sign 
 APIs on their behalf. To register an app:
 
 - Navigate to **OpenID Connect IdP** > **Clients** > **Add Client**.
-- Enter the app's client ID and name. The name is shown to users on the consent screen.
+- Enter the app's client ID and name. The name is shown to users on the consent screen and in the sign-in page.
 - Choose the client type. Use **Public** for browser and mobile apps that can't keep a secret, and **Confidential**
   for server-side apps.
 - Add the grant types (usually `authorization_code`, plus `refresh_token` if the app should renew tokens), the
@@ -266,4 +279,6 @@ To enable authentication through third-party identity providers, do the followin
 - Use **allowConnection** to control whether users can connect the provider to an existing HydroServer account.
 - When omitted, **allowSignUp** defaults to enabled, but **allowConnection** is enabled only when explicitly set to
   `true`.
+- Use **icon** to set an OpenID Connect provider's button icon path. See
+  [Sign-In Provider Icons](/hosting-and-deployment/how-to/setting-up-a-production-deployment.md#sign-in-provider-icons).
 - Assign the default site that the provider can authenticate against.

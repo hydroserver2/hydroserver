@@ -45,7 +45,7 @@ class DatastreamFields(Schema):
     time_aggregation_interval: float
     status: Optional[str] = Field(None, max_length=255)
     is_private: bool = False
-    is_visible: bool = True
+    is_restricted: bool = False
     time_aggregation_interval_unit: Literal["seconds", "minutes", "hours", "days"]
     intended_time_spacing: Optional[float] = None
     intended_time_spacing_unit: Optional[
@@ -129,7 +129,7 @@ _sortby_fields = (
     "sampledMedium",
     "status",
     "isPrivate",
-    "isVisible",
+    "isRestricted",
     "aggregationStatistic",
     "valueCount",
     "phenomenonBeginTime",

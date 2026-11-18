@@ -71,7 +71,7 @@ vi.mock('@uwrl/qc-utils', async (importOriginal) => {
   const actual = (await importOriginal()) as Record<string, unknown>
   return {
     ...actual,
-    Snackbar: { error: vi.fn(), success: vi.fn(), info: vi.fn() },
+    Snackbar: { error: vi.fn(), success: vi.fn(), info: vi.fn(), warn: vi.fn() },
   }
 })
 
@@ -1624,5 +1624,88 @@ describe('useDataVisStore.replaceDatastream', () => {
     expect(store.datastreams.map((d) => d.id)).toEqual(['a', 'm'])
     expect(store.datastreams[1]?.phenomenonEndTime).toBe('2021-06-30T12:00:00Z')
     expect(store.qcDatastream?.phenomenonEndTime).toBe('2021-06-30T12:00:00Z')
+  })
+})
+
+describe('useDataVisStore plot limits', () => {
+  const ids = (store: any) => store.plottedDatastreams.map((d: any) => d.id)
+  const snapMeta = (sessionLabel: string) => ({
+    sessionId: 'sess-1',
+    sessionLabel,
+    opIndex: 0,
+    opCount: 1,
+    opName: 'Fill Gaps',
+    createdAt: '2026-01-01T00:00:00Z',
+  })
+
+  it('refuses a fifth datastream and says which one', async () => {
+    const { Snackbar } = await import('@uwrl/qc-utils')
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    for (const id of ['a', 'b', 'c', 'd']) {
+      await store.plotDatastream(makeDs({ id, name: id.toUpperCase() }) as any)
+    }
+    await store.plotDatastream(makeDs({ id: 'e', name: 'Extra' }) as any)
+
+    expect(ids(store)).toEqual(['a', 'b', 'c', 'd'])
+    expect(Snackbar.warn).toHaveBeenCalledWith(
+      'Up to 4 datastreams can be plotted at once, so Extra was left off.'
+    )
+  })
+
+  it('keeps the first four of a share link and names the rest', async () => {
+    const { Snackbar } = await import('@uwrl/qc-utils')
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    await store.setPlottedDatastreams(
+      ['a', 'b', 'c', 'd', 'e', 'f'].map((id) =>
+        makeDs({ id, name: `Stream ${id}` })
+      ) as any
+    )
+
+    expect(ids(store)).toEqual(['a', 'b', 'c', 'd'])
+    expect(Snackbar.warn).toHaveBeenCalledWith(
+      'Up to 4 datastreams can be plotted at once, so Stream e and Stream f were left off.'
+    )
+  })
+
+  it('refuses a choice that would plot more than four', async () => {
+    const { Snackbar } = await import('@uwrl/qc-utils')
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    store.datastreams = ['a', 'b', 'c', 'src', 'm1', 'm2'].map((id) =>
+      makeDs({ id, name: id })
+    ) as any
+    store.qcHistories = [
+      { id: 'h1', sourceDatastreamId: 'src', managedDatastreamId: 'm1' },
+      { id: 'h2', sourceDatastreamId: 'src', managedDatastreamId: 'm2' },
+    ] as any
+    for (const id of ['a', 'b', 'c']) {
+      await store.plotDatastream(makeDs({ id, name: id }) as any)
+    }
+    await store.plotSourceSelection('src', ['src', 'm1'])
+
+    expect(ids(store)).toEqual(['a', 'b', 'c', 'src'])
+    expect(Snackbar.warn).toHaveBeenCalledWith(
+      'Up to 4 datastreams can be plotted at once, so m1 was left off.'
+    )
+  })
+
+  it('shows at most two snapshots', async () => {
+    const { Snackbar } = await import('@uwrl/qc-utils')
+    const { useDataVisStore } = await import('@/store/dataVisualization')
+    const store = useDataVisStore()
+    for (const [id, label] of [
+      ['snap:sess-1:0', 'First'],
+      ['snap:sess-1:1', 'Second'],
+      ['snap:sess-1:2', 'Third'],
+    ]) {
+      await store.addSnapshotSeries(id, { history: [] } as any, snapMeta(label) as any)
+    }
+
+    expect(ids(store)).toEqual(['snap:sess-1:0', 'snap:sess-1:1'])
+    expect(Snackbar.warn).toHaveBeenCalledWith(
+      'Up to 2 snapshots can be shown at once. Hide one to show Third.'
+    )
   })
 })

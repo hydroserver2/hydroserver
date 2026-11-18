@@ -1,5 +1,14 @@
 <template>
-  <v-menu :close-on-content-click="false" location="bottom start" attach="body">
+  <HsTableFilterMenu
+    :title="title"
+    :label="label"
+    :section-label="label === 'Status' ? 'Statuses' : 'Task types'"
+    :options="options.map((option) => ({ ...option, label: option.title }))"
+    :selected="selected"
+    :show-checkboxes="showCheckboxes"
+    :searchable="false"
+    @toggle="emit('toggle', $event)"
+  >
     <template #activator="{ props: menuProps }">
       <v-btn
         v-bind="menuProps"
@@ -17,52 +26,11 @@
         </span>
       </v-btn>
     </template>
-
-    <v-list
-      class="task-filter-menu"
-      :class="{ 'task-filter-menu--compact': !showCheckboxes }"
-      density="compact"
-    >
-      <div class="task-filter-title">{{ title }}</div>
-      <v-list-item
-        v-for="option in options"
-        :key="option.value"
-        :class="{
-          'task-filter-option--selected': selected.includes(option.value),
-        }"
-        @click="emit('toggle', option.value)"
-      >
-        <template v-if="showCheckboxes" #prepend>
-          <v-checkbox
-            :model-value="selected.includes(option.value)"
-            hide-details
-            density="compact"
-            :aria-label="`${label}: ${option.title}`"
-            @click.stop="emit('toggle', option.value)"
-          />
-        </template>
-        <v-list-item-title class="task-filter-option">
-          <v-icon
-            v-if="option.icon"
-            :icon="option.icon"
-            size="18"
-            :style="{ color: option.color }"
-          />
-          <span>{{ option.title }}</span>
-        </v-list-item-title>
-      </v-list-item>
-      <v-list-item
-        v-if="selected.length"
-        class="task-filter-clear"
-        @click="emit('clear')"
-      >
-        <v-list-item-title>Clear filter</v-list-item-title>
-      </v-list-item>
-    </v-list>
-  </v-menu>
+  </HsTableFilterMenu>
 </template>
 
 <script setup lang="ts">
+import { HsTableFilterMenu } from '@hydroserver/design-system/vue'
 import { mdiChevronDown } from '@mdi/js'
 
 withDefaults(
@@ -83,7 +51,6 @@ withDefaults(
 
 const emit = defineEmits<{
   toggle: [value: string]
-  clear: []
 }>()
 </script>
 
@@ -96,8 +63,7 @@ const emit = defineEmits<{
   text-transform: none;
 }
 
-.task-filter-button--active,
-.task-filter-clear {
+.task-filter-button--active {
   color: rgb(var(--v-theme-primary));
 }
 
@@ -111,42 +77,5 @@ const emit = defineEmits<{
   text-align: center;
   background: rgb(var(--v-theme-primary));
   border-radius: var(--hs-radius-pill);
-}
-
-.task-filter-menu {
-  min-width: 260px;
-  max-height: 320px;
-  padding: var(--hs-space-8) 0;
-  overflow-y: auto;
-}
-
-.task-filter-menu--compact {
-  min-width: 240px;
-}
-
-.task-filter-menu--compact :deep(.v-list-item) {
-  min-height: 32px;
-  padding-inline: var(--hs-space-16);
-}
-
-.task-filter-menu--compact :deep(.v-list-item__content) {
-  padding-block: 0;
-}
-
-.task-filter-title {
-  padding: var(--hs-space-8) var(--hs-space-16);
-  color: var(--hs-text-primary);
-  font-size: var(--hs-font-md);
-  font-weight: var(--hs-font-weight-semibold);
-}
-
-.task-filter-option {
-  display: inline-flex;
-  gap: var(--hs-space-8);
-  align-items: center;
-}
-
-.task-filter-option--selected {
-  background: var(--hs-surface-muted);
 }
 </style>

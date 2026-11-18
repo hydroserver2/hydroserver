@@ -131,13 +131,22 @@ export class HydroServer {
         ? null
         : () => client.session.getAccessToken()
     )
+    const expire = () => {
+      options.onUnauthorized?.()
+      client.emit('session:expired')
+    }
     registerUnauthorizedHandler(
       client.authMode === 'token'
-        ? () => {
-            options.onUnauthorized?.()
-            client.emit('session:expired')
+        ? (sentToken) => {
+            if (sentToken) expire()
           }
-        : null
+        : client.authMode === 'session'
+          ? () => {
+              // A 401 while signed in means the server ended the session.
+              // Signing in again restores it, so the user is kept.
+              if (client.user.isAuthenticated) expire()
+            }
+          : null
     )
     await client.session.initialize()
     return client

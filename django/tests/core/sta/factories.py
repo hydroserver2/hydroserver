@@ -264,10 +264,11 @@ class DatastreamFactory(DjangoModelFactory):
     time_aggregation_interval = 15
     time_aggregation_interval_unit = "minutes"
     is_private = False
-    is_visible = True
+    is_restricted = False
 
     class Params:
         private = factory.Trait(is_private=True)
+        restricted = factory.Trait(is_restricted=True)
 
 
 class ObservationFactory(DjangoModelFactory):

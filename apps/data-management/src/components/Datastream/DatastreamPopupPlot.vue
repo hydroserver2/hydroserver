@@ -42,7 +42,7 @@
             <DatePickerField
               :active="isCustomRangeActive"
               :model-value="beginDate"
-              placeholder="Begin Date"
+              placeholder="Begin date"
               class="w-full"
               @update:model-value="setDateRange({ begin: $event })"
             />
@@ -51,7 +51,7 @@
             <DatePickerField
               :active="isCustomRangeActive"
               :model-value="endDate"
-              placeholder="End Date"
+              placeholder="End date"
               class="w-full"
               @update:model-value="setDateRange({ end: $event })"
             />

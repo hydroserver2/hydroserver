@@ -72,7 +72,7 @@ class Datastream(models.Model):
     result_end_time = models.DateTimeField(null=True, blank=True)  # Unused
     result_begin_time = models.DateTimeField(null=True, blank=True)  # Unused
     is_private = models.BooleanField(default=True)
-    is_visible = models.BooleanField(default=True)
+    is_restricted = models.BooleanField(default=False)
     tags = models.JSONField(default=dict, blank=True, validators=[validate_tags])
     search_vector = SearchVectorField(null=True, editable=False)
 

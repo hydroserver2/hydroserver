@@ -99,14 +99,17 @@ src/
 │  ├─ EditData/                 One panel per edit op (FillGaps, ChangeValues, Interpolate, …),
 │  │                            EditHistory and its session list, the Start editing chooser,
 │  │                            the session window and leave dialogs, and the operation registry.
-│  └─ base/                     Generic Vuetify wrappers (FullScreenLoader, Notifications).
+│  └─ base/                     Generic Vuetify wrappers (FullScreenLoader, Notifications,
+│                               SessionExpiredNotice).
 ├─ composables/
 │  ├─ useDataSelection.ts       Bridges Plotly's selectedpoints into the Pinia store.
 │  ├─ useFilterDispatch.ts      Shared "open panel → dispatch op → highlight result" flow.
+│  ├─ useFilterWithinSelection.ts  Filters that search only the selected points.
 │  ├─ useEditEntry.ts           Entering and leaving the editor.
 │  ├─ useEditSession.ts         Open, save and commit a QC session.
 │  ├─ useLeaveSession.ts        The one question asked before any exit.
 │  ├─ useManagedDatastreams.ts  The chooser's managed datastreams, and deleting them.
+│  ├─ useWorkspaceCatalog.ts    The Select view's lists for a workspace, every page.
 │  ├─ useHistorySnapshots.ts    History snapshots plotted as comparison lines.
 │  ├─ useWorkspacePermissions.ts Role checks that gate editing, Save and Commit.
 │  ├─ useQcHistory.ts           Download the QC history (qc-utils' serializeHistory).
@@ -181,7 +184,7 @@ seconds). Put the preference in `qcPreferences` (or a store like
                 ▼
  ┌──────────────────────────────────────┐
  │ Panel collects args                  │
- │ (e.g. { 'Greater than': 100 })       │
+ │ (e.g. { filters: [...], match })     │
  └──────────────┬───────────────────────┘
                 ▼
  ┌──────────────────────────────────────┐

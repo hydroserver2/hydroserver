@@ -10,7 +10,6 @@
               :options="statusOptions"
               :selected="statusFilter"
               @toggle="emit('toggle-status', $event)"
-              @clear="emit('clear-status')"
             />
           </th>
           <th class="text-right" />
@@ -164,7 +163,6 @@ defineProps<{
 
 const emit = defineEmits<{
   'toggle-status': [status: string]
-  'clear-status': []
   'toggle-paused': [task: TaskRow]
   'run-now': [task: TaskRow]
   'open-task': [task: TaskRow]

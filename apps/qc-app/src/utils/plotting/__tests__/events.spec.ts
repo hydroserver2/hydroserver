@@ -44,6 +44,7 @@ vi.mock('@/store/dataVisualization', () => ({
 }))
 
 vi.mock('../relayout', () => ({ handleRelayout: vi.fn() }))
+vi.mock('../axisLock', () => ({ installAxisLock: vi.fn() }))
 vi.mock('../selected', () => ({ handleSelected: vi.fn() }))
 vi.mock('../zoom', () => ({
   captureCurrentZoomState: vi.fn(() => null),

@@ -1,18 +1,105 @@
 <template>
   <div class="map-wrapper">
-    <!-- 2) Dropdown, absolutely positioned -->
-    <div class="basemap-select-container" v-if="basemapTileSources.length > 1">
+    <div class="map-controls">
       <v-select
         v-model="selectedTileSourceName"
         :items="basemapTileSources"
         item-title="name"
         item-value="name"
-        label="Base Map"
+        label="Base map"
         dense
         hide-details
         variant="solo-filled"
-        style="width: 180px"
-      />
+        class="basemap-select"
+      >
+        <template #menu-footer>
+          <v-divider />
+          <div class="layer-opacity-control">
+            <div class="layer-opacity-label hs-text-sm">
+              <span>Opacity</span>
+              <span aria-hidden="true">{{ basemapOpacity }}%</span>
+            </div>
+            <v-slider
+              v-model="basemapOpacity"
+              aria-label="Base map opacity"
+              :aria-valuetext="`${basemapOpacity}%`"
+              :min="0"
+              :max="100"
+              :step="1"
+              color="primary"
+              hide-details
+              @keydown="onOpacityKeydown"
+            />
+          </div>
+        </template>
+      </v-select>
+      <v-menu v-if="overlays.length" :close-on-content-click="false">
+        <template #activator="{ props: menuProps }">
+          <!-- Vuetify's aria-owns otherwise adds menu contents to the button name. -->
+          <v-btn
+            v-bind="menuProps"
+            :prepend-icon="mdiLayers"
+            :append-icon="mdiChevronDown"
+            aria-label="Overlays"
+            variant="flat"
+            rounded="var(--hs-radius-sm)"
+            class="overlay-menu-button"
+          >
+            Overlays
+          </v-btn>
+        </template>
+        <v-card class="overlay-layer-control">
+          <v-card-text>
+            <div
+              v-for="{ overlay, index } in overlayMenuItems"
+              :key="overlay.configuration.name"
+            >
+              <v-checkbox
+                class="overlay-visibility"
+                :model-value="overlayVisibility[index]"
+                :label="overlay.configuration.name"
+                hide-details
+                @update:model-value="setOverlayVisibility(index, !!$event)"
+              />
+              <div class="overlay-opacity-controls">
+                <div
+                  class="layer-opacity-label hs-text-sm"
+                  :class="{ 'text-disabled': !overlayVisibility[index] }"
+                >
+                  <span>Opacity</span>
+                  <span aria-hidden="true">{{ overlayOpacities[index] }}%</span>
+                </div>
+                <!-- Vuetify disables interaction but does not mark the thumb aria-disabled. -->
+                <v-slider
+                  :model-value="overlayOpacities[index]"
+                  :disabled="!overlayVisibility[index]"
+                  :aria-disabled="!overlayVisibility[index]"
+                  :aria-label="`${overlay.configuration.name} opacity`"
+                  :aria-valuetext="`${overlayOpacities[index]}%`"
+                  :min="0"
+                  :max="100"
+                  :step="1"
+                  color="primary"
+                  hide-details
+                  @update:model-value="setOverlayOpacity(index, $event)"
+                  @keydown="onOpacityKeydown"
+                />
+                <p
+                  v-if="overlayErrors[index]"
+                  class="text-error hs-text-sm"
+                  role="status"
+                >
+                  Could not load layer. Turn it off and on to retry.
+                </p>
+              </div>
+              <v-divider
+                v-if="index > 0"
+                class="overlay-group-divider"
+              />
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-menu>
     </div>
     <div ref="mapContainer" class="fill-width fill-height"></div>
 
@@ -23,10 +110,6 @@
     <div ref="popupContainer" class="ol-popup">
       <a href="#" ref="popupCloser" class="ol-popup-closer" />
       <div ref="popupContent" />
-    </div>
-
-    <div ref="selectionLabelContainer" class="selected-site-label hs-title">
-      {{ selectedSiteLabel }}
     </div>
 
     <div
@@ -50,7 +133,11 @@
       </ul>
     </div>
 
-    <transition name="detail-card">
+    <div
+      ref="selectionPopupContainer"
+      class="selection-popup"
+      :class="{ 'selection-popup--visible': selectionPopupVisible }"
+    >
       <div v-if="selectable && detailMonitoringSite" class="site-detail-card">
         <div class="detail-accent" />
         <div class="detail-body">
@@ -95,7 +182,7 @@
           </div>
         </div>
       </div>
-    </transition>
+    </div>
   </div>
 </template>
 
@@ -128,6 +215,7 @@ import {
 import OlMap from 'ol/Map'
 import View from 'ol/View'
 import TileLayer from 'ol/layer/Tile'
+import LayerGroup from 'ol/layer/Group'
 import VectorLayer from 'ol/layer/Vector'
 import VectorSource from 'ol/source/Vector'
 import { Feature, Overlay } from 'ol'
@@ -136,12 +224,23 @@ import Point from 'ol/geom/Point'
 import { Style, Icon } from 'ol/style'
 import { fromLonLat, toLonLat } from 'ol/proj'
 import { settings } from '@/config/settings'
-import { Extent, isEmpty as extentIsEmpty } from 'ol/extent'
+import {
+  Extent,
+  equals as extentEquals,
+  isEmpty as extentIsEmpty,
+} from 'ol/extent'
 import { fetchLocationData } from '@/utils/maps/location'
+import { createOverlayLayers } from '@/utils/maps/overlays'
 import WebGLVectorLayer from 'ol/layer/WebGLVector'
 import mapMarkerUrl from '@/assets/map-marker-64.png?url'
 import { OSM, XYZ } from 'ol/source'
-import { mdiMapMarker, mdiChevronRight, mdiClose } from '@mdi/js'
+import {
+  mdiMapMarker,
+  mdiChevronRight,
+  mdiChevronDown,
+  mdiClose,
+  mdiLayers,
+} from '@mdi/js'
 
 const props = defineProps({
   monitoringSites: {
@@ -167,9 +266,7 @@ const props = defineProps({
     type: String,
     default: undefined,
   },
-  // Browse-style selection: clicking a marker selects it (instead of opening
-  // the anchored popup), the selected marker grows + shows its name label, and
-  // details render in a fixed card rather than a marker-tethered popup.
+  // Browse-style selection opens a marker-attached site details card.
   selectable: Boolean,
 })
 const emit = defineEmits(['location-clicked', 'select'])
@@ -199,16 +296,46 @@ const basemapTileSources = settings.mapConfiguration.basemapLayers.map(
   })
 )
 
-// TODO: Create a separate map control to toggle overlay layers
-const overlayTileSources = settings.mapConfiguration.overlayLayers.map(
-  (mapLayer) => ({
-    name: mapLayer.name,
-    source: new XYZ({
-      url: mapLayer.source,
-      attributions: mapLayer.attribution,
-    }),
-  })
-)
+const overlays = createOverlayLayers(settings.mapConfiguration.overlayLayers)
+// List the topmost layer first without changing the map's drawing order.
+const overlayMenuItems = overlays
+  .map((overlay, index) => ({ overlay, index }))
+  .reverse()
+const overlayVisibility = ref(overlays.map(({ layer }) => layer.getVisible()))
+const overlayErrors = ref(overlays.map(() => false))
+const basemapOpacity = ref(100)
+const overlayOpacities = ref(overlays.map(() => 100))
+const overlayGroup = new LayerGroup({
+  layers: overlays.map(({ layer }) => layer),
+  zIndex: 1,
+})
+
+function setOverlayOpacity(index: number, opacity: number) {
+  overlayOpacities.value[index] = opacity
+  overlays[index].layer.setOpacity(opacity / 100)
+}
+
+function onOpacityKeydown(event: KeyboardEvent) {
+  // Let the slider handle navigation keys without moving focus to menu items.
+  if (event.key !== 'Escape' && event.key !== 'Tab') event.stopPropagation()
+}
+
+async function setOverlayVisibility(index: number, visible: boolean) {
+  overlayVisibility.value[index] = visible
+  const overlay = overlays[index]
+  overlay.layer.setVisible(visible)
+  if (!visible) return
+  overlayErrors.value[index] = false
+  try {
+    await overlay.load()
+  } catch (error) {
+    overlayErrors.value[index] = true
+    console.error(
+      `[OpenLayersMap] Could not load overlay "${overlay.configuration.name}"`,
+      error
+    )
+  }
+}
 
 if (basemapTileSources.length === 0) {
   basemapTileSources.push({
@@ -221,7 +348,7 @@ const mapContainer = ref<HTMLElement>()
 const popupContainer = ref<HTMLElement>()
 const popupContent = ref<HTMLElement>()
 const popupCloser = ref<HTMLElement>()
-const selectionLabelContainer = ref<HTMLElement>()
+const selectionPopupContainer = ref<HTMLElement>()
 
 const coloredMonitoringSites = ref<MapMonitoringSiteWithColor[]>([])
 const selectedTileSourceName = ref<string>(basemapTileSources[0].name)
@@ -230,7 +357,7 @@ const detailedMonitoringSiteCache = new Map<string, MonitoringSite>()
 let map: OlMap
 let rasterLayer: TileLayer
 let popupOverlay: Overlay | undefined
-let selectionLabelOverlay: Overlay | undefined
+let selectionPopupOverlay: Overlay | undefined
 let selectedMonitoringSiteTransitionId = 0
 let activeFlyId = 0
 const vectorSource = new VectorSource<Feature>()
@@ -239,13 +366,18 @@ const DEFAULT_MARKER_OPACITY = 0.85
 
 // ── Browse-style selection (only used when `selectable`) ──
 const detailMonitoringSite = ref<MapMonitoringSite>()
+const selectionPopupVisible = ref(false)
 const selectionSource = new VectorSource<Feature>()
 let selectionLayer: VectorLayer | undefined
+// Reference layers should never intercept monitoring-site clicks or hover states.
+const siteHitOptions = {
+  layerFilter: (layer: import('ol/layer/Layer').default) =>
+    layer === markerLayer.value || layer === selectionLayer,
+}
 // Final scale of the grown selection marker, relative to the 64px source png.
 const SELECTION_SCALE = 0.78
 let selectionScale = SELECTION_SCALE
 let selectionAnimId = 0
-const selectedSiteLabel = ref('')
 
 const detailSubtitle = computed(() => {
   const monitoringSite = detailMonitoringSite.value
@@ -416,16 +548,12 @@ const updateSelectionMarker = (monitoringSiteId?: string | null) => {
     feature.set('markerOpacity', isSelected ? 0 : DEFAULT_MARKER_OPACITY)
   })
   if (!monitoringSiteId) {
-    selectedSiteLabel.value = ''
-    selectionLabelOverlay?.setPosition(undefined)
     selectionAnimId++ // stop any in-flight grow
     return
   }
   const feature = findFeatureByMonitoringSiteId(monitoringSiteId)
   const geometry = feature?.getGeometry()
   if (!feature || !(geometry instanceof Point)) {
-    selectedSiteLabel.value = ''
-    selectionLabelOverlay?.setPosition(undefined)
     return
   }
 
@@ -433,8 +561,6 @@ const updateSelectionMarker = (monitoringSiteId?: string | null) => {
   clone.set('markerColor', feature.get('markerColor'))
   clone.set('monitoringSite', getFeatureMonitoringSite(feature))
   selectionSource.addFeature(clone)
-  selectedSiteLabel.value = getFeatureMonitoringSite(feature)?.name ?? ''
-  selectionLabelOverlay?.setPosition(geometry.getCoordinates())
   animateSelectionScale(SELECTION_SCALE * 0.78, SELECTION_SCALE)
 }
 
@@ -473,7 +599,11 @@ const getPaddedCenter = (
 const flyTo = (
   targetCenter: [number, number],
   targetZoom: number,
-  { duration, onComplete }: { duration?: number; onComplete?: () => void } = {}
+  { duration, onComplete, onProgress }: {
+    duration?: number
+    onComplete?: () => void
+    onProgress?: (progress: number) => void
+  } = {}
 ) => {
   if (!map) return
   const view = map.getView()
@@ -508,6 +638,7 @@ const flyTo = (
     const step = (now: number) => {
       if (flyId !== activeFlyId) return
       const k = Math.min(1, (now - start) / totalDuration)
+      onProgress?.(k)
       const e = easeOutFly(k)
       view.setCenter([from[0] + dx * e, from[1] + dy * e])
       view.setResolution(
@@ -547,6 +678,7 @@ const flyTo = (
   const step = (now: number) => {
     if (flyId !== activeFlyId) return
     const k = Math.min(1, (now - start) / totalDuration)
+    onProgress?.(k)
     if (k < 1) {
       const s = easeOutFly(k) * bigS
       const frac = u(s) / u1
@@ -565,10 +697,12 @@ const flyTo = (
 const focusMonitoringSiteById = (monitoringSiteId?: string | null) => {
   selectedMonitoringSiteTransitionId++
   const transitionId = selectedMonitoringSiteTransitionId
+  selectionPopupVisible.value = false
 
   if (!map || !monitoringSiteId) {
     activeFlyId++ // cancel any in-flight fly
     popupOverlay?.setPosition(undefined)
+    selectionPopupOverlay?.setPosition(undefined)
     if (props.selectable) updateSelectionMarker(undefined)
     return
   }
@@ -584,11 +718,25 @@ const focusMonitoringSiteById = (monitoringSiteId?: string | null) => {
   const targetCenter = getPaddedCenter(targetCoordinates, targetZoom)
 
   popupOverlay?.setPosition(undefined)
+  selectionPopupOverlay?.setPosition(undefined)
 
   if (props.selectable) {
-    // Browse mode: grow the marker + show its label; details live in the card.
     updateSelectionMarker(monitoringSiteId)
-    flyTo(targetCenter, targetZoom, { duration: 700 })
+    selectionPopupOverlay?.setPosition(targetCoordinates)
+    flyTo(targetCenter, targetZoom, {
+      duration: 700,
+      onProgress: (progress) => {
+        if (progress >= 0.8) selectionPopupVisible.value = true
+      },
+      onComplete: () => {
+        if (transitionId !== selectedMonitoringSiteTransitionId) return
+        selectionPopupVisible.value = true
+        selectionPopupOverlay?.panIntoView({
+          animation: { duration: 250 },
+          margin: 16,
+        })
+      },
+    })
     return
   }
 
@@ -627,6 +775,7 @@ async function updateFeatures() {
 
   // 2) clear & add
   if (!vectorSource) return
+  const previousExtent = vectorSource.getExtent()?.slice()
   vectorSource.clear()
   vectorSource.addFeatures(features)
 
@@ -639,8 +788,15 @@ async function updateFeatures() {
     if (props.selectable) updateSelectionMarker(undefined)
   }
 
-  // 3) zoom to the extent of whatever source we used
-  fitViewToMarkers()
+  // Route/selection and color updates can re-emit the same sites. Preserve
+  // the current view unless the markers' geographic bounds actually change.
+  const currentExtent = vectorSource.getExtent()
+  if (
+    currentExtent &&
+    (!previousExtent || !extentEquals(previousExtent, currentExtent))
+  ) {
+    fitViewToMarkers()
+  }
 }
 
 const initializeMap = () => {
@@ -664,8 +820,13 @@ const initializeMap = () => {
   if (!chosenSource) chosenSource = basemapTileSources[0]
   selectedTileSourceName.value = chosenSource.name
 
-  rasterLayer = new TileLayer({ source: chosenSource.source })
+  rasterLayer = new TileLayer({
+    source: chosenSource.source,
+    zIndex: 0,
+    opacity: basemapOpacity.value / 100,
+  })
   markerLayer.value = new WebGLVectorLayer({
+    zIndex: 2,
     source: vectorSource,
     style: {
       'icon-src': mapMarkerUrl,
@@ -688,6 +849,7 @@ const initializeMap = () => {
   })
 
   selectionLayer = new VectorLayer({
+    zIndex: 3,
     source: selectionSource,
     style: selectionStyle,
   })
@@ -697,11 +859,10 @@ const initializeMap = () => {
     autoPan: props.singleMarkerMode ? false : { animation: { duration: 250 } },
   })
 
-  selectionLabelOverlay = new Overlay({
-    element: selectionLabelContainer.value,
-    positioning: 'center-left',
-    offset: [42, -26],
-    stopEvent: false,
+  selectionPopupOverlay = new Overlay({
+    element: selectionPopupContainer.value,
+    positioning: 'bottom-center',
+    offset: [0, -50],
   })
 
   popupCloser.value!.onclick = () => {
@@ -711,9 +872,13 @@ const initializeMap = () => {
 
   map = new OlMap({
     target: mapContainer.value,
-    layers: [rasterLayer, markerLayer.value, selectionLayer],
-    overlays: [popupOverlay, selectionLabelOverlay],
+    layers: [rasterLayer, overlayGroup, markerLayer.value, selectionLayer],
+    overlays: [popupOverlay, selectionPopupOverlay],
     view: new View(defaultView),
+  })
+
+  overlays.forEach((overlay, index) => {
+    if (overlay.layer.getVisible()) void setOverlayVisibility(index, true)
   })
 
   map.on('click', async (evt) => {
@@ -730,7 +895,11 @@ const initializeMap = () => {
       return
     }
 
-    const rawFeatures = map.forEachFeatureAtPixel(evt.pixel, (f) => f)
+    const rawFeatures = map.forEachFeatureAtPixel(
+      evt.pixel,
+      (f) => f,
+      siteHitOptions
+    )
 
     // Browse mode: clicks drive selection rather than opening a popup.
     if (props.selectable) {
@@ -759,7 +928,7 @@ const initializeMap = () => {
 
   map.on('pointermove', function (e) {
     // change mouse cursor when over marker
-    const hit = map.hasFeatureAtPixel(e.pixel)
+    const hit = map.hasFeatureAtPixel(e.pixel, siteHitOptions)
     map.getTargetElement().style.cursor = hit ? 'pointer' : ''
   })
 
@@ -830,6 +999,10 @@ function getConfigByName(name: string): ConfigTileSource {
   const found = basemapTileSources.find((cfg) => cfg.name === name)
   return found || basemapTileSources[0]
 }
+watch(basemapOpacity, (opacity) => {
+  rasterLayer?.setOpacity(opacity / 100)
+})
+
 watch(
   () => selectedTileSourceName.value,
   (newName) => {
@@ -862,12 +1035,69 @@ watch(
   font-size: var(--hs-font-lg);
 }
 
-/* 2) Position the dropdown in the top-right corner */
-.basemap-select-container {
+.map-controls {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: var(--hs-space-12);
+  right: var(--hs-space-12);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--hs-space-8);
   z-index: 2; /* above the map tiles */
+}
+
+.basemap-select {
+  width: calc(var(--hs-space-16) * 12);
+}
+
+/* Matches the Create Site page action, in blue. */
+.overlay-menu-button {
+  padding-inline: var(--hs-space-16);
+  font-size: var(--hs-font-sm);
+  font-weight: var(--hs-font-weight-bold);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.overlay-menu-button :deep(.v-btn__content) {
+  gap: var(--hs-space-6);
+}
+
+.overlay-layer-control {
+  width: calc(var(--hs-space-32) * 9);
+  max-width: calc(100vw - var(--hs-space-24));
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.layer-opacity-control {
+  min-width: calc(var(--hs-space-24) * 10);
+  padding: var(--hs-space-8) var(--hs-space-16);
+}
+
+.overlay-group-divider {
+  margin-block: var(--hs-space-8);
+}
+
+.overlay-visibility :deep(.v-label) {
+  margin-inline-start: var(--hs-space-4);
+}
+
+.overlay-opacity-controls {
+  margin-inline-start: var(--hs-space-32);
+  /* Keep the slider thumb's hit area and focus ring inside the menu at 100%. */
+  padding-inline-end: var(--hs-space-8);
+}
+
+.overlay-opacity-controls :deep(.v-slider > .v-input__control) {
+  margin-inline: 0;
+}
+
+.layer-opacity-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--hs-space-8);
 }
 
 .fill-width {
@@ -901,51 +1131,57 @@ watch(
   z-index: 4;
 }
 
-.selected-site-label {
-  max-width: 320px;
-  padding: 6px 12px;
-  overflow: hidden;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 999px;
-  background: var(--hs-surface-floating);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
-  color: rgba(0, 0, 0, 0.78);
-  line-height: 1.2;
+.selection-popup {
+  width: calc(var(--hs-space-32) * 10);
+  max-width: calc(100vw - var(--hs-space-32));
+  opacity: 0;
   pointer-events: none;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.selected-site-label:empty {
-  display: none;
+.selection-popup--visible {
+  opacity: 1;
+  pointer-events: auto;
+  transition: opacity 180ms ease;
 }
 
-/* ── Browse selected-site detail card ── */
-.site-detail-card {
+@media (prefers-reduced-motion: reduce) {
+  .selection-popup--visible {
+    transition: none;
+  }
+}
+
+.selection-popup::after {
   position: absolute;
-  left: 412px;
-  bottom: 16px;
-  width: 348px;
-  z-index: 6;
-  background: #fff;
-  border-radius: 14px;
-  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.22);
+  top: 100%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border: var(--hs-space-10) solid transparent;
+  border-top-color: var(--hs-surface-floating);
+  content: '';
+  transform: translateX(-50%);
+}
+
+.site-detail-card {
+  background: var(--hs-surface-floating);
+  border-radius: var(--hs-radius-lg);
+  box-shadow: var(--hs-shadow-popover);
   overflow: hidden;
 }
 
 .detail-accent {
-  height: 4px;
+  height: var(--hs-space-4);
   background: rgb(var(--v-theme-primary));
 }
 
 .detail-body {
-  padding: 13px 16px 15px;
+  padding: var(--hs-space-16);
 }
 
 .detail-header {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: var(--hs-space-10);
 }
 
 .detail-heading {
@@ -954,15 +1190,15 @@ watch(
 }
 
 .detail-name {
-  color: rgba(0, 0, 0, 0.87);
+  color: var(--hs-text-primary);
 }
 
 .detail-meta {
   display: flex;
   align-items: center;
-  gap: 5px;
-  margin-top: 4px;
-  color: rgba(0, 0, 0, 0.6);
+  gap: var(--hs-space-4);
+  margin-top: var(--hs-space-4);
+  color: var(--hs-text-secondary);
 }
 
 .detail-close {
@@ -971,60 +1207,34 @@ watch(
   border: none;
   background: transparent;
   border-radius: 50%;
-  padding: 5px;
+  padding: var(--hs-space-4);
   cursor: pointer;
-  color: rgba(0, 0, 0, 0.6);
+  color: var(--hs-text-secondary);
 }
 
 .detail-close:hover {
-  background: rgba(0, 0, 0, 0.07);
+  background: var(--hs-surface-muted);
 }
 
 .detail-grid {
-  margin: 13px 0;
-  padding: 11px 12px;
-  background: rgba(0, 0, 0, 0.04);
-  border-radius: 10px;
+  margin: var(--hs-space-12) 0;
+  padding: var(--hs-space-12);
+  background: var(--hs-surface-muted);
+  border-radius: var(--hs-radius-md);
 }
 
 .detail-field-label {
-  color: rgba(0, 0, 0, 0.6);
-  margin-bottom: 2px;
+  color: var(--hs-text-secondary);
+  margin-bottom: var(--hs-space-2);
 }
 
 .detail-field-value {
-  color: rgba(0, 0, 0, 0.87);
+  color: var(--hs-text-primary);
 }
 
 .detail-actions {
   display: flex;
-  gap: 8px;
-}
-
-.detail-card-enter-active,
-.detail-card-leave-active {
-  transition:
-    opacity 0.2s ease,
-    transform 0.2s cubic-bezier(0.2, 0.8, 0.3, 1);
-}
-
-.detail-card-enter-from,
-.detail-card-leave-to {
-  opacity: 0;
-  transform: translateY(14px);
-}
-
-@media (max-width: 900px) {
-  .selected-site-label {
-    display: none;
-  }
-
-  .site-detail-card {
-    left: 12px;
-    right: 12px;
-    bottom: 12px;
-    width: auto;
-  }
+  gap: var(--hs-space-8);
 }
 
 .ol-popup {

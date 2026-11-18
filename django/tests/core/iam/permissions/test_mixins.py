@@ -1,11 +1,12 @@
 import types
 
 import pytest
+from django.core.exceptions import ImproperlyConfigured
 
 from core.iam.models import Workspace
 from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.iam.permissions.mixins import ResourcePermissionMixin
-from core.sta.models import Method, MonitoringSite, SampledMedium
+from core.sta.models import Datastream, Method, MonitoringSite, Observation, SampledMedium
 from tests.core.iam.factories import (
     CollaboratorFactory,
     PermissionFactory,
@@ -15,8 +16,10 @@ from tests.core.iam.factories import (
     WorkspaceFactory,
 )
 from tests.core.sta.factories import (
+    DatastreamFactory,
     MethodFactory,
     MonitoringSiteFactory,
+    ObservationFactory,
     SampledMediumFactory,
 )
 
@@ -479,6 +482,119 @@ def test_filter_by_permission_returns_every_monitoring_site_for_superuser():
     visible = superuser.filter_by_permission(MonitoringSite.objects.all(), "can_view")
 
     assert visible.count() == 2
+
+
+# --- filter_by_permission: evaluated as a related resource type ---------------
+
+
+def _datastream(workspace, **kwargs):
+    return DatastreamFactory(monitoring_site=MonitoringSiteFactory(workspace=workspace), **kwargs)
+
+
+def _observation_view_ids(principal, queryset=None):
+    queryset = Datastream.objects.all() if queryset is None else queryset
+    return set(
+        principal.filter_by_permission(queryset, "can_view", resource_type=Observation)
+        .values_list("id", flat=True)
+    )
+
+
+@pytest.mark.django_db
+def test_filter_by_permission_as_observation_excludes_restricted_and_private_for_anonymous():
+    workspace = WorkspaceFactory(is_private=False)
+    open_datastream = _datastream(workspace)
+    _datastream(workspace, restricted=True)
+    _datastream(workspace, private=True)
+
+    assert _observation_view_ids(AnonymousPrincipal()) == {open_datastream.id}
+
+
+@pytest.mark.django_db
+def test_filter_by_permission_as_observation_includes_restricted_for_workspace_owner():
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner, is_private=False)
+    open_datastream = _datastream(workspace)
+    restricted_datastream = _datastream(workspace, restricted=True)
+
+    assert _observation_view_ids(owner) == {open_datastream.id, restricted_datastream.id}
+
+
+@pytest.mark.django_db
+def test_filter_by_permission_as_observation_includes_restricted_for_observation_viewer():
+    workspace = WorkspaceFactory(is_private=False)
+    restricted_datastream = _datastream(workspace, restricted=True)
+    role = RoleFactory(workspace=workspace)
+    PermissionFactory(role=role, resource_type="Observation", can_view=True)
+    collaborator = CollaboratorFactory(workspace=workspace, role=role)
+
+    assert _observation_view_ids(collaborator.user) == {restricted_datastream.id}
+
+
+@pytest.mark.django_db
+def test_filter_by_permission_as_observation_excludes_restricted_for_datastream_only_viewer():
+    workspace = WorkspaceFactory(is_private=False)
+    _datastream(workspace, restricted=True)
+    role = RoleFactory(workspace=workspace)
+    PermissionFactory(role=role, resource_type="Datastream", can_view=True)
+    collaborator = CollaboratorFactory(workspace=workspace, role=role)
+
+    assert _observation_view_ids(collaborator.user) == set()
+
+
+@pytest.mark.django_db
+def test_filter_by_permission_as_observation_returns_every_datastream_for_superuser():
+    workspace = WorkspaceFactory(is_private=True)
+    restricted_datastream = _datastream(workspace, restricted=True)
+    private_datastream = _datastream(workspace, private=True)
+    superuser = UserFactory(is_superuser=True)
+
+    assert _observation_view_ids(superuser) == {restricted_datastream.id, private_datastream.id}
+
+
+@pytest.mark.django_db
+def test_filter_by_permission_as_observation_accepts_resource_type_name():
+    workspace = WorkspaceFactory(is_private=False)
+    open_datastream = _datastream(workspace)
+    _datastream(workspace, restricted=True)
+
+    visible = AnonymousPrincipal().filter_by_permission(
+        Datastream.objects.all(), "can_view", resource_type="Observation"
+    )
+
+    assert list(visible) == [open_datastream]
+
+
+@pytest.mark.django_db
+def test_filter_by_permission_as_observation_matches_observation_level_filter():
+    """Evaluating Observation permission on datastream rows selects exactly the
+    datastreams whose observations filter_by_permission(Observation) returns."""
+    owner = UserFactory()
+    owned = WorkspaceFactory(owner=owner, is_private=False)
+    other = WorkspaceFactory(is_private=False)
+    datastreams = [
+        _datastream(owned),
+        _datastream(owned, restricted=True),
+        _datastream(other),
+        _datastream(other, restricted=True),
+        _datastream(other, private=True),
+    ]
+    for datastream in datastreams:
+        ObservationFactory(datastream=datastream)
+
+    for principal in (AnonymousPrincipal(), owner, UserFactory()):
+        expected = set(
+            principal.filter_by_permission(Observation.objects.all(), "can_view")
+            .values_list("datastream_id", flat=True)
+        )
+        assert _observation_view_ids(principal) == expected
+
+
+@pytest.mark.django_db
+def test_filter_by_permission_as_observation_raises_without_direct_relation():
+    with pytest.raises(ImproperlyConfigured):
+        UserFactory().filter_by_permission(
+            MonitoringSite.objects.all(), "can_view", resource_type=Observation
+        )
 
 
 # --- annotate_permissions: consistency with can_view/can_edit/can_delete -----

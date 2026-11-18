@@ -31,14 +31,12 @@
     <template #item.actions="{ item }">
       <div class="metadata-items__actions">
         <v-btn
-          variant="text"
+          variant="outlined"
           size="small"
-          color="primary"
-          :append-icon="mdiChevronRight"
-          :aria-label="`View details for ${itemTitle(item)}`"
+          :aria-label="`View full metadata for ${itemTitle(item)}`"
           :data-testid="`view-metadata-${item.id}`"
           @click="selectedId = item.id"
-          >View details</v-btn
+          >View full metadata</v-btn
         >
         <slot name="actions" :item="item" />
       </div>
@@ -118,7 +116,6 @@
 
 <script setup lang="ts" generic="T extends MetadataItem">
 import { computed, ref, useId, useTemplateRef, watch } from 'vue'
-import { mdiChevronRight } from '@mdi/js'
 import { HsCopyButton, HsTableSummary } from '@hydroserver/design-system/vue'
 import MetadataScopeChip from './MetadataScopeChip.vue'
 import LoadMoreRow from '@/components/base/LoadMoreRow.vue'

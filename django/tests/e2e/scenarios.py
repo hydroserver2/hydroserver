@@ -125,7 +125,7 @@ def _datastream(
         phenomenon_begin_time=begin,
         phenomenon_end_time=end,
         is_private=private,
-        is_visible=True,
+        is_restricted=False,
         tags={f"E2E {marker}": "Scenario"},
     )
     return datastream

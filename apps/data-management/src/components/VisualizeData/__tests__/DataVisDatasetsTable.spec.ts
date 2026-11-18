@@ -3,6 +3,7 @@ import { flushPromises, shallowMount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mdiMapMarkerOutline } from '@mdi/js'
 import { useDataVisStore } from '@/store/dataVisualization'
+import { useWorkspaceStore } from '@/store/workspaces'
 import DataVisDatasetsTable from '../DataVisDatasetsTable.vue'
 
 const listMock = vi.hoisted(() => vi.fn())
@@ -69,6 +70,91 @@ describe('DataVisDatasetsTable', () => {
   afterEach(() => {
     vi.useRealTimers()
     vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+  })
+
+  it('copies the current URL', async () => {
+    mockList([])
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } })
+    const wrapper = mountTable()
+    await wrapper.get('[data-testid="copy-state-url"]').trigger('click')
+    expect(writeText).toHaveBeenCalledWith(window.location.href)
+    wrapper.unmount()
+  })
+
+  it('clears selections and returns to the complete paged list', async () => {
+    mockList([datastream, { ...datastream, id: 'datastream-2' }])
+    const store = useDataVisStore()
+    store.plottedDatastreams = [datastream] as any
+    const wrapper = mountTable()
+    await flushPromises()
+    await wrapper
+      .get('[data-testid="toggle-selected-datastreams"]')
+      .trigger('click')
+    await wrapper
+      .get('[data-testid="clear-selected-datastreams-button"]')
+      .trigger('click')
+    expect(store.plottedDatastreams).toEqual([])
+    expect(rowIds(wrapper)).toEqual(['datastream-1', 'datastream-2'])
+    wrapper.unmount()
+  })
+
+  it('restores server filters when lookup data arrives after the query', async () => {
+    vi.useFakeTimers()
+    mockList([])
+    const store = useDataVisStore()
+    store.tableSearch =
+      'workspace:"River Network" site:"Logan River" observed-property:"Water temperature" unit:"Degrees Celsius" method:"Shielded sensor" processing-level:"Quality controlled"'
+    const wrapper = mountTable()
+    expect(store.selectedWorkspaces).toEqual([])
+    store.workspaces = [{ id: 'workspace-1', name: 'River Network' }] as any
+    store.monitoringSites = [site] as any
+    store.observedProperties = [
+      { id: 'property-1', name: 'Water temperature' },
+    ] as any
+    store.units = [{ id: 'unit-1', name: 'Degrees Celsius' }] as any
+    store.methods = [{ id: 'method-1', name: 'Shielded sensor' }] as any
+    store.processingLevels = [
+      { id: 'level-1', name: 'Quality controlled' },
+    ] as any
+    await vi.advanceTimersByTimeAsync(300)
+    expect(listMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        workspaceId: ['workspace-1'],
+        monitoringSiteId: ['site-1'],
+        observedPropertyId: ['property-1'],
+        unitId: ['unit-1'],
+        methodId: ['method-1'],
+        processingLevelId: ['level-1'],
+        offset: 0,
+      })
+    )
+    wrapper.unmount()
+  })
+
+  it('resolves public workspaces independently of management memberships', async () => {
+    mockList([])
+    const management = useWorkspaceStore()
+    management.setWorkspaces([
+      { id: 'member-workspace', name: 'My workspace' } as any,
+    ])
+    const store = useDataVisStore()
+    store.workspaces = [
+      { id: 'public-workspace', name: 'Public river network' },
+      ...management.workspaces,
+    ] as any
+    store.tableSearch = 'workspace:"Public river network"'
+    const wrapper = mountTable()
+    await flushPromises()
+    expect(store.selectedWorkspaces.map((item) => item.id)).toEqual([
+      'public-workspace',
+    ])
+    expect(listMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ workspaceId: ['public-workspace'] })
+    )
+    expect(management.selectedWorkspace?.id).toBe('member-workspace')
+    wrapper.unmount()
   })
 
   it('requests the first page filtered by a typed multi-word site name', async () => {

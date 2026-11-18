@@ -50,6 +50,9 @@ export interface GraphSeries {
    * before.
    */
   intendedSpacingMs?: number | null
+  /** Observed property and unit, `propertyId:unitId`. Series that share it
+   *  measure the same variable, so their y axes can be locked together. */
+  variable?: string
   /**
    * Set when this series is a frozen replay of a session's history rather
    * than a live datastream. Drives the legend provenance row and the guards

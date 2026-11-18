@@ -124,7 +124,7 @@ class DatastreamMixin(SensorThingsUtils):
                             "time_aggregation_interval": datastream.time_aggregation_interval,
                             "time_aggregation_interval_unit_of_measurement": datastream.time_aggregation_interval_unit,
                             "is_private": datastream.is_private,
-                            "is_visible": datastream.is_visible,
+                            "is_restricted": datastream.is_restricted,
                             "workspace": {
                                 "id": datastream.monitoring_site.workspace.id,
                                 "name": datastream.monitoring_site.workspace.name,

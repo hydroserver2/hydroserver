@@ -6,7 +6,7 @@
           {{ datastream.observedProperty.name }}
         </div>
         <div class="hs-text-2xs font-weight-medium text-grey-darken-1">
-          Observed Property
+          Observed property
         </div>
       </div>
       <!-- Processing Level -->
@@ -14,7 +14,7 @@
         <div class="hs-text-md font-weight-medium">
           {{ datastream.processingLevel.name }}
         </div>
-        <div class="hs-text-2xs text-grey-darken-1">Processing Level</div>
+        <div class="hs-text-2xs text-grey-darken-1">Processing level</div>
       </div>
 
       <v-divider class="my-3" />
@@ -32,7 +32,7 @@
 
         <small class="flex items-center opacity-80">
           <span class="font-weight-medium text-grey-darken-2 mr-2"
-            >Sampled Medium:</span
+            >Sampled medium:</span
           >
           <span>{{ datastream.sampledMedium }}</span>
         </small>
@@ -47,14 +47,14 @@
 
       <small v-if="addAggregation" class="flex items-center opacity-80">
         <span class="font-weight-medium text-grey-darken-2 mr-2"
-          >Aggregation Statistic:</span
+          >Aggregation statistic:</span
         >
         <span>{{ datastream?.aggregationStatistic }}</span>
       </small>
 
       <small v-if="addAggregation" class="flex items-center opacity-80">
         <span class="font-weight-medium text-grey-darken-2 mr-2"
-          >Aggregation Interval:</span
+          >Aggregation interval:</span
         >
         <span>
           {{ datastream?.timeAggregationInterval }}
