@@ -1,5 +1,17 @@
 <template>
   <FullScreenLoader v-if="loading" />
+  <v-alert
+    v-else-if="loadError"
+    type="error"
+    variant="tonal"
+    class="ma-4"
+    data-testid="visualization-load-error"
+  >
+    <div class="d-flex align-center ga-4 flex-wrap">
+      <span>{{ loadError }}</span>
+      <v-btn size="small" variant="text" @click="loadPage">Retry</v-btn>
+    </div>
+  </v-alert>
   <div v-else class="visualize-page">
     <DataVisNavRail />
     <div class="visualize-content">
@@ -35,7 +47,7 @@ import DataVisNavRail from '@/components/VisualizeData/DataVisNavRail.vue'
 import DataVisDatasetsTable from '@/components/VisualizeData/DataVisDatasetsTable.vue'
 import DataVisualizationCard from '@/components/VisualizeData/DataVisualizationCard.vue'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
-import hs, { type Datastream } from '@hydroserver/client'
+import hs, { type ApiResponse } from '@hydroserver/client'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { storeToRefs } from 'pinia'
 import { useRoute, useRouter, type LocationQueryRaw } from 'vue-router'
@@ -44,6 +56,7 @@ import { HsFullScreenLoader as FullScreenLoader } from '@hydroserver/design-syst
 
 const route = useRoute()
 const router = useRouter()
+let disposed = false
 
 const dataVisStore = useDataVisStore()
 const { onDateBtnClick, resetState } = dataVisStore
@@ -212,14 +225,17 @@ const parseUrlAndSetState = async () => {
   )
 
   if (datastreamIdsStrings.length) {
-    const limitedIds = datastreamIdsStrings.slice(0, 5)
+    const limitedIds = [...new Set(datastreamIdsStrings)].slice(0, 5)
     if (datastreamIdsStrings.length > 5) {
       Snackbar.info('Only the first 5 datastreams were loaded from the URL.')
     }
-    const found = await Promise.all(
+    const found = await Promise.allSettled(
       limitedIds.map((id) => hs.datastreams.getItem(id))
     )
-    plottedDatastreams.value = found.filter((ds): ds is Datastream => !!ds)
+    if (disposed) return
+    plottedDatastreams.value = found.flatMap((result) =>
+      result.status === 'fulfilled' && result.value ? [result.value] : []
+    )
   }
 
   // Site IDs
@@ -357,9 +373,10 @@ const parseUrlAndSetState = async () => {
 }
 
 const loading = ref(true)
+const loadError = ref('')
 
 const syncRouteQuery = () => {
-  if (loading.value) return
+  if (loading.value || loadError.value || disposed) return
 
   const query = buildStateQuery()
   const nextFullPath = router.resolve({
@@ -398,44 +415,66 @@ watch(
   { deep: true }
 )
 
-onMounted(async () => {
+async function loadFilterItems<T>(service: {
+  list: (params: {
+    fetch_all: boolean
+    sortby: 'name'[]
+  }) => Promise<ApiResponse<T[]>>
+}) {
+  const response = await service.list({ fetch_all: true, sortby: ['name'] })
+  if (!response.ok) throw new Error(response.message)
+  return response.data
+}
+
+async function loadPage() {
+  loading.value = true
+  loadError.value = ''
   try {
     // Filter options; the datastreams themselves are paged by the table.
-    if (!monitoringSites.value.length) {
+    if (
+      ![
+        monitoringSites.value,
+        observedProperties.value,
+        processingLevels.value,
+        units.value,
+        methods.value,
+        workspaces.value,
+      ].every((items) => items.length)
+    ) {
+      const options = await Promise.all([
+        loadFilterItems(hs.monitoringSites),
+        loadFilterItems(hs.observedProperties),
+        loadFilterItems(hs.processingLevels),
+        loadFilterItems(hs.units),
+        loadFilterItems(hs.methods),
+        loadFilterItems(hs.workspaces),
+      ])
+      if (disposed) return
       ;[
         monitoringSites.value,
         observedProperties.value,
         processingLevels.value,
         units.value,
         methods.value,
-      ] = await Promise.all([
-        hs.monitoringSites.listAllItems(),
-        hs.observedProperties.listAllItems(),
-        hs.processingLevels.listAllItems(),
-        hs.units.listAllItems(),
-        hs.methods.listAllItems(),
-      ])
+        workspaces.value,
+      ] = options
     }
-    const workspaceCatalog = await hs.workspaces.list({
-      sortby: ['name'],
-      fetch_all: true,
-    })
-    if (!workspaceCatalog.ok)
-      throw new Error(
-        workspaceCatalog.message || 'Unable to load visualization workspaces'
-      )
-    workspaces.value = workspaceCatalog.data
     await parseUrlAndSetState()
   } catch (error) {
-    Snackbar.error('Unable to fetch data from the API.')
-    console.error('Unable to fetch data from the API:', error)
+    if (disposed) return
+    loadError.value = 'Unable to load visualization filters. Please try again.'
+    console.error('Unable to load visualization:', error)
   }
 
+  if (disposed) return
   loading.value = false
   syncRouteQuery()
-})
+}
+
+onMounted(loadPage)
 
 onUnmounted(() => {
+  disposed = true
   resetState()
 })
 </script>

@@ -1,6 +1,6 @@
 <template>
   <tbody>
-    <tr ref="row" class="load-more-row">
+    <tr v-show="hasMore || loading || error" ref="row" class="load-more-row">
       <td :colspan="colspan">
         <div v-if="error" class="load-more-row__status hs-text-sm">
           {{ error }}
@@ -14,6 +14,11 @@
           color="primary"
           aria-label="Loading more rows"
         />
+        <div v-else-if="hasMore" class="load-more-row__status">
+          <v-btn size="small" variant="text" @click="$emit('load')"
+            >Load more</v-btn
+          >
+        </div>
       </td>
     </tr>
   </tbody>
@@ -24,6 +29,9 @@ import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 // Place in a table's `#tbody` slot. Requests the next page whenever this row
 // is scrolled into view (or is still visible after the last page loaded).
+// Observe the viewport: mobile tables grow with the page, so their wrapper
+// would consider every row visible. Desktop scroll containers still clip
+// intersections naturally when the viewport is the root.
 const props = defineProps<{
   colspan: number
   hasMore: boolean
@@ -36,6 +44,7 @@ const row = ref<HTMLElement>()
 let observer: IntersectionObserver | undefined
 
 onMounted(() => {
+  if (typeof IntersectionObserver === 'undefined') return
   observer = new IntersectionObserver(
     ([entry]) => {
       if (
@@ -46,7 +55,7 @@ onMounted(() => {
       )
         emit('load')
     },
-    { root: row.value?.closest('.v-table__wrapper'), rootMargin: '200px' }
+    { rootMargin: '200px' }
   )
   if (row.value) observer.observe(row.value)
 })

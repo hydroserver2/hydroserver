@@ -93,7 +93,7 @@ describe('DataVisDatasetsTable', () => {
       .get('[data-testid="toggle-selected-datastreams"]')
       .trigger('click')
     await wrapper
-      .get('[data-testid="clear-selected-datastreams-button"]')
+      .get('[data-testid="clear-selected-datastreams"]')
       .trigger('click')
     expect(store.plottedDatastreams).toEqual([])
     expect(rowIds(wrapper)).toEqual(['datastream-1', 'datastream-2'])
@@ -198,7 +198,29 @@ describe('DataVisDatasetsTable', () => {
     ])
   })
 
-  it('keeps selected datastreams pinned above results when the search changes', async () => {
+  it('preserves legacy site filters when a bookmarked link also has search text', async () => {
+    mockList([datastream])
+    const store = useDataVisStore()
+    store.monitoringSites = [site] as any
+    store.selectedMonitoringSites = [site] as any
+    store.tableSearch = 'temperature'
+    const wrapper = mountTable()
+    await flushPromises()
+    expect(store.tableSearch).toBe('site:"Logan River" temperature')
+    expect(store.selectedMonitoringSites.map((item) => item.id)).toEqual([
+      site.id,
+    ])
+    expect(listMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        monitoringSiteId: [site.id],
+        q: 'temperature',
+        offset: 0,
+      })
+    )
+    wrapper.unmount()
+  })
+
+  it('preserves plotted selections while displaying only the new filtered results', async () => {
     mockList([{ ...datastream, id: 'datastream-2' }, datastream])
     const store = useDataVisStore()
     store.monitoringSites = [site] as any
@@ -207,6 +229,7 @@ describe('DataVisDatasetsTable', () => {
     expect(rowIds(wrapper)).toEqual(['datastream-2', 'datastream-1'])
 
     store.plottedDatastreams = [datastream] as any
+    mockList([{ ...datastream, id: 'datastream-3' }])
     await wrapper
       .getComponent({ name: 'HsQuerySearchInput' })
       .vm.$emit('update:modelValue', 'temperature')
@@ -216,7 +239,12 @@ describe('DataVisDatasetsTable', () => {
     expect(store.plottedDatastreams.map((item) => item.id)).toEqual([
       'datastream-1',
     ])
-    expect(rowIds(wrapper)).toEqual(['datastream-1', 'datastream-2'])
+    expect(rowIds(wrapper)).toEqual(['datastream-3'])
+    expect(wrapper.text()).toContain('1 selected for plotting (maximum 5)')
+    expect(
+      wrapper.findComponent({ name: 'DataVisTableFilters' }).exists()
+    ).toBe(true)
+    wrapper.unmount()
   })
 
   it('shows only the selected datastreams while "Show selected" is on', async () => {
@@ -236,6 +264,61 @@ describe('DataVisDatasetsTable', () => {
     expect(rowIds(wrapper)).toEqual(['datastream-2'])
     await toggle()
     expect(rowIds(wrapper)).toEqual(['datastream-1', 'datastream-2'])
+  })
+
+  it('shows site context for selections across sites despite a single-site filter', async () => {
+    vi.useFakeTimers()
+    const otherSite = { ...site, id: 'site-2', name: 'Bear River' }
+    const otherStreams = ['datastream-2', 'datastream-3'].map((id) => ({
+      ...datastream,
+      id,
+      monitoringSiteId: otherSite.id,
+    }))
+    mockList([datastream])
+    const store = useDataVisStore()
+    store.monitoringSites = [site, otherSite] as any
+    store.selectedMonitoringSites = [site] as any
+    const wrapper = mountTable()
+    await flushPromises()
+    expect(wrapper.findAll('.datastream-name__thing')).toHaveLength(0)
+    await wrapper
+      .get('[data-testid="plot-datastream-datastream-1"]')
+      .setValue(true)
+
+    mockList(otherStreams)
+    await wrapper
+      .getComponent({ name: 'HsQuerySearchInput' })
+      .vm.$emit('update:modelValue', 'site:"Bear River"')
+    await vi.advanceTimersByTimeAsync(300)
+    for (const stream of otherStreams)
+      await wrapper
+        .get(`[data-testid="plot-datastream-${stream.id}"]`)
+        .setValue(true)
+    expect(store.selectedMonitoringSites.map((item) => item.id)).toEqual([
+      otherSite.id,
+    ])
+    await wrapper
+      .get('[data-testid="toggle-selected-datastreams"]')
+      .trigger('click')
+
+    expect(rowIds(wrapper)).toEqual([
+      'datastream-1',
+      'datastream-2',
+      'datastream-3',
+    ])
+    expect(
+      wrapper.findAll('.datastream-name__thing').map((item) => item.text())
+    ).toEqual(['Logan River', 'Bear River', 'Bear River'])
+    expect(wrapper.find('.datastream-name').attributes('title')).toBe(
+      'Discharge @ Logan River'
+    )
+
+    // Removing the only selection from the first site leaves one site's rows.
+    await wrapper
+      .get('[data-testid="plot-datastream-datastream-1"]')
+      .setValue(false)
+    expect(wrapper.findAll('.datastream-name__thing')).toHaveLength(0)
+    wrapper.unmount()
   })
 
   it('links a datastream row to its site details page', async () => {

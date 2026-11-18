@@ -145,26 +145,21 @@
           >
             <div class="datastream-selection-header__content">
               <div class="datastream-selection-summary">
-                <input
-                  type="checkbox"
-                  class="plot-checkbox datastreams-clear-selection-checkbox"
-                  :indeterminate="true"
-                  aria-label="Clear selected datastreams"
-                  data-testid="clear-selected-datastreams"
-                  @change="clearSelected"
-                />
-                <span> {{ plottedDatastreams.length }} of 5 selected </span>
-              </div>
-
-              <div class="datastream-selection-actions">
                 <v-btn
                   size="small"
                   variant="text"
-                  data-testid="clear-selected-datastreams-button"
+                  data-testid="clear-selected-datastreams"
                   @click="clearSelected"
                 >
                   Clear selected
                 </v-btn>
+                <span>
+                  {{ plottedDatastreams.length }} selected for plotting (maximum
+                  5)
+                </span>
+              </div>
+
+              <div class="datastream-selection-actions">
                 <v-btn
                   size="small"
                   variant="text"
@@ -310,7 +305,7 @@
 <script setup lang="ts">
 import { computed, ref, useTemplateRef, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import hs, { Datastream, MonitoringSite } from '@hydroserver/client'
+import { Datastream, MonitoringSite } from '@hydroserver/client'
 import {
   mdiArrowDown,
   mdiArrowUp,
@@ -336,6 +331,7 @@ import {
 import { HsQuerySearchInput } from '@hydroserver/design-system/vue'
 import LoadMoreRow from '@/components/base/LoadMoreRow.vue'
 import { usePagedList } from '@/composables/usePagedList'
+import { fetchDatastreamPage } from '@/utils/fetchDatastreamPage'
 import DatastreamInformationCard from './DatastreamInformationCard.vue'
 import DataVisTableFilters from './DataVisTableFilters.vue'
 
@@ -368,9 +364,6 @@ const initialFilters: DatastreamQueryFilters = {
   unit: [...selectedUnitNames.value],
   method: [...selectedMethodNames.value],
   'processing-level': [...selectedProcessingLevelNames.value],
-}
-if (!search.value.trim()) {
-  search.value = serializeDatastreamQuery(initialFilters, '')
 }
 
 const openInfoCard = ref(false)
@@ -426,6 +419,21 @@ const searchQualifiers = computed(() => [
     ],
   },
 ])
+// Older links store site/metadata filters separately from the search text.
+// Merge them once on mount; afterwards the query is the source of truth.
+const restoredQuery = parseDatastreamQuery(search.value, searchQualifiers.value)
+for (const key of Object.keys(initialFilters) as Array<
+  keyof DatastreamQueryFilters
+>) {
+  if (!restoredQuery.filters[key].length)
+    restoredQuery.filters[key] = initialFilters[key]
+}
+search.value = serializeDatastreamQuery(
+  restoredQuery.filters,
+  restoredQuery.text,
+  restoredQuery.sort ?? undefined
+)
+
 const parsedSearch = computed(() =>
   parseDatastreamQuery(search.value, searchQualifiers.value)
 )
@@ -446,10 +454,7 @@ const canonicalValues = (candidates: string[], requested: string[]) => {
   })
 }
 
-// The filter controls are replaced by the selection summary while a
-// datastream is plotted, so keep query hydration in this always-mounted table.
-// Parsing also depends on lookup data, which can arrive after URL restoration.
-// Rehydrate when that data arrives so badges, menu checks, and results agree.
+// Rehydrate when lookup data arrives as well as when the query changes.
 watch(
   parsedSearch,
   () => {
@@ -564,17 +569,12 @@ const { items, total, loading, error, hasMore, loadMore, retry } = usePagedList(
       `${activeSort.value.order === 'desc' ? '-' : ''}${sortFields[activeSort.value.key]}` as const,
     ],
   }),
-  (query, page) => hs.datastreams.list({ ...query, ...page })
+  fetchDatastreamPage
 )
 
-// Selected datastreams are pinned above the results each time the results
-// restart, so they survive filter changes without jumping when checked.
-const pinned = ref([...plottedDatastreams.value])
 const table = useTemplateRef('table')
 watch(total, (value) => {
-  if (value !== null) return
-  pinned.value = [...plottedDatastreams.value]
-  table.value?.scrollToIndex(0)
+  if (value === null) table.value?.scrollToIndex(0)
 })
 // "Show selected" hides every row that isn't currently selected.
 const showOnlySelected = ref(false)
@@ -586,13 +586,7 @@ watch(
   }
 )
 const tableItems = computed<DatastreamTableItem[]>(() => {
-  const pinnedIds = new Set(pinned.value.map((item) => item.id))
-  const rows = showOnlySelected.value
-    ? plottedDatastreams.value
-    : [
-        ...pinned.value,
-        ...items.value.filter((item) => !pinnedIds.has(item.id)),
-      ]
+  const rows = showOnlySelected.value ? plottedDatastreams.value : items.value
   return rows.map((datastream) => ({
     ...datastream,
     monitoringSiteName: dataVisStore.monitoringSiteById.get(
@@ -604,7 +598,7 @@ const tableItems = computed<DatastreamTableItem[]>(() => {
 const columns = [{ key: 'plot' }, { key: 'summary' }, { key: 'actions' }]
 
 const showMonitoringSiteContext = computed(
-  () => selectedMonitoringSites.value.length !== 1
+  () => new Set(tableItems.value.map((item) => item.monitoringSiteId)).size > 1
 )
 
 const datastreamName = (item: DatastreamTableItem) =>
@@ -840,6 +834,8 @@ function updatePlottedDatastreams(
 
 .datastream-selection-header__content {
   display: flex;
+  flex-wrap: wrap;
+  gap: var(--hs-space-8);
   align-items: center;
   justify-content: space-between;
   color: var(--hs-text-primary);
@@ -855,11 +851,6 @@ function updatePlottedDatastreams(
 
 .datastream-selection-actions {
   font-weight: var(--hs-font-weight-regular);
-}
-
-.plot-checkbox.datastreams-clear-selection-checkbox {
-  flex: 0 0 auto;
-  margin: 0;
 }
 
 .datastreams-table tbody tr {

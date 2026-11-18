@@ -874,12 +874,12 @@ test.describe("visualization", () => {
       .click();
     await page.getByTestId("add-datastream-to-plot").click();
     await expect(page.getByTestId("datastream-selection-bar")).toContainText(
-      "1 of 5 selected",
+      "1 selected for plotting (maximum 5)",
     );
 
     await page.getByTestId("show-summary-view").click();
     await expect(
-      page.getByText("Summary statistics", { exact: true }),
+      page.locator(".plot-card .v-card-title").getByText("Summary statistics", { exact: true }),
     ).toBeVisible();
 
     await page.getByTestId("show-plot-view").click();
@@ -917,26 +917,25 @@ test.describe("visualization", () => {
     await copiedContext.close();
   });
 
-  test("visualization header checkbox clears selected datastreams", async ({
+  test("visualization Clear selected button clears selected datastreams", async ({
     page,
   }) => {
     await authenticateSession(page, users.owner.email, users.owner.password);
     await page.goto(`/visualize-data?sites=${fixtures.monitoringSites.public.id}`);
 
     const selectionBar = page.getByTestId("datastream-selection-bar");
-    const clearSelectedCheckbox = selectionBar.getByRole("checkbox", {
-      name: "Clear selected datastreams",
+    const clearSelectedButton = selectionBar.getByRole("button", {
+      name: "Clear selected",
     });
 
-    await expect(clearSelectedCheckbox).toHaveCount(0);
+    await expect(clearSelectedButton).toHaveCount(0);
     await expect(
       page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`),
     ).toBeVisible();
 
     await plotPublicDatastream(page);
-    await expect(clearSelectedCheckbox).toBeVisible();
-    await expect(clearSelectedCheckbox).toHaveJSProperty("indeterminate", true);
-    await expect(selectionBar).toContainText("1 of 5 selected");
+    await expect(clearSelectedButton).toBeVisible();
+    await expect(selectionBar).toContainText("1 selected for plotting (maximum 5)");
 
     await page.getByTestId("toggle-selected-datastreams").click();
     await expect(
@@ -951,9 +950,9 @@ test.describe("visualization", () => {
       ),
     ).toBeVisible();
 
-    await clearSelectedCheckbox.click();
+    await clearSelectedButton.click();
 
-    await expect(clearSelectedCheckbox).toHaveCount(0);
+    await expect(clearSelectedButton).toHaveCount(0);
     await expect(
       page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`),
     ).toBeVisible();

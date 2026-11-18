@@ -1,6 +1,7 @@
 import { computed, ref, type Ref } from 'vue'
 import type { ApiResponse } from '@hydroserver/client'
 import { usePagedList } from './usePagedList'
+import { Snackbar } from '@/utils/notifications'
 import type { Scoped } from './tableScope'
 
 const UUID = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i
@@ -18,7 +19,7 @@ export function useMetadataTableLogic<T extends MetadataRow>(
   service: {
     list: (params: any) => Promise<ApiResponse<T[]>>
     get: (id: string) => Promise<ApiResponse<T>>
-    delete: (id: string) => Promise<unknown>
+    delete: (id: string) => Promise<ApiResponse<unknown>>
   },
   ItemClass: new () => T,
   workspaceId: Ref<string | undefined>,
@@ -46,6 +47,7 @@ export function useMetadataTableLogic<T extends MetadataRow>(
       if (!query.q || !UUID.test(query.q))
         return service.list({ ...query, ...range })
       const res = await service.get(query.q)
+      if (!res.ok && res.status !== 404) throw new Error(res.message)
       const rows =
         res.ok && query.workspaceId.includes(res.data.workspaceId ?? 'null')
           ? [res.data]
@@ -73,22 +75,21 @@ export function useMetadataTableLogic<T extends MetadataRow>(
     else if (dialog === 'delete') openDelete.value = true
   }
 
-  const onUpdate = (updatedItem: T) => {
-    page.items.value = page.items.value.map((row) =>
-      row.id === updatedItem.id ? updatedItem : row
-    )
-  }
+  // Requery after mutations so ordering, filters, totals and offsets stay valid.
+  const onUpdate = () => page.reload()
 
   const onDelete = async () => {
     try {
-      await service.delete(item.value.id)
-      page.items.value = page.items.value.filter(
-        (row) => row.id !== item.value.id
-      )
-      if (page.total.value) page.total.value--
+      const result = await service.delete(item.value.id)
+      if (!result.ok) throw new Error(result.message)
       openDelete.value = false
+      await page.reload()
     } catch (error) {
-      console.error(`Error deleting table item`, error)
+      Snackbar.error(
+        error instanceof Error
+          ? error.message
+          : 'Unable to delete metadata item.'
+      )
     }
   }
 

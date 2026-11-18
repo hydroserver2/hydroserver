@@ -3,12 +3,7 @@ import type { ApiResponse } from '@hydroserver/client'
 
 export const PAGE_SIZE = 25
 
-/**
- * Loads a server collection one page at a time for an infinite-scroll table.
- * The list restarts (debounced) whenever `query` changes; responses for an
- * outdated query are ignored. While `active` is false (e.g. a hidden tab) it
- * doesn't fetch, and restarts once when shown if the query changed meanwhile.
- */
+/** Server paging with debounced query changes and lazy loading for hidden tabs. */
 export function usePagedList<T, Q>(
   query: () => Q,
   fetchPage: (
@@ -25,9 +20,31 @@ export function usePagedList<T, Q>(
     () => total.value === null || items.value.length < total.value
   )
   let generation = 0
+  let disposed = false
+  let timer: ReturnType<typeof setTimeout> | undefined
+  let stale = !active()
+
+  function invalidate() {
+    generation++
+    clearTimeout(timer)
+    timer = undefined
+    items.value = []
+    total.value = null
+    loading.value = false
+    error.value = ''
+  }
 
   async function loadMore() {
-    if (loading.value || error.value || !hasMore.value) return
+    if (
+      disposed ||
+      !active() ||
+      stale ||
+      timer ||
+      loading.value ||
+      error.value ||
+      !hasMore.value
+    )
+      return
     const current = generation
     loading.value = true
     try {
@@ -36,13 +53,17 @@ export function usePagedList<T, Q>(
         limit: PAGE_SIZE,
       })
       if (current !== generation) return
-      if (!res.ok) throw new Error(res.message)
+      if (!res.ok) throw new Error(res.message || 'Unable to load rows.')
       items.value = [...items.value, ...res.data]
       const matched = res.meta?.numberMatched
-      total.value =
-        typeof matched === 'number' && res.data.length
+      // An empty response always ends paging, even if a stale total says otherwise.
+      total.value = !res.data.length
+        ? items.value.length
+        : typeof matched === 'number'
           ? matched
-          : items.value.length
+          : res.data.length < PAGE_SIZE
+            ? items.value.length
+            : null
     } catch (e) {
       if (current === generation)
         error.value = e instanceof Error ? e.message : 'Unable to load rows.'
@@ -52,11 +73,8 @@ export function usePagedList<T, Q>(
   }
 
   function reload() {
-    generation++
-    items.value = []
-    total.value = null
-    loading.value = false
-    error.value = ''
+    invalidate()
+    stale = !active()
     return loadMore()
   }
 
@@ -65,32 +83,31 @@ export function usePagedList<T, Q>(
     return loadMore()
   }
 
-  let timer: ReturnType<typeof setTimeout> | undefined
-  let stale = !active()
   watch(
     () => JSON.stringify(query()),
     () => {
-      clearTimeout(timer)
-      if (!active()) stale = true
-      else
+      // Invalidate immediately: an old response must not append during debounce.
+      invalidate()
+      stale = !active()
+      if (!stale)
         timer = setTimeout(() => {
           timer = undefined
-          void reload()
+          void loadMore()
         }, 250)
-    }
+    },
+    { flush: 'sync' }
   )
   watch(active, (isActive) => {
     if (!isActive) {
-      // A restart still waiting on the debounce happens when shown again.
       if (timer) stale = true
       clearTimeout(timer)
       timer = undefined
     } else if (stale) {
-      stale = false
       void reload()
     }
   })
   onScopeDispose(() => {
+    disposed = true
     clearTimeout(timer)
     generation++
   })
