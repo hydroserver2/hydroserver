@@ -23,14 +23,11 @@
 import { computed, ref, watch } from 'vue'
 import hs, { type MonitoringRule } from '@hydroserver/client'
 import MappingDatastreamCard from '@/components/Orchestration/shared/MappingDatastreamCard.vue'
-import { useMappingDatastreams } from '@/composables/orchestration/useMappingDatastreams'
 
 const props = defineProps<{
   taskId: string
   monitoringSiteId?: string | null
 }>()
-
-useMappingDatastreams()
 
 const rules = ref<MonitoringRule[]>([])
 

@@ -2,32 +2,42 @@
   <div
     class="mapping-datastream-card"
     :data-testid="`mapping-datastream-${datastreamId}`"
+    :aria-busy="loading"
   >
     <div class="mapping-datastream-card__text">
-      <span class="mapping-datastream-card__name hs-title">{{
-        datastream?.name || '—'
-      }}</span>
-      <span v-if="siteName" class="mapping-datastream-card__site hs-text-sm"
-        >@ {{ siteName }}</span
-      >
-      <span class="mapping-datastream-card__id hs-text-sm">{{
-        datastreamId || '—'
-      }}</span>
+      <v-skeleton-loader
+        v-if="loading"
+        type="sentences"
+        loading-text="Loading datastream details"
+        class="mapping-datastream-card__skeleton"
+      />
+      <template v-else>
+        <span class="mapping-datastream-card__name hs-title">{{
+          datastream?.name || '—'
+        }}</span>
+        <span v-if="siteName" class="mapping-datastream-card__site hs-text-sm"
+          >@ {{ siteName }}</span
+        >
+        <span class="mapping-datastream-card__id hs-text-sm">{{
+          datastreamId || '—'
+        }}</span>
+      </template>
     </div>
     <DatastreamSiteButton
       :datastream="datastream"
       :datastream-id="datastreamId"
-      :fallback-monitoring-site-id="siteId"
+      :fallback-monitoring-site-id="loading ? null : monitoringSiteId"
       show-menu
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { storeToRefs } from 'pinia'
-import { useOrchestrationStore } from '@/store/orchestration'
-import { datastreamMonitoringSiteId } from '@/utils/orchestration/datastreams'
+import { computed, ref, watch } from 'vue'
+import hs, {
+  type Datastream,
+  type DatastreamExtended,
+} from '@hydroserver/client'
 import DatastreamSiteButton from './DatastreamSiteButton.vue'
 
 const props = defineProps<{
@@ -35,40 +45,35 @@ const props = defineProps<{
   monitoringSiteId?: string | null
 }>()
 
-const {
-  workspaceDatastreams,
-  linkedDatastreams,
-  draftDatastreams,
-  workspaceMonitoringSites,
-} = storeToRefs(useOrchestrationStore())
-
-const datastream = computed(
-  () =>
-    [
-      ...workspaceDatastreams.value,
-      ...linkedDatastreams.value,
-      ...draftDatastreams.value,
-    ].find((item) => String(item.id) === props.datastreamId) ?? null
+const datastream = ref<Datastream | null>(null)
+const loading = ref(true)
+watch(
+  () => props.datastreamId,
+  async (id, _, onCleanup) => {
+    let active = true
+    onCleanup(() => {
+      active = false
+    })
+    loading.value = true
+    datastream.value = null
+    let result: Datastream | null = null
+    try {
+      if (id) {
+        result = await hs.datastreams.getItem(id, { expand_related: true })
+      }
+    } catch (error) {
+      console.error('Error fetching mapping datastream', error)
+    }
+    if (!active) return
+    datastream.value = result
+    loading.value = false
+  },
+  { immediate: true }
 )
-const siteId = computed(
+const siteName = computed(
   () =>
-    (datastream.value
-      ? datastreamMonitoringSiteId(datastream.value as any)
-      : '') ||
-    props.monitoringSiteId ||
-    ''
+    (datastream.value as DatastreamExtended | null)?.monitoringSite?.name || ''
 )
-const siteName = computed(() => {
-  const expanded = datastream.value as {
-    monitoringSite?: { name?: string }
-  } | null
-  return (
-    expanded?.monitoringSite?.name ||
-    workspaceMonitoringSites.value.find((site) => site.id === siteId.value)
-      ?.name ||
-    ''
-  )
-})
 </script>
 
 <style scoped>
@@ -90,6 +95,17 @@ const siteName = computed(() => {
   min-width: 0;
   gap: var(--hs-space-2);
   overflow-wrap: anywhere;
+}
+/* Reserves space for the name, site, and UUID while loading. */
+.mapping-datastream-card__skeleton {
+  height: calc(var(--hs-font-sm) * 4.25 + var(--hs-space-2) * 2);
+}
+.mapping-datastream-card__skeleton :deep(.v-skeleton-loader__sentences) {
+  height: 100%;
+  align-content: space-around;
+}
+.mapping-datastream-card__skeleton :deep(.v-skeleton-loader__text) {
+  margin: 0;
 }
 .mapping-datastream-card__name {
   color: var(--hs-text-primary);
