@@ -247,6 +247,36 @@ describe('DataVisDatasetsTable', () => {
     wrapper.unmount()
   })
 
+  it('sorts selected rows numerically by observations in both directions without changing plot order', async () => {
+    const selected = [
+      { ...datastream, id: 'empty', valueCount: 0 },
+      { ...datastream, id: 'few', valueCount: 2 },
+      { ...datastream, id: 'many', valueCount: 10 },
+      { ...datastream, id: 'unknown', valueCount: null },
+    ]
+    mockList(selected)
+    const store = useDataVisStore()
+    store.plottedDatastreams = selected as any
+    const wrapper = mountTable()
+    await flushPromises()
+    await wrapper
+      .get('[data-testid="toggle-selected-datastreams"]')
+      .trigger('click')
+    store.tableSearch = 'sort:observations-desc'
+    await flushPromises()
+    expect(rowIds(wrapper)).toEqual(['many', 'few', 'empty', 'unknown'])
+    store.tableSearch = 'sort:observations-asc'
+    await flushPromises()
+    expect(rowIds(wrapper)).toEqual(['empty', 'unknown', 'few', 'many'])
+    expect(store.plottedDatastreams.map((item) => item.id)).toEqual([
+      'empty',
+      'few',
+      'many',
+      'unknown',
+    ])
+    wrapper.unmount()
+  })
+
   it('shows only the selected datastreams while "Show selected" is on', async () => {
     mockList([datastream, { ...datastream, id: 'datastream-2' }])
     const store = useDataVisStore()
@@ -264,6 +294,44 @@ describe('DataVisDatasetsTable', () => {
     expect(rowIds(wrapper)).toEqual(['datastream-2'])
     await toggle()
     expect(rowIds(wrapper)).toEqual(['datastream-1', 'datastream-2'])
+  })
+
+  it('keeps site context for a method filter until one specific site is selected', async () => {
+    vi.useFakeTimers()
+    mockList([datastream])
+    const store = useDataVisStore()
+    store.monitoringSites = [
+      site,
+      { ...site, id: 'site-2', name: 'Bear River' },
+    ] as any
+    store.methods = [{ id: 'method-1', name: 'Shielded sensor' }] as any
+    store.tableSearch = 'method:"Shielded sensor"'
+    const wrapper = mountTable()
+    await flushPromises()
+    expect(store.selectedMonitoringSites).toEqual([])
+    expect(wrapper.find('.datastream-name__thing').text()).toBe('Logan River')
+    expect(wrapper.find('.datastream-name').attributes('title')).toBe(
+      'Discharge @ Logan River'
+    )
+
+    await wrapper
+      .getComponent({ name: 'HsQuerySearchInput' })
+      .vm.$emit(
+        'update:modelValue',
+        'site:"Logan River" method:"Shielded sensor"'
+      )
+    await vi.advanceTimersByTimeAsync(300)
+    expect(wrapper.findAll('.datastream-name__thing')).toHaveLength(0)
+
+    await wrapper
+      .getComponent({ name: 'HsQuerySearchInput' })
+      .vm.$emit(
+        'update:modelValue',
+        'site:"Logan River" site:"Bear River" method:"Shielded sensor"'
+      )
+    await vi.advanceTimersByTimeAsync(300)
+    expect(wrapper.find('.datastream-name__thing').text()).toBe('Logan River')
+    wrapper.unmount()
   })
 
   it('shows site context for selections across sites despite a single-site filter', async () => {
@@ -318,6 +386,15 @@ describe('DataVisDatasetsTable', () => {
       .get('[data-testid="plot-datastream-datastream-1"]')
       .setValue(false)
     expect(wrapper.findAll('.datastream-name__thing')).toHaveLength(0)
+
+    // A filter for a different site does not describe these selected rows.
+    await wrapper
+      .getComponent({ name: 'HsQuerySearchInput' })
+      .vm.$emit('update:modelValue', 'site:"Logan River"')
+    await vi.advanceTimersByTimeAsync(300)
+    expect(
+      wrapper.findAll('.datastream-name__thing').map((item) => item.text())
+    ).toEqual(['Bear River', 'Bear River'])
     wrapper.unmount()
   })
 

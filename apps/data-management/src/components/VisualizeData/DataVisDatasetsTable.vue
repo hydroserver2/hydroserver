@@ -585,8 +585,31 @@ watch(
     if (!count) showOnlySelected.value = false
   }
 )
+function compareSelectedDatastreams(left: Datastream, right: Datastream) {
+  const { key, order } = activeSort.value
+  let comparison: number
+  if (key === 'name') {
+    comparison = (left.name?.trim() || 'Unnamed datastream').localeCompare(
+      right.name?.trim() || 'Unnamed datastream',
+      undefined,
+      { numeric: true, sensitivity: 'base' }
+    )
+  } else if (key === 'observations') {
+    comparison = Number(left.valueCount ?? 0) - Number(right.valueCount ?? 0)
+  } else {
+    comparison =
+      (Date.parse(left.phenomenonEndTime ?? '') || 0) -
+      (Date.parse(right.phenomenonEndTime ?? '') || 0)
+  }
+  return (
+    comparison * (order === 'desc' ? -1 : 1) || left.id.localeCompare(right.id)
+  )
+}
+
 const tableItems = computed<DatastreamTableItem[]>(() => {
-  const rows = showOnlySelected.value ? plottedDatastreams.value : items.value
+  const rows = showOnlySelected.value
+    ? [...plottedDatastreams.value].sort(compareSelectedDatastreams)
+    : items.value
   return rows.map((datastream) => ({
     ...datastream,
     monitoringSiteName: dataVisStore.monitoringSiteById.get(
@@ -597,9 +620,13 @@ const tableItems = computed<DatastreamTableItem[]>(() => {
 
 const columns = [{ key: 'plot' }, { key: 'summary' }, { key: 'actions' }]
 
-const showMonitoringSiteContext = computed(
-  () => new Set(tableItems.value.map((item) => item.monitoringSiteId)).size > 1
-)
+const showMonitoringSiteContext = computed(() => {
+  if (selectedMonitoringSites.value.length !== 1) return true
+  const selectedSiteId = selectedMonitoringSites.value[0].id
+  return tableItems.value.some(
+    (item) => item.monitoringSiteId !== selectedSiteId
+  )
+})
 
 const datastreamName = (item: DatastreamTableItem) =>
   item.name?.trim() || 'Unnamed datastream'

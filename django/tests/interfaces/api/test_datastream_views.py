@@ -114,6 +114,37 @@ def test_get_datastreams_returns_400_for_malformed_tag(client):
     assert response.status_code == 400
 
 
+@pytest.mark.parametrize("sortby", ["valueCount", "-valueCount"])
+def test_get_datastreams_sorts_missing_counts_as_zero_across_pages(client, sortby):
+    workspace = WorkspaceFactory()
+    streams = [
+        _make_datastream(workspace, value_count=count)
+        for count in (None, 0, 2, 10, 100)
+    ]
+    reverse = sortby.startswith("-")
+    expected = sorted(
+        streams,
+        key=lambda ds: (
+            -(ds.value_count or 0) if reverse else (ds.value_count or 0),
+            ds.id,
+        ),
+    )
+    actual = []
+    for offset in range(0, len(streams), 2):
+        response = client.get(
+            DATASTREAMS_URL,
+            {
+                "workspaceId": str(workspace.id),
+                "sortby": sortby,
+                "offset": offset,
+                "limit": 2,
+            },
+        )
+        assert response.status_code == 200
+        actual.extend(row["id"] for row in response.json()["data"])
+    assert actual == [str(ds.id) for ds in expected]
+
+
 # --- full-text search (q) ------------------------------------------------------------
 
 
