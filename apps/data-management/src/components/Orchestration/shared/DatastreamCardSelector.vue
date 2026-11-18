@@ -193,7 +193,7 @@ async function openSelector() {
     try {
       // Refresh immediately before selection so a task created in another
       // browser session cannot leave this list with stale availability.
-      await ensureWorkspaceLinkedDatastreams(props.workspaceId, true)
+      await ensureWorkspaceLinkedDatastreams(props.workspaceId)
     } catch (error: any) {
       Snackbar.error(
         error?.message || 'Unable to check already linked datastreams.'

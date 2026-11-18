@@ -860,8 +860,9 @@ test.describe("visualization", () => {
     ).toHaveCount(0);
 
     await page.getByTestId("show-summary-view").click();
+    // The summary button's tooltip has the same text but renders outside #app.
     await expect(
-      page.getByText("Summary statistics", { exact: true }),
+      page.locator("#app").getByText("Summary statistics", { exact: true }),
     ).toBeVisible();
 
     await page.getByTestId("show-plot-view").click();
