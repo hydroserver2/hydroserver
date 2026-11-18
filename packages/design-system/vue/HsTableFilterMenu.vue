@@ -57,6 +57,7 @@
                 <v-checkbox-btn
                   v-if="showCheckboxes"
                   :model-value="isSelected(option.value)"
+                  color="primary"
                   density="compact"
                   :aria-label="`${label}: ${option.label}`"
                   @click.stop="emit('toggle', option.value)"
