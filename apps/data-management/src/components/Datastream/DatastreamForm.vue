@@ -593,7 +593,7 @@
                   rounded="xl"
                   class="ml-2"
                   @click="datastream.description = generateDefaultDescription()"
-                  >Auto-Fill from Form</v-btn
+                  >Auto-fill from form</v-btn
                 >
               </v-col>
             </v-row>

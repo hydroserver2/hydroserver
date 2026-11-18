@@ -255,7 +255,7 @@ test.describe('sites and workspaces', () => {
     await page.goto('/browse')
 
     await expect(
-      page.getByRole('button', { name: 'Create Site', exact: true })
+      page.getByRole('button', { name: 'Create site', exact: true })
     ).toBeVisible()
 
     const siteRow = page.locator(
@@ -283,12 +283,12 @@ test.describe('sites and workspaces', () => {
     await expect(siteRow).toHaveClass(/selected/)
     await expect(siteRowActions).toHaveCSS('opacity', '1')
 
-    await page.getByRole('button', { name: 'Hide Filters' }).click()
+    await page.getByRole('button', { name: 'Hide filters' }).click()
     await expect(
       page.getByRole('textbox', { name: 'Search sites' })
     ).toBeHidden()
     await expect(siteRow).toBeVisible()
-    await page.getByRole('button', { name: 'Show Filters' }).click()
+    await page.getByRole('button', { name: 'Show filters' }).click()
     await expect(
       page.getByRole('textbox', { name: 'Search sites' })
     ).toBeVisible()
@@ -298,7 +298,7 @@ test.describe('sites and workspaces', () => {
       .click()
     const editDialog = page.getByRole('dialog')
     await expect(
-      editDialog.getByText('Edit Site', { exact: true })
+      editDialog.getByText('Edit site', { exact: true })
     ).toBeVisible()
     await editDialog.getByRole('button', { name: 'Cancel' }).click()
     await expect(editDialog).toBeHidden()
@@ -308,7 +308,7 @@ test.describe('sites and workspaces', () => {
       .click()
     const deleteDialog = page.getByRole('dialog')
     await expect(
-      deleteDialog.getByText('Confirm Deletion', { exact: true })
+      deleteDialog.getByText('Confirm deletion', { exact: true })
     ).toBeVisible()
     await expect(
       deleteDialog.locator('.v-toolbar.bg-red-darken-4')
@@ -449,12 +449,12 @@ test.describe('sites and workspaces', () => {
     await chooseOverlayOption(page, fixtures.workspaces.public.name)
     const siteFormDialog = page.getByRole('dialog')
 
-    await page.getByLabel('Site Code').fill(siteCode)
-    await page.getByLabel('Site Name').fill(siteName)
+    await page.getByLabel('Site code').fill(siteCode)
+    await page.getByLabel('Site name').fill(siteName)
     await page
-      .getByLabel('Site Description')
+      .getByLabel('Site description')
       .fill('Temporary site created by the Playwright release coverage suite.')
-    await fillCombobox(page, 'Select Site Type', 'Lake')
+    await fillCombobox(page, 'Select site type', 'Lake')
     await page.getByLabel('Latitude').fill('41.7501')
     await page.getByLabel('Longitude').fill('-111.8102')
     await page.getByLabel('Elevation (m)').fill('1380')
@@ -488,7 +488,7 @@ test.describe('sites and workspaces', () => {
     await createdSiteRow
       .getByRole('button', { name: `Edit ${siteName}` })
       .click()
-    await page.getByLabel('Site Name').fill(updatedSiteName)
+    await page.getByLabel('Site name').fill(updatedSiteName)
     await page.getByRole('button', { name: 'Save' }).click()
 
     const updatedSiteRow = page
@@ -518,25 +518,25 @@ test.describe('sites and workspaces', () => {
     await page.goto(`/sites/${fixtures.monitoringSites.mutablePublic.id}`)
 
     await page.getByTestId('edit-site-button').click()
-    await page.getByLabel('State/Province/Region').fill(unsavedProvince)
+    await page.getByLabel('State/province/region').fill(unsavedProvince)
     await page.getByRole('button', { name: 'Cancel' }).click()
 
     await expect(page.getByText(unsavedProvince, { exact: true })).toHaveCount(0)
 
     await page.getByTestId('edit-site-button').click()
-    await expect(page.getByLabel('State/Province/Region')).not.toHaveValue(
+    await expect(page.getByLabel('State/province/region')).not.toHaveValue(
       unsavedProvince
     )
     await page.getByRole('button', { name: 'Cancel' }).click()
 
     await page.getByTestId('edit-site-button').click()
-    await page.getByLabel('County/District').fill(unsavedCounty)
+    await page.getByLabel('County/district').fill(unsavedCounty)
     await page.keyboard.press('Escape')
 
     await expect(page.getByText(unsavedCounty, { exact: true })).toHaveCount(0)
 
     await page.getByTestId('edit-site-button').click()
-    await expect(page.getByLabel('County/District')).not.toHaveValue(
+    await expect(page.getByLabel('County/district')).not.toHaveValue(
       unsavedCounty
     )
     await page.getByRole('button', { name: 'Cancel' }).click()
@@ -573,7 +573,7 @@ test.describe('sites and workspaces', () => {
     ).toBeVisible()
 
     await page.getByTestId('edit-site-button').click()
-    await page.getByLabel('Site Name').fill(renamedSiteName)
+    await page.getByLabel('Site name').fill(renamedSiteName)
     await page.getByRole('button', { name: 'Save' }).click()
 
     await expect(
@@ -882,7 +882,7 @@ test.describe('sites and workspaces', () => {
     await expect(
       metadataDialog.getByText('General', { exact: true })
     ).toBeVisible()
-    await metadataDialog.getByText('Observed Property', { exact: true }).click()
+    await metadataDialog.getByText('Observed property', { exact: true }).click()
     await expect(metadataDialog.getByText('Code')).toBeVisible()
 
     const csvDownload = page.waitForEvent('download')

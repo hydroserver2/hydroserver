@@ -35,7 +35,7 @@ export const routes: RouteRecordRaw[] = [
     meta: {
       requiresAuth: true,
       hideFooter: true,
-      title: 'Manage Workspaces',
+      title: 'Manage workspaces',
       metaTags: [
         {
           name: 'keywords',
@@ -50,7 +50,7 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('@/pages/Browse.vue'),
     meta: {
       hideFooter: true,
-      title: 'Browse Monitoring Sites',
+      title: 'Browse monitoring sites',
       metaTags: [
         {
           name: 'keywords',
@@ -202,14 +202,14 @@ export const routes: RouteRecordRaw[] = [
     path: '/access-denied',
     name: 'AccessDenied',
     component: () => import('@/pages/AccessDenied.vue'),
-    meta: { requiresAuth: true, title: 'Access Denied' },
+    meta: { requiresAuth: true, title: 'Access denied' },
   },
   {
     path: '/visualize-data/:monitoringSiteId?',
     name: 'VisualizeData',
     component: () => import('@/pages/VisualizeData.vue'),
     meta: {
-      title: 'VisualizeData',
+      title: 'Visualize data',
       hasSidebar: true,
       hideFooter: true,
       metaTags: [
@@ -224,6 +224,6 @@ export const routes: RouteRecordRaw[] = [
     path: '/:catchAll(.*)*',
     name: 'PageNotFound',
     component: () => import('@/pages/PageNotFound.vue'),
-    meta: { title: 'Page Not Found' },
+    meta: { title: 'Page not found' },
   },
 ]

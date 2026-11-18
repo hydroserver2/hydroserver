@@ -271,7 +271,7 @@ const { inputScopeNote, outputScopeNote } = useDatastreamScopeNotes(
 )
 
 const aggregationMethodOptions = [
-  { title: 'Arithmetic Mean', value: 'mean' },
+  { title: 'Arithmetic mean', value: 'mean' },
   { title: 'First', value: 'first' },
   { title: 'Last', value: 'last' },
   { title: 'Max', value: 'max' },

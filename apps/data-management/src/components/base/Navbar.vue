@@ -297,7 +297,7 @@ const basePaths: NavItem[] = [
     icon: mdiTransitConnectionVariant,
   },
   {
-    label: 'Quality Control',
+    label: 'Quality control',
     icon: mdiShieldEditOutline,
     requiresAuth: true,
     onClick: () => {

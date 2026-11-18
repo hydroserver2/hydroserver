@@ -2,7 +2,7 @@
   <v-card>
     <v-toolbar flat color="primary">
       <v-card-title>
-        {{ isEdit ? 'Edit' : 'Add' }} Result Qualifier
+        {{ isEdit ? 'Edit' : 'Add' }} result qualifier
       </v-card-title>
     </v-toolbar>
     <v-divider />

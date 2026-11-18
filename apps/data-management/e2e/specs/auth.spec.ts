@@ -14,7 +14,7 @@ test.describe('authentication', () => {
     await expect(page).toHaveURL(/\/accounts\/login\/(?:\?.*)?$/)
     await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible()
     await expect(
-      page.getByRole('button', { name: 'Quality Control' })
+      page.getByRole('button', { name: 'Quality control' })
     ).toHaveCount(0)
   })
 
@@ -30,12 +30,12 @@ test.describe('authentication', () => {
     ).toBeVisible()
     await expect(page.getByTestId('register-site-button')).toBeEnabled()
     await expect(
-      page.getByRole('button', { name: 'Quality Control' })
+      page.getByRole('button', { name: 'Quality control' })
     ).toBeVisible()
 
     await page.setViewportSize({ width: 1050, height: 720 })
     await expect(
-      page.getByRole('button', { name: 'Quality Control' })
+      page.getByRole('button', { name: 'Quality control' })
     ).toHaveCount(0)
     await expect(page.getByTestId('mobile-nav-button')).toBeVisible()
   })

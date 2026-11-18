@@ -32,7 +32,7 @@
         <v-text-field
           v-model="item.type"
           class="required-label"
-          label="Unit Type"
+          label="Unit type"
           :rules="rules.requiredAndMaxLength255"
         />
       </v-card-text>

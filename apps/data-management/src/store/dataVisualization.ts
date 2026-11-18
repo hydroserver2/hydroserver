@@ -69,12 +69,12 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   const tableHeaders = reactive([
     { title: 'Plot', key: 'plot', visible: true },
     {
-      title: 'Number Observations',
+      title: 'Number of observations',
       key: 'valueCount',
       visible: false,
     },
     {
-      title: 'Date Last Updated',
+      title: 'Date last updated',
       key: 'phenomenonEndTime',
       visible: false,
     },

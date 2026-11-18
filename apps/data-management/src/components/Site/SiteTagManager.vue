@@ -1,6 +1,6 @@
 <template>
   <h6 class="hs-text-md my-5">
-    Add Additional Metadata
+    Add additional metadata
     <v-tooltip>
       <template v-slot:activator="{ props }">
         <v-icon
@@ -24,7 +24,7 @@
         </p>
         <p>
           Additionally, if a URL is added as a value, it will be clickable from
-          the Site Details page, allowing direct access to relevant links.
+          the site details page, allowing direct access to relevant links.
         </p>
       </template>
     </v-tooltip>

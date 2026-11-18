@@ -27,16 +27,16 @@
             v-if="showRegisterSite"
             class="register-site-button"
             data-testid="register-site-button"
-            aria-label="Create Site"
+            aria-label="Create site"
             :disabled="!canRegisterSite"
             :title="
               canRegisterSite
-                ? 'Create Site'
+                ? 'Create site'
                 : 'You need site creation permission in a workspace to create a site'
             "
             @click="$emit('register-site')"
           >
-            Create Site
+            Create site
           </v-btn-page-action>
 
           <v-btn
@@ -295,7 +295,7 @@
               :aria-expanded="filtersVisible"
               @click="filtersVisible = !filtersVisible"
             >
-              {{ filtersVisible ? 'Hide Filters' : 'Show Filters' }}
+              {{ filtersVisible ? 'Hide filters' : 'Show filters' }}
             </v-btn>
           </div>
         </div>

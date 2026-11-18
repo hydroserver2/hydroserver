@@ -1,7 +1,7 @@
 <template>
   <v-card class="site-form-card">
     <v-card-title class="hs-subheading">
-      {{ monitoringSiteId ? 'Edit Site' : 'Create Site' }}
+      {{ monitoringSiteId ? 'Edit site' : 'Create site' }}
     </v-card-title>
     <v-form
       class="site-form"
@@ -36,29 +36,29 @@
         <v-card-text>
           <v-row>
             <v-col cols="12" md="6">
-              <h6 class="hs-text-md my-4">Site Information</h6>
+              <h6 class="hs-text-md my-4">Site information</h6>
               <v-row>
                 <v-col cols="12"
                   ><v-text-field
-                    label="Site Code *"
+                    label="Site code *"
                     v-model="monitoringSite.code"
                     :rules="rules.requiredCode"
                 /></v-col>
                 <v-col cols="12"
                   ><v-text-field
-                    label="Site Name *"
+                    label="Site name *"
                     v-model="monitoringSite.name"
                     :rules="rules.requiredAndMaxLength200"
                 /></v-col>
                 <v-col cols="12"
                   ><v-textarea
-                    label="Site Description *"
+                    label="Site description *"
                     v-model="monitoringSite.description"
                     :rules="rules.requiredDescription"
                 /></v-col>
                 <v-col cols="12">
                   <v-combobox
-                    label="Select Site Type *"
+                    label="Select site type *"
                     :items="vocabularyStore.monitoringSiteTypes"
                     v-model="monitoringSite.type"
                     :rules="rules.required"
@@ -96,7 +96,7 @@
               </v-row>
             </v-col>
             <v-col cols="12" md="6">
-              <h6 class="hs-text-md my-4">Site Location</h6>
+              <h6 class="hs-text-md my-4">Site location</h6>
               <v-row>
                 <v-col cols="12" sm="6">
                   <v-text-field
@@ -144,14 +144,14 @@
                 /></v-col>
                 <v-col cols="12" sm="6">
                   <v-text-field
-                    label="State/Province/Region"
+                    label="State/province/region"
                     v-model="monitoringSite.adminArea1"
                     :rules="monitoringSite.adminArea1 ? rules.name : []"
                   />
                 </v-col>
                 <v-col cols="12" sm="6">
                   <v-text-field
-                    label="County/District"
+                    label="County/district"
                     v-model="monitoringSite.adminArea2"
                     :rules="monitoringSite.adminArea2 ? rules.name : []"
                   />

@@ -158,7 +158,7 @@ const buildSummaryButton = () => {
   const { showSummaryStatistics } = storeToRefs(useDataVisStore())
 
   return {
-    name: 'Summary Statistics',
+    name: 'Summary statistics',
     icon: {
       width: 512,
       height: 512,

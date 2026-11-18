@@ -8,7 +8,7 @@
       <v-row>
         <v-col cols="auto" class="pb-0">
           <h6 class="hs-text-md mt-4" v-if="monitoringSite">
-            Toggle Site Privacy
+            Toggle site privacy
             <v-icon
               @click="showPrivacyHelp = !showPrivacyHelp"
               color="grey"
@@ -24,7 +24,7 @@
         and workspace metadata visible to only you and other collaborators of
         your workspace. Setting your site to public will make it visible to all
         users and guests of the system. By default, all related datastreams will
-        also be public, but can be made private from on the Site Details page.
+        also be public, but can be made private from the site details page.
       </p>
 
       <v-row v-if="monitoringSite">

@@ -48,7 +48,7 @@
               <span v-else>{{ value }}</span>
             </v-chip>
           </div>
-          <div v-else-if="item.label === 'Rating Curves'">
+          <div v-else-if="item.label === 'Rating curves'">
             <v-btn
               variant="text"
               color="teal-darken-1"
@@ -112,7 +112,7 @@
             <span v-else>{{ value }}</span>
           </v-chip>
         </div>
-        <div v-else-if="item.label === 'Rating Curves'">
+        <div v-else-if="item.label === 'Rating curves'">
           <v-btn
             variant="text"
             color="teal-darken-1"
@@ -253,7 +253,7 @@ const monitoringSiteProperties = computed(() => {
   if (props.ratingCurveCount > 0) {
     properties.push({
       icon: mdiChartLine,
-      label: 'Rating Curves',
+      label: 'Rating curves',
       value: props.ratingCurveCount,
     })
   }

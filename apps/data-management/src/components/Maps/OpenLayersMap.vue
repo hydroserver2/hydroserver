@@ -6,7 +6,7 @@
         :items="basemapTileSources"
         item-title="name"
         item-value="name"
-        label="Base Map"
+        label="Base map"
         dense
         hide-details
         variant="solo-filled"

@@ -861,7 +861,7 @@ test.describe("visualization", () => {
 
     await page.getByTestId("show-summary-view").click();
     await expect(
-      page.getByText("Summary Statistics", { exact: true }),
+      page.getByText("Summary statistics", { exact: true }),
     ).toBeVisible();
 
     await page.getByTestId("show-plot-view").click();
@@ -1120,9 +1120,9 @@ test.describe("visualization", () => {
 
     await plotPublicDatastream(page);
 
-    // DatePickerField uses placeholder "Begin Date" / "End Date" and M/D/YYYY format
-    const startDate = page.locator('input[placeholder="Begin Date"]').first();
-    const endDate = page.locator('input[placeholder="End Date"]').first();
+    // DatePickerField uses placeholder "Begin date" / "End date" and M/D/YYYY format
+    const startDate = page.locator('input[placeholder="Begin date"]').first();
+    const endDate = page.locator('input[placeholder="End date"]').first();
 
     await expect(startDate).toBeVisible();
     await expect(endDate).toBeVisible();

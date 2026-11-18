@@ -369,11 +369,11 @@ const locationDetails = computed(() => {
       value: formatCoordinate(location.longitude),
     },
     {
-      label: 'State/Province',
+      label: 'State/province',
       value: formatLocationValue(location.adminArea1),
     },
     {
-      label: 'County/District',
+      label: 'County/district',
       value: formatLocationValue(location.adminArea2),
     },
     {

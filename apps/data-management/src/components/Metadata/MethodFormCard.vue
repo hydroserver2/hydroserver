@@ -50,7 +50,7 @@
           v-if="isInstrument"
           v-model="item.sensorModelManufacturer"
           class="required-label"
-          label="Sensor Model Manufacturer"
+          label="Sensor model manufacturer"
           :rules="rules.requiredAndMaxLength255"
         />
 
@@ -58,14 +58,14 @@
           v-if="isInstrument"
           v-model="item.sensorModel"
           class="required-label"
-          label="Sensor Model"
+          label="Sensor model"
           :rules="rules.requiredAndMaxLength255"
         />
 
         <v-text-field
           v-if="isInstrument"
           v-model="item.sensorModelDefinition"
-          label="Sensor Model Definition"
+          label="Sensor model definition"
           :rules="[...rules.maxLength(2000), ...(item.sensorModelDefinition ? rules.urlFormat : [])]"
         />
 

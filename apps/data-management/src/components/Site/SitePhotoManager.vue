@@ -1,5 +1,5 @@
 <template>
-  <h6 class="hs-text-md mb-4">Add Photos</h6>
+  <h6 class="hs-text-md mb-4">Add photos</h6>
 
   <v-btn-toggle
     v-if="fileUploadEnabled"
