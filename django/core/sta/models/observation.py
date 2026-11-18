@@ -67,6 +67,7 @@ class Observation(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     datastream = models.ForeignKey(Datastream, on_delete=models.DO_NOTHING)
     phenomenon_time = models.DateTimeField()
+    z = models.DecimalField(max_digits=14, decimal_places=6, null=True, blank=True)
     result = models.FloatField()
     result_time = models.DateTimeField(null=True, blank=True)
     quality_code = models.CharField(max_length=255, null=True, blank=True)
@@ -77,7 +78,8 @@ class Observation(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["datastream_id", "phenomenon_time"],
-                name="unique_datastream_id_phenomenon_time",
+                fields=["datastream_id", "phenomenon_time", "z"],
+                nulls_distinct=False,
+                name="unique_datastream_id_phenomenon_time_z",
             )
         ]

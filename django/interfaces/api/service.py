@@ -314,7 +314,7 @@ class APIService:
         requested data is retrieved and transformed through the provided registry definitions.
         """
 
-        included = {}
+        buckets: dict[str, tuple[Any, dict]] = {}
 
         for name in requested:
             config = registry[name]
@@ -327,12 +327,12 @@ class APIService:
                 related_by_pk = APIService.resolve_relation_include(objects, config)
 
             if related_by_pk:
-                included[config["bucket"]] = [
-                    config["response_schema"].model_validate(related)
-                    for related in related_by_pk.values()
-                ]
+                buckets.setdefault(config["bucket"], (config["response_schema"], {}))[1].update(related_by_pk)
 
-        return included
+        return {
+            bucket: [response_schema.model_validate(related) for related in related_by_pk.values()]
+            for bucket, (response_schema, related_by_pk) in buckets.items()
+        }
 
     @staticmethod
     def walk_attribute_path(obj: object, path: str) -> Any:

@@ -15,6 +15,7 @@ from .unit_type import UnitType
 from .sampled_medium import SampledMedium
 from .aggregation_statistic import AggregationStatistic
 from .datastream_status import DatastreamStatus
+from .z_reference import ZReference
 from .datastream import (
     Datastream,
     DatastreamLinkedResource,

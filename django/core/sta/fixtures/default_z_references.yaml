@@ -1,0 +1,15 @@
+- model: sta.zreference
+  pk: 01a1ebab-e8fc-7776-bda5-3fee5b7682a3
+  fields:
+    name: Depth below surface
+    description: Vertical distance below the water surface. Positive z is down.
+- model: sta.zreference
+  pk: 01a1ebab-e8fc-7776-bda5-3ff08f5a279c
+  fields:
+    name: Height above bottom
+    description: Vertical distance above the bottom of the water body. Positive z is up.
+- model: sta.zreference
+  pk: 01a1ebab-e8fc-7776-bda5-3ff3504ff6dd
+  fields:
+    name: Elevation above NAVD88
+    description: Elevation relative to the North American Vertical Datum of 1988. Positive z is up.

@@ -28,17 +28,18 @@ from interfaces.api.schemas import (
 from interfaces.api.schemas.sta.linked_resource import LinkedResourceGetResponse
 from interfaces.api.schemas.sta.tags import reject_empty_tag_keys_and_values
 from interfaces.api.schemas.sta.vocabulary import VocabularyResponse
-from core.sta.models import SampledMedium, AggregationStatistic, DatastreamStatus
+from core.sta.models import SampledMedium, AggregationStatistic, DatastreamStatus, ZReference
 from interfaces.api.schemas.base import ItemId, NewItemId
 
 
-DatastreamType = Literal["timeSeriesCoverage"]
+DatastreamType = Literal["timeSeriesCoverage", "profileCoverage"]
 
 
 class DatastreamFields(Schema):
     name: str = Field(..., max_length=255)
     description: str
     type: DatastreamType = "timeSeriesCoverage"
+    z_reference: Optional[str] = Field(None, max_length=255)
     sampled_medium: str = Field(..., max_length=255)
     no_data_value: float
     aggregation_statistic: str = Field(..., max_length=255)
@@ -61,6 +62,8 @@ class DatastreamStatisticsFields(Schema):
     phenomenon_end_time: Optional[ISODatetime] = None
     result_begin_time: Optional[ISODatetime] = None
     result_end_time: Optional[ISODatetime] = None
+    z_min: Optional[float] = None
+    z_max: Optional[float] = None
 
 
 class DatastreamRelatedFields(Schema):
@@ -69,6 +72,7 @@ class DatastreamRelatedFields(Schema):
     observed_property_id: uuid.UUID
     processing_level_id: uuid.UUID
     unit_id: uuid.UUID
+    z_unit_id: Optional[uuid.UUID] = None
 
 
 DATASTREAM_INCLUDE_RELATIONS = {
@@ -102,6 +106,17 @@ DATASTREAM_INCLUDE_RELATIONS = {
         "bucket": "units",
         "response_schema": UnitResponse,
     },
+    "zUnit": {
+        "path": "z_unit",
+        "bucket": "units",
+        "response_schema": UnitResponse,
+    },
+    "zReference": {
+        "bucket": "zReferences",
+        "response_schema": VocabularyResponse,
+        "vocabulary_model": ZReference,
+        "value_field": "z_reference",
+    },
     "sampledMedium": {
         "bucket": "sampledMediums",
         "response_schema": VocabularyResponse,
@@ -126,6 +141,7 @@ DatastreamIncludeRelation = Literal[*DATASTREAM_INCLUDE_RELATIONS.keys()]
 _sortby_fields = (
     "name",
     "type",
+    "zReference",
     "sampledMedium",
     "status",
     "isPrivate",
@@ -206,6 +222,12 @@ class DatastreamQueryParameters(DatastreamFilterFields, CollectionQueryParameter
         [], description="Datastreams at this processing level. Matches `id` in `processing-levels`."
     )
     unit_id: list[uuid.UUID] = Query([], description="Datastreams in this unit. Matches `id` in `units`.")
+    z_unit_id: list[uuid.UUID] = Query(
+        [], description="Profile coverage datastreams with z in this unit. Matches `id` in `units`."
+    )
+    z_reference: list[str] = Query(
+        [], description="Profile coverage datastreams measuring z from this datum. Matches `name` in `z-references`."
+    )
     observations__result_qualifier_id: list[uuid.UUID] = Query(
         [],
         description="Not supported yet. Any value returns no datastreams.",
@@ -274,6 +296,10 @@ class VisualizationDatastreamResponse(BaseGetResponse, ItemId):
     unit_id: uuid.UUID
     unit_name: str = Field(..., max_length=255)
     unit_symbol: str = Field(..., max_length=255)
+    type: DatastreamType
+    z_reference: Optional[str] = Field(None, max_length=255)
+    z_unit_id: Optional[uuid.UUID] = None
+    z_unit_symbol: Optional[str] = Field(None, max_length=255)
     no_data_value: float
     aggregation_statistic: str = Field(..., max_length=255)
     time_aggregation_interval: float

@@ -17,8 +17,12 @@ from .processing_level import ProcessingLevel
 from .observed_property import ObservedProperty
 
 
+TIME_SERIES_COVERAGE = "timeSeriesCoverage"
+PROFILE_COVERAGE = "profileCoverage"
+
 DATASTREAM_TYPE_CHOICES = (
-    ("timeSeriesCoverage", "Time Series Coverage"),
+    (TIME_SERIES_COVERAGE, "Time Series Coverage"),
+    (PROFILE_COVERAGE, "Profile Coverage"),
 )
 
 
@@ -55,7 +59,11 @@ class Datastream(models.Model):
         Unit, on_delete=models.PROTECT, related_name="datastreams"
     )
     type = models.CharField(
-        max_length=255, choices=DATASTREAM_TYPE_CHOICES, default="timeSeriesCoverage"
+        max_length=255, choices=DATASTREAM_TYPE_CHOICES, default=TIME_SERIES_COVERAGE
+    )
+    z_reference = models.CharField(max_length=255, null=True, blank=True)
+    z_unit = models.ForeignKey(
+        Unit, on_delete=models.PROTECT, null=True, blank=True, related_name="z_datastreams"
     )
     status = models.CharField(max_length=255, null=True, blank=True)
     observed_area = models.CharField(max_length=255, null=True, blank=True)  # Unused
@@ -69,6 +77,8 @@ class Datastream(models.Model):
     time_aggregation_interval_unit = models.CharField(max_length=255)
     phenomenon_begin_time = models.DateTimeField(null=True, blank=True)
     phenomenon_end_time = models.DateTimeField(null=True, blank=True)
+    z_min = models.DecimalField(max_digits=14, decimal_places=6, null=True, blank=True)
+    z_max = models.DecimalField(max_digits=14, decimal_places=6, null=True, blank=True)
     result_end_time = models.DateTimeField(null=True, blank=True)  # Unused
     result_begin_time = models.DateTimeField(null=True, blank=True)  # Unused
     is_private = models.BooleanField(default=True)
@@ -87,32 +97,63 @@ class Datastream(models.Model):
             ),
             GinIndex(fields=["search_vector"], name="sta_datastream_search_gin"),
         ]
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(
+                        type=TIME_SERIES_COVERAGE,
+                        z_unit__isnull=True,
+                        z_reference__isnull=True,
+                    )
+                    | models.Q(
+                        type=PROFILE_COVERAGE,
+                        z_unit__isnull=False,
+                        z_reference__isnull=False,
+                    )
+                ),
+                name="datastream_type_z_fields",
+            )
+        ]
 
     def __str__(self):
         return f"{self.name} — {self.id}"
 
     def clean(self):
+        if self.type == PROFILE_COVERAGE:
+            if not self.z_unit_id or not self.z_reference:
+                raise ValidationError(
+                    "Profile coverage datastreams require a z unit and a z reference"
+                )
+        elif self.z_unit_id or self.z_reference:
+            raise ValidationError(
+                "Only profile coverage datastreams can have a z unit or a z reference"
+            )
+
+        original = None if self._state.adding else Datastream.objects.filter(pk=self.pk).first()
+
+        if original and original.type != self.type:
+            raise ValidationError("Datastream type cannot be changed")
+
         try:
             workspace_id = self.monitoring_site.workspace_id
         except ObjectDoesNotExist:
             return
 
-        if not self._state.adding:
-            original = Datastream.objects.filter(pk=self.pk).first()
-            if (
-                original
-                and original.monitoring_site_id != self.monitoring_site_id
-                and original.monitoring_site.workspace_id != workspace_id
-            ):
-                raise ValidationError(
-                    "Cannot associate this datastream with a monitoring site in another workspace"
-                )
+        if (
+            original
+            and original.monitoring_site_id != self.monitoring_site_id
+            and original.monitoring_site.workspace_id != workspace_id
+        ):
+            raise ValidationError(
+                "Cannot associate this datastream with a monitoring site in another workspace"
+            )
 
         for field_name, label in (
             ("observed_property", "observed property"),
             ("processing_level", "processing level"),
             ("method", "method"),
             ("unit", "unit"),
+            ("z_unit", "z unit"),
         ):
             if not getattr(self, f"{field_name}_id"):
                 continue

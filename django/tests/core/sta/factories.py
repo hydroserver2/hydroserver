@@ -22,6 +22,7 @@ from core.sta.models import (
     SampledMedium,
     Unit,
     UnitType,
+    ZReference,
 )
 from tests.core.iam.factories import WorkspaceFactory
 
@@ -157,6 +158,18 @@ class DatastreamStatusFactory(DjangoModelFactory):
     description = factory.Faker("sentence")
 
 
+class ZReferenceFactory(DjangoModelFactory):
+    class Meta:
+        model = ZReference
+
+    if TYPE_CHECKING:
+
+        def __new__(cls, *args, **kwargs) -> ZReference: ...
+
+    name = factory.Sequence(lambda seq: f"Z Reference {seq}")
+    description = factory.Faker("sentence")
+
+
 class MethodTypeFactory(DjangoModelFactory):
     class Meta:
         model = MethodType
@@ -269,6 +282,13 @@ class DatastreamFactory(DjangoModelFactory):
     class Params:
         private = factory.Trait(is_private=True)
         restricted = factory.Trait(is_restricted=True)
+        profile = factory.Trait(
+            type="profileCoverage",
+            z_reference="Depth below water surface",
+            z_unit=factory.SubFactory(
+                UnitFactory, workspace=factory.SelfAttribute("..monitoring_site.workspace")
+            ),
+        )
 
 
 class ObservationFactory(DjangoModelFactory):
