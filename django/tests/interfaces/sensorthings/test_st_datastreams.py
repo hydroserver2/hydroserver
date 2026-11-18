@@ -1,5 +1,6 @@
 import json
 from datetime import timedelta
+from decimal import Decimal
 
 import pytest
 from django.utils import timezone
@@ -60,6 +61,20 @@ def test_get_datastream_returns_empty_tags_when_untagged(client):
 
     assert response.status_code == 200
     assert response.json()["properties"]["tags"] == {}
+
+
+def test_get_datastream_includes_z_fields_in_properties(client):
+    datastream = DatastreamFactory(profile=True, z_min=Decimal("0.5"), z_max=Decimal("12.25"))
+
+    properties = client.get(_detail_url(datastream.id)).json()["properties"]
+
+    assert properties["zReference"] == datastream.z_reference
+    assert properties["zUnit"] == {
+        "id": str(datastream.z_unit.id),
+        "name": datastream.z_unit.name,
+        "symbol": datastream.z_unit.symbol,
+    }
+    assert (properties["zMin"], properties["zMax"]) == (0.5, 12.25)
 
 
 @pytest.mark.parametrize(

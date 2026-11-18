@@ -1,13 +1,45 @@
 import io
+import math
 import uuid
 import operator
 import orjson
 
+from decimal import Decimal, ROUND_HALF_EVEN
+from django.core.exceptions import ValidationError
 from django.db import models, connection
 
 from core.iam.permissions.registry import register_resource_type
 
-from .datastream import Datastream
+from .datastream import Datastream, PROFILE_COVERAGE
+
+Z_QUANTUM = Decimal("0.000001")
+Z_LIMIT = Decimal(10) ** 8
+
+
+def normalize_z_values(datastream: Datastream, values) -> list[Decimal | None]:
+    """
+    Validates the z values of new observations on a datastream and rounds them to the 6 decimal places the z column
+    stores, so every write path stores the same input as the same value. Time series observations have no z, and
+    profile observations each need a finite z.
+    """
+
+    if datastream.type != PROFILE_COVERAGE:
+        if any(value is not None for value in values):
+            raise ValidationError("z is only allowed on profile coverage datastreams")
+        return [None] * len(values)
+
+    normalized = []
+    for value in values:
+        if isinstance(value, bool) or not isinstance(value, (int, float, Decimal)) or not math.isfinite(value):
+            raise ValidationError("Observations on profile coverage datastreams need a numeric z")
+        z = Decimal(str(value))
+        if abs(z) < Z_LIMIT:
+            z = z.quantize(Z_QUANTUM, rounding=ROUND_HALF_EVEN)
+        if abs(z) >= Z_LIMIT:
+            raise ValidationError("z must be less than 100000000")
+        normalized.append(z)
+
+    return normalized
 
 
 class ObservationQuerySet(models.QuerySet):

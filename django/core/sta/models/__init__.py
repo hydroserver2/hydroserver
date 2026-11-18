@@ -20,4 +20,4 @@ from .datastream import (
     Datastream,
     DatastreamLinkedResource,
 )
-from .observation import Observation
+from .observation import Observation, normalize_z_values

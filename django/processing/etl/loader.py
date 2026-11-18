@@ -8,6 +8,7 @@ from pydantic import ConfigDict
 
 from core.sta.models import Datastream
 from interfaces.api.services.sta import DatastreamAPIService, ObservationAPIService
+from interfaces.api.services.sta.datastream import OBSERVATION_STATISTICS_FIELDS
 from interfaces.api.schemas import ObservationBulkDeleteBody, ObservationBulkPostBody
 
 from hydroserverpy.etl.loaders import Loader, ETLLoaderResult, ETLTargetResult
@@ -166,7 +167,7 @@ class HydroServerInternalLoader(Loader):
             finally:
                 datastream_service.update_observation_statistics(
                     datastream=datastream,
-                    fields=["phenomenon_begin_time", "phenomenon_end_time", "value_count"],
+                    fields=OBSERVATION_STATISTICS_FIELDS,
                 )
 
             if not etl_results.target_results[target_id].values_loaded > 0:
