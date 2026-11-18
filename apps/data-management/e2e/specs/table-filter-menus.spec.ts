@@ -407,3 +407,55 @@ for (const context of [
     await expect(menu).toBeVisible()
   })
 }
+
+test('visualization clears filter qualifiers from the toolbar and mobile overflow menu', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1920, height: 900 })
+  await authenticateSession(page, users.owner.email, users.owner.password)
+  const query = [
+    `workspace:"${fixtures.workspaces.public.name}"`,
+    `site:"${fixtures.monitoringSites.public.name}"`,
+    `observed-property:"${fixtures.metadata.publicAssignedObservedProperty.name}"`,
+    `unit:"${fixtures.metadata.publicAssignedUnit.name}"`,
+    `method:"${fixtures.metadata.publicAssignedMethod.name}"`,
+    `processing-level:"${fixtures.metadata.publicAssignedProcessingLevel.name}"`,
+    'sort:observations-desc',
+    'Public',
+  ].join(' ')
+  await page.goto(
+    `/visualize-data?plot=false&datastreams=${fixtures.datastreams.public.id}&q=${encodeURIComponent(query)}`
+  )
+  const search = page.getByRole('combobox', { name: 'Search', exact: true })
+  const toolbar = page.locator('.datavis-header-filters')
+  const clear = page.getByTestId('clear-datastream-filters')
+  await expect(toolbar.locator('.datavis-filter-button--active')).toHaveCount(6)
+  await expect(clear).toBeVisible()
+  const processing = await page
+    .getByRole('button', { name: /^Filter by processing levels/ })
+    .boundingBox()
+  const clearBox = await clear.boundingBox()
+  expect(clearBox!.x).toBeGreaterThanOrEqual(processing!.x + processing!.width)
+  await expect(clear).toHaveClass(/text-primary/)
+  await clear.click()
+  await expect(search).toHaveValue('sort:observations-desc Public')
+  await expect(toolbar.locator('.datavis-filter-button--active')).toHaveCount(0)
+  await expect(
+    page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`)
+  ).toBeChecked()
+
+  await search.fill(query)
+  await expect(toolbar.locator('.datavis-filter-button--active')).toHaveCount(6)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await expect(clear).toBeHidden()
+  await page.getByRole('button', { name: 'More filters', exact: true }).click()
+  const overflowClear = page.getByTestId('clear-datastream-filters-overflow')
+  await expect(overflowClear).toBeVisible()
+  await expect(overflowClear).toHaveClass(/text-primary/)
+  await overflowClear.click()
+  await expect(search).toHaveValue('sort:observations-desc Public')
+  await expect(toolbar.locator('.datavis-filter-button--active')).toHaveCount(0)
+  await expect(
+    page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`)
+  ).toBeChecked()
+})

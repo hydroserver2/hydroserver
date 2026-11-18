@@ -40,6 +40,21 @@
       </template>
     </HsTableFilterMenu>
 
+    <div
+      class="hs-table-actions datavis-filter-action"
+      :class="{ 'datavis-filter--hidden': !showClearFilters }"
+    >
+      <v-btn
+        variant="text"
+        size="small"
+        color="primary"
+        data-testid="clear-datastream-filters"
+        @click="clearFilters"
+      >
+        Clear filters
+      </v-btn>
+    </div>
+
     <v-menu location="bottom end" attach="body">
       <template #activator="{ props: menuProps }">
         <v-btn-icon
@@ -47,7 +62,7 @@
           :icon="mdiDotsVertical"
           size="small"
           class="datavis-filter-overflow"
-          :class="{ 'datavis-filter--hidden': !overflowFilters.length }"
+          :class="{ 'datavis-filter--hidden': !hasOverflow }"
           aria-label="More filters"
         />
       </template>
@@ -62,6 +77,13 @@
             <span class="filter-count">{{ filter.selectedCount }}</span>
           </template>
         </v-list-item>
+        <v-list-item
+          v-if="!showClearFilters"
+          title="Clear filters"
+          class="text-primary"
+          data-testid="clear-datastream-filters-overflow"
+          @click="clearFilters"
+        />
       </v-list>
     </v-menu>
   </div>
@@ -179,10 +201,14 @@ const filterDefinitions = computed<FilterDefinition[]>(() => [
 
 const openFilters = reactive<Partial<Record<FilterKey, boolean>>>({})
 const container = useTemplateRef('container')
-const visibleCount = ref(filterDefinitions.value.length)
+const visibleCount = ref(filterDefinitions.value.length + 1)
 const overflowFilters = computed(() =>
   filterDefinitions.value.slice(visibleCount.value)
 )
+const showClearFilters = computed(
+  () => visibleCount.value > filterDefinitions.value.length
+)
+const hasOverflow = computed(() => !showClearFilters.value)
 
 // Show as many filters as fit, in order; the rest go in the overflow menu.
 // Hidden buttons stay rendered (but invisible) so they can still be measured.
@@ -191,7 +217,9 @@ function fitFilters() {
   if (!element?.clientWidth) return
   const gap = parseFloat(getComputedStyle(element).columnGap) || 0
   const widths = [
-    ...element.querySelectorAll<HTMLElement>('.datavis-filter-button'),
+    ...element.querySelectorAll<HTMLElement>(
+      '.datavis-filter-button, .datavis-filter-action'
+    ),
   ].map((button) => button.offsetWidth + gap)
   const fitsAll =
     widths.reduce((sum, width) => sum + width, 0) - gap <= element.clientWidth
@@ -216,10 +244,30 @@ onMounted(() => {
   if (!container.value) return
   observer.observe(container.value)
   container.value
-    .querySelectorAll('.datavis-filter-button')
+    .querySelectorAll('.datavis-filter-button, .datavis-filter-action')
     .forEach((button) => observer!.observe(button))
 })
 onBeforeUnmount(() => observer?.disconnect())
+
+function clearFilters() {
+  const query = parseDatastreamQuery(
+    tableSearch.value,
+    filterDefinitions.value.map((filter) => ({
+      key: filter.key,
+      values: filter.options.map((option) => option.value),
+    }))
+  )
+  // Clear filter qualifiers while keeping the search text, sort and plot.
+  tableSearch.value = serializeDatastreamQuery(
+    parseDatastreamQuery('').filters,
+    query.text,
+    query.sort
+  )
+  for (const key of Object.keys(filterSearches) as FilterKey[]) {
+    filterSearches[key] = ''
+    openFilters[key] = false
+  }
+}
 
 const toggleFilter = (key: FilterKey, value: string) => {
   const filters = Object.fromEntries(
@@ -252,7 +300,8 @@ const toggleFilter = (key: FilterKey, value: string) => {
   min-width: 0;
 }
 
-.datavis-filter-button {
+.datavis-filter-button,
+.datavis-filter-action {
   flex: 0 0 auto;
 }
 
