@@ -285,8 +285,6 @@
                   :monitoring-site-id="monitoringSiteId"
                   :workspace-id="monitoringSite.workspaceId"
                   :can-edit="canEditMonitoringSite"
-                  inline-read-only
-                  download-only
                   @rating-curves-changed="ratingCurveCount = $event.length"
                 />
               </div>

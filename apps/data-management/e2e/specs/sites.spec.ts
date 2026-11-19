@@ -603,9 +603,11 @@ test.describe('sites and workspaces', () => {
     await page.getByRole('button', { name: 'Close' }).click()
     await expect(page.getByTestId('site-privacy-chip')).toHaveText('Public')
 
-    // Photos are managed from their own tab, not the Edit site form.
+    // Photos are managed inline in their own tab (no dialog). The tab is
+    // display-only until Manage photos is clicked.
     await page.getByTestId('site-tab-photos').click()
     await expect(page).toHaveURL(/[?&]tab=photos/)
+    await expect(page.getByTestId('site-photos-manage')).toHaveCount(0)
     await page.getByTestId('manage-site-photos-button').click()
     await page.getByTestId('site-photo-input').setInputFiles({
       name: 'site-photo.png',
@@ -613,17 +615,20 @@ test.describe('sites and workspaces', () => {
       buffer: sitePhotoPng,
     })
     await expect(page.getByTestId('site-photo-preview-0')).toBeVisible()
-    await page.getByRole('dialog').getByRole('button', { name: 'Save' }).click()
+    await page.getByTestId('save-site-photos-button').click()
 
-    await expect(page.getByText('1 photo', { exact: true })).toBeVisible()
+    await expect(page.getByTestId('site-tab-photos')).toContainText('1')
+    await expect(page.getByTestId('site-photo-0')).toBeVisible()
+    await expect(page.getByTestId('site-photos-manage')).toHaveCount(0)
     await expect(page.getByTestId('site-photo-carousel-view-all')).toBeVisible()
 
     await page.getByTestId('manage-site-photos-button').click()
     await page.getByTestId('delete-existing-photo-0').click()
-    await page.getByRole('dialog').getByRole('button', { name: 'Save' }).click()
+    await page.getByTestId('save-site-photos-button').click()
 
     await expect(page.getByText('No photos added yet.')).toBeVisible()
     await expect(page.getByTestId('site-photo-carousel-view-all')).toHaveCount(0)
+    await expect(page.getByRole('dialog')).toHaveCount(0)
 
     await page.getByTestId('site-tab-datastreams').click()
     await page.getByTestId('add-datastream-button').click()
@@ -940,5 +945,57 @@ test.describe('sites and workspaces', () => {
     await expect(
       page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`)
     ).toBeChecked()
+  })
+
+  test('owner can add, edit, and delete a rating curve inline on the site page', async ({
+    page,
+  }) => {
+    const name = `E2E rating curve ${Date.now()}`
+    const renamed = `${name} renamed`
+    const ratingCurvesTab = page.getByTestId('site-tab-rating-curves')
+
+    await authenticateSession(page, users.owner.email, users.owner.password)
+    await page.goto(
+      `/sites/${fixtures.monitoringSites.mutablePublic.id}?tab=rating-curves`
+    )
+    await expect(ratingCurvesTab).toContainText('0')
+
+    await page.getByTestId('add-rating-curve-button').click()
+    const createForm = page.getByTestId('rating-curve-create-form')
+    await createForm.getByTestId('rating-curve-create-file').setInputFiles({
+      name: 'stage-discharge.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.from('stage,discharge\n0.5,1.2\n1.0,3.4\n1.5,7.8\n'),
+    })
+    await createForm.getByLabel('Rating curve name *').fill(name)
+    await createForm.getByTestId('rating-curve-create-save').click()
+
+    const entry = page.locator('[data-testid^="rating-curve-"]').filter({
+      hasText: name,
+    })
+    await expect(entry).toBeVisible()
+    await expect(createForm).toHaveCount(0)
+    await expect(ratingCurvesTab).toContainText('1')
+
+    // The edit form replaces the row's text, so pin the row by its test id.
+    const entryTestId = await entry.getAttribute('data-testid')
+    const pinnedEntry = page.getByTestId(entryTestId!)
+    await pinnedEntry.locator('[data-testid^="edit-rating-curve-"]').click()
+    await pinnedEntry.getByLabel('Rating curve name *').fill(renamed)
+    await pinnedEntry.getByRole('button', { name: 'Save' }).click()
+    const renamedEntry = page
+      .locator('[data-testid^="rating-curve-"]')
+      .filter({ hasText: renamed })
+    await expect(renamedEntry).toBeVisible()
+
+    await renamedEntry.locator('[data-testid^="delete-rating-curve-"]').click()
+    await renamedEntry.getByTestId('confirm-delete-rating-curve').click()
+    await expect(
+      page.getByText('No rating curves have been added to this site yet.')
+    ).toBeVisible()
+    await expect(ratingCurvesTab).toContainText('0')
+
+    // Everything above happened inline; no dialog was ever opened.
+    await expect(page.getByRole('dialog')).toHaveCount(0)
   })
 })

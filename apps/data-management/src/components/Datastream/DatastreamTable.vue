@@ -50,7 +50,6 @@
                 workspace
               )
             "
-            size="small"
             data-testid="add-datastream-button"
             @click="openCreate = true"
           >

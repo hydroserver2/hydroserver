@@ -1,5 +1,9 @@
 <template>
-  <h6 class="hs-text-md mb-4">Add photos</h6>
+  <!-- The optional "actions" slot lets a parent put buttons on the heading line. -->
+  <div class="d-flex align-center justify-space-between flex-wrap ga-2 mb-4">
+    <h6 class="hs-text-md mb-0">Add photos</h6>
+    <slot name="actions" />
+  </div>
 
   <v-btn-toggle
     v-if="fileUploadEnabled"

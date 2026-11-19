@@ -1,298 +1,62 @@
 <template>
-  <div v-if="showHeader" class="rating-curve-manager">
-    <div class="d-flex align-center mb-2">
-      <h6 class="hs-text-md mb-0">Rating curves</h6>
-      <v-chip class="ml-2" size="small" variant="tonal">
-        {{ attachmentCountLabel }}
-      </v-chip>
-      <v-spacer />
-      <v-btn
-        v-if="showManageButton"
-        color="teal-darken-1"
-        class="text-none"
-        :loading="loading"
-        @click="openManageDialog"
-      >
-        Manage rating curves
-      </v-btn>
-    </div>
-  </div>
-
-  <div v-if="inlineReadOnly" class="rating-curve-surface">
-    <v-progress-linear v-if="loading" indeterminate color="primary" />
-    <div class="rating-curve-body">
-      <div
-        v-if="!loading && displayAttachments.length === 0"
-        class="text-medium-emphasis"
-      >
-        <small>No rating curves have been added to this site yet.</small>
-      </div>
-
-      <div v-else class="rating-curve-list">
-        <div
-          v-for="attachment in displayAttachments"
-          :key="attachment.id"
-          class="rating-curve-item"
+  <div class="rating-curves">
+    <!-- The tab already shows the count, so the toolbar only holds the action. -->
+    <div
+      v-if="canEditMonitoringSite && !openCreate"
+      class="rating-curves__toolbar"
+    >
+      <div class="hs-table-actions">
+        <v-btn-page-action
+          data-testid="add-rating-curve-button"
+          @click="openCreateDialog"
         >
-          <div class="rating-curve-item-preview">
-            <div
-              v-if="isPreviewLoading(attachment.id)"
-              class="hs-text-2xs text-medium-emphasis"
-            >
-              Loading...
-            </div>
-            <div
-              v-else-if="getPreviewPath(attachment.id)"
-              class="rating-curve-preview-box"
-            >
-              <svg
-                class="rating-curve-preview-svg"
-                :viewBox="`0 0 ${PREVIEW_SVG_WIDTH} ${PREVIEW_SVG_HEIGHT}`"
-                preserveAspectRatio="none"
-              >
-                <path
-                  class="rating-curve-line"
-                  :d="getPreviewPath(attachment.id)"
-                  fill="none"
-                  vector-effect="non-scaling-stroke"
-                  stroke-linejoin="round"
-                  stroke-linecap="round"
-                />
-              </svg>
-            </div>
-            <div
-              v-else-if="getPreviewError(attachment.id)"
-              class="hs-text-2xs text-error"
-            >
-              Preview unavailable
-            </div>
-            <div v-else class="hs-text-2xs text-medium-emphasis">
-              No points
-            </div>
-          </div>
-
-          <div class="rating-curve-item-main">
-            <div class="hs-text-sm">{{ attachment.name }}</div>
-            <div
-              v-if="attachment.description"
-              class="hs-text-2xs text-medium-emphasis"
-            >
-              {{ attachment.description }}
-            </div>
-          </div>
-
-          <div v-if="downloadOnly" class="rating-curve-item-actions">
-            <v-tooltip location="top">
-              <template #activator="{ props: tooltipProps }">
-                <span v-bind="tooltipProps" class="inline-flex">
-                  <v-btn
-                    :icon="mdiDownload"
-                    variant="text"
-                    :loading="isDownloading(attachment.id)"
-                    :disabled="isDownloading(attachment.id)"
-                    @click="downloadAttachment(attachment)"
-                  />
-                </span>
-              </template>
-              <span>{{ downloadTooltipText }}</span>
-            </v-tooltip>
-          </div>
-        </div>
+          Add rating curve
+        </v-btn-page-action>
       </div>
     </div>
-  </div>
 
-  <v-dialog v-model="openManage" width="56rem">
-    <v-card>
-      <v-card-title class="hs-text-md bg-teal-darken-1 text-white">
-        Manage rating curves
-      </v-card-title>
-      <v-divider />
-      <v-card-text class="pt-4">
-        <div class="d-flex align-center mb-3">
-          <v-chip size="small" variant="tonal">
-            {{ attachmentCountLabel }}
-          </v-chip>
-          <v-spacer />
-          <v-tooltip
-            v-if="canEditMonitoringSite"
-            location="top"
-            :disabled="canEditMonitoringSite"
-          >
-            <template #activator="{ props: tooltipProps }">
-              <span v-bind="tooltipProps" class="inline-flex">
-                <v-btn
-                  variant="outlined"
-                  color="teal-darken-1"
-                  class="text-none"
-                  :disabled="!canEditMonitoringSite"
-                  @click="openCreateDialog"
-                >
-                  Add rating curve
-                </v-btn>
-              </span>
-            </template>
-            <span>{{ readOnlyTooltip }}</span>
-          </v-tooltip>
-        </div>
+    <!-- Outside the list: a ref inside v-for would become an array. -->
+    <input
+      ref="editFileInput"
+      type="file"
+      accept=".csv,text/csv"
+      class="d-none"
+      data-testid="rating-curve-edit-file"
+      @change="onEditFileSelected"
+    />
 
-        <div class="rating-curve-surface">
-          <v-progress-linear v-if="loading" indeterminate color="primary" />
-          <div class="rating-curve-body">
-            <div
-              v-if="!loading && displayAttachments.length === 0"
-              class="text-medium-emphasis"
-            >
-              <small>No rating curves have been added to this site yet.</small>
-            </div>
-
-            <div v-else class="rating-curve-list">
-              <div
-                v-for="attachment in displayAttachments"
-                :key="attachment.id"
-                class="rating-curve-item"
-              >
-                <div class="rating-curve-item-preview">
-                  <div
-                    v-if="isPreviewLoading(attachment.id)"
-                    class="hs-text-2xs text-medium-emphasis"
-                  >
-                    Loading...
-                  </div>
-                  <div
-                    v-else-if="getPreviewPath(attachment.id)"
-                    class="rating-curve-preview-box"
-                  >
-                    <svg
-                      class="rating-curve-preview-svg"
-                      :viewBox="`0 0 ${PREVIEW_SVG_WIDTH} ${PREVIEW_SVG_HEIGHT}`"
-                      preserveAspectRatio="none"
-                    >
-                      <path
-                        class="rating-curve-line"
-                        :d="getPreviewPath(attachment.id)"
-                        fill="none"
-                        vector-effect="non-scaling-stroke"
-                        stroke-linejoin="round"
-                        stroke-linecap="round"
-                      />
-                    </svg>
-                  </div>
-                  <div
-                    v-else-if="getPreviewError(attachment.id)"
-                    class="hs-text-2xs text-error"
-                  >
-                    Preview unavailable
-                  </div>
-                  <div v-else class="hs-text-2xs text-medium-emphasis">
-                    No points
-                  </div>
-                </div>
-
-                <div class="rating-curve-item-main">
-                  <div class="hs-text-sm">{{ attachment.name }}</div>
-                  <div
-                    v-if="attachment.description"
-                    class="hs-text-2xs text-medium-emphasis"
-                  >
-                    {{ attachment.description }}
-                  </div>
-                </div>
-
-                <div v-if="canEditMonitoringSite" class="rating-curve-item-actions">
-                  <v-tooltip location="top" :disabled="canEditMonitoringSite">
-                    <template #activator="{ props: tooltipProps }">
-                      <span v-bind="tooltipProps" class="inline-flex">
-                        <v-btn
-                          :icon="mdiPencil"
-                          variant="text"
-                          :disabled="!canEditMonitoringSite"
-                          @click="openEditDialog(attachment)"
-                        />
-                      </span>
-                    </template>
-                    <span>{{ readOnlyTooltip }}</span>
-                  </v-tooltip>
-
-                  <v-tooltip location="top" :disabled="canEditMonitoringSite">
-                    <template #activator="{ props: tooltipProps }">
-                      <span v-bind="tooltipProps" class="inline-flex">
-                        <v-btn
-                          :icon="mdiTrashCanOutline"
-                          variant="text"
-                          color="delete"
-                          :loading="isValidatingDelete(attachment.id)"
-                          :disabled="
-                            !canEditMonitoringSite || isValidatingDelete(attachment.id)
-                          "
-                          @click="handleDeleteClick(attachment)"
-                        />
-                      </span>
-                    </template>
-                    <span>{{ readOnlyTooltip }}</span>
-                  </v-tooltip>
-                </div>
-
-                <div v-else-if="downloadOnly" class="rating-curve-item-actions">
-                  <v-tooltip location="top">
-                    <template #activator="{ props: tooltipProps }">
-                      <span v-bind="tooltipProps" class="inline-flex">
-                        <v-btn
-                          :icon="mdiDownload"
-                          variant="text"
-                          :loading="isDownloading(attachment.id)"
-                          :disabled="isDownloading(attachment.id)"
-                          @click="downloadAttachment(attachment)"
-                        />
-                      </span>
-                    </template>
-                    <span>{{ downloadTooltipText }}</span>
-                  </v-tooltip>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </v-card-text>
-      <v-divider />
-      <v-card-actions>
-        <v-spacer />
-        <v-btn-cancel @click="openManage = false">Close</v-btn-cancel>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
-
-  <v-dialog v-model="openCreate" width="42rem">
-    <v-card>
-      <v-card-title class="hs-text-md bg-teal-darken-1 text-white">
-        Add rating curve
-      </v-card-title>
-      <v-divider />
-      <v-card-text class="pt-4">
+    <v-expand-transition>
+      <section
+        v-if="openCreate"
+        class="rating-curve-form"
+        aria-labelledby="rating-curve-create-title"
+        data-testid="rating-curve-create-form"
+      >
+        <h3 id="rating-curve-create-title" class="hs-text-md mb-3">
+          Add rating curve
+        </h3>
         <input
           ref="createFileInput"
           type="file"
           accept=".csv,text/csv"
           class="d-none"
+          data-testid="rating-curve-create-file"
           @change="onCreateFileSelected"
         />
-        <v-btn
-          variant="outlined"
-          color="teal-darken-1"
-          block
-          class="mb-2 text-none"
-          @click="openCreateFilePicker"
-        >
-          {{ selectedFile ? 'Change CSV file' : 'Choose CSV file *' }}
-        </v-btn>
-        <div v-if="selectedFile" class="d-flex align-center mb-3">
-          <span class="hs-text-2xs text-medium-emphasis">
-            Selected:
+        <div class="rating-curve-form__file">
+          <v-btn variant="outlined" color="primary" @click="openCreateFilePicker">
+            {{ selectedFile ? 'Change CSV file' : 'Choose CSV file *' }}
+          </v-btn>
+          <span v-if="selectedFile" class="hs-text-2xs text-medium-emphasis">
             <strong>{{ selectedFile.name }}</strong>
             ({{ formatFileSize(selectedFile.size) }})
           </span>
-          <v-spacer />
-          <v-btn variant="text" size="small" @click="clearCreateFile">
+          <v-btn
+            v-if="selectedFile"
+            variant="text"
+            size="small"
+            @click="clearCreateFile"
+          >
             Clear
           </v-btn>
         </div>
@@ -312,240 +76,294 @@
           Validating rating curve CSV...
         </div>
 
-        <v-text-field
-          v-model="attachmentName"
-          label="Rating curve name *"
-          class="mb-3"
-        />
-        <v-textarea
-          v-model="attachmentDescription"
-          label="Description"
-          rows="2"
-          class="mb-3"
-        />
-        <v-select
-          v-model="attachmentFittingMethod"
-          :items="fittingMethodOptions"
-          item-title="title"
-          item-value="value"
-          label="Fitting method *"
-        />
-      </v-card-text>
-      <v-divider />
-      <v-card-actions>
-        <v-spacer />
-        <v-btn-cancel @click="openCreate = false">Cancel</v-btn-cancel>
-        <v-btn-dialog-action
-          :loading="saving"
-          :disabled="!canCreateAttachment"
-          @click="createAttachment"
-        >
-          Save
-        </v-btn-dialog-action>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+        <div class="rating-curve-form__fields">
+          <v-text-field v-model="attachmentName" label="Rating curve name *" />
+          <v-select
+            v-model="attachmentFittingMethod"
+            :items="fittingMethodOptions"
+            item-title="title"
+            item-value="value"
+            label="Fitting method *"
+          />
+          <v-textarea
+            v-model="attachmentDescription"
+            label="Description"
+            rows="2"
+            class="rating-curve-form__wide"
+          />
+        </div>
 
-  <v-dialog v-model="openEdit" width="42rem">
-    <v-card>
-      <v-card-title class="hs-text-md bg-teal-darken-1 text-white">
-        Update rating curve
-      </v-card-title>
-      <v-divider />
-      <v-card-text class="pt-4">
-        <div class="mb-3">
-          <small
-            >Selected rating curve:
-            <strong>{{ editAttachment?.name }}</strong></small
+        <div class="rating-curve-form__actions">
+          <v-btn-cancel @click="openCreate = false">Cancel</v-btn-cancel>
+          <v-btn-dialog-action
+            :loading="saving"
+            :disabled="!canCreateAttachment"
+            data-testid="rating-curve-create-save"
+            @click="createAttachment"
           >
+            Save
+          </v-btn-dialog-action>
         </div>
+      </section>
+    </v-expand-transition>
 
-        <v-text-field
-          v-model="editAttachmentName"
-          label="Rating curve name *"
-          class="mb-3"
-        />
-        <v-textarea
-          v-model="editAttachmentDescription"
-          label="Description"
-          rows="2"
-          class="mb-3"
-        />
-        <v-select
-          v-model="editAttachmentFittingMethod"
-          :items="fittingMethodOptions"
-          item-title="title"
-          item-value="value"
-          label="Fitting method *"
-          class="mb-3"
-        />
+    <v-progress-linear v-if="loading" indeterminate color="primary" />
 
-        <input
-          ref="editFileInput"
-          type="file"
-          accept=".csv,text/csv"
-          class="d-none"
-          @change="onEditFileSelected"
-        />
-        <v-btn
-          variant="outlined"
-          color="teal-darken-1"
-          block
-          class="mb-2 text-none"
-          @click="openEditFilePicker"
-        >
-          {{
-            selectedEditFile ? 'Change CSV file' : 'Choose replacement CSV file'
-          }}
-        </v-btn>
-        <div v-if="selectedEditFile" class="d-flex align-center mb-3">
-          <span class="hs-text-2xs text-medium-emphasis">
-            Selected:
-            <strong>{{ selectedEditFile.name }}</strong>
-            ({{ formatFileSize(selectedEditFile.size) }})
-          </span>
-          <v-spacer />
-          <v-btn variant="text" size="small" @click="clearEditFile"
-            >Clear</v-btn
-          >
-        </div>
+    <p
+      v-if="!loading && displayAttachments.length === 0"
+      class="rating-curves__empty hs-text-sm text-medium-emphasis"
+    >
+      No rating curves have been added to this site yet.
+    </p>
 
-        <v-alert
-          v-if="editFileValidationError"
-          type="error"
-          variant="tonal"
-          density="compact"
-          class="mb-3"
-        >
-          {{ editFileValidationError }}
-        </v-alert>
-        <div
-          v-else-if="editFileValidationPending"
-          class="hs-text-2xs text-medium-emphasis mb-3"
-        >
-          Validating rating curve CSV...
-        </div>
-        <div
-          v-else-if="editPreviewLoading"
-          class="hs-text-2xs text-medium-emphasis mb-3"
-        >
-          Loading current preview...
-        </div>
-        <v-alert
-          v-else-if="editPreviewError"
-          type="warning"
-          variant="tonal"
-          density="compact"
-          class="mb-3"
-        >
-          {{ editPreviewError }}
-        </v-alert>
-
-        <div v-if="editPreviewPath" class="rating-curve-edit-preview">
-          <div class="hs-text-2xs text-medium-emphasis mb-1">Preview</div>
-          <div class="rating-curve-preview-box">
-            <svg
-              class="rating-curve-preview-svg"
-              :viewBox="`0 0 ${PREVIEW_SVG_WIDTH} ${PREVIEW_SVG_HEIGHT}`"
-              preserveAspectRatio="none"
-            >
-              <path
-                class="rating-curve-line"
-                :d="editPreviewPath"
-                fill="none"
-                vector-effect="non-scaling-stroke"
-                stroke-linejoin="round"
-                stroke-linecap="round"
-              />
-            </svg>
-          </div>
-        </div>
-      </v-card-text>
-      <v-divider />
-      <v-card-actions>
-        <v-spacer />
-        <v-btn-cancel @click="openEdit = false">Cancel</v-btn-cancel>
-        <v-btn-dialog-action
-          :loading="saving"
-          :disabled="!canSaveEditAttachment"
-          @click="saveEditAttachment"
-        >
-          Save
-        </v-btn-dialog-action>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
-
-  <v-dialog v-model="openDelete" width="30rem">
-    <v-card>
-      <v-card-title class="hs-text-md text-error"
-        >Delete rating curve</v-card-title
+    <ul v-else class="rating-curve-list">
+      <li
+        v-for="attachment in displayAttachments"
+        :key="attachment.id"
+        class="rating-curve-entry"
+        :data-testid="`rating-curve-${attachment.id}`"
       >
-      <v-divider />
-      <v-card-text class="pt-4">
-        Delete <strong>{{ activeAttachment?.name }}</strong> from this site?
-      </v-card-text>
-      <v-divider />
-      <v-card-actions>
-        <v-spacer />
-        <v-btn-cancel @click="openDelete = false">Cancel</v-btn-cancel>
-        <v-btn-destructive
-          color="error"
-          :loading="saving"
-          @click="deleteAttachment"
+        <!-- Editing swaps the row for its form, in place. -->
+        <section
+          v-if="openEdit && editAttachment?.id === attachment.id"
+          class="rating-curve-form rating-curve-form--edit"
+          :aria-label="`Edit ${attachment.name}`"
         >
-          Delete
-        </v-btn-destructive>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+          <div class="rating-curve-form__fields">
+            <v-text-field
+              v-model="editAttachmentName"
+              label="Rating curve name *"
+            />
+            <v-select
+              v-model="editAttachmentFittingMethod"
+              :items="fittingMethodOptions"
+              item-title="title"
+              item-value="value"
+              label="Fitting method *"
+            />
+            <v-textarea
+              v-model="editAttachmentDescription"
+              label="Description"
+              rows="2"
+              class="rating-curve-form__wide"
+            />
+          </div>
 
-  <v-dialog v-model="openLinkedTasks" width="42rem" max-width="95vw">
-    <v-card>
-      <v-toolbar flat color="red-darken-4">
-        <v-card-title class="hs-text-md">
-          <v-icon :icon="mdiAlert" />
-          Cannot delete rating curve
-        </v-card-title>
-      </v-toolbar>
-      <v-divider />
-      <v-card-text class="pt-4">
-        <div class="mb-3">
-          <small>
-            <strong>{{ blockedAttachment?.name }}</strong> is linked to one or
-            more tasks. Remove this rating curve from those tasks before
-            deleting it.
-          </small>
-        </div>
-        <div class="linked-task-buttons">
-          <v-btn
-            v-for="task in blockedTasks"
-            :key="task.id"
-            :to="taskDetailsRoute(task)"
-            variant="outlined"
-            color="primary"
-            block
-            class="text-none linked-task-btn"
+          <div class="rating-curve-form__file">
+            <v-btn variant="outlined" color="primary" @click="openEditFilePicker">
+              {{
+                selectedEditFile ? 'Change CSV file' : 'Replace points from a CSV file'
+              }}
+            </v-btn>
+            <span
+              v-if="selectedEditFile"
+              class="hs-text-2xs text-medium-emphasis"
+            >
+              <strong>{{ selectedEditFile.name }}</strong>
+              ({{ formatFileSize(selectedEditFile.size) }})
+            </span>
+            <v-btn
+              v-if="selectedEditFile"
+              variant="text"
+              size="small"
+              @click="clearEditFile"
+            >
+              Clear
+            </v-btn>
+          </div>
+
+          <v-alert
+            v-if="editFileValidationError"
+            type="error"
+            variant="tonal"
+            density="compact"
+            class="mb-3"
           >
-            <span class="linked-task-btn-name font-weight-semibold">{{
-              task.name || task.id
-            }}</span>
-            <small class="linked-task-btn-id">{{ task.id }}</small>
-          </v-btn>
-        </div>
-      </v-card-text>
-      <v-divider />
-      <v-card-actions>
-        <v-spacer />
-        <v-btn-cancel @click="openLinkedTasks = false">Close</v-btn-cancel>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+            {{ editFileValidationError }}
+          </v-alert>
+          <div
+            v-else-if="editFileValidationPending"
+            class="hs-text-2xs text-medium-emphasis mb-3"
+          >
+            Validating rating curve CSV...
+          </div>
+          <div
+            v-else-if="editPreviewLoading"
+            class="hs-text-2xs text-medium-emphasis mb-3"
+          >
+            Loading current preview...
+          </div>
+          <v-alert
+            v-else-if="editPreviewError"
+            type="warning"
+            variant="tonal"
+            density="compact"
+            class="mb-3"
+          >
+            {{ editPreviewError }}
+          </v-alert>
+
+          <div v-if="editPreviewPath" class="mb-3">
+            <div class="hs-text-2xs text-medium-emphasis mb-1">Preview</div>
+            <div class="rating-curve-preview-box">
+              <svg
+                class="rating-curve-preview-svg"
+                :viewBox="`0 0 ${PREVIEW_SVG_WIDTH} ${PREVIEW_SVG_HEIGHT}`"
+                preserveAspectRatio="none"
+                aria-hidden="true"
+              >
+                <path
+                  class="rating-curve-line"
+                  :d="editPreviewPath"
+                  fill="none"
+                  vector-effect="non-scaling-stroke"
+                  stroke-linejoin="round"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </div>
+          </div>
+
+          <div class="rating-curve-form__actions">
+            <v-btn-cancel @click="openEdit = false">Cancel</v-btn-cancel>
+            <v-btn-dialog-action
+              :loading="saving"
+              :disabled="!canSaveEditAttachment"
+              @click="saveEditAttachment"
+            >
+              Save
+            </v-btn-dialog-action>
+          </div>
+        </section>
+
+        <template v-else>
+          <div class="rating-curve-item">
+            <div class="rating-curve-item-preview">
+              <div
+                v-if="isPreviewLoading(attachment.id)"
+                class="hs-text-2xs text-medium-emphasis"
+              >
+                Loading...
+              </div>
+              <div
+                v-else-if="getPreviewPath(attachment.id)"
+                class="rating-curve-preview-box"
+              >
+                <svg
+                  class="rating-curve-preview-svg"
+                  :viewBox="`0 0 ${PREVIEW_SVG_WIDTH} ${PREVIEW_SVG_HEIGHT}`"
+                  preserveAspectRatio="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    class="rating-curve-line"
+                    :d="getPreviewPath(attachment.id)"
+                    fill="none"
+                    vector-effect="non-scaling-stroke"
+                    stroke-linejoin="round"
+                    stroke-linecap="round"
+                  />
+                </svg>
+              </div>
+              <div
+                v-else-if="getPreviewError(attachment.id)"
+                class="hs-text-2xs text-error"
+              >
+                Preview unavailable
+              </div>
+              <div v-else class="hs-text-2xs text-medium-emphasis">
+                No points
+              </div>
+            </div>
+
+            <div class="rating-curve-item-main">
+              <div class="hs-text-sm font-weight-medium">
+                {{ attachment.name }}
+              </div>
+              <div
+                v-if="attachment.description"
+                class="hs-text-2xs text-medium-emphasis"
+              >
+                {{ attachment.description }}
+              </div>
+            </div>
+
+            <div class="rating-curve-item-actions">
+              <v-btn-icon
+                :icon="mdiDownload"
+                :aria-label="`Download ${attachment.name}`"
+                :loading="isDownloading(attachment.id)"
+                :disabled="isDownloading(attachment.id)"
+                @click="downloadAttachment(attachment)"
+              />
+              <template v-if="canEditMonitoringSite">
+                <v-btn-icon
+                  :icon="mdiPencil"
+                  :aria-label="`Edit ${attachment.name}`"
+                  :data-testid="`edit-rating-curve-${attachment.id}`"
+                  @click="openEditDialog(attachment)"
+                />
+                <v-btn-icon
+                  :icon="mdiTrashCanOutline"
+                  color="delete"
+                  :aria-label="`Delete ${attachment.name}`"
+                  :data-testid="`delete-rating-curve-${attachment.id}`"
+                  :loading="isValidatingDelete(attachment.id)"
+                  :disabled="isValidatingDelete(attachment.id)"
+                  @click="handleDeleteClick(attachment)"
+                />
+              </template>
+            </div>
+          </div>
+
+          <div
+            v-if="openDelete && activeAttachment?.id === attachment.id"
+            class="rating-curve-confirm"
+            role="alert"
+          >
+            <span class="hs-text-sm">
+              Delete <strong>{{ attachment.name }}</strong> from this site?
+            </span>
+            <div class="rating-curve-form__actions mt-0">
+              <v-btn-cancel @click="openDelete = false">Cancel</v-btn-cancel>
+              <v-btn-destructive
+                :loading="saving"
+                data-testid="confirm-delete-rating-curve"
+                @click="deleteAttachment"
+              >
+                Delete
+              </v-btn-destructive>
+            </div>
+          </div>
+
+          <v-alert
+            v-if="openLinkedTasks && blockedAttachment?.id === attachment.id"
+            type="error"
+            variant="tonal"
+            density="compact"
+            closable
+            class="mt-2"
+            @click:close="openLinkedTasks = false"
+          >
+            <strong>{{ attachment.name }}</strong> is used by these tasks.
+            Remove it from them before deleting it.
+            <ul class="rating-curve-linked-tasks">
+              <li v-for="task in blockedTasks" :key="task.id">
+                <router-link :to="taskDetailsRoute(task)">
+                  {{ task.name || task.id }}
+                </router-link>
+              </li>
+            </ul>
+          </v-alert>
+        </template>
+      </li>
+    </ul>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { mdiAlert, mdiTrashCanOutline, mdiDownload, mdiPencil } from '@mdi/js'
+import { mdiTrashCanOutline, mdiDownload, mdiPencil } from '@mdi/js'
 import hs, {
   type RatingCurve,
   type RatingCurveFittingMethod,
@@ -564,19 +382,13 @@ const props = withDefaults(
     monitoringSiteId?: string
     canEdit?: boolean
     deferPersist?: boolean
-    inlineReadOnly?: boolean
-    downloadOnly?: boolean
     workspaceId?: string
-    showHeader?: boolean
     refreshToken?: number
   }>(),
   {
     canEdit: false,
     deferPersist: false,
-    inlineReadOnly: false,
-    downloadOnly: false,
     workspaceId: '',
-    showHeader: true,
     refreshToken: 0,
   }
 )
@@ -600,7 +412,9 @@ const backendRatingCurves = ref<RatingCurve[]>([])
 const backendLoading = ref(false)
 const saving = ref(false)
 
-const openManage = ref(false)
+// These flags show each step inline on the page: the create form above the
+// list, the edit form in place of its row, and delete confirmation or the
+// "used by tasks" notice under its row.
 const openCreate = ref(false)
 const openEdit = ref(false)
 const openDelete = ref(false)
@@ -650,13 +464,6 @@ const fittingMethodOptions = [
 ]
 
 const canEditMonitoringSite = computed(() => props.canEdit)
-// The inline list is shown to everyone who asks for it; editors also get the
-// Manage button, which opens the dialog where rating curves are changed.
-const inlineReadOnly = computed(() => props.inlineReadOnly)
-const showManageButton = computed(() => canEditMonitoringSite.value)
-const readOnlyTooltip =
-  'You have read-only access to this site. Ask an editor or owner to make changes.'
-const downloadTooltipText = 'Download rating curve'
 
 const loading = computed(() =>
   props.deferPersist ? ratingCurveStore.loading : backendLoading.value
@@ -713,11 +520,6 @@ const displayAttachments = computed<DisplayRatingCurve[]>(() => {
   }))
 
   return [...existing, ...queued].sort((a, b) => a.name.localeCompare(b.name))
-})
-
-const attachmentCountLabel = computed(() => {
-  const count = displayAttachments.value.length
-  return `${count} rating curve${count === 1 ? '' : 's'}`
 })
 
 const selectedFile = computed(() => {
@@ -913,11 +715,6 @@ function openCreateDialog() {
   if (!canEditMonitoringSite.value) return
   resetCreateState()
   openCreate.value = true
-}
-
-function openManageDialog() {
-  if (!canEditMonitoringSite.value) return
-  openManage.value = true
 }
 
 function openEditDialog(item: DisplayRatingCurve) {
@@ -1577,35 +1374,75 @@ watch(openEdit, (isOpen) => {
 </script>
 
 <style scoped>
-.rating-curve-surface {
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.012);
+.rating-curves__toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--hs-space-12);
 }
 
-.rating-curve-body {
-  padding: 0.75rem;
+.rating-curves__empty {
+  margin: 0;
+  padding: var(--hs-space-16) 0;
+  text-align: center;
+}
+
+/* Inline create/edit form: a quiet panel, not another bordered card. */
+.rating-curve-form {
+  margin-bottom: var(--hs-space-12);
+  padding: var(--hs-space-16);
+  background: var(--hs-surface-muted);
+  border-radius: var(--hs-radius-md);
+}
+
+.rating-curve-form--edit {
+  margin-bottom: 0;
+}
+
+.rating-curve-form__file {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--hs-space-8);
+  margin-bottom: var(--hs-space-12);
+}
+
+.rating-curve-form__fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 var(--hs-space-12);
+}
+
+.rating-curve-form__wide {
+  grid-column: 1 / -1;
+}
+
+.rating-curve-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--hs-space-8);
+  margin-top: var(--hs-space-4);
 }
 
 .rating-curve-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  max-height: 18rem;
-  overflow: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rating-curve-entry {
+  padding: var(--hs-space-8) 0;
+  border-bottom: 1px solid var(--hs-border);
+}
+
+.rating-curve-entry:last-child {
+  border-bottom: none;
 }
 
 .rating-curve-item {
   display: grid;
   grid-template-columns: 8.5rem minmax(0, 1fr) auto;
-  gap: 0.75rem;
+  gap: var(--hs-space-12);
   align-items: center;
-  padding: 0.45rem 0.2rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-.rating-curve-item:last-child {
-  border-bottom: none;
 }
 
 .rating-curve-item-main {
@@ -1622,15 +1459,32 @@ watch(openEdit, (isOpen) => {
 .rating-curve-item-actions {
   display: flex;
   align-items: center;
-  gap: 0.1rem;
+  gap: var(--hs-space-2);
+}
+
+.rating-curve-confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--hs-space-8);
+  margin-top: var(--hs-space-8);
+  padding: var(--hs-space-8) var(--hs-space-12);
+  background: var(--hs-danger-bg);
+  border-radius: var(--hs-radius-md);
+}
+
+.rating-curve-linked-tasks {
+  margin: var(--hs-space-4) 0 0;
+  padding-left: var(--hs-space-20);
 }
 
 .rating-curve-preview-box {
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 6px;
+  border: 1px solid var(--hs-border);
+  border-radius: var(--hs-radius-sm);
   height: 38px;
   width: 132px;
-  margin-block: 2px;
+  margin-block: var(--hs-space-2);
 }
 
 .rating-curve-preview-svg {
@@ -1639,41 +1493,8 @@ watch(openEdit, (isOpen) => {
 }
 
 .rating-curve-line {
-  stroke: #00796b;
+  stroke: var(--hs-primary);
   stroke-width: 2;
-}
-
-.rating-curve-edit-preview {
-  margin-top: 0.25rem;
-}
-
-.linked-task-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-}
-
-.linked-task-btn {
-  height: auto;
-  justify-content: flex-start;
-  text-align: left;
-  padding: 0.65rem 0.85rem;
-}
-
-.linked-task-btn-name,
-.linked-task-btn-id {
-  display: block;
-  width: 100%;
-}
-
-.linked-task-btn-name {
-  color: currentColor;
-}
-
-.linked-task-btn-id {
-  margin-top: 0.15rem;
-  opacity: 0.9;
-  text-transform: none;
 }
 
 @media (max-width: 680px) {
@@ -1684,6 +1505,10 @@ watch(openEdit, (isOpen) => {
   .rating-curve-item-preview {
     grid-column: 1 / -1;
     justify-content: flex-start;
+  }
+
+  .rating-curve-form__fields {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 </style>
