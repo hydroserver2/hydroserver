@@ -277,6 +277,40 @@ describe('DataVisDatasetsTable', () => {
     wrapper.unmount()
   })
 
+  it('sorts selected rows without observations last by last updated in both directions', async () => {
+    const selected = [
+      { ...datastream, id: 'no-data-b', phenomenonEndTime: null },
+      { ...datastream, id: 'older', phenomenonEndTime: '2025-01-01T00:00:00Z' },
+      { ...datastream, id: 'no-data-a', phenomenonEndTime: null },
+      { ...datastream, id: 'newer', phenomenonEndTime: '2026-01-01T00:00:00Z' },
+    ]
+    mockList(selected)
+    const store = useDataVisStore()
+    store.plottedDatastreams = selected as any
+    const wrapper = mountTable()
+    await flushPromises()
+    await wrapper
+      .get('[data-testid="toggle-selected-datastreams"]')
+      .trigger('click')
+    store.tableSearch = 'sort:updated-desc'
+    await flushPromises()
+    expect(rowIds(wrapper)).toEqual([
+      'newer',
+      'older',
+      'no-data-a',
+      'no-data-b',
+    ])
+    store.tableSearch = 'sort:updated-asc'
+    await flushPromises()
+    expect(rowIds(wrapper)).toEqual([
+      'older',
+      'newer',
+      'no-data-a',
+      'no-data-b',
+    ])
+    wrapper.unmount()
+  })
+
   it('shows only the selected datastreams while "Show selected" is on', async () => {
     mockList([datastream, { ...datastream, id: 'datastream-2' }])
     const store = useDataVisStore()

@@ -597,9 +597,19 @@ function compareSelectedDatastreams(left: Datastream, right: Datastream) {
   } else if (key === 'observations') {
     comparison = Number(left.valueCount ?? 0) - Number(right.valueCount ?? 0)
   } else {
-    comparison =
-      (Date.parse(left.phenomenonEndTime ?? '') || 0) -
-      (Date.parse(right.phenomenonEndTime ?? '') || 0)
+    // Like the server, datastreams without observations sort last either way.
+    const leftTime = Date.parse(left.phenomenonEndTime ?? '')
+    const rightTime = Date.parse(right.phenomenonEndTime ?? '')
+    const leftMissing = Number.isNaN(leftTime)
+    const rightMissing = Number.isNaN(rightTime)
+    if (leftMissing || rightMissing) {
+      return leftMissing === rightMissing
+        ? left.id.localeCompare(right.id)
+        : leftMissing
+          ? 1
+          : -1
+    }
+    comparison = leftTime - rightTime
   }
   return (
     comparison * (order === 'desc' ? -1 : 1) || left.id.localeCompare(right.id)

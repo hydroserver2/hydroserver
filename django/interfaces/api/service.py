@@ -7,7 +7,7 @@ from pydantic.alias_generators import to_snake
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.search import SearchQuery, SearchRank
-from django.core.exceptions import EmptyResultSet
+from django.core.exceptions import EmptyResultSet, FieldDoesNotExist
 from django.db import connection
 from django.db.models import QuerySet, Model, JSONField, Q, F, Exists, OuterRef
 
@@ -267,7 +267,28 @@ class APIService:
         if "id" not in stripped_sortby_fields:
             sortby_fields.append("id")
 
-        return queryset.order_by(*sortby_fields)
+        def order_expression(field: str):
+            name = field.lstrip("-")
+            model, nullable = queryset.model, False
+            for part in name.split("__"):
+                try:
+                    model_field = model._meta.get_field(part)
+                except FieldDoesNotExist:
+                    break
+                if model_field.null or (model_field.is_relation and not model_field.concrete):
+                    nullable = True
+                    break
+                if not model_field.is_relation:
+                    break
+                model = model_field.related_model
+
+            if not nullable:
+                return field
+            if field.startswith("-"):
+                return F(name).desc(nulls_last=True)
+            return F(name).asc(nulls_last=True)
+
+        return queryset.order_by(*(order_expression(field) for field in sortby_fields))
 
     @classmethod
     def apply_search(

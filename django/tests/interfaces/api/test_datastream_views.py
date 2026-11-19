@@ -145,6 +145,38 @@ def test_get_datastreams_sorts_missing_counts_as_zero_across_pages(client, sortb
     assert actual == [str(ds.id) for ds in expected]
 
 
+@pytest.mark.parametrize("sortby", ["phenomenonEndTime", "-phenomenonEndTime"])
+def test_get_datastreams_sorts_missing_end_times_last_across_pages(client, sortby):
+    workspace = WorkspaceFactory()
+    now = timezone.now()
+    with_times = [
+        _make_datastream(workspace, phenomenon_end_time=now - timedelta(days=days))
+        for days in (30, 1, 10)
+    ]
+    without_times = [
+        _make_datastream(workspace, phenomenon_end_time=None) for _ in range(2)
+    ]
+    expected = sorted(
+        with_times,
+        key=lambda ds: ds.phenomenon_end_time,
+        reverse=sortby.startswith("-"),
+    ) + sorted(without_times, key=lambda ds: ds.id)
+    actual = []
+    for offset in range(0, len(expected), 2):
+        response = client.get(
+            DATASTREAMS_URL,
+            {
+                "workspaceId": str(workspace.id),
+                "sortby": sortby,
+                "offset": offset,
+                "limit": 2,
+            },
+        )
+        assert response.status_code == 200
+        actual.extend(row["id"] for row in response.json()["data"])
+    assert actual == [str(ds.id) for ds in expected]
+
+
 # --- full-text search (q) ------------------------------------------------------------
 
 
