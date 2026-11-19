@@ -1,5 +1,6 @@
 import pytest
 import textwrap
+import pandas as pd
 from io import BytesIO, StringIO
 
 from hydroserverpy.etl.transformers.base import ETLDataMapping, ETLTargetPath
@@ -311,6 +312,31 @@ class TestCSVTransformerNameMode:
         ])
         assert _targets(result, "target_1")["value"].tolist() == pytest.approx([1.0, 2.0])
         assert _targets(result, "target_2")["value"].tolist() == pytest.approx([10.0, 20.0])
+
+    def test_large_file_with_mixed_type_column_outside_usecols_range(self):
+        """
+        Regression test for #688: pandas infers dtypes per chunk on large files.
+        A mapped column that switches from numeric to text partway through,
+        positioned beyond the number of selected columns, raised an IndexError
+        while pandas built its mixed-type warning.
+        """
+        rows = 300_000
+        timestamps = pd.date_range("2024-01-01", periods=rows, freq="min").strftime("%Y-%m-%dT%H:%M:%SZ")
+        is_text = [i > rows * 0.8 and i % 7 == 0 for i in range(rows)]
+        lines = ["timestamp,x1,x2,x3,x4,mixed"]
+        lines.extend(
+            f"{ts},1,2,3,4,{'NAN' if text else f'{i * 0.1:.1f}'}"
+            for i, (ts, text) in enumerate(zip(timestamps, is_text))
+        )
+        csv = "\n".join(lines) + "\n"
+
+        t = _make_transformer()
+        result = t.transform(csv, [_make_mapping("mixed", "target_1")])
+
+        values = _targets(result, "target_1")["value"]
+        assert len(values) == rows
+        assert values.isna().tolist() == is_text
+        assert pd.api.types.is_numeric_dtype(values)
 
 
 # ---------------------------------------------------------------------------

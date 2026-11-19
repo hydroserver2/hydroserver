@@ -199,6 +199,19 @@ class TestParseSeriesUtc:
         with pytest.raises(Exception):
             utc_iso_timestamp.parse_series_to_utc(series)
 
+    @pytest.mark.parametrize("values", [
+        ["2026-10-29T13:01:28.397000", "2026-10-07T02:37:41"],
+        ["2026-10-07T02:37:41", "2026-10-29T13:01:28.397000"],
+    ])
+    def test_mixed_fractional_and_whole_seconds(self, utc_iso_timestamp, values):
+        """
+        Regression test: pandas infers a format from the first element unless told
+        the series is ISO 8601, so a timestamp without fractional seconds next to
+        one with them was rejected as unreadable.
+        """
+        result = utc_iso_timestamp.parse_series_to_utc(pd.Series(values))
+        assert result.tolist() == [pd.Timestamp(value, tz="UTC") for value in values]
+
     def test_whitespace_is_stripped(self, utc_iso_timestamp):
         series = pd.Series(["  2024-01-01T12:00:00  ", "\t2024-06-01T00:00:00\n"])
         result = utc_iso_timestamp.parse_series_to_utc(series)
