@@ -4,8 +4,8 @@
       <div class="datastreams-tools__primary">
         <div class="datastreams-heading">
           <h2 id="datastreams-heading" class="hs-subheading">Datastreams</h2>
-          <span class="datastreams-count hs-text-sm">
-            {{ tableItems.length }} available
+          <span v-if="total !== null" class="datastreams-count hs-text-sm">
+            {{ total }} available
           </span>
         </div>
 
@@ -46,143 +46,146 @@
           aria-label="Search"
           :qualifiers="searchQualifiers"
           @update:model-value="updateSearch"
-          @clear="clearSearchAndSelection"
+          @clear="clearSearch"
         />
       </div>
     </div>
 
     <div class="hs-table-card datastreams-table-card">
-      <table class="datastreams-table hs-text-sm">
-        <thead>
-          <tr v-if="plottedDatastreams.length">
-            <th colspan="3" class="datastream-selection-header">
-              <div class="datastream-selection-header__content">
-                <div class="datastream-selection-summary">
-                  <input
-                    type="checkbox"
-                    class="plot-checkbox datastreams-clear-selection-checkbox"
-                    :indeterminate="true"
-                    aria-label="Clear selected datastreams"
-                    data-testid="clear-selected-datastreams"
-                    @change="clearSelected"
-                  />
-                  <span> {{ plottedDatastreams.length }} of 5 selected </span>
-                </div>
+      <v-data-table-virtual
+        ref="table"
+        class="datastreams-table hs-text-sm"
+        :headers="columns"
+        :items="tableItems"
+        item-value="id"
+        hide-default-header
+        hide-no-data
+      >
+        <template #top>
+          <div class="datastream-filter-header">
+            <div class="datastream-filter-header__content">
+              <DataVisTableFilters />
 
-                <div class="datastream-selection-actions">
+              <v-menu location="bottom end" attach="body">
+                <template #activator="{ props: menuProps }">
                   <v-btn
-                    size="small"
+                    v-bind="menuProps"
                     variant="text"
-                    data-testid="clear-selected-datastreams-button"
-                    @click="clearSelected"
-                  >
-                    Clear selected
-                  </v-btn>
-                  <v-btn
                     size="small"
-                    variant="text"
-                    data-testid="toggle-selected-datastreams"
-                    @click="showOnlySelected = !showOnlySelected"
+                    class="datastream-sort-button"
+                    :prepend-icon="mdiSort"
+                    :append-icon="mdiChevronDown"
+                    aria-label="Sort datastreams"
+                    data-testid="datastream-sort-menu"
                   >
-                    {{ showOnlySelected ? 'Show all' : 'Show selected' }}
+                    {{ sortButtonLabel }}
                   </v-btn>
+                </template>
 
-                  <v-btn
-                    size="small"
-                    variant="text"
-                    :loading="downloading"
-                    :prepend-icon="mdiDownload"
-                    data-testid="download-selected-datastreams"
-                    @click="downloadSelected(plottedDatastreams)"
+                <v-list class="datastream-sort-menu" density="comfortable">
+                  <div class="datastream-sort-menu__title">Sort by</div>
+                  <v-list-item
+                    v-for="option in sortOptions"
+                    :key="option.key"
+                    :class="{
+                      'datastream-sort-menu__item--selected':
+                        activeSort.key === option.key,
+                    }"
+                    @click="setSortKey(option.key)"
                   >
-                    Download selected
-                  </v-btn>
-                </div>
+                    <template #prepend>
+                      <v-icon
+                        :icon="mdiCheck"
+                        :class="{
+                          'datastream-sort-menu__check--hidden':
+                            activeSort.key !== option.key,
+                        }"
+                      />
+                    </template>
+                    <v-list-item-title>{{ option.label }}</v-list-item-title>
+                  </v-list-item>
+
+                  <v-divider class="my-1" />
+
+                  <div class="datastream-sort-menu__title">Order</div>
+                  <v-list-item
+                    v-for="option in sortOrderOptions"
+                    :key="option.order"
+                    :class="{
+                      'datastream-sort-menu__item--selected':
+                        activeSort.order === option.order,
+                    }"
+                    @click="setSortOrder(option.order)"
+                  >
+                    <template #prepend>
+                      <v-icon
+                        :icon="option.icon"
+                        class="datastream-sort-menu__order-icon"
+                      />
+                    </template>
+                    <v-list-item-title>{{ option.label }}</v-list-item-title>
+                    <template #append>
+                      <v-icon
+                        :icon="mdiCheck"
+                        :class="{
+                          'datastream-sort-menu__check--hidden':
+                            activeSort.order !== option.order,
+                        }"
+                      />
+                    </template>
+                  </v-list-item>
+                </v-list>
+              </v-menu>
+            </div>
+          </div>
+          <div
+            v-if="plottedDatastreams.length"
+            class="datastream-selection-header"
+            data-testid="datastream-selection-bar"
+          >
+            <div class="datastream-selection-header__content">
+              <div class="datastream-selection-summary">
+                <v-btn
+                  size="small"
+                  variant="text"
+                  data-testid="clear-selected-datastreams"
+                  @click="clearSelected"
+                >
+                  Clear selected
+                </v-btn>
+                <span>
+                  {{ plottedDatastreams.length }} selected for plotting (maximum
+                  5)
+                </span>
               </div>
-            </th>
-          </tr>
-          <tr v-else>
-            <th colspan="3" class="datastream-filter-header">
-              <div class="datastream-filter-header__content">
-                <DataVisTableFilters />
 
-                <v-menu location="bottom end" attach="body">
-                  <template #activator="{ props: menuProps }">
-                    <v-btn
-                      v-bind="menuProps"
-                      variant="text"
-                      size="small"
-                      class="datastream-sort-button"
-                      :prepend-icon="mdiSort"
-                      :append-icon="mdiChevronDown"
-                      aria-label="Sort datastreams"
-                      data-testid="datastream-sort-menu"
-                    >
-                      {{ sortButtonLabel }}
-                    </v-btn>
-                  </template>
+              <div class="datastream-selection-actions">
+                <v-btn
+                  size="small"
+                  variant="text"
+                  data-testid="toggle-selected-datastreams"
+                  @click="showOnlySelected = !showOnlySelected"
+                >
+                  {{ showOnlySelected ? 'Show all' : 'Show selected' }}
+                </v-btn>
 
-                  <v-list class="datastream-sort-menu" density="comfortable">
-                    <div class="datastream-sort-menu__title">Sort by</div>
-                    <v-list-item
-                      v-for="option in sortOptions"
-                      :key="option.key"
-                      :class="{
-                        'datastream-sort-menu__item--selected':
-                          activeSort.key === option.key,
-                      }"
-                      @click="setSortKey(option.key)"
-                    >
-                      <template #prepend>
-                        <v-icon
-                          :icon="mdiCheck"
-                          :class="{
-                            'datastream-sort-menu__check--hidden':
-                              activeSort.key !== option.key,
-                          }"
-                        />
-                      </template>
-                      <v-list-item-title>{{ option.label }}</v-list-item-title>
-                    </v-list-item>
-
-                    <v-divider class="my-1" />
-
-                    <div class="datastream-sort-menu__title">Order</div>
-                    <v-list-item
-                      v-for="option in sortOrderOptions"
-                      :key="option.order"
-                      :class="{
-                        'datastream-sort-menu__item--selected':
-                          activeSort.order === option.order,
-                      }"
-                      @click="setSortOrder(option.order)"
-                    >
-                      <template #prepend>
-                        <v-icon
-                          :icon="option.icon"
-                          class="datastream-sort-menu__order-icon"
-                        />
-                      </template>
-                      <v-list-item-title>{{ option.label }}</v-list-item-title>
-                      <template #append>
-                        <v-icon
-                          :icon="mdiCheck"
-                          :class="{
-                            'datastream-sort-menu__check--hidden':
-                              activeSort.order !== option.order,
-                          }"
-                        />
-                      </template>
-                    </v-list-item>
-                  </v-list>
-                </v-menu>
+                <v-btn
+                  size="small"
+                  variant="text"
+                  :loading="downloading"
+                  :prepend-icon="mdiDownload"
+                  data-testid="download-selected-datastreams"
+                  @click="downloadSelected(plottedDatastreams)"
+                >
+                  Download selected
+                </v-btn>
               </div>
-            </th>
-          </tr>
-        </thead>
+            </div>
+          </div>
+        </template>
 
-        <tbody>
-          <tr v-for="item in visibleTableItems" :key="item.id">
+        <template #item="{ item, itemRef }">
+          <tr :ref="itemRef">
             <td class="datastream-plot-cell">
               <input
                 type="checkbox"
@@ -262,14 +265,27 @@
               </div>
             </td>
           </tr>
+        </template>
 
-          <tr v-if="!visibleTableItems.length">
-            <td colspan="3" class="datastreams-empty hs-text-sm">
-              No datastreams match the current filters.
-            </td>
-          </tr>
-        </tbody>
-      </table>
+        <template #tbody="{ columns }">
+          <LoadMoreRow
+            v-if="!showOnlySelected"
+            :colspan="columns.length"
+            :has-more="hasMore"
+            :loading="loading"
+            :error="error"
+            @load="loadMore"
+            @retry="retry"
+          />
+          <tbody v-if="total === 0 && !showOnlySelected">
+            <tr>
+              <td colspan="3" class="datastreams-empty hs-text-sm">
+                No datastreams match the current filters.
+              </td>
+            </tr>
+          </tbody>
+        </template>
+      </v-data-table-virtual>
     </div>
 
     <v-dialog
@@ -287,7 +303,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, useTemplateRef, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { Datastream, MonitoringSite } from '@hydroserver/client'
 import {
@@ -313,21 +329,18 @@ import {
   type DatastreamSortOrder,
 } from '@/utils/datastreamSearch'
 import { HsQuerySearchInput } from '@hydroserver/design-system/vue'
+import LoadMoreRow from '@/components/base/LoadMoreRow.vue'
+import { usePagedList } from '@/composables/usePagedList'
+import { fetchDatastreamPage } from '@/utils/fetchDatastreamPage'
 import DatastreamInformationCard from './DatastreamInformationCard.vue'
 import DataVisTableFilters from './DataVisTableFilters.vue'
 
-type DatastreamTableItem = Datastream & {
-  monitoringSiteName?: string
-  methodName?: string
-  processingLevelName?: string
-  unitName?: string
-  unitSymbol?: string
-}
+type DatastreamTableItem = Datastream & { monitoringSiteName?: string }
 
 const dataVisStore = useDataVisStore()
 const {
-  filteredDatastreams,
   plottedDatastreams,
+  datastreamFilters,
   tableSearch: search,
   datastreamDetailLevel: detailLevel,
   monitoringSites,
@@ -339,6 +352,8 @@ const {
   selectedProcessingLevelNames,
   observedProperties,
   processingLevels,
+  units,
+  methods,
   workspaces,
 } = storeToRefs(dataVisStore)
 
@@ -350,11 +365,7 @@ const initialFilters: DatastreamQueryFilters = {
   method: [...selectedMethodNames.value],
   'processing-level': [...selectedProcessingLevelNames.value],
 }
-if (!search.value.trim()) {
-  search.value = serializeDatastreamQuery(initialFilters, '')
-}
 
-const showOnlySelected = ref(false)
 const openInfoCard = ref(false)
 const downloading = ref(false)
 const selectedDatastream = ref<Datastream | null>(null)
@@ -383,20 +394,12 @@ const searchQualifiers = computed(() => [
   {
     key: 'unit',
     label: 'Units',
-    values: uniqueSorted(
-      dataVisStore.datastreams.map(
-        (item) => (item as DatastreamTableItem).unitName
-      )
-    ),
+    values: uniqueSorted(units.value.map((item) => item.name)),
   },
   {
     key: 'method',
     label: 'Methods',
-    values: uniqueSorted(
-      dataVisStore.datastreams.map(
-        (item) => (item as DatastreamTableItem).methodName
-      )
-    ),
+    values: uniqueSorted(methods.value.map((item) => item.name)),
   },
   {
     key: 'processing-level',
@@ -416,6 +419,21 @@ const searchQualifiers = computed(() => [
     ],
   },
 ])
+// Older links store site/metadata filters separately from the search text.
+// Merge them once on mount; afterwards the query is the source of truth.
+const restoredQuery = parseDatastreamQuery(search.value, searchQualifiers.value)
+for (const key of Object.keys(initialFilters) as Array<
+  keyof DatastreamQueryFilters
+>) {
+  if (!restoredQuery.filters[key].length)
+    restoredQuery.filters[key] = initialFilters[key]
+}
+search.value = serializeDatastreamQuery(
+  restoredQuery.filters,
+  restoredQuery.text,
+  restoredQuery.sort ?? undefined
+)
+
 const parsedSearch = computed(() =>
   parseDatastreamQuery(search.value, searchQualifiers.value)
 )
@@ -436,10 +454,7 @@ const canonicalValues = (candidates: string[], requested: string[]) => {
   })
 }
 
-// The filter controls are replaced by the selection summary while a
-// datastream is plotted, so keep query hydration in this always-mounted table.
-// Parsing also depends on lookup data, which can arrive after URL restoration.
-// Rehydrate when that data arrives so badges, menu checks, and results agree.
+// Rehydrate when lookup data arrives as well as when the query changes.
 watch(
   parsedSearch,
   () => {
@@ -461,15 +476,11 @@ watch(
       filters['observed-property']
     )
     selectedUnitNames.value = canonicalValues(
-      dataVisStore.datastreams
-        .map((item) => (item as DatastreamTableItem).unitName)
-        .filter((value): value is string => Boolean(value)),
+      units.value.map((item) => item.name),
       filters.unit
     )
     selectedMethodNames.value = canonicalValues(
-      dataVisStore.datastreams
-        .map((item) => (item as DatastreamTableItem).methodName)
-        .filter((value): value is string => Boolean(value)),
+      methods.value.map((item) => item.name),
       filters.method
     )
     selectedProcessingLevelNames.value = canonicalValues(
@@ -487,9 +498,7 @@ const activeSort = computed(() => parsedSearch.value.sort ?? defaultSort)
 const sortOptions = computed(() => [
   {
     key: 'name' as const,
-    label: showMonitoringSiteContext.value
-      ? 'Site name, datastream name'
-      : 'Datastream name',
+    label: 'Datastream name',
   },
   { key: 'updated' as const, label: 'Last updated' },
   { key: 'observations' as const, label: 'Observation count' },
@@ -546,110 +555,88 @@ const setSortOrder = (order: DatastreamSortOrder) => {
   updateSort({ key: activeSort.value.key, order })
 }
 
-const displayDatastreams = computed(() => {
-  if (!showOnlySelected.value) return filteredDatastreams.value
-  return filteredDatastreams.value.filter((datastream) =>
-    plottedDatastreams.value.some((selected) => selected.id === datastream.id)
+const sortFields = {
+  name: 'name',
+  updated: 'phenomenonEndTime',
+  observations: 'valueCount',
+} as const
+
+const { items, total, loading, error, hasMore, loadMore, retry } = usePagedList(
+  () => ({
+    ...datastreamFilters.value,
+    q: plainSearch.value || undefined,
+    sortby: [
+      `${activeSort.value.order === 'desc' ? '-' : ''}${sortFields[activeSort.value.key]}` as const,
+    ],
+  }),
+  fetchDatastreamPage
+)
+
+const table = useTemplateRef('table')
+watch(total, (value) => {
+  if (value === null) table.value?.scrollToIndex(0)
+})
+// "Show selected" hides every row that isn't currently selected.
+const showOnlySelected = ref(false)
+watch(showOnlySelected, () => table.value?.scrollToIndex(0))
+watch(
+  () => plottedDatastreams.value.length,
+  (count) => {
+    if (!count) showOnlySelected.value = false
+  }
+)
+function compareSelectedDatastreams(left: Datastream, right: Datastream) {
+  const { key, order } = activeSort.value
+  let comparison: number
+  if (key === 'name') {
+    comparison = (left.name?.trim() || 'Unnamed datastream').localeCompare(
+      right.name?.trim() || 'Unnamed datastream',
+      undefined,
+      { numeric: true, sensitivity: 'base' }
+    )
+  } else if (key === 'observations') {
+    comparison = Number(left.valueCount ?? 0) - Number(right.valueCount ?? 0)
+  } else {
+    // Like the server, datastreams without observations sort last either way.
+    const leftTime = Date.parse(left.phenomenonEndTime ?? '')
+    const rightTime = Date.parse(right.phenomenonEndTime ?? '')
+    const leftMissing = Number.isNaN(leftTime)
+    const rightMissing = Number.isNaN(rightTime)
+    if (leftMissing || rightMissing) {
+      return leftMissing === rightMissing
+        ? left.id.localeCompare(right.id)
+        : leftMissing
+          ? 1
+          : -1
+    }
+    comparison = leftTime - rightTime
+  }
+  return (
+    comparison * (order === 'desc' ? -1 : 1) || left.id.localeCompare(right.id)
+  )
+}
+
+const tableItems = computed<DatastreamTableItem[]>(() => {
+  const rows = showOnlySelected.value
+    ? [...plottedDatastreams.value].sort(compareSelectedDatastreams)
+    : items.value
+  return rows.map((datastream) => ({
+    ...datastream,
+    monitoringSiteName: dataVisStore.monitoringSiteById.get(
+      datastream.monitoringSiteId
+    )?.name,
+  }))
+})
+
+const columns = [{ key: 'plot' }, { key: 'summary' }, { key: 'actions' }]
+
+const showMonitoringSiteContext = computed(() => {
+  if (selectedMonitoringSites.value.length !== 1) return true
+  const selectedSiteId = selectedMonitoringSites.value[0].id
+  return tableItems.value.some(
+    (item) => item.monitoringSiteId !== selectedSiteId
   )
 })
-
-const tableItems = computed<DatastreamTableItem[]>(() =>
-  displayDatastreams.value.map((datastream) => {
-    const monitoringSite = dataVisStore.monitoringSiteById.get(
-      datastream.monitoringSiteId
-    )
-    const processingLevel = dataVisStore.processingLevelById.get(
-      datastream.processingLevelId
-    )
-
-    return {
-      ...datastream,
-      monitoringSiteName: monitoringSite?.name,
-      processingLevelName: processingLevel?.name,
-    }
-  })
-)
-
-const visibleTableItems = computed(() => {
-  const query = plainSearch.value.trim().toLocaleLowerCase()
-  return tableItems.value
-    .filter((item) => {
-      if (!query) return true
-      return [item.name, item.monitoringSiteName].some((value) =>
-        `${value ?? ''}`.toLocaleLowerCase().includes(query)
-      )
-    })
-    .sort(compareTableItems)
-})
-
-const showMonitoringSiteContext = computed(
-  () => selectedMonitoringSites.value.length !== 1
-)
-
-const compareText = (
-  left: string | null | undefined,
-  right: string | null | undefined
-) =>
-  (left ?? '').localeCompare(right ?? '', undefined, {
-    numeric: true,
-    sensitivity: 'base',
-  })
-
-const compareOptionalNumber = (
-  left: number | string | null | undefined,
-  right: number | string | null | undefined
-) => {
-  const leftNumber = Number(left)
-  const rightNumber = Number(right)
-  const leftIsValid = Number.isFinite(leftNumber)
-  const rightIsValid = Number.isFinite(rightNumber)
-
-  if (!leftIsValid && !rightIsValid) return 0
-  if (!leftIsValid) return 1
-  if (!rightIsValid) return -1
-  return leftNumber - rightNumber
-}
-
-const compareNames = (
-  left: DatastreamTableItem,
-  right: DatastreamTableItem
-) => {
-  if (showMonitoringSiteContext.value) {
-    const siteComparison = compareText(
-      left.monitoringSiteName,
-      right.monitoringSiteName
-    )
-    if (siteComparison) return siteComparison
-  }
-
-  return compareText(left.name, right.name)
-}
-
-const compareTableItems = (
-  left: DatastreamTableItem,
-  right: DatastreamTableItem
-) => {
-  const { key, order } = activeSort.value
-  const multiplier = order === 'asc' ? 1 : -1
-
-  if (key === 'name') return compareNames(left, right) * multiplier
-
-  const valueComparison =
-    key === 'updated'
-      ? compareOptionalNumber(
-          left.phenomenonEndTime
-            ? new Date(left.phenomenonEndTime).getTime()
-            : null,
-          right.phenomenonEndTime
-            ? new Date(right.phenomenonEndTime).getTime()
-            : null
-        )
-      : compareOptionalNumber(left.valueCount, right.valueCount)
-
-  return valueComparison
-    ? valueComparison * multiplier
-    : compareNames(left, right)
-}
 
 const datastreamName = (item: DatastreamTableItem) =>
   item.name?.trim() || 'Unnamed datastream'
@@ -673,7 +660,6 @@ const downloadSelected = async (datastreams: Datastream[]) => {
 }
 
 const clearSelected = () => {
-  showOnlySelected.value = false
   plottedDatastreams.value = []
 }
 
@@ -687,13 +673,10 @@ const copyStateUrl = async () => {
 }
 
 const updateSearch = (value: string) => {
-  if (value === search.value) return
-
   search.value = value
-  clearSelected()
 }
 
-const clearSearchAndSelection = () => {
+const clearSearch = () => {
   search.value = ''
   selectedWorkspaces.value = []
   selectedMonitoringSites.value = []
@@ -701,7 +684,6 @@ const clearSearchAndSelection = () => {
   selectedUnitNames.value = []
   selectedMethodNames.value = []
   selectedProcessingLevelNames.value = []
-  clearSelected()
 }
 
 const isChecked = (item: Datastream) =>
@@ -710,9 +692,7 @@ const isChecked = (item: Datastream) =>
 const openMetadata = (item: Datastream) => {
   selectedMonitoringSite.value =
     dataVisStore.monitoringSiteById.get(item.monitoringSiteId) ?? null
-  selectedDatastream.value =
-    filteredDatastreams.value.find((datastream) => datastream.id === item.id) ??
-    null
+  selectedDatastream.value = item
   openInfoCard.value = Boolean(
     selectedDatastream.value && selectedMonitoringSite.value
   )
@@ -847,44 +827,39 @@ function updatePlottedDatastreams(
   margin-left: auto;
 }
 
-.datastreams-table-card {
+/* Sized to its rows, scrolling only once they outgrow the panel. */
+.datastreams-table-card,
+.datastreams-table {
+  display: flex;
   flex: 0 1 auto;
-  height: auto;
-  max-height: 100%;
+  flex-direction: column;
   min-height: 0;
-  overflow: auto;
+}
+
+.datastreams-table-card {
+  overflow: hidden;
 }
 
 .datastreams-table {
-  width: 100%;
-  min-width: 100%;
-  height: auto;
-  border-collapse: collapse;
-  table-layout: auto;
+  background: transparent;
 }
 
-.datastreams-table thead {
-  position: sticky;
-  top: 0;
-  z-index: 2;
+.datastreams-table :deep(.v-table__wrapper) {
+  flex: 0 1 auto;
+  min-height: 0;
 }
 
-.datastreams-table thead th {
-  height: 48px;
+.datastream-filter-header,
+.datastream-selection-header {
   padding: var(--hs-space-8) var(--hs-space-12);
   color: var(--hs-text-secondary);
   font-size: var(--hs-font-sm);
-  font-weight: var(--hs-font-weight-regular);
-  letter-spacing: 0;
-  text-transform: none;
   background: var(--hs-surface-muted);
+  border-bottom: 1px solid var(--hs-border);
 }
 
-.datastreams-table .datastream-filter-header {
-  height: auto;
+.datastream-filter-header {
   padding: var(--hs-space-12);
-  text-align: left;
-  background: var(--hs-surface-muted);
 }
 
 .datastream-filter-header__content {
@@ -894,12 +869,10 @@ function updatePlottedDatastreams(
   justify-content: space-between;
 }
 
-.datastream-selection-header {
-  text-align: left;
-}
-
 .datastream-selection-header__content {
   display: flex;
+  flex-wrap: wrap;
+  gap: var(--hs-space-8);
   align-items: center;
   justify-content: space-between;
   color: var(--hs-text-primary);
@@ -917,12 +890,6 @@ function updatePlottedDatastreams(
   font-weight: var(--hs-font-weight-regular);
 }
 
-.plot-checkbox.datastreams-clear-selection-checkbox {
-  flex: 0 0 auto;
-  margin: 0;
-}
-
-.datastreams-table thead tr,
 .datastreams-table tbody tr {
   border-bottom: 1px solid var(--hs-border);
 }

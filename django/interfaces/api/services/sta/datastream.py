@@ -5,6 +5,7 @@ from typing import Optional, Literal, Sequence, get_args
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
 from django.db.models import Min, Max, Count, Exists, OuterRef
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 from django.http import StreamingHttpResponse
 
@@ -179,10 +180,14 @@ class DatastreamAPIService(APIService):
         )
         queryset = self.apply_tag_filter(queryset, filtering.get("tag"))
         queryset, has_search = self.apply_search(queryset, filtering.get("q"))
+        if any(field.lstrip("-") == "valueCount" for field in (sortby or [])):
+            # Streams without observation statistics display as zero observations.
+            queryset = queryset.annotate(observation_sort_count=Coalesce("value_count", 0))
         queryset = self.apply_sorting(
             queryset,
             sortby,
             list(get_args(DatastreamSortByFields)),
+            field_aliases={"valueCount": "observation_sort_count"},
             rank=has_search,
         )
 

@@ -158,13 +158,11 @@ class CSVTransformer(Transformer):
                 )
 
             columns = [timestamp_position] + source_positions
-            dtype = "string"
 
         else:
             columns = [self.timestamp_key] + [
                 mapping.source_identifier for mapping in data_mappings
             ]
-            dtype = {self.timestamp_key: "string"}
 
         logger.debug(
             "Parsing CSV (identifierType=%r, delimiter=%r, headerRow=%r, dataStartRow=%r, usecols=%r).",
@@ -174,13 +172,17 @@ class CSVTransformer(Transformer):
         try:
             header_idx = (self.header_row - 1) if self.header_row is not None else -1
             data_start_idx = self.data_start_row - 1
+            # Read every selected column as text. Values are coerced to numeric
+            # later in standardize_dataframe, so non-numeric markers (e.g. "NAN",
+            # "-", "ERR") become NaN instead of letting pandas infer dtypes per
+            # chunk, which fails on large files with mixed-type columns.
             df = read_csv(
                 clean_payload,
                 sep=self.delimiter,
                 header=0 if not use_index else None,
                 skiprows=[i for i in range(data_start_idx) if i != header_idx],
                 usecols=columns,
-                dtype=dtype,
+                dtype="string",
             )
         except EmptyDataError as e:
             raise ETLError(

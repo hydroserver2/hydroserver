@@ -81,6 +81,20 @@ def test_get_observations_includes_restricted_datastream_observations_for_owner(
     assert response.json()["@iot.count"] == 2
 
 
+@pytest.mark.parametrize("params", [{}, {"$orderby": "result desc"}])
+def test_get_datastream_observations_count_includes_every_observation(client, params):
+    datastream = DatastreamFactory()
+    ObservationFactory.create_batch(3, datastream=datastream)
+
+    response = client.get(
+        f"/api/sensorthings/v1.1/Datastreams('{datastream.id}')/Observations",
+        {"$count": "true", **params},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["@iot.count"] == 3
+
+
 def test_get_observation_returns_404_for_restricted_datastream_observation_when_anonymous(client):
     restricted_observation, _ = _restricted_and_open_observations()
 

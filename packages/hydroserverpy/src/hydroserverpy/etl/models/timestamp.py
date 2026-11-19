@@ -191,10 +191,13 @@ class Timestamp(Timezone):
                 )
 
             # ISO strings: regex detects embedded tz per element to support mixed-offset series
-            # (pandas cannot parse mixed tz/naive strings without coercing to NaT)
+            # (pandas cannot parse mixed tz/naive strings without coercing to NaT).
+            # format="ISO8601" accepts any valid ISO 8601 shape per element; without it, pandas
+            # infers a format from the first element and rejects valid variants such as a
+            # timestamp without fractional seconds following one with them.
             has_tz = series.str.contains(_EMBEDDED_TZ_RE, regex=True, na=False)
-            tz_aware = pd.to_datetime(series[has_tz], utc=True, errors="raise")
-            tz_naive_raw_series = pd.to_datetime(series[~has_tz], utc=False, errors="raise")
+            tz_aware = pd.to_datetime(series[has_tz], utc=True, format="ISO8601", errors="raise")
+            tz_naive_raw_series = pd.to_datetime(series[~has_tz], utc=False, format="ISO8601", errors="raise")
 
         elif isinstance(first_timestamp, pd.Timestamp):
             has_tz = series.apply(lambda x: x.tzinfo is not None)

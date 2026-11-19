@@ -58,8 +58,10 @@ class DatastreamMixin(SensorThingsUtils):
                 else "method" if group_by[0] == "sensor" else group_by[0]
             )
             datastreams = datastreams.filter(**{f"{group_field}_id__in": group_by[1]})
+            # Clear the ordering first: Django adds order_by fields to the GROUP BY of values().annotate().
             ds_counts = dict(
                 datastreams
+                .order_by()
                 .values(group_field)
                 .annotate(total=Count("id"))
                 .values_list(group_field, "total")

@@ -125,10 +125,10 @@ class MonitoringTaskService(HydroServerBaseService):
         limit: int = ...,
         sortby: List[str] = ...,
         status: str = ...,
-        started_at_min: datetime = ...,
-        started_at_max: datetime = ...,
-        finished_at_min: datetime = ...,
-        finished_at_max: datetime = ...,
+        min_started_at: datetime = ...,
+        max_started_at: datetime = ...,
+        min_finished_at: datetime = ...,
+        max_finished_at: datetime = ...,
     ) -> List[TaskRun]:
         """Fetch a collection of task runs for a monitoring task."""
 
@@ -137,10 +137,10 @@ class MonitoringTaskService(HydroServerBaseService):
             "limit": limit,
             "sortby": [sortby_to_camel(o) for o in sortby] if sortby is not ... else sortby,
             "status": status,
-            "startedAtMin": started_at_min,
-            "startedAtMax": started_at_max,
-            "finishedAtMin": finished_at_min,
-            "finishedAtMax": finished_at_max,
+            "minStartedAt": min_started_at,
+            "maxStartedAt": max_started_at,
+            "minFinishedAt": min_finished_at,
+            "maxFinishedAt": max_finished_at,
         }
         params = {k: v for k, v in params.items() if v is not ...}
 

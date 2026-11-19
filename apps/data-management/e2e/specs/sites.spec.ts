@@ -907,7 +907,9 @@ test.describe('sites and workspaces', () => {
       )
     )
     await expect(
-      page.getByText(fixtures.datastreams.public.name, { exact: true })
+      page
+        .getByRole('region', { name: 'Datastreams', exact: true })
+        .getByText(fixtures.datastreams.public.name, { exact: true })
     ).toBeVisible()
 
     await page.goto(`/sites/${fixtures.monitoringSites.public.id}`)
@@ -929,7 +931,12 @@ test.describe('sites and workspaces', () => {
       page.getByTestId('clear-selected-datastreams')
     ).toBeVisible()
     await expect(
-      page.getByText(fixtures.datastreams.public.name, { exact: true })
+      page
+        .getByRole('region', { name: 'Datastreams', exact: true })
+        .getByText(fixtures.datastreams.public.name, { exact: true })
     ).toBeVisible()
+    await expect(
+      page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`)
+    ).toBeChecked()
   })
 })

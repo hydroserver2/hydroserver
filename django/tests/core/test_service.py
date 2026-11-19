@@ -1,5 +1,8 @@
+import pytest
+from django.db.models.expressions import OrderBy
+
 from interfaces.api.service import APIService
-from core.sta.models import Datastream
+from core.sta.models import Datastream, MonitoringSite, Observation
 
 
 def test_apply_sorting_appends_id_tiebreaker_for_deterministic_pagination():
@@ -21,3 +24,21 @@ def test_apply_sorting_appends_id_tiebreaker_for_deterministic_pagination():
 def test_apply_sorting_does_not_duplicate_an_already_requested_id():
     queryset = APIService.apply_sorting(Datastream.objects.all(), ["id"], ["id"])
     assert queryset.query.order_by == ("id",)
+
+
+@pytest.mark.parametrize(
+    ("model", "field", "nullable"),
+    [
+        (Datastream, "-phenomenonEndTime", True),
+        (Datastream, "-monitoringSite__elevationM", True),
+        (MonitoringSite, "-datastreams__name", True),
+        # NOT NULL stays plain: NULLS LAST would stop Postgres using the index for DESC.
+        (Observation, "-phenomenonTime", False),
+    ],
+)
+def test_apply_sorting_puts_nulls_last_only_for_fields_that_can_be_null(model, field, nullable):
+    first = APIService.apply_sorting(model.objects.all(), [field], [field]).query.order_by[0]
+    if nullable:
+        assert isinstance(first, OrderBy) and first.descending and first.nulls_last
+    else:
+        assert first == "-phenomenon_time"

@@ -15,32 +15,23 @@ describe('data visualization store', () => {
     setActivePinia(createPinia())
   })
 
-  it('filters datastreams by unit name', () => {
+  it('resolves selected filter names to server filter IDs', () => {
     const store = useDataVisStore()
-    store.datastreams = [
-      { id: 'temperature', unitName: 'Degrees Celsius' },
-      { id: 'discharge', unitName: 'Cubic feet per second' },
+    store.units = [
+      { id: 'celsius', name: 'Degrees Celsius' },
+      { id: 'cfs', name: 'Cubic feet per second' },
+      { id: 'celsius-2', name: 'Degrees Celsius' },
     ] as any
-
+    store.methods = [
+      { id: 'shielded', name: 'Shielded sensor' },
+      { id: 'pressure', name: 'Pressure transducer' },
+    ] as any
     store.selectedUnitNames = ['Degrees Celsius']
-
-    expect(store.filteredDatastreams.map((item) => item.id)).toEqual([
-      'temperature',
-    ])
-  })
-
-  it('filters datastreams by method name', () => {
-    const store = useDataVisStore()
-    store.datastreams = [
-      { id: 'temperature', methodName: 'Shielded sensor' },
-      { id: 'discharge', methodName: 'Pressure transducer' },
-    ] as any
-
     store.selectedMethodNames = ['Shielded sensor']
 
-    expect(store.filteredDatastreams.map((item) => item.id)).toEqual([
-      'temperature',
-    ])
+    expect(store.datastreamFilters.unitId).toEqual(['celsius', 'celsius-2'])
+    expect(store.datastreamFilters.methodId).toEqual(['shielded'])
+    expect(store.datastreamFilters.observedPropertyId).toEqual([])
   })
 
   function labelStore() {
@@ -49,7 +40,7 @@ describe('data visualization store', () => {
       { id: 'logan', name: 'Logan River' },
       { id: 'bear', name: 'Bear River' },
     ] as any
-    store.datastreams = [
+    const datastreams = [
       {
         id: 'upstream',
         name: 'Discharge',
@@ -69,12 +60,12 @@ describe('data visualization store', () => {
         phenomenonEndTime: '2026-10-01T00:00:00Z',
       },
     ] as any
-    return store
+    return { store, datastreams }
   }
 
   it('includes the site on every trace even for a single plotted site and a single-site table filter', async () => {
-    const store = labelStore()
-    store.plottedDatastreams = store.datastreams.slice(0, 2)
+    const { store, datastreams } = labelStore()
+    store.plottedDatastreams = datastreams.slice(0, 2)
     expect(store.plotLabelItems.map((item) => item.label)).toEqual([
       'Discharge\n@ Logan River',
       'Temperature\n@ Logan River',
@@ -89,9 +80,9 @@ describe('data visualization store', () => {
   })
 
   it('includes each plotted site when comparing sites, even if their names match', () => {
-    const store = labelStore()
+    const { store, datastreams } = labelStore()
     store.monitoringSites[1].name = 'Logan River'
-    store.plottedDatastreams = [store.datastreams[0], store.datastreams[2]]
+    store.plottedDatastreams = [datastreams[0], datastreams[2]]
     expect(store.plotLabelItems.map((item) => item.label)).toEqual([
       'Discharge\n@ Logan River',
       'Discharge\n@ Logan River',

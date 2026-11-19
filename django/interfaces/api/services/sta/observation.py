@@ -228,16 +228,40 @@ class ObservationAPIService(APIService):
         if profile in ("row", "column"):
             return self.grouped_values(queryset, meta, profile, properties, requested_includes)
 
-        observations = list(queryset.all())
+        if requested_includes:
+            observations = list(queryset.all())
+            return {
+                "data": [
+                    ObservationResponse.model_validate(observation)
+                    for observation in observations
+                ],
+                "meta": meta,
+                "included": self.resolve_includes(
+                    observations, requested_includes, self.INCLUDE_RELATIONS
+                ),
+            }
+
+        # Plain alias-keyed dicts from one values_list query. Validating model instances here is far slower:
+        # the response schemas look up camelCase aliases first, and django-ninja falls back to Django's
+        # template Variable.resolve, which calls dir(), for every attribute a model instance doesn't have.
+        rows = queryset.values_list(
+            "id", "phenomenon_time", "result", "result_qualifiers", "datastream_id",
+            OBSERVATION_GROUP_WORKSPACE_FIELD,
+        )
         return {
             "data": [
-                ObservationResponse.model_validate(observation)
-                for observation in observations
+                {
+                    "id": observation_id,
+                    "phenomenonTime": phenomenon_time,
+                    "result": result,
+                    "resultQualifiers": result_qualifiers,
+                    "datastreamId": datastream_id,
+                    "workspaceId": workspace_id,
+                }
+                for observation_id, phenomenon_time, result, result_qualifiers, datastream_id, workspace_id in rows
             ],
             "meta": meta,
-            "included": self.resolve_includes(
-                observations, requested_includes, self.INCLUDE_RELATIONS
-            ),
+            "included": None,
         }
 
     def grouped_values(
