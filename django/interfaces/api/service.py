@@ -1,4 +1,5 @@
 import json
+import re
 import uuid
 
 from typing import Union, Any, Optional, Type
@@ -6,7 +7,7 @@ from pydantic.alias_generators import to_snake
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.search import SearchQuery, SearchRank
-from django.core.exceptions import EmptyResultSet
+from django.core.exceptions import EmptyResultSet, FieldDoesNotExist
 from django.db import connection
 from django.db.models import QuerySet, Model, JSONField, Q, F, Exists, OuterRef
 
@@ -266,33 +267,61 @@ class APIService:
         if "id" not in stripped_sortby_fields:
             sortby_fields.append("id")
 
-        return queryset.order_by(*sortby_fields)
+        def order_expression(field: str):
+            name = field.lstrip("-")
+            model, nullable = queryset.model, False
+            for part in name.split("__"):
+                try:
+                    model_field = model._meta.get_field(part)
+                except FieldDoesNotExist:
+                    break
+                if model_field.null or (model_field.is_relation and not model_field.concrete):
+                    nullable = True
+                    break
+                if not model_field.is_relation:
+                    break
+                model = model_field.related_model
+
+            if not nullable:
+                return field
+            if field.startswith("-"):
+                return F(name).desc(nulls_last=True)
+            return F(name).asc(nulls_last=True)
+
+        return queryset.order_by(*(order_expression(field) for field in sortby_fields))
 
     @classmethod
     def apply_search(
         cls, queryset: QuerySet, q: Optional[str], field: str = "search_vector"
     ) -> tuple[QuerySet, bool]:
         """
-        Filters a queryset by the `q` full-text search parameter and annotates a `rank`
-        field for relevance ordering.
+        Filters a queryset by the `q` full-text search and annotates a `rank` for relevance.
 
-        Comma-separated terms are combined with OR; the whitespace-separated words within
-        each term are combined with AND. Matching is case-insensitive.
+        Commas separate OR terms; words within a term are ANDed. Each word is a
+        case-insensitive prefix, matched both stemmed and unstemmed so stopword prefixes
+        still match (e.g. "a" matches "air"). A query without letters or digits matches
+        nothing.
 
-        Returns the (possibly unchanged) queryset and whether search was applied, so
-        callers can pass that through to `apply_sorting`'s `rank` argument.
+        Returns the queryset and whether search was applied (for `apply_sorting`'s `rank`).
         """
 
         if not q or not q.strip():
             return queryset, False
 
-        groups = [group.strip() for group in q.split(",") if group.strip()]
+        # Keep only letters and digits so no tsquery syntax reaches the raw query.
+        groups = [re.findall(r"[^\W_]+", group) for group in q.split(",")]
+        groups = [words for words in groups if words]
         if not groups:
-            return queryset, False
+            return queryset.none(), False
 
         search_query = None
-        for group in groups:
-            group_query = SearchQuery(group, config=cls.SEARCH_CONFIG, search_type="plain")
+        for words in groups:
+            group_query = None
+            for word in words:
+                word_query = SearchQuery(
+                    f"{word}:*", config=cls.SEARCH_CONFIG, search_type="raw"
+                ) | SearchQuery(f"{word}:*", config="simple", search_type="raw")
+                group_query = word_query if group_query is None else group_query & word_query
             search_query = group_query if search_query is None else search_query | group_query
 
         queryset = queryset.annotate(rank=SearchRank(F(field), search_query)).filter(

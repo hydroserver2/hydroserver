@@ -234,12 +234,12 @@ class DatastreamQueryParameters(DatastreamFilterFields, CollectionQueryParameter
     value_count__lte: Optional[int] = Query(
         None,
         description="Datastreams with at most this many observations.",
-        alias="valueCountMax",
+        alias="maxValueCount",
     )
     value_count__gte: Optional[int] = Query(
         None,
         description="Datastreams with at least this many observations.",
-        alias="valueCountMin",
+        alias="minValueCount",
     )
 
 

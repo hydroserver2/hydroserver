@@ -103,8 +103,8 @@ class EtlTaskAPIService(TaskService[EtlTask], APIService):
         sortby = sortby or []
 
         latest_run_fields = [
-            "latest_run_status", "latest_run_started_at_min", "latest_run_started_at_max",
-            "latest_run_finished_at_min", "latest_run_finished_at_max",
+            "latest_run_status", "min_latest_run_started_at", "max_latest_run_started_at",
+            "min_latest_run_finished_at", "max_latest_run_finished_at",
         ]
         if any(field in filtering for field in latest_run_fields) or any(
             to_snake(term.lstrip("-")) in self.latest_run_filter_fields for term in sortby
@@ -127,17 +127,17 @@ class EtlTaskAPIService(TaskService[EtlTask], APIService):
         if "latest_run_status" in filtering:
             queryset = self.apply_filters(queryset, "latest_run_status", filtering["latest_run_status"])
 
-        if "latest_run_started_at_min" in filtering:
-            queryset = queryset.filter(latest_run_started_at__gte=filtering["latest_run_started_at_min"])
+        if "min_latest_run_started_at" in filtering:
+            queryset = queryset.filter(latest_run_started_at__gte=filtering["min_latest_run_started_at"])
 
-        if "latest_run_started_at_max" in filtering:
-            queryset = queryset.filter(latest_run_started_at__lte=filtering["latest_run_started_at_max"])
+        if "max_latest_run_started_at" in filtering:
+            queryset = queryset.filter(latest_run_started_at__lte=filtering["max_latest_run_started_at"])
 
-        if "latest_run_finished_at_min" in filtering:
-            queryset = queryset.filter(latest_run_finished_at__gte=filtering["latest_run_finished_at_min"])
+        if "min_latest_run_finished_at" in filtering:
+            queryset = queryset.filter(latest_run_finished_at__gte=filtering["min_latest_run_finished_at"])
 
-        if "latest_run_finished_at_max" in filtering:
-            queryset = queryset.filter(latest_run_finished_at__lte=filtering["latest_run_finished_at_max"])
+        if "max_latest_run_finished_at" in filtering:
+            queryset = queryset.filter(latest_run_finished_at__lte=filtering["max_latest_run_finished_at"])
 
         queryset, has_search = self.apply_search(queryset, filtering.get("q"))
         queryset = self.apply_sorting(

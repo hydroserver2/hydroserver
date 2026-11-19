@@ -2,10 +2,13 @@
   <MetadataItemTable
     :items="items"
     :loading="isLoading"
-    :search="search"
+    :has-more="hasMore"
+    :error="error"
     kind="processingLevel"
     :default-scope="workspaceId ? 'workspace' : 'system'"
     :show-scope="scope === 'all'"
+    @load-more="loadMore"
+    @retry="retry"
   >
     <template #actions="{ item }">
       <PermissionTooltip
@@ -93,8 +96,7 @@ import DeleteMetadataCard from '@/components/Metadata/DeleteMetadataCard.vue'
 import MetadataItemTable from '@/components/Metadata/MetadataItemTable.vue'
 import hs, { ProcessingLevel } from '@hydroserver/client'
 import { toRef } from 'vue'
-import { useSystemTableLogic } from '@/composables/useSystemTableLogic'
-import { useAllScopeTableLogic } from '@/composables/useAllScopeTableLogic'
+import { useMetadataTableLogic } from '@/composables/useMetadataTableLogic'
 import {
   mdiDeleteOffOutline,
   mdiPencil,
@@ -103,38 +105,38 @@ import {
 } from '@mdi/js'
 import PermissionTooltip from '@/components/PermissionTooltip.vue'
 
-const props = defineProps<{
-  search: string | undefined
-  workspaceId?: string
-  canEdit: boolean
-  canDelete: boolean
-  canManageSystem?: boolean
-  scope?: 'workspace' | 'system' | 'all'
-}>()
+const props = withDefaults(
+  defineProps<{
+    search: string | undefined
+    workspaceId?: string
+    canEdit: boolean
+    canDelete: boolean
+    canManageSystem?: boolean
+    scope?: 'workspace' | 'system' | 'all'
+    active?: boolean
+  }>(),
+  { active: true }
+)
 
 const {
   item,
   items,
   isLoading,
+  hasMore,
+  error,
+  loadMore,
+  retry,
   openEdit,
   openDelete,
   openDialog,
   onUpdate,
   onDelete,
-} =
-  props.workspaceId
-    ? useAllScopeTableLogic(
-        async (wsId: string) =>
-          await hs.processingLevels.listAllItems({ workspaceId: [wsId] }),
-        () => hs.processingLevels.listAllItems({ workspaceId: ['null'] }),
-        hs.processingLevels.delete,
-        ProcessingLevel,
-        toRef(props, 'workspaceId'),
-        toRef(() => props.scope ?? 'workspace')
-      )
-    : useSystemTableLogic(
-        () => hs.processingLevels.listAllItems({ workspaceId: ['null'] }),
-        (id: string) => hs.processingLevels.delete(id),
-        ProcessingLevel
-      )
+} = useMetadataTableLogic(
+  hs.processingLevels,
+  ProcessingLevel,
+  toRef(props, 'workspaceId'),
+  toRef(() => props.scope ?? 'workspace'),
+  toRef(props, 'search'),
+  toRef(props, 'active')
+)
 </script>

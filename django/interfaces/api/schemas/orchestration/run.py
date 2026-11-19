@@ -45,19 +45,19 @@ class TaskRunQueryParameters(CollectionQueryParameters):
     )
     started_at__lte: ISODatetime | None = Query(
         None, description="Task runs that started at or before this RFC 3339 date-time.",
-        alias="startedAtMax"
+        alias="maxStartedAt"
     )
     started_at__gte: ISODatetime | None = Query(
         None, description="Task runs that started at or after this RFC 3339 date-time.",
-        alias="startedAtMin"
+        alias="minStartedAt"
     )
     finished_at__lte: ISODatetime | None = Query(
         None, description="Task runs that finished at or before this RFC 3339 date-time.",
-        alias="finishedAtMax"
+        alias="maxFinishedAt"
     )
     finished_at__gte: ISODatetime | None = Query(
         None, description="Task runs that finished at or after this RFC 3339 date-time.",
-        alias="finishedAtMin"
+        alias="minFinishedAt"
     )
 
 

@@ -3243,11 +3243,21 @@ export interface components {
              */
             limit: number;
             /**
+             * Maxvaluecount
+             * @description Datastreams with at most this many observations.
+             */
+            maxValueCount?: number | null;
+            /**
              * Methodid
              * @description Datastreams produced by this method. Matches `id` in `methods`.
              * @default []
              */
             methodId: string[];
+            /**
+             * Minvaluecount
+             * @description Datastreams with at least this many observations.
+             */
+            minValueCount?: number | null;
             /**
              * Monitoringsiteid
              * @description Datastreams at this monitoring site. Matches `id` in `monitoring-sites`.
@@ -3324,16 +3334,6 @@ export interface components {
              * @default []
              */
             unitId: string[];
-            /**
-             * Valuecountmax
-             * @description Datastreams with at most this many observations.
-             */
-            valueCountMax?: number | null;
-            /**
-             * Valuecountmin
-             * @description Datastreams with at least this many observations.
-             */
-            valueCountMin?: number | null;
             /**
              * Workspaceid
              * @description Datastreams in this workspace. Matches `id` in `workspaces`.
@@ -3682,26 +3682,6 @@ export interface components {
              */
             include?: "dataConnection"[];
             /**
-             * Latestrunfinishedatmax
-             * @description ETL tasks whose latest run finished at or before this RFC 3339 date-time.
-             */
-            latestRunFinishedAtMax?: string | null;
-            /**
-             * Latestrunfinishedatmin
-             * @description ETL tasks whose latest run finished at or after this RFC 3339 date-time.
-             */
-            latestRunFinishedAtMin?: string | null;
-            /**
-             * Latestrunstartedatmax
-             * @description ETL tasks whose latest run started at or before this RFC 3339 date-time.
-             */
-            latestRunStartedAtMax?: string | null;
-            /**
-             * Latestrunstartedatmin
-             * @description ETL tasks whose latest run started at or after this RFC 3339 date-time.
-             */
-            latestRunStartedAtMin?: string | null;
-            /**
              * Latestrunstatus
              * @description ETL tasks whose latest run has this status: `PENDING`, `STARTED`, `SUCCESS`, or `FAILURE`. `null` matches tasks that have never run.
              * @default []
@@ -3713,6 +3693,26 @@ export interface components {
              * @default 100
              */
             limit: number;
+            /**
+             * Maxlatestrunfinishedat
+             * @description ETL tasks whose latest run finished at or before this RFC 3339 date-time.
+             */
+            maxLatestRunFinishedAt?: string | null;
+            /**
+             * Maxlatestrunstartedat
+             * @description ETL tasks whose latest run started at or before this RFC 3339 date-time.
+             */
+            maxLatestRunStartedAt?: string | null;
+            /**
+             * Minlatestrunfinishedat
+             * @description ETL tasks whose latest run finished at or after this RFC 3339 date-time.
+             */
+            minLatestRunFinishedAt?: string | null;
+            /**
+             * Minlatestrunstartedat
+             * @description ETL tasks whose latest run started at or after this RFC 3339 date-time.
+             */
+            minLatestRunStartedAt?: string | null;
             /**
              * Monitoringsiteid
              * @description ETL tasks with a mapping that loads data into a datastream at this monitoring site. Matches `id` in `monitoring-sites`.
@@ -7466,16 +7466,6 @@ export interface components {
         /** TaskRunQueryParameters */
         TaskRunQueryParameters: {
             /**
-             * Finishedatmax
-             * @description Task runs that finished at or before this RFC 3339 date-time.
-             */
-            finishedAtMax?: string | null;
-            /**
-             * Finishedatmin
-             * @description Task runs that finished at or after this RFC 3339 date-time.
-             */
-            finishedAtMin?: string | null;
-            /**
              * Include
              * @description Comma-separated list of related resources to include in the response.
              */
@@ -7486,6 +7476,26 @@ export interface components {
              * @default 100
              */
             limit: number;
+            /**
+             * Maxfinishedat
+             * @description Task runs that finished at or before this RFC 3339 date-time.
+             */
+            maxFinishedAt?: string | null;
+            /**
+             * Maxstartedat
+             * @description Task runs that started at or before this RFC 3339 date-time.
+             */
+            maxStartedAt?: string | null;
+            /**
+             * Minfinishedat
+             * @description Task runs that finished at or after this RFC 3339 date-time.
+             */
+            minFinishedAt?: string | null;
+            /**
+             * Minstartedat
+             * @description Task runs that started at or after this RFC 3339 date-time.
+             */
+            minStartedAt?: string | null;
             /**
              * Offset
              * @description Number of items to skip.
@@ -7503,16 +7513,6 @@ export interface components {
              * @default []
              */
             sortby: ("id" | "status" | "startedAt" | "finishedAt" | "-id" | "-status" | "-startedAt" | "-finishedAt" | "+id" | "+status" | "+startedAt" | "+finishedAt")[];
-            /**
-             * Startedatmax
-             * @description Task runs that started at or before this RFC 3339 date-time.
-             */
-            startedAtMax?: string | null;
-            /**
-             * Startedatmin
-             * @description Task runs that started at or after this RFC 3339 date-time.
-             */
-            startedAtMin?: string | null;
             /**
              * Status
              * @description Task runs with this status. `PENDING` and `STARTED` runs haven't finished yet.
@@ -8925,13 +8925,13 @@ export interface operations {
                 /** @description Task runs with this status. `PENDING` and `STARTED` runs haven't finished yet. */
                 status?: ("PENDING" | "STARTED" | "SUCCESS" | "FAILURE")[];
                 /** @description Task runs that started at or before this RFC 3339 date-time. */
-                startedAtMax?: string | null;
+                maxStartedAt?: string | null;
                 /** @description Task runs that started at or after this RFC 3339 date-time. */
-                startedAtMin?: string | null;
+                minStartedAt?: string | null;
                 /** @description Task runs that finished at or before this RFC 3339 date-time. */
-                finishedAtMax?: string | null;
+                maxFinishedAt?: string | null;
                 /** @description Task runs that finished at or after this RFC 3339 date-time. */
-                finishedAtMin?: string | null;
+                minFinishedAt?: string | null;
             };
             header?: never;
             path: {
@@ -9699,9 +9699,9 @@ export interface operations {
                 /** @description `false` returns only datastreams that are public at every level: the datastream, its monitoring site, and its workspace. `true` returns only datastreams that are private at every level. */
                 isPrivate?: boolean | null;
                 /** @description Datastreams with at most this many observations. */
-                valueCountMax?: number | null;
+                maxValueCount?: number | null;
                 /** @description Datastreams with at least this many observations. */
-                valueCountMin?: number | null;
+                minValueCount?: number | null;
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json" | "geojson";
             };
@@ -10973,13 +10973,13 @@ export interface operations {
                 /** @description ETL tasks whose latest run has this status: `PENDING`, `STARTED`, `SUCCESS`, or `FAILURE`. `null` matches tasks that have never run. */
                 latestRunStatus?: (string | "null")[];
                 /** @description ETL tasks whose latest run started at or after this RFC 3339 date-time. */
-                latestRunStartedAtMin?: string | null;
+                minLatestRunStartedAt?: string | null;
                 /** @description ETL tasks whose latest run started at or before this RFC 3339 date-time. */
-                latestRunStartedAtMax?: string | null;
+                maxLatestRunStartedAt?: string | null;
                 /** @description ETL tasks whose latest run finished at or after this RFC 3339 date-time. */
-                latestRunFinishedAtMin?: string | null;
+                minLatestRunFinishedAt?: string | null;
                 /** @description ETL tasks whose latest run finished at or before this RFC 3339 date-time. */
-                latestRunFinishedAtMax?: string | null;
+                maxLatestRunFinishedAt?: string | null;
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json";
             };
@@ -11258,13 +11258,13 @@ export interface operations {
                 /** @description Task runs with this status. `PENDING` and `STARTED` runs haven't finished yet. */
                 status?: ("PENDING" | "STARTED" | "SUCCESS" | "FAILURE")[];
                 /** @description Task runs that started at or before this RFC 3339 date-time. */
-                startedAtMax?: string | null;
+                maxStartedAt?: string | null;
                 /** @description Task runs that started at or after this RFC 3339 date-time. */
-                startedAtMin?: string | null;
+                minStartedAt?: string | null;
                 /** @description Task runs that finished at or before this RFC 3339 date-time. */
-                finishedAtMax?: string | null;
+                maxFinishedAt?: string | null;
                 /** @description Task runs that finished at or after this RFC 3339 date-time. */
-                finishedAtMin?: string | null;
+                minFinishedAt?: string | null;
             };
             header?: never;
             path: {
@@ -13812,13 +13812,13 @@ export interface operations {
                 /** @description Task runs with this status. `PENDING` and `STARTED` runs haven't finished yet. */
                 status?: ("PENDING" | "STARTED" | "SUCCESS" | "FAILURE")[];
                 /** @description Task runs that started at or before this RFC 3339 date-time. */
-                startedAtMax?: string | null;
+                maxStartedAt?: string | null;
                 /** @description Task runs that started at or after this RFC 3339 date-time. */
-                startedAtMin?: string | null;
+                minStartedAt?: string | null;
                 /** @description Task runs that finished at or before this RFC 3339 date-time. */
-                finishedAtMax?: string | null;
+                maxFinishedAt?: string | null;
                 /** @description Task runs that finished at or after this RFC 3339 date-time. */
-                finishedAtMin?: string | null;
+                minFinishedAt?: string | null;
             };
             header?: never;
             path: {

@@ -138,8 +138,8 @@
               <strong> Filter: </strong>
             </div>
             <div>
-              Filter the datastream table items with the filter drawer on the
-              left and the search bar on the top of the datastreams table.
+              Use the filters and search bar above the datastreams table to find
+              data to plot.
             </div>
           </v-timeline-item>
           <v-timeline-item size="x-small" dot-color="secondary">

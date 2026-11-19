@@ -558,7 +558,7 @@ datastream.save()
 hs_api.datastreams.list(workspace=..., monitoring_site=..., method=..., observed_property=...,
                         processing_level=..., unit=..., type=..., sampled_medium=...,
                         status=..., tag=..., is_private=...,
-                        value_count_min=..., value_count_max=...,
+                        min_value_count=..., max_value_count=...,
                         phenomenon_time_min=..., phenomenon_time_max=...) -> HydroServerCollection[Datastream]
 hs_api.datastreams.get(uid) -> Datastream
 hs_api.datastreams.create(name, description, monitoring_site, method, observed_property, processing_level,
@@ -736,8 +736,8 @@ hs_api.dataconnections.delete(uid) -> None
 ```python
 hs_api.etltasks.list(
     workspace=..., data_connection=..., latest_run_status=...,
-    latest_run_started_at_min=..., latest_run_started_at_max=...,
-    latest_run_finished_at_min=..., latest_run_finished_at_max=...,
+    min_latest_run_started_at=..., max_latest_run_started_at=...,
+    min_latest_run_finished_at=..., max_latest_run_finished_at=...,
 ) -> HydroServerCollection[EtlTask]
 hs_api.etltasks.get(uid) -> EtlTask
 hs_api.etltasks.create(
@@ -761,7 +761,7 @@ hs_api.etltasks.delete(uid) -> None
 | Method | Returns | Description |
 |---|---|---|
 | `trigger()` | `TaskRun` | Dispatch an immediate run |
-| `list_runs(status=..., started_at_min=..., started_at_max=..., finished_at_min=..., finished_at_max=..., offset=..., limit=..., sortby=...)` | `List[TaskRun]` | Fetch run history, newest first |
+| `list_runs(status=..., min_started_at=..., max_started_at=..., min_finished_at=..., max_finished_at=..., offset=..., limit=..., sortby=...)` | `List[TaskRun]` | Fetch run history, newest first |
 | `get_run(run_id)` | `TaskRun` | Fetch a single run by ID |
 
 The service has the same methods with the task UID as the first argument, e.g. `hs_api.etltasks.trigger(uid)`.
