@@ -718,6 +718,9 @@ const props = defineProps({
   targetDatastreamId: { type: String, default: '' },
 })
 
+// Lets the page show how many datastreams are available (e.g. on its tab).
+const emit = defineEmits<{ 'datastream-count': [count: number] }>()
+
 type LinkedDatastreamTask = {
   id: string
   name: string
@@ -820,7 +823,16 @@ const onCreated = async () => {
   await loadDatastreams()
 }
 
-const { item, items, openEdit, openDelete, openDialog, onUpdate, onDelete } =
+const {
+  item,
+  items,
+  isLoading,
+  openEdit,
+  openDelete,
+  openDialog,
+  onUpdate,
+  onDelete,
+} =
   useTableLogic(
     async (monitoringSiteId: string) =>
       await hs.datastreams.listAllItems({
@@ -1854,6 +1866,16 @@ const loadDatastreams = async () => {
     console.error('Error fetching datastreams', e)
   }
 }
+
+// Report the count once the first load finishes (not the empty list before
+// it), then again whenever datastreams are added or removed.
+watch(
+  [isLoading, () => visibleDatastreams.value.length],
+  ([loading, count]) => {
+    if (!loading) emit('datastream-count', count)
+  },
+  { immediate: true }
+)
 </script>
 
 <style scoped>

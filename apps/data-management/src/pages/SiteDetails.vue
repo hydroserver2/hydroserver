@@ -226,6 +226,14 @@
           >
             <v-tab value="datastreams" data-testid="site-tab-datastreams">
               Datastreams
+              <v-chip
+                v-if="datastreamCount !== null"
+                size="x-small"
+                variant="tonal"
+                class="ml-2"
+              >
+                {{ datastreamCount }}
+              </v-chip>
             </v-tab>
             <v-tab value="photos" data-testid="site-tab-photos">
               Photos
@@ -252,6 +260,7 @@
                   v-if="workspace"
                   :workspace="workspace"
                   :target-datastream-id="targetDatastreamId"
+                  @datastream-count="datastreamCount = $event"
                 />
               </div>
             </v-window-item>
@@ -437,6 +446,9 @@ const isRegisterModalOpen = ref(false)
 const isDeleteModalOpen = ref(false)
 const isAccessControlModalOpen = ref(false)
 const ratingCurveCount = ref(0)
+// Fetched on load so the tab chip shows on every tab; DatastreamTable keeps it
+// current as datastreams are added or removed. null hides the chip until known.
+const datastreamCount = ref<number | null>(null)
 const selectedPhotoIndex = ref<number | null>(null)
 const isPhotoViewerOpen = ref(false)
 const hasMultiplePhotos = computed(() => (photos.value?.length ?? 0) > 1)
@@ -492,6 +504,19 @@ async function loadRatingCurveCount() {
   ratingCurveCount.value = items.length
 }
 
+// limit=0 asks only for the total (meta.numberMatched), not the rows.
+async function loadDatastreamCount() {
+  const res = await hs.datastreams.list({
+    monitoringSiteId: [monitoringSiteId],
+    limit: 0,
+  })
+  const count = res.ok ? res.meta?.numberMatched : undefined
+  // The table may have reported first; its count is just as current.
+  if (typeof count === 'number' && datastreamCount.value === null) {
+    datastreamCount.value = count
+  }
+}
+
 function onSiteFormClosed() {
   isRegisterModalOpen.value = false
 }
@@ -542,6 +567,9 @@ onMounted(async () => {
   )
   void loadRatingCurveCount().catch((error) =>
     console.error('Error fetching rating curves from DB', error)
+  )
+  void loadDatastreamCount().catch((error) =>
+    console.error('Error fetching datastream count', error)
   )
 
   const monitoringSiteResponse = await hs.monitoringSites
