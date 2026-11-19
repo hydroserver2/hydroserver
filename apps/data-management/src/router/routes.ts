@@ -72,6 +72,9 @@ export const routes: RouteRecordRaw[] = [
     name: 'SiteDetails',
     component: () => import('@/pages/SiteDetails.vue'),
     meta: {
+      // The page scrolls inside its own body below the title, so a footer
+      // after it would sit off-screen (same as Workspaces/Orchestration).
+      hideFooter: true,
       title: 'Site',
       metaTags: [
         {

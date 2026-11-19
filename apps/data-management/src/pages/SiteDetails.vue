@@ -107,182 +107,184 @@
       </v-col>
     </v-row>
 
-    <div v-if="monitoringSite" class="site-details-layout">
-      <aside class="site-details-aside" aria-label="About this site">
-        <SitePhotoCarousel
-          :photos="photos ?? []"
-          @open="openPhoto"
-          @view-all="activeTab = 'photos'"
-        />
+    <div class="site-details-body">
+      <div v-if="monitoringSite" class="site-details-layout">
+        <aside class="site-details-aside" aria-label="About this site">
+          <SitePhotoCarousel
+            :photos="photos ?? []"
+            @open="openPhoto"
+            @view-all="activeTab = 'photos'"
+          />
 
-        <v-card class="site-details-card" flat>
-          <h2 class="site-details-card__title hs-text-md">Site information</h2>
-          <dl class="site-details-facts hs-text-sm" data-testid="site-facts">
-            <div class="site-details-facts__row site-details-facts__row--stacked">
-              <dt>Site UUID</dt>
-              <dd class="site-details-facts__uuid">
-                <span class="hs-font-data">{{ monitoringSite.id }}</span>
-                <HsCopyButton
-                  :value="monitoringSite.id"
-                  :label="monitoringSite.name"
-                  data-testid="copy-site-id"
-                  @copied="Snackbar.success('Site UUID copied to clipboard')"
-                  @error="Snackbar.error('Failed to copy site UUID')"
-                />
-              </dd>
-            </div>
-            <div v-if="monitoringSite.code" class="site-details-facts__row">
-              <dt>Site code</dt>
-              <dd class="hs-font-data">{{ monitoringSite.code }}</dd>
-            </div>
-            <div v-if="monitoringSite.type" class="site-details-facts__row">
-              <dt>Site type</dt>
-              <dd>{{ monitoringSite.type }}</dd>
-            </div>
-            <div class="site-details-facts__row">
-              <dt>Privacy</dt>
-              <dd>
-                <v-chip
-                  size="small"
-                  variant="tonal"
-                  :color="monitoringSite.isPrivate ? 'error' : 'success'"
-                  :prepend-icon="
-                    monitoringSite.isPrivate ? mdiLock : mdiLockOpenVariant
-                  "
-                  data-testid="site-privacy-chip"
-                >
-                  {{ monitoringSite.isPrivate ? 'Private' : 'Public' }}
-                </v-chip>
-              </dd>
-            </div>
-          </dl>
-          <p class="site-details-card__body hs-text-sm">
-            {{ monitoringSite.description || 'No description provided.' }}
-          </p>
-        </v-card>
-
-        <SiteTagList
-          :tags="monitoringSite.tags"
-          :can-edit="canEditMonitoringSite"
-          @edit="isRegisterModalOpen = true"
-        />
-      </aside>
-
-      <section class="site-details-map" aria-label="Site location">
-        <div class="h-80 w-full max-[960px]:h-72">
-          <OpenLayersMap
-            :monitoringSites="[monitoringSite]"
-            startInSatellite
-            class="h-full w-full"
-          >
-            <template #overlay>
-              <v-card
-                v-if="!isMobile"
-                class="mb-2 ml-2 max-w-[18rem] bg-white/95 px-3 py-2"
-                elevation="4"
-              >
-                <div class="hs-text-sm font-weight-medium mb-2">Location</div>
-                <div class="grid gap-1">
-                  <div
-                    v-for="detail in locationDetails"
-                    :key="detail.label"
-                    class="flex flex-col"
+          <v-card class="site-details-card" flat>
+            <h2 class="site-details-card__title hs-text-md">Site information</h2>
+            <dl class="site-details-facts hs-text-sm" data-testid="site-facts">
+              <div class="site-details-facts__row site-details-facts__row--stacked">
+                <dt>Site UUID</dt>
+                <dd class="site-details-facts__uuid">
+                  <span class="hs-font-data">{{ monitoringSite.id }}</span>
+                  <HsCopyButton
+                    :value="monitoringSite.id"
+                    :label="monitoringSite.name"
+                    data-testid="copy-site-id"
+                    @copied="Snackbar.success('Site UUID copied to clipboard')"
+                    @error="Snackbar.error('Failed to copy site UUID')"
+                  />
+                </dd>
+              </div>
+              <div v-if="monitoringSite.code" class="site-details-facts__row">
+                <dt>Site code</dt>
+                <dd class="hs-font-data">{{ monitoringSite.code }}</dd>
+              </div>
+              <div v-if="monitoringSite.type" class="site-details-facts__row">
+                <dt>Site type</dt>
+                <dd>{{ monitoringSite.type }}</dd>
+              </div>
+              <div class="site-details-facts__row">
+                <dt>Privacy</dt>
+                <dd>
+                  <v-chip
+                    size="small"
+                    variant="tonal"
+                    :color="monitoringSite.isPrivate ? 'error' : 'success'"
+                    :prepend-icon="
+                      monitoringSite.isPrivate ? mdiLock : mdiLockOpenVariant
+                    "
+                    data-testid="site-privacy-chip"
                   >
-                    <span class="hs-text-2xs text-medium-emphasis">
-                      {{ detail.label }}
-                    </span>
-                    <span class="hs-text-sm">{{ detail.value }}</span>
-                  </div>
-                </div>
-              </v-card>
-            </template>
-          </OpenLayersMap>
-        </div>
-        <div v-if="isMobile" class="px-3 py-2">
-          <div class="hs-text-sm font-weight-medium mb-2">Location</div>
-          <div class="grid gap-1">
-            <div
-              v-for="detail in locationDetails"
-              :key="detail.label"
-              class="flex flex-col"
+                    {{ monitoringSite.isPrivate ? 'Private' : 'Public' }}
+                  </v-chip>
+                </dd>
+              </div>
+            </dl>
+            <p class="site-details-card__body hs-text-sm">
+              {{ monitoringSite.description || 'No description provided.' }}
+            </p>
+          </v-card>
+
+          <SiteTagList
+            :tags="monitoringSite.tags"
+            :can-edit="canEditMonitoringSite"
+            @edit="isRegisterModalOpen = true"
+          />
+        </aside>
+
+        <section class="site-details-map" aria-label="Site location">
+          <div class="h-80 w-full max-[960px]:h-72">
+            <OpenLayersMap
+              :monitoringSites="[monitoringSite]"
+              startInSatellite
+              class="h-full w-full"
             >
-              <span class="hs-text-2xs text-medium-emphasis">
-                {{ detail.label }}
-              </span>
-              <span class="hs-text-sm">{{ detail.value }}</span>
+              <template #overlay>
+                <v-card
+                  v-if="!isMobile"
+                  class="mb-2 ml-2 max-w-[18rem] bg-white/95 px-3 py-2"
+                  elevation="4"
+                >
+                  <div class="hs-text-sm font-weight-medium mb-2">Location</div>
+                  <div class="grid gap-1">
+                    <div
+                      v-for="detail in locationDetails"
+                      :key="detail.label"
+                      class="flex flex-col"
+                    >
+                      <span class="hs-text-2xs text-medium-emphasis">
+                        {{ detail.label }}
+                      </span>
+                      <span class="hs-text-sm">{{ detail.value }}</span>
+                    </div>
+                  </div>
+                </v-card>
+              </template>
+            </OpenLayersMap>
+          </div>
+          <div v-if="isMobile" class="px-3 py-2">
+            <div class="hs-text-sm font-weight-medium mb-2">Location</div>
+            <div class="grid gap-1">
+              <div
+                v-for="detail in locationDetails"
+                :key="detail.label"
+                class="flex flex-col"
+              >
+                <span class="hs-text-2xs text-medium-emphasis">
+                  {{ detail.label }}
+                </span>
+                <span class="hs-text-sm">{{ detail.value }}</span>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <v-card class="site-details-tabs" flat>
-        <v-tabs
-          v-model="activeTab"
-          color="primary"
-          density="comfortable"
-          show-arrows
-          class="site-details-tabs__bar"
-        >
-          <v-tab value="datastreams" data-testid="site-tab-datastreams">
-            Datastreams
-          </v-tab>
-          <v-tab value="photos" data-testid="site-tab-photos">
-            Photos
-            <v-chip size="x-small" variant="tonal" class="ml-2">
-              {{ photos?.length ?? 0 }}
-            </v-chip>
-          </v-tab>
-          <v-tab value="rating-curves" data-testid="site-tab-rating-curves">
-            Rating curves
-            <v-chip size="x-small" variant="tonal" class="ml-2">
-              {{ ratingCurveCount }}
-            </v-chip>
-          </v-tab>
-        </v-tabs>
+        <v-card class="site-details-tabs" flat>
+          <v-tabs
+            v-model="activeTab"
+            color="primary"
+            density="comfortable"
+            show-arrows
+            class="site-details-tabs__bar"
+          >
+            <v-tab value="datastreams" data-testid="site-tab-datastreams">
+              Datastreams
+            </v-tab>
+            <v-tab value="photos" data-testid="site-tab-photos">
+              Photos
+              <v-chip size="x-small" variant="tonal" class="ml-2">
+                {{ photos?.length ?? 0 }}
+              </v-chip>
+            </v-tab>
+            <v-tab value="rating-curves" data-testid="site-tab-rating-curves">
+              Rating curves
+              <v-chip size="x-small" variant="tonal" class="ml-2">
+                {{ ratingCurveCount }}
+              </v-chip>
+            </v-tab>
+          </v-tabs>
 
-        <v-window v-model="activeTab" :touch="false">
-          <v-window-item
-            value="datastreams"
-            :transition="false"
-            :reverse-transition="false"
-          >
-            <div class="site-details-tabs__panel">
-              <DatastreamTable
-                v-if="workspace"
-                :workspace="workspace"
-                :target-datastream-id="targetDatastreamId"
-              />
-            </div>
-          </v-window-item>
-          <v-window-item
-            value="photos"
-            :transition="false"
-            :reverse-transition="false"
-          >
-            <SitePhotosPanel
-              :monitoring-site-id="monitoringSiteId"
-              :can-edit="canEditMonitoringSite"
-              @open="openPhoto"
-            />
-          </v-window-item>
-          <v-window-item
-            value="rating-curves"
-            :transition="false"
-            :reverse-transition="false"
-          >
-            <div class="site-details-tabs__panel">
-              <RatingCurveTable
+          <v-window v-model="activeTab" :touch="false">
+            <v-window-item
+              value="datastreams"
+              :transition="false"
+              :reverse-transition="false"
+            >
+              <div class="site-details-tabs__panel">
+                <DatastreamTable
+                  v-if="workspace"
+                  :workspace="workspace"
+                  :target-datastream-id="targetDatastreamId"
+                />
+              </div>
+            </v-window-item>
+            <v-window-item
+              value="photos"
+              :transition="false"
+              :reverse-transition="false"
+            >
+              <SitePhotosPanel
                 :monitoring-site-id="monitoringSiteId"
-                :workspace-id="monitoringSite.workspaceId"
                 :can-edit="canEditMonitoringSite"
-                inline-read-only
-                download-only
-                @rating-curves-changed="ratingCurveCount = $event.length"
+                @open="openPhoto"
               />
-            </div>
-          </v-window-item>
-        </v-window>
-      </v-card>
+            </v-window-item>
+            <v-window-item
+              value="rating-curves"
+              :transition="false"
+              :reverse-transition="false"
+            >
+              <div class="site-details-tabs__panel">
+                <RatingCurveTable
+                  :monitoring-site-id="monitoringSiteId"
+                  :workspace-id="monitoringSite.workspaceId"
+                  :can-edit="canEditMonitoringSite"
+                  inline-read-only
+                  download-only
+                  @rating-curves-changed="ratingCurveCount = $event.length"
+                />
+              </div>
+            </v-window-item>
+          </v-window>
+        </v-card>
+      </div>
     </div>
 
     <v-dialog v-model="isPhotoViewerOpen" width="60rem">
@@ -565,14 +567,20 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* Like Workspaces and Job Orchestration: the page fills the space under the
+   navbar and only the body scrolls, so the navbar and title stay full width
+   above the scroll bar. */
 .site-details-page {
   --site-details-page-gutter: var(--hs-space-24);
+  display: flex;
+  flex-direction: column;
+  height: calc(100dvh - var(--v-layout-top, 0px) - var(--v-layout-bottom, 0px));
+  overflow: hidden;
 }
 
 .site-details-header {
-  position: sticky;
-  top: var(--v-layout-top, 0);
-  z-index: 10;
+  /* .v-row defaults to flex: 1 1 auto, which would split the height with the body. */
+  flex: 0 0 auto;
   margin: 0;
   padding: var(--hs-space-16) var(--site-details-page-gutter);
   background: var(--hs-surface);
@@ -581,6 +589,12 @@ onMounted(async () => {
 
 .site-details-header > .v-col {
   padding: 0;
+}
+
+.site-details-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 /* Basis 0 so the stacked phone header (flex-direction: column) doesn't turn
@@ -702,14 +716,21 @@ onMounted(async () => {
   gap: var(--hs-space-4);
 }
 
+/* Phones keep normal page scrolling: a pinned header would take too much of
+   the small screen. */
 @media (max-width: 700px) {
   .site-details-page {
     --site-details-page-gutter: var(--hs-space-16);
+    height: auto;
+    overflow: visible;
   }
 
   .site-details-header {
-    position: static;
     padding-block: var(--hs-space-12);
+  }
+
+  .site-details-body {
+    overflow: visible;
   }
 }
 </style>

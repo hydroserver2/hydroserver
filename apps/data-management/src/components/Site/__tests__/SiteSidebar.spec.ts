@@ -69,6 +69,54 @@ describe('SiteTagList', () => {
     expect(wrapper.find('[data-testid="edit-site-tags-button"]').exists()).toBe(false)
   })
 
+  it('lists tags alphabetically by key, ignoring case', () => {
+    const wrapper = mount(SiteTagList, {
+      props: {
+        tags: { watershed: 'a', HUC10: 'b', bank: 'c', HUC2: 'd', Access: 'e' },
+      },
+      global: { plugins: [vuetify] },
+    })
+    const keys = wrapper.findAll('dt').map((dt) => dt.text())
+    expect(keys).toEqual(['Access', 'bank', 'HUC2', 'HUC10', 'watershed'])
+  })
+
+  it('hides the filter when there are only a few tags', () => {
+    const wrapper = mount(SiteTagList, {
+      props: { tags: { watershed: 'Logan River', network: 'LRO' } },
+      global: { plugins: [vuetify] },
+    })
+    expect(wrapper.find('[data-testid="site-tag-filter"]').exists()).toBe(false)
+  })
+
+  it('filters long tag lists by key or value, ignoring case', async () => {
+    const tags = {
+      watershed: 'Logan River',
+      network: 'Logan River Observatory',
+      datalogger: 'Campbell Scientific CR1000X',
+      telemetry: 'Cellular modem',
+      power: 'Solar panel and battery',
+      access: 'Park at the pull-out by the bridge',
+      bank: 'East bank',
+    }
+    const wrapper = mount(SiteTagList, {
+      props: { tags },
+      global: { plugins: [vuetify] },
+    })
+    const input = wrapper.get('[data-testid="site-tag-filter"] input')
+
+    await input.setValue('LOGAN')
+    expect(wrapper.findAll('.site-tag-list__item')).toHaveLength(2)
+    expect(wrapper.text()).toContain('2 of 7 tags')
+
+    await input.setValue('power')
+    const keys = wrapper.findAll('dt').map((dt) => dt.text())
+    expect(keys).toEqual(['power'])
+
+    await input.setValue('no such tag')
+    expect(wrapper.findAll('.site-tag-list__item')).toHaveLength(0)
+    expect(wrapper.text()).toContain('No tags match “no such tag”.')
+  })
+
   it('shows an empty state and the edit button for editors', () => {
     const wrapper = mount(SiteTagList, {
       props: { tags: {}, canEdit: true },
