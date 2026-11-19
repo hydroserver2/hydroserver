@@ -69,7 +69,7 @@
       />
     </div>
 
-    <div class="hs-table-card site-datastreams__table-card">
+    <div class="site-datastreams__table-card">
       <div class="site-datastreams__table-controls">
         <div class="site-datastreams__filter-header-content">
           <div class="site-datastreams__filters">
@@ -2420,16 +2420,17 @@ const loadDatastreams = async () => {
   max-width: none;
   margin-left: 0;
 }
+/* The rows sit directly on the page's tab card: no extra bordered wrapper or
+   tinted backdrop, just the filter bar and one card per datastream. */
 .site-datastreams__table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  background: var(--hs-background);
 }
 .site-datastreams__table-controls {
   padding: var(--hs-space-6) var(--hs-space-8);
   background: var(--hs-surface-muted);
-  border-bottom: 1px solid var(--hs-border);
+  border-radius: var(--hs-radius-md);
 }
 .site-datastreams__filter-header-content {
   width: 100%;
@@ -2462,7 +2463,7 @@ const loadDatastreams = async () => {
   display: flex;
   flex-direction: column;
   gap: var(--hs-space-8);
-  padding: var(--hs-space-8);
+  padding: var(--hs-space-8) 0 0;
 }
 .site-datastreams__table tbody tr {
   position: relative;
@@ -2642,6 +2643,11 @@ const loadDatastreams = async () => {
     display: block;
     width: 100%;
   }
+  /* Keep the cards stacked with a gap between them. */
+  .site-datastreams__table tbody {
+    display: flex;
+    flex-direction: column;
+  }
   .site-datastreams__table tbody tr {
     padding: 0;
   }
@@ -2676,6 +2682,20 @@ const loadDatastreams = async () => {
   }
   .site-datastreams__sparkline {
     flex-basis: calc(4 * var(--hs-space-32));
+  }
+  /* Phone cards are too narrow for value, date, and count on one line: let
+     them wrap below the sparkline instead of being clipped by the card. */
+  .site-datastreams__observations {
+    flex-wrap: wrap;
+    row-gap: var(--hs-space-4);
+  }
+  .site-datastreams__latest {
+    flex-wrap: wrap;
+    row-gap: var(--hs-space-2);
+    white-space: normal;
+  }
+  .site-datastreams__latest-item {
+    white-space: nowrap;
   }
 }
 </style>
