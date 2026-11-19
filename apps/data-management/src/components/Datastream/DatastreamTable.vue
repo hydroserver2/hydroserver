@@ -4,13 +4,6 @@
     class="site-datastreams"
     aria-labelledby="site-datastreams-heading"
   >
-    <p
-      v-if="monitoringSite?.dataDisclaimer"
-      class="site-datastreams__disclaimer hs-text-md"
-    >
-      {{ monitoringSite.dataDisclaimer }}
-    </p>
-
     <div class="hs-table-tools site-datastreams__tools">
       <div class="site-datastreams__tools-primary">
         <div class="site-datastreams__heading">
@@ -2396,13 +2389,12 @@ watch(
 .site-datastreams {
   min-width: 0;
 }
-.site-datastreams__disclaimer {
-  margin: 0 0 var(--hs-space-8);
-  color: var(--hs-error);
-}
+/* No top margin: the site page's tab panel already pads the top, so the
+   buttons line up with the Photos and Rating curves tabs. */
 .site-datastreams__tools {
   flex-wrap: wrap;
   align-items: flex-end;
+  margin-top: 0;
 }
 .site-datastreams__tools-primary,
 .site-datastreams__heading,

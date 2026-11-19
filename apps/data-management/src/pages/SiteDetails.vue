@@ -160,6 +160,19 @@
             <SiteDescription :text="monitoringSite.description" />
           </v-card>
 
+          <!-- Was above the datastream list; kept in the same warning color. -->
+          <v-card
+            v-if="monitoringSite.dataDisclaimer"
+            class="site-details-card"
+            flat
+            data-testid="site-data-disclaimer"
+          >
+            <h2 class="site-details-card__title hs-text-md">Data disclaimer</h2>
+            <p class="site-details-disclaimer hs-text-sm">
+              {{ monitoringSite.dataDisclaimer }}
+            </p>
+          </v-card>
+
           <SiteTagList
             :tags="monitoringSite.tags"
             :can-edit="canEditMonitoringSite"
@@ -694,6 +707,14 @@ onMounted(async () => {
   margin: 0;
   padding: var(--hs-space-10) var(--hs-space-16);
   border-bottom: 1px solid var(--hs-border);
+}
+
+.site-details-disclaimer {
+  margin: 0;
+  padding: var(--hs-space-12) var(--hs-space-16);
+  color: var(--hs-error);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
 }
 
 /* Label/value rows; the UUID gets its own full-width line so it never wraps. */
