@@ -41,7 +41,6 @@ import { computed } from 'vue'
 import { mdiArrowRight } from '@mdi/js'
 import type { DataProductTransformation } from '@hydroserver/client'
 import MappingDatastreamCard from '@/components/Orchestration/shared/MappingDatastreamCard.vue'
-import { useMappingDatastreams } from '@/composables/orchestration/useMappingDatastreams'
 
 type ProductTaskLabel = 'aggregation' | 'derivation'
 type MappingRow = {
@@ -55,8 +54,6 @@ const props = defineProps<{
   taskLabel: ProductTaskLabel
   monitoringSiteId?: string | null
 }>()
-
-useMappingDatastreams()
 
 const mappingRows = computed<MappingRow[]>(() => {
   const transformations = props.transformations ?? []

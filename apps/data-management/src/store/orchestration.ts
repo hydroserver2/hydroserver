@@ -31,9 +31,6 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
   const selectedConnectionId = ref<string | null>(null)
   const selectedMonitoringSiteId = ref<string | null>(null)
   const sidebarSearch = ref('')
-  const loadedWorkspaceDatastreamId = ref<string | null>(null)
-  const loadedLinkedDatastreamWorkspaceId = ref<string | null>(null)
-  const loadedWorkspaceMonitoringSitesId = ref<string | null>(null)
   let workspaceDatastreamRequestId = 0
   let linkedDatastreamRequestId = 0
   let workspaceMonitoringSitesRequestId = 0
@@ -41,19 +38,16 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
   const resetWorkspaceDatastreams = () => {
     workspaceDatastreamRequestId += 1
     workspaceDatastreams.value = []
-    loadedWorkspaceDatastreamId.value = null
   }
 
   const resetWorkspaceMonitoringSites = () => {
     workspaceMonitoringSitesRequestId += 1
     workspaceMonitoringSites.value = []
-    loadedWorkspaceMonitoringSitesId.value = null
   }
 
   const resetLinkedDatastreams = () => {
     linkedDatastreamRequestId += 1
     persistedLinkedDatastreamIds.value = new Set()
-    loadedLinkedDatastreamWorkspaceId.value = null
   }
 
   const resetDraftDatastreams = () => {
@@ -63,18 +57,10 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
   const linkedDatastreamIds = computed(() => persistedLinkedDatastreamIds.value)
 
   const ensureWorkspaceLinkedDatastreams = async (
-    requestedWorkspaceId = workspaceId.value,
-    force = false
+    requestedWorkspaceId = workspaceId.value
   ) => {
     if (!requestedWorkspaceId) {
       resetLinkedDatastreams()
-      return linkedDatastreamIds.value
-    }
-
-    if (
-      !force &&
-      loadedLinkedDatastreamWorkspaceId.value === requestedWorkspaceId
-    ) {
       return linkedDatastreamIds.value
     }
 
@@ -101,7 +87,6 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
     }
 
     persistedLinkedDatastreamIds.value = ids
-    loadedLinkedDatastreamWorkspaceId.value = requestedWorkspaceId
     return linkedDatastreamIds.value
   }
 
@@ -112,16 +97,11 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
   )
 
   const ensureWorkspaceDatastreams = async (
-    requestedWorkspaceId = workspaceId.value,
-    force = false
+    requestedWorkspaceId = workspaceId.value
   ) => {
     if (!requestedWorkspaceId) {
       resetWorkspaceDatastreams()
       return []
-    }
-
-    if (!force && loadedWorkspaceDatastreamId.value === requestedWorkspaceId) {
-      return workspaceDatastreams.value
     }
 
     const requestId = ++workspaceDatastreamRequestId
@@ -133,24 +113,15 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
       return workspaceDatastreams.value
     }
     workspaceDatastreams.value = list ?? []
-    loadedWorkspaceDatastreamId.value = requestedWorkspaceId
     return workspaceDatastreams.value
   }
 
   const ensureWorkspaceMonitoringSites = async (
-    requestedWorkspaceId = workspaceId.value,
-    force = false
+    requestedWorkspaceId = workspaceId.value
   ) => {
     if (!requestedWorkspaceId) {
       resetWorkspaceMonitoringSites()
       return []
-    }
-
-    if (
-      !force &&
-      loadedWorkspaceMonitoringSitesId.value === requestedWorkspaceId
-    ) {
-      return workspaceMonitoringSites.value
     }
 
     const requestId = ++workspaceMonitoringSitesRequestId
@@ -162,33 +133,15 @@ export const useOrchestrationStore = defineStore('orchestration', () => {
       return workspaceMonitoringSites.value
     }
     workspaceMonitoringSites.value = (list ?? []) as MonitoringSite[]
-    loadedWorkspaceMonitoringSitesId.value = requestedWorkspaceId
     return workspaceMonitoringSites.value
   }
 
-  watch(
-    workspaceId,
-    (wsId) => {
-      if (!wsId) {
-        resetWorkspaceDatastreams()
-        resetLinkedDatastreams()
-        resetWorkspaceMonitoringSites()
-        resetDraftDatastreams()
-        return
-      }
-      if (loadedWorkspaceDatastreamId.value !== wsId) {
-        resetWorkspaceDatastreams()
-        resetDraftDatastreams()
-      }
-      if (loadedLinkedDatastreamWorkspaceId.value !== wsId) {
-        resetLinkedDatastreams()
-      }
-      if (loadedWorkspaceMonitoringSitesId.value !== wsId) {
-        resetWorkspaceMonitoringSites()
-      }
-    },
-    { immediate: true }
-  )
+  watch(workspaceId, () => {
+    resetWorkspaceDatastreams()
+    resetLinkedDatastreams()
+    resetWorkspaceMonitoringSites()
+    resetDraftDatastreams()
+  })
 
   return {
     workspaceTasks,

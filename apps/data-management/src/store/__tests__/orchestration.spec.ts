@@ -6,10 +6,12 @@ import { useWorkspaceStore } from '../workspaces'
 
 const {
   listAllItemsMock,
+  monitoringSitesListAllItemsMock,
   etlMappingsListAllItemsMock,
   dataProductTransformationsListAllItemsMock,
 } = vi.hoisted(() => ({
   listAllItemsMock: vi.fn(),
+  monitoringSitesListAllItemsMock: vi.fn(),
   etlMappingsListAllItemsMock: vi.fn(),
   dataProductTransformationsListAllItemsMock: vi.fn(),
 }))
@@ -23,6 +25,9 @@ vi.mock('@hydroserver/client', async (importOriginal) => {
       ...actual.default,
       datastreams: {
         listAllItems: listAllItemsMock,
+      },
+      monitoringSites: {
+        listAllItems: monitoringSitesListAllItemsMock,
       },
       etlMappings: {
         listAllItems: etlMappingsListAllItemsMock,
@@ -40,6 +45,7 @@ describe('orchestration store', () => {
     setActivePinia(createPinia())
     vi.restoreAllMocks()
     listAllItemsMock.mockReset()
+    monitoringSitesListAllItemsMock.mockReset()
     etlMappingsListAllItemsMock.mockReset()
     dataProductTransformationsListAllItemsMock.mockReset()
   })
@@ -97,6 +103,33 @@ describe('orchestration store', () => {
     })
     expect(etlMappingsListAllItemsMock).toHaveBeenCalledTimes(1)
     expect(dataProductTransformationsListAllItemsMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('recovers from an empty failed load because every call fetches again', async () => {
+    listAllItemsMock
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ id: 'ds-1', name: 'Datastream 1' }])
+    monitoringSitesListAllItemsMock
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ id: 'site-1', name: 'Site 1' }])
+    const orchestrationStore = useOrchestrationStore()
+
+    await orchestrationStore.ensureWorkspaceDatastreams('workspace-1')
+    await orchestrationStore.ensureWorkspaceMonitoringSites('workspace-1')
+    expect(orchestrationStore.workspaceDatastreams).toEqual([])
+    expect(orchestrationStore.workspaceMonitoringSites).toEqual([])
+
+    await orchestrationStore.ensureWorkspaceDatastreams('workspace-1')
+    await orchestrationStore.ensureWorkspaceMonitoringSites('workspace-1')
+
+    expect(orchestrationStore.workspaceDatastreams.map((d) => d.id)).toEqual([
+      'ds-1',
+    ])
+    expect(orchestrationStore.workspaceMonitoringSites.map((s) => s.id)).toEqual(
+      ['site-1']
+    )
+    expect(listAllItemsMock).toHaveBeenCalledTimes(2)
+    expect(monitoringSitesListAllItemsMock).toHaveBeenCalledTimes(2)
   })
 
   it('ignores stale datastream responses after switching workspaces', async () => {

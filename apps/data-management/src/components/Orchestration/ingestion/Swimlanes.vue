@@ -46,10 +46,8 @@
 import type { EtlMapping } from '@hydroserver/client'
 import { mdiArrowRight } from '@mdi/js'
 import MappingDatastreamCard from '@/components/Orchestration/shared/MappingDatastreamCard.vue'
-import { useMappingDatastreams } from '@/composables/orchestration/useMappingDatastreams'
 
 defineProps<{ mappings: EtlMapping[] }>()
-useMappingDatastreams()
 </script>
 
 <style scoped>

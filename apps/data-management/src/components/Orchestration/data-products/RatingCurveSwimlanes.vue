@@ -33,7 +33,6 @@
 <script setup lang="ts">
 import { mdiArrowRight } from '@mdi/js'
 import MappingDatastreamCard from '@/components/Orchestration/shared/MappingDatastreamCard.vue'
-import { useMappingDatastreams } from '@/composables/orchestration/useMappingDatastreams'
 
 type RatingCurveTransformation = {
   id?: string
@@ -46,8 +45,6 @@ const props = defineProps<{
   transformations: RatingCurveTransformation[]
   monitoringSiteId?: string | null
 }>()
-
-useMappingDatastreams()
 
 function inputDatastreamId(t: RatingCurveTransformation) {
   return t.inputDatastreams?.[0]?.datastreamId ?? ''

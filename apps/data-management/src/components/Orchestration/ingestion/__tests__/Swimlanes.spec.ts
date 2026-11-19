@@ -16,7 +16,7 @@ vi.mock('@hydroserver/client', async (importOriginal) => {
     ...actual,
     default: {
       ...actual.default,
-      datastreams: { listAllItems: datastreamsMock },
+      datastreams: { getItem: datastreamsMock },
       monitoringSites: { listAllItems: monitoringSitesMock },
     },
   }
@@ -30,19 +30,26 @@ describe('ingestion mapping targets', () => {
     useWorkspaceStore().setWorkspaces([
       { id: 'workspace-1', name: 'Workspace 1' } as any,
     ])
-    datastreamsMock.mockResolvedValue([
-      {
-        id: 'datastream-1',
-        name: 'Water temperature',
-        monitoringSiteId: 'site-1',
-      },
-    ])
+    datastreamsMock.mockResolvedValue({
+      id: 'datastream-1',
+      name: 'Water temperature',
+      monitoringSiteId: 'site-1',
+      monitoringSite: { id: 'site-1', name: 'River station' },
+    })
     monitoringSitesMock.mockResolvedValue([
       { id: 'site-1', name: 'River station' },
     ])
   })
 
-  it('loads target names and site links without opening the task editor', async () => {
+  it('shows a skeleton until target names and site links load from the client', async () => {
+    const result = await datastreamsMock()
+    datastreamsMock.mockClear()
+    let resolve!: (value: any) => void
+    datastreamsMock.mockReturnValueOnce(
+      new Promise((done) => {
+        resolve = done
+      })
+    )
     const store = useOrchestrationStore()
     expect(store.workspaceDatastreams).toEqual([])
     expect(store.workspaceMonitoringSites).toEqual([])
@@ -61,6 +68,7 @@ describe('ingestion mapping targets', () => {
       global: {
         stubs: {
           'v-icon': true,
+          'v-skeleton-loader': true,
           'v-menu': {
             template:
               '<div><slot name="activator" :props="{}" /><slot /></div>',
@@ -80,16 +88,19 @@ describe('ingestion mapping targets', () => {
     })
     await flushPromises()
 
-    expect(datastreamsMock).toHaveBeenCalledWith({
-      workspaceId: ['workspace-1'],
+    expect(wrapper.find('v-skeleton-loader-stub').exists()).toBe(true)
+    expect(wrapper.text()).not.toContain('datastream-1')
+    expect(wrapper.get('button').element.disabled).toBe(true)
+    resolve(result)
+    await flushPromises()
+    expect(wrapper.find('v-skeleton-loader-stub').exists()).toBe(false)
+    expect(datastreamsMock).toHaveBeenCalledWith('datastream-1', {
       expand_related: true,
     })
-    expect(monitoringSitesMock).toHaveBeenCalledWith({
-      workspaceId: ['workspace-1'],
-      sortby: ['name'],
-    })
+    expect(monitoringSitesMock).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('Water temperature')
     expect(wrapper.text()).toContain('River station')
+    expect(wrapper.text()).toContain('datastream-1')
     expect(wrapper.get('button').element.disabled).toBe(false)
     const siteLink = wrapper
       .findAllComponents({ name: 'VListItem' })
