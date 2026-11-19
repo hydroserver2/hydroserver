@@ -157,9 +157,7 @@
                 </dd>
               </div>
             </dl>
-            <p class="site-details-card__body hs-text-sm">
-              {{ monitoringSite.description || 'No description provided.' }}
-            </p>
+            <SiteDescription :text="monitoringSite.description" />
           </v-card>
 
           <SiteTagList
@@ -362,6 +360,7 @@ import SiteDeleteModal from '@/components/Site/SiteDeleteModal.vue'
 import SitePhotoCarousel from '@/components/Site/SitePhotoCarousel.vue'
 import SitePhotosPanel from '@/components/Site/SitePhotosPanel.vue'
 import SiteTagList from '@/components/Site/SiteTagList.vue'
+import SiteDescription from '@/components/Site/SiteDescription.vue'
 import RatingCurveTable from '@/components/Orchestration/data-products/RatingCurveTable.vue'
 import {
   HsCopyButton,
@@ -695,12 +694,6 @@ onMounted(async () => {
   margin: 0;
   padding: var(--hs-space-10) var(--hs-space-16);
   border-bottom: 1px solid var(--hs-border);
-}
-
-.site-details-card__body {
-  margin: 0;
-  padding: var(--hs-space-12) var(--hs-space-16);
-  white-space: pre-line;
 }
 
 /* Label/value rows; the UUID gets its own full-width line so it never wraps. */
