@@ -22,7 +22,7 @@
         variant="text"
         data-testid="add-datastream-to-plot"
         @click="addToPlot(datastream)"
-        >Add to Current Plot</v-btn-dialog-action
+        >Add to current plot</v-btn-dialog-action
       >
       <v-spacer />
       <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
@@ -30,7 +30,7 @@
         type="submit"
         data-testid="clear-and-plot-datastream"
         @click="clearAndPlot(datastream)"
-        >Clear and Plot</v-btn-dialog-action
+        >Clear and plot</v-btn-dialog-action
       >
     </v-card-actions>
   </v-card>

@@ -9,16 +9,16 @@
     <v-card-title>
       <v-row class="hs-text-md">
         <v-col v-if="linkToExistingAccount">
-          Link Site to HydroShare Archival Resource
+          Link site to HydroShare archival resource
         </v-col>
         <v-col v-else>
-          {{ isEdit ? 'Update' : 'Create' }} HydroShare Archival Resource
+          {{ isEdit ? 'Update' : 'Create' }} HydroShare archival resource
         </v-col>
         <v-spacer />
         <v-col cols="auto" v-if="isEdit">
           <v-btn @click="archiveMonitoringSite">
             <v-icon :icon="mdiUpload" left />
-            Archive Now
+            Archive now
           </v-btn>
         </v-col>
       </v-row>
@@ -34,7 +34,7 @@
       :disabled="loading"
     >
       <h6 v-if="false" class="hs-text-md my-4 d-flex justify-center align-center">
-        Archival Scheduling
+        Archival scheduling
 
         <v-tooltip open-delay="500">
           <template v-slot:activator="{ props }">
@@ -94,23 +94,23 @@
 
         <div v-if="!isEdit">
           <v-radio-group v-model="linkToExistingAccount" inline>
-            <v-radio label="Create New Resource" :value="false" />
-            <v-radio label="Link Site to Existing Resource" :value="true" />
+            <v-radio label="Create new resource" :value="false" />
+            <v-radio label="Link site to existing resource" :value="true" />
           </v-radio-group>
 
           <div v-if="!linkToExistingAccount">
             <v-text-field
-              label="Resource Title *"
+              label="Resource title *"
               v-model="item.resourceTitle"
               :rules="rules.required"
             />
             <v-textarea
-              label="Resource Abstract *"
+              label="Resource abstract *"
               v-model="item.resourceAbstract"
               :rules="rules.required"
             />
             <v-combobox
-              label="Resource Keywords *"
+              label="Resource keywords *"
               v-model="item.resourceKeywords"
               multiple
               :rules="rules.minLength(1)"
@@ -132,21 +132,21 @@
         <v-text-field
           v-if="linkToExistingAccount || isEdit"
           v-model="item.link"
-          label="HydroShare Resource Link (URL) *"
+          label="HydroShare resource link (URL) *"
           placeholder="https://www.hydroshare.org/resource/9429f876dc71958d93f22909f2cb12f3/"
           :rules="hydroShareUrl"
           class="mb-4"
         />
 
         <v-text-field
-          label="Resource Folder Name *"
+          label="Resource folder name *"
           v-model="item.path"
           :rules="rules.required"
           class="mb-4"
         />
 
         <v-autocomplete
-          label="Included Datastreams *"
+          label="Included datastreams *"
           v-model="item.datastreamIds"
           :items="datastreams"
           :item-title="datastreamTitle"

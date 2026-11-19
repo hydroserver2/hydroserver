@@ -2,7 +2,7 @@
   <v-card>
     <v-toolbar flat color="red-darken-4">
       <v-card-title class="hs-text-md">
-        <v-icon :icon="mdiAlert" /> Confirm Deletion
+        <v-icon :icon="mdiAlert" /> Confirm deletion
       </v-card-title>
     </v-toolbar>
     <v-card-text>
@@ -13,7 +13,7 @@
       deletion. Alternatively, you can pass ownership of this site to someone
       else using the
       <v-btn class="px-0" variant="text" @click="emit('switchToAccessControl')"
-        >Access Control</v-btn
+        >Access control</v-btn
       >
       dialog.
     </v-card-text>

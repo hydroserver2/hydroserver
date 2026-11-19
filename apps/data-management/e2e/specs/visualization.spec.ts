@@ -790,8 +790,32 @@ test.describe("visualization", () => {
 
   async function ensureTableFiltersVisible(page: Page) {
     await expect(
-      page.getByRole("button", { name: "Filter by workspace" }),
+      page.getByRole("button", { name: "Sort datastreams" }),
     ).toBeVisible();
+  }
+
+  // Filters that don't fit the toolbar width move into "More filters", and
+  // can move as the layout settles, so retry until the filter's menu opens.
+  async function openFilter(page: Page, label: string) {
+    await expect(async () => {
+      const button = page.getByRole("button", {
+        name: `Filter by ${label.toLowerCase()}`,
+      });
+      if (await button.isVisible()) {
+        await button.click({ timeout: 1000 });
+      } else {
+        await page
+          .getByRole("button", { name: "More filters" })
+          .click({ timeout: 1000 });
+        await page
+          .locator(".v-overlay--active .v-list-item")
+          .filter({ hasText: label })
+          .click({ timeout: 1000 });
+      }
+      await expect(page.getByText(`Filter by ${label}`)).toBeVisible({
+        timeout: 1000,
+      });
+    }).toPass();
   }
 
   async function plotPublicDatastream(page: Page) {
@@ -815,9 +839,6 @@ test.describe("visualization", () => {
       page.getByRole("heading", { name: "Datastreams" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Filter by site" }),
-    ).toBeVisible();
-    await expect(
       page.getByTestId("clear-selected-datastreams"),
     ).toHaveCount(0);
     await expect(
@@ -826,6 +847,8 @@ test.describe("visualization", () => {
     await expect(
       mobileDatastreamRow(page, fixtures.datastreams.publicSystemMetadata.name),
     ).toBeVisible();
+
+    await openFilter(page, "Sites");
   });
 
   test("visualization preserves selected datastream state in the URL and supports summary mode", async ({
@@ -850,18 +873,13 @@ test.describe("visualization", () => {
       .getByTestId(`datavis-metadata-${fixtures.datastreams.public.id}`)
       .click();
     await page.getByTestId("add-datastream-to-plot").click();
-    await page.getByTestId("toggle-selected-datastreams").click();
-
-    await expect(
-      mobileDatastreamRow(page, fixtures.datastreams.public.name),
-    ).toBeVisible();
-    await expect(
-      mobileDatastreamRow(page, fixtures.datastreams.publicSystemMetadata.name),
-    ).toHaveCount(0);
+    await expect(page.getByTestId("datastream-selection-bar")).toContainText(
+      "1 selected for plotting (maximum 5)",
+    );
 
     await page.getByTestId("show-summary-view").click();
     await expect(
-      page.getByText("Summary Statistics", { exact: true }),
+      page.locator(".plot-card .v-card-title").getByText("Summary statistics", { exact: true }),
     ).toBeVisible();
 
     await page.getByTestId("show-plot-view").click();
@@ -899,41 +917,42 @@ test.describe("visualization", () => {
     await copiedContext.close();
   });
 
-  test("visualization header checkbox clears selected datastreams", async ({
+  test("visualization Clear selected button clears selected datastreams", async ({
     page,
   }) => {
     await authenticateSession(page, users.owner.email, users.owner.password);
     await page.goto(`/visualize-data?sites=${fixtures.monitoringSites.public.id}`);
 
-    const tableHeader = page.locator("thead");
-    const clearSelectedCheckbox = tableHeader.getByRole("checkbox", {
-      name: "Clear selected datastreams",
+    const selectionBar = page.getByTestId("datastream-selection-bar");
+    const clearSelectedButton = selectionBar.getByRole("button", {
+      name: "Clear selected",
     });
 
-    await expect(clearSelectedCheckbox).toHaveCount(0);
+    await expect(clearSelectedButton).toHaveCount(0);
     await expect(
       page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`),
     ).toBeVisible();
 
     await plotPublicDatastream(page);
-    await expect(clearSelectedCheckbox).toBeVisible();
-    await expect(clearSelectedCheckbox).toHaveJSProperty("indeterminate", true);
-    await expect(tableHeader).toContainText("1 of 5 selected");
-    await page.getByTestId("toggle-selected-datastreams").click();
+    await expect(clearSelectedButton).toBeVisible();
+    await expect(selectionBar).toContainText("1 selected for plotting (maximum 5)");
 
-    await expect(
-      page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`),
-    ).toBeVisible();
+    await page.getByTestId("toggle-selected-datastreams").click();
     await expect(
       page.getByTestId(
         `plot-datastream-${fixtures.datastreams.publicSystemMetadata.id}`,
       ),
     ).toHaveCount(0);
+    await page.getByTestId("toggle-selected-datastreams").click();
+    await expect(
+      page.getByTestId(
+        `plot-datastream-${fixtures.datastreams.publicSystemMetadata.id}`,
+      ),
+    ).toBeVisible();
 
-    // clearSelected() resets showOnlySelected to false, so both rows are visible immediately
-    await clearSelectedCheckbox.click();
+    await clearSelectedButton.click();
 
-    await expect(clearSelectedCheckbox).toHaveCount(0);
+    await expect(clearSelectedButton).toHaveCount(0);
     await expect(
       page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`),
     ).toBeVisible();
@@ -962,7 +981,7 @@ test.describe("visualization", () => {
       ),
     ).toBeVisible();
 
-    await page.getByRole("button", { name: "Filter by sites" }).click();
+    await openFilter(page, "Sites");
     await page
       .getByRole("checkbox", {
         name: `Sites: ${fixtures.monitoringSites.privateWorkspacePublic.name}`,
@@ -1004,9 +1023,12 @@ test.describe("visualization", () => {
     ).toBeVisible();
 
     await tableSearch.fill(siteQualifier);
+    await page.keyboard.press("Escape");
+    await openFilter(page, "Sites");
     await expect(
-      page.getByRole("button", { name: "Filter by sites (1 selected)" }),
-    ).toBeVisible();
+      page.getByRole("checkbox", { name: `Sites: ${selectedSiteName}` }),
+    ).toBeChecked();
+    await page.keyboard.press("Escape");
     await expect(
       mobileDatastreamRow(
         page,
@@ -1120,9 +1142,9 @@ test.describe("visualization", () => {
 
     await plotPublicDatastream(page);
 
-    // DatePickerField uses placeholder "Begin Date" / "End Date" and M/D/YYYY format
-    const startDate = page.locator('input[placeholder="Begin Date"]').first();
-    const endDate = page.locator('input[placeholder="End Date"]').first();
+    // DatePickerField uses placeholder "Begin date" / "End date" and M/D/YYYY format
+    const startDate = page.locator('input[placeholder="Begin date"]').first();
+    const endDate = page.locator('input[placeholder="End date"]').first();
 
     await expect(startDate).toBeVisible();
     await expect(endDate).toBeVisible();
@@ -1160,16 +1182,15 @@ test.describe("visualization", () => {
     );
 
     await page.getByTestId("add-datastream-to-plot").click();
-    await page.getByTestId("toggle-selected-datastreams").click();
 
     await expect(
       page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`),
-    ).toBeVisible();
+    ).toBeChecked();
     await expect(
       page.getByTestId(
         `plot-datastream-${fixtures.datastreams.publicSystemMetadata.id}`,
       ),
-    ).toHaveCount(0);
+    ).not.toBeChecked();
 
     const zipDownload = page.waitForEvent("download");
     await page.getByTestId("download-selected-datastreams").click();
@@ -1195,14 +1216,15 @@ test.describe("visualization", () => {
       )
       .click();
     await page.getByTestId("clear-and-plot-datastream").click();
-    await page.getByTestId("toggle-selected-datastreams").click();
 
     await expect(
-      mobileDatastreamRow(page, fixtures.datastreams.publicSystemMetadata.name),
-    ).toBeVisible();
+      page.getByTestId(
+        `plot-datastream-${fixtures.datastreams.publicSystemMetadata.id}`,
+      ),
+    ).toBeChecked();
     await expect(
-      mobileDatastreamRow(page, fixtures.datastreams.public.name),
-    ).toHaveCount(0);
+      page.getByTestId(`plot-datastream-${fixtures.datastreams.public.id}`),
+    ).not.toBeChecked();
   });
 
   test("visualization selected download works for multiple datastreams", async ({

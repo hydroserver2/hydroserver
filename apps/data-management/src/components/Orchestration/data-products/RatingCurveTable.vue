@@ -1,7 +1,7 @@
 <template>
   <div v-if="showHeader" class="rating-curve-manager">
     <div class="d-flex align-center mb-2">
-      <h6 class="hs-text-md mb-0">Rating Curves</h6>
+      <h6 class="hs-text-md mb-0">Rating curves</h6>
       <v-chip class="ml-2" size="small" variant="tonal">
         {{ attachmentCountLabel }}
       </v-chip>

@@ -362,10 +362,10 @@ for (const viewport of [
     await expect(
       page.locator('.browse-map .map-controls')
     ).toContainText('Configured street map')
-    await page.getByRole('button', { name: 'Create Site', exact: true }).click()
+    await page.getByRole('button', { name: 'Create site', exact: true }).click()
 
     const dialog = page.getByRole('dialog')
-    await expect(dialog.getByText('Create Site', { exact: true })).toBeVisible()
+    await expect(dialog.getByText('Create site', { exact: true })).toBeVisible()
     await expect(dialog.locator('.map-controls')).toContainText(
       'Configured street map'
     )
@@ -378,7 +378,7 @@ for (const viewport of [
       contentType: 'image/png',
     })
 
-    const name = dialog.getByLabel('Site Name')
+    const name = dialog.getByLabel('Site name')
     await name.fill('In-progress site')
     await dialog.locator('.site-form-content').evaluate((element) => {
       element.scrollTop = element.scrollHeight
@@ -388,12 +388,12 @@ for (const viewport of [
     await page.mouse.click(2, 2)
     await expect(dialog).toBeHidden()
 
-    await page.getByRole('button', { name: 'Create Site', exact: true }).click()
-    await expect(dialog.getByLabel('Site Name')).toHaveValue('')
+    await page.getByRole('button', { name: 'Create site', exact: true }).click()
+    await expect(dialog.getByLabel('Site name')).toHaveValue('')
     await page.keyboard.press('Escape')
     await expect(dialog).toBeHidden()
 
-    await page.getByRole('button', { name: 'Create Site', exact: true }).click()
+    await page.getByRole('button', { name: 'Create site', exact: true }).click()
     await cancel.click()
     await expect(dialog).toBeHidden()
 
@@ -406,7 +406,7 @@ for (const viewport of [
         name: `Edit ${fixtures.monitoringSites.public.name}`,
       })
       .click()
-    await expect(dialog.getByText('Edit Site', { exact: true })).toBeVisible()
+    await expect(dialog.getByText('Edit site', { exact: true })).toBeVisible()
     await expect(dialog.locator('.map-controls')).toContainText(
       'Configured satellite map'
     )

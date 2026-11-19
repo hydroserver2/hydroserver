@@ -1,9 +1,14 @@
 <template>
-  <div class="datavis-header-filters">
+  <div ref="container" class="datavis-header-filters">
+    <!-- Filters that don't fit move into the "More filters" menu; their own
+         menus then open from that button. -->
     <HsTableFilterMenu
-      v-for="filter in filterDefinitions"
+      v-for="(filter, index) in filterDefinitions"
       :key="filter.key"
+      v-model="openFilters[filter.key]"
       v-model:search="filterSearches[filter.key]"
+      :target="index >= visibleCount ? '.datavis-filter-overflow' : undefined"
+      :location="index >= visibleCount ? 'bottom end' : 'bottom start'"
       :title="`Filter by ${filter.label}`"
       :label="filter.label"
       :options="filter.options"
@@ -20,6 +25,7 @@
           class="datavis-filter-button"
           :class="{
             'datavis-filter-button--active': filter.selectedCount > 0,
+            'datavis-filter--hidden': index >= visibleCount,
           }"
           :append-icon="mdiChevronDown"
           :aria-label="`Filter by ${filter.label.toLowerCase()}${
@@ -33,14 +39,68 @@
         </v-btn>
       </template>
     </HsTableFilterMenu>
+
+    <div
+      class="hs-table-actions datavis-filter-action"
+      :class="{ 'datavis-filter--hidden': !showClearFilters }"
+    >
+      <v-btn
+        variant="text"
+        size="small"
+        color="primary"
+        data-testid="clear-datastream-filters"
+        @click="clearFilters"
+      >
+        Clear filters
+      </v-btn>
+    </div>
+
+    <v-menu location="bottom end" attach="body">
+      <template #activator="{ props: menuProps }">
+        <v-btn-icon
+          v-bind="menuProps"
+          :icon="mdiDotsVertical"
+          size="small"
+          class="datavis-filter-overflow"
+          :class="{ 'datavis-filter--hidden': !hasOverflow }"
+          aria-label="More filters"
+        />
+      </template>
+      <v-list density="compact">
+        <v-list-item
+          v-for="filter in overflowFilters"
+          :key="filter.key"
+          :title="filter.label"
+          @click="openFilters[filter.key] = true"
+        >
+          <template v-if="filter.selectedCount" #append>
+            <span class="filter-count">{{ filter.selectedCount }}</span>
+          </template>
+        </v-list-item>
+        <v-list-item
+          v-if="!showClearFilters"
+          title="Clear filters"
+          class="text-primary"
+          data-testid="clear-datastream-filters-overflow"
+          @click="clearFilters"
+        />
+      </v-list>
+    </v-menu>
   </div>
 </template>
 
 <script setup lang="ts">
-import { HsTableFilterMenu } from '@hydroserver/design-system/vue'
-import { computed, reactive } from 'vue'
+import {
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  reactive,
+  ref,
+  useTemplateRef,
+} from 'vue'
 import { storeToRefs } from 'pinia'
-import { mdiChevronDown } from '@mdi/js'
+import { mdiChevronDown, mdiDotsVertical } from '@mdi/js'
+import { HsTableFilterMenu } from '@hydroserver/design-system/vue'
 import { useDataVisStore } from '@/store/dataVisualization'
 import {
   parseDatastreamQuery,
@@ -58,17 +118,21 @@ type FilterDefinition = {
   selectedCount: number
 }
 
-const dataVisStore = useDataVisStore()
 const {
-  matchesSelectedObservedProperty,
-  matchesSelectedUnit,
-  matchesSelectedMethod,
-  matchesSelectedProcessingLevel,
-  matchesSelectedMonitoringSite,
-  matchesSelectedWorkspace,
-} = dataVisStore
-const { monitoringSites, datastreams, tableSearch, workspaces } =
-  storeToRefs(dataVisStore)
+  monitoringSites,
+  observedProperties,
+  processingLevels,
+  units,
+  methods,
+  selectedMonitoringSites,
+  selectedWorkspaces,
+  selectedObservedPropertyNames,
+  selectedUnitNames,
+  selectedMethodNames,
+  selectedProcessingLevelNames,
+  tableSearch,
+  workspaces,
+} = storeToRefs(useDataVisStore())
 
 const filterSearches = reactive<Record<FilterKey, string>>({
   workspace: '',
@@ -81,176 +145,129 @@ const filterSearches = reactive<Record<FilterKey, string>>({
 
 const parsedQuery = computed(() => parseDatastreamQuery(tableSearch.value))
 
-const sortedWorkspaces = computed(() => {
-  const workspaceIds = new Set<string>()
-  datastreams.value.forEach((datastream) => {
-    if (
-      !matchesSelectedMonitoringSite(datastream) ||
-      !matchesSelectedObservedProperty(datastream) ||
-      !matchesSelectedUnit(datastream) ||
-      !matchesSelectedMethod(datastream) ||
-      !matchesSelectedProcessingLevel(datastream)
-    )
-      return
+const uniqueNames = (items: { name?: string | null }[]) =>
+  [...new Set(items.map((item) => item.name).filter(Boolean) as string[])]
+    .sort((a, b) => a.localeCompare(b))
+    .map((name) => ({ value: name, label: name }))
 
-    const workspaceId = dataVisStore.monitoringSiteById.get(
-      datastream.monitoringSiteId
-    )?.workspaceId
-    if (workspaceId) workspaceIds.add(workspaceId)
-  })
-  return workspaces.value
-    .filter((workspace) => workspaceIds.has(workspace.id))
-    .sort((a, b) => a.name.localeCompare(b.name))
-})
-
-const sortedMonitoringSites = computed(() => {
-  const ids = new Set<string>()
-  datastreams.value.forEach((datastream) => {
-    if (
-      !matchesSelectedObservedProperty(datastream) ||
-      !matchesSelectedUnit(datastream) ||
-      !matchesSelectedMethod(datastream) ||
-      !matchesSelectedProcessingLevel(datastream) ||
-      !matchesSelectedWorkspace(datastream)
+// Sites are narrowed to the selected workspaces.
+const siteOptions = computed(() => {
+  const workspaceIds = new Set(selectedWorkspaces.value.map((item) => item.id))
+  return uniqueNames(
+    monitoringSites.value.filter(
+      (site) => !workspaceIds.size || workspaceIds.has(site.workspaceId)
     )
-      return
-    ids.add(datastream.monitoringSiteId)
-  })
-  return monitoringSites.value
-    .filter((site) => ids.has(site.id))
-    .sort((a, b) => a.name.localeCompare(b.name))
-})
-
-const sortedObservedPropertyNames = computed(() => {
-  const names = new Set<string>()
-  datastreams.value.forEach((datastream) => {
-    if (
-      !matchesSelectedMonitoringSite(datastream) ||
-      !matchesSelectedUnit(datastream) ||
-      !matchesSelectedMethod(datastream) ||
-      !matchesSelectedProcessingLevel(datastream) ||
-      !matchesSelectedWorkspace(datastream)
-    )
-      return
-    const name = dataVisStore.observedPropertyById.get(
-      datastream.observedPropertyId
-    )?.name
-    if (name) names.add(name)
-  })
-  return [...names].sort()
-})
-
-const sortedProcessingLevelNames = computed(() => {
-  const names = new Set<string>()
-  datastreams.value.forEach((datastream) => {
-    if (
-      !matchesSelectedMonitoringSite(datastream) ||
-      !matchesSelectedObservedProperty(datastream) ||
-      !matchesSelectedUnit(datastream) ||
-      !matchesSelectedMethod(datastream) ||
-      !matchesSelectedWorkspace(datastream)
-    )
-      return
-    const name = dataVisStore.processingLevelById.get(
-      datastream.processingLevelId
-    )?.name
-    if (name) names.add(name)
-  })
-  return [...names].sort()
-})
-
-const sortedUnitNames = computed(() => {
-  const names = new Set<string>()
-  datastreams.value.forEach((datastream) => {
-    if (
-      !matchesSelectedMonitoringSite(datastream) ||
-      !matchesSelectedObservedProperty(datastream) ||
-      !matchesSelectedMethod(datastream) ||
-      !matchesSelectedProcessingLevel(datastream) ||
-      !matchesSelectedWorkspace(datastream)
-    )
-      return
-    const name = (datastream as typeof datastream & { unitName?: string })
-      .unitName
-    if (name) names.add(name)
-  })
-  return [...names].sort()
-})
-
-const sortedMethodNames = computed(() => {
-  const names = new Set<string>()
-  datastreams.value.forEach((datastream) => {
-    if (
-      !matchesSelectedMonitoringSite(datastream) ||
-      !matchesSelectedObservedProperty(datastream) ||
-      !matchesSelectedUnit(datastream) ||
-      !matchesSelectedProcessingLevel(datastream) ||
-      !matchesSelectedWorkspace(datastream)
-    )
-      return
-    const name = (datastream as typeof datastream & { methodName?: string })
-      .methodName
-    if (name) names.add(name)
-  })
-  return [...names].sort()
+  )
 })
 
 const filterDefinitions = computed<FilterDefinition[]>(() => [
   {
     key: 'workspace',
     label: 'Workspaces',
-    options: sortedWorkspaces.value.map((item) => ({
-      value: item.name,
-      label: item.name,
-    })),
-    selectedCount: parsedQuery.value.filters.workspace.length,
+    options: uniqueNames(workspaces.value),
+    selectedCount: selectedWorkspaces.value.length,
   },
   {
     key: 'site',
     label: 'Sites',
-    options: sortedMonitoringSites.value.map((item) => ({
-      value: item.name,
-      label: item.name,
-    })),
-    selectedCount: parsedQuery.value.filters.site.length,
+    options: siteOptions.value,
+    selectedCount: selectedMonitoringSites.value.length,
   },
   {
     key: 'observed-property',
     label: 'Observed properties',
-    options: sortedObservedPropertyNames.value.map((item) => ({
-      value: item,
-      label: item,
-    })),
-    selectedCount: parsedQuery.value.filters['observed-property'].length,
+    options: uniqueNames(observedProperties.value),
+    selectedCount: selectedObservedPropertyNames.value.length,
   },
   {
     key: 'unit',
     label: 'Units',
-    options: sortedUnitNames.value.map((item) => ({
-      value: item,
-      label: item,
-    })),
-    selectedCount: parsedQuery.value.filters.unit.length,
+    options: uniqueNames(units.value),
+    selectedCount: selectedUnitNames.value.length,
   },
   {
     key: 'method',
     label: 'Methods',
-    options: sortedMethodNames.value.map((item) => ({
-      value: item,
-      label: item,
-    })),
-    selectedCount: parsedQuery.value.filters.method.length,
+    options: uniqueNames(methods.value),
+    selectedCount: selectedMethodNames.value.length,
   },
   {
     key: 'processing-level',
     label: 'Processing levels',
-    options: sortedProcessingLevelNames.value.map((item) => ({
-      value: item,
-      label: item,
-    })),
-    selectedCount: parsedQuery.value.filters['processing-level'].length,
+    options: uniqueNames(processingLevels.value),
+    selectedCount: selectedProcessingLevelNames.value.length,
   },
 ])
+
+const openFilters = reactive<Partial<Record<FilterKey, boolean>>>({})
+const container = useTemplateRef('container')
+const visibleCount = ref(filterDefinitions.value.length + 1)
+const overflowFilters = computed(() =>
+  filterDefinitions.value.slice(visibleCount.value)
+)
+const showClearFilters = computed(
+  () => visibleCount.value > filterDefinitions.value.length
+)
+const hasOverflow = computed(() => !showClearFilters.value)
+
+// Show as many filters as fit, in order; the rest go in the overflow menu.
+// Hidden buttons stay rendered (but invisible) so they can still be measured.
+function fitFilters() {
+  const element = container.value
+  if (!element?.clientWidth) return
+  const gap = parseFloat(getComputedStyle(element).columnGap) || 0
+  const widths = [
+    ...element.querySelectorAll<HTMLElement>(
+      '.datavis-filter-button, .datavis-filter-action'
+    ),
+  ].map((button) => button.offsetWidth + gap)
+  const fitsAll =
+    widths.reduce((sum, width) => sum + width, 0) - gap <= element.clientWidth
+  let room = fitsAll
+    ? Infinity
+    : element.clientWidth -
+      (element.querySelector<HTMLElement>('.datavis-filter-overflow')
+        ?.offsetWidth ?? 0)
+  let count = 0
+  for (const width of widths) {
+    if (width > room) break
+    room -= width
+    count++
+  }
+  visibleCount.value = count
+}
+
+let observer: ResizeObserver | undefined
+onMounted(() => {
+  fitFilters()
+  observer = new ResizeObserver(fitFilters)
+  if (!container.value) return
+  observer.observe(container.value)
+  container.value
+    .querySelectorAll('.datavis-filter-button, .datavis-filter-action')
+    .forEach((button) => observer!.observe(button))
+})
+onBeforeUnmount(() => observer?.disconnect())
+
+function clearFilters() {
+  const query = parseDatastreamQuery(
+    tableSearch.value,
+    filterDefinitions.value.map((filter) => ({
+      key: filter.key,
+      values: filter.options.map((option) => option.value),
+    }))
+  )
+  // Clear filter qualifiers while keeping the search text, sort and plot.
+  tableSearch.value = serializeDatastreamQuery(
+    parseDatastreamQuery('').filters,
+    query.text,
+    query.sort
+  )
+  for (const key of Object.keys(filterSearches) as FilterKey[]) {
+    filterSearches[key] = ''
+    openFilters[key] = false
+  }
+}
 
 const toggleFilter = (key: FilterKey, value: string) => {
   const filters = Object.fromEntries(
@@ -275,10 +292,27 @@ const toggleFilter = (key: FilterKey, value: string) => {
 
 <style scoped>
 .datavis-header-filters {
+  position: relative;
   display: flex;
-  flex-wrap: wrap;
+  flex: 1 1 0;
   gap: var(--hs-space-8);
   align-items: center;
+  min-width: 0;
+}
+
+.datavis-filter-button,
+.datavis-filter-action {
+  flex: 0 0 auto;
+}
+
+.datavis-filter-overflow {
+  margin-left: auto;
+}
+
+/* Out of the layout and accessibility tree, but still measurable. */
+.datavis-filter--hidden {
+  position: absolute;
+  visibility: hidden;
 }
 
 .datavis-filter-button {

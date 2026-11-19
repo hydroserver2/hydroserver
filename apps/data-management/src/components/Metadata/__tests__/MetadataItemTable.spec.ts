@@ -24,7 +24,7 @@ vi.mock('@hydroserver/client', async (importOriginal) => {
         'processingLevels',
         'units',
         'resultQualifiers',
-      ].map((name) => [name, { listAllItems: vi.fn(), delete: vi.fn() }])
+      ].map((name) => [name, { list: vi.fn(), delete: vi.fn() }])
     ),
   }
 })
@@ -41,6 +41,13 @@ const record = {
   sensorModelManufacturer: 'Example manufacturer',
   sensorModelDefinition: 'https://example.org/sensor',
 }
+const page = (rows: object[]) =>
+  ({
+    ok: true,
+    status: 200,
+    data: rows,
+    meta: { numberMatched: rows.length },
+  }) as any
 const mounted: ReturnType<typeof mount>[] = []
 const writeText = vi.fn()
 function render(component: any = MetadataItemTable, props: object = {}) {
@@ -51,6 +58,7 @@ function render(component: any = MetadataItemTable, props: object = {}) {
             items: [record],
             kind: 'method',
             loading: false,
+            hasMore: false,
             defaultScope: 'workspace',
             ...props,
           }
@@ -62,6 +70,14 @@ function render(component: any = MetadataItemTable, props: object = {}) {
 }
 
 beforeEach(() => {
+  vi.stubGlobal(
+    'IntersectionObserver',
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    }
+  )
   vi.stubGlobal('visualViewport', {
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
@@ -104,18 +120,25 @@ describe('metadata table UUIDs and read-only details', () => {
     ['units', UnitTable, 3],
     ['resultQualifiers', ResultQualifierTable, 4],
   ] as const)(
-    'switches %s scopes without remounting, refetching, or flashing a skeleton',
+    'loads %s pages for each scope from the server without remounting',
     async (service, component, tab) => {
-      let resolveWorkspace!: (items: any[]) => void
-      const workspaceItems = new Promise<any[]>((resolve) => {
-        resolveWorkspace = resolve
-      })
-      const systemRecord = { ...record, id: 'system-item', name: 'System metadata' }
-      const fetch = vi.spyOn(hs[service], 'listAllItems').mockImplementation(
-        async (params: any) => params.workspaceId[0] === 'null'
-          ? [systemRecord] as any
-          : workspaceItems
-      )
+      const systemRecord = {
+        ...record,
+        id: 'system-item',
+        name: 'System metadata',
+        workspaceId: null,
+      }
+      const workspaceRecord = { ...record, workspaceId: 'workspace-1' }
+      const list = vi
+        .mocked(hs[service].list)
+        .mockImplementation(async (params: any) =>
+          page([
+            ...(params.workspaceId.includes('workspace-1')
+              ? [workspaceRecord]
+              : []),
+            ...(params.workspaceId.includes('null') ? [systemRecord] : []),
+          ])
+        )
       const pinia = createPinia()
       useMetadata(pinia).tab = tab
       const wrapper = mount(MetadataTable, {
@@ -124,20 +147,29 @@ describe('metadata table UUIDs and read-only details', () => {
       })
       mounted.push(wrapper)
       await flushPromises()
-      expect(wrapper.find('.metadata-table-loading-skeleton').exists()).toBe(true)
-      resolveWorkspace([{ ...record }])
-      await flushPromises()
       const tableId = wrapper.findComponent(component as any).vm.$.uid
 
-      for (const scope of ['workspace', 'system', 'all'] as const) {
-        await wrapper.get(`[data-testid="metadata-scope-${scope}"]`).trigger('click')
-        expect(wrapper.find('.metadata-table-loading-skeleton').exists()).toBe(false)
+      for (const [scope, workspaceId] of [
+        ['workspace', ['workspace-1']],
+        ['system', ['null']],
+        ['all', ['workspace-1', 'null']],
+      ] as const) {
+        await wrapper
+          .get(`[data-testid="metadata-scope-${scope}"]`)
+          .trigger('click')
+        await new Promise((resolve) => setTimeout(resolve, 300))
+        await flushPromises()
+        expect(list).toHaveBeenLastCalledWith(
+          expect.objectContaining({ workspaceId, offset: 0, limit: 25 })
+        )
         expect(wrapper.findComponent(component as any).vm.$.uid).toBe(tableId)
-        expect(wrapper.find(`[data-testid="view-metadata-${record.id}"]`).exists())
-          .toBe(scope !== 'system')
-        expect(wrapper.find('[data-testid="view-metadata-system-item"]').exists())
-          .toBe(scope !== 'workspace')
-        expect(fetch).toHaveBeenCalledTimes(2)
+        const rows = wrapper
+          .findComponent(MetadataItemTable as any)
+          .props('items') as any[]
+        expect(rows.map((row) => [row.id, row._scope])).toEqual([
+          ...(scope !== 'system' ? [[record.id, 'workspace']] : []),
+          ...(scope !== 'workspace' ? [['system-item', 'system']] : []),
+        ])
       }
     }
   )
@@ -145,7 +177,9 @@ describe('metadata table UUIDs and read-only details', () => {
   it('uses the qualifier name as its title without a definition field', async () => {
     const wrapper = render(MetadataItemTable, { kind: 'resultQualifier' })
     expect(wrapper.get('.hs-table-summary__title').text()).toBe(record.name)
-    await wrapper.get(`[data-testid="view-metadata-${record.id}"]`).trigger('click')
+    await wrapper
+      .get(`[data-testid="view-metadata-${record.id}"]`)
+      .trigger('click')
     await flushPromises()
     const definition = document.querySelector(`a[href="${record.definition}"]`)
     expect(definition).toBeNull()
@@ -160,8 +194,8 @@ describe('metadata table UUIDs and read-only details', () => {
   ] as const)(
     'supports copying and viewing %s with no edit permission',
     async (service, component) => {
-      vi.spyOn(hs[service], 'listAllItems').mockImplementation(async (params: any) =>
-        params.workspaceId[0] === 'null' ? [] : [{ ...record }] as any
+      vi.mocked(hs[service].list).mockResolvedValue(
+        page([{ ...record, workspaceId: 'workspace-1' }])
       )
       const wrapper = render(component, {
         search: '',
@@ -211,21 +245,20 @@ describe('metadata table UUIDs and read-only details', () => {
     )
   })
 
-  it('keeps UUIDs, supporting fields, and full details searchable', async () => {
-    const table = render()
-    for (const search of [
-      record.id,
-      ' temp ',
-      record.description,
-      'EXAMPLE MANUFACTURER',
-    ]) {
-      await table.setProps({ search })
-      expect(
-        table.find(`[data-testid="view-metadata-${record.id}"]`).exists()
-      ).toBe(true)
-    }
-    await table.setProps({ search: 'No such item' })
-    expect(table.text()).toContain('No data available')
+  it('searches metadata on the server', async () => {
+    const list = vi.mocked(hs.units.list).mockResolvedValue(page([]))
+    const wrapper = render(UnitTable, {
+      search: '',
+      workspaceId: 'workspace-1',
+      canEdit: false,
+      canDelete: false,
+    })
+    await flushPromises()
+    await wrapper.setProps({ search: ' temp ' })
+    await new Promise((resolve) => setTimeout(resolve, 300))
+    expect(list).toHaveBeenLastCalledWith(
+      expect.objectContaining({ q: 'temp', sortby: ['name'], offset: 0 })
+    )
   })
 
   it('shows the row scope and opens complete details without navigating', async () => {

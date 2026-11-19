@@ -2,7 +2,7 @@
   <v-select
     v-model="selectedWorkspace"
     data-testid="workspace-selector"
-    hint="Selected Workspace"
+    hint="Selected workspace"
     :items="workspaces"
     item-title="name"
     :return-object="true"

@@ -62,10 +62,10 @@ class MonitoringTask(HydroServerBaseModel):
         limit: int = ...,
         sortby: List[str] = ...,
         status: str = ...,
-        started_at_min: datetime = ...,
-        started_at_max: datetime = ...,
-        finished_at_min: datetime = ...,
-        finished_at_max: datetime = ...,
+        min_started_at: datetime = ...,
+        max_started_at: datetime = ...,
+        min_finished_at: datetime = ...,
+        max_finished_at: datetime = ...,
     ) -> List[TaskRun]:
         """Get a collection of task runs for this monitoring task."""
 
@@ -75,10 +75,10 @@ class MonitoringTask(HydroServerBaseModel):
             limit=limit,
             sortby=sortby,
             status=status,
-            started_at_min=started_at_min,
-            started_at_max=started_at_max,
-            finished_at_min=finished_at_min,
-            finished_at_max=finished_at_max,
+            min_started_at=min_started_at,
+            max_started_at=max_started_at,
+            min_finished_at=min_finished_at,
+            max_finished_at=max_finished_at,
         )
 
     def get_run(self, run_id: uuid.UUID) -> TaskRun:

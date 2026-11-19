@@ -2,7 +2,7 @@
   <v-card>
     <v-toolbar flat color="primary">
       <v-card-title>
-        {{ isEdit ? 'Edit' : 'Add' }} Processing Level
+        {{ isEdit ? 'Edit' : 'Add' }} processing level
       </v-card-title>
     </v-toolbar>
     <v-divider />

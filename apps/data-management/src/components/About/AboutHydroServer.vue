@@ -7,7 +7,7 @@
           <v-card-title class="d-flex align-center" color="primary" dark>
             <v-img
               :src="HydroServerIcon"
-              alt="HydroServer Logo"
+              alt="HydroServer logo"
               max-width="120"
               class="mr-3"
             ></v-img>

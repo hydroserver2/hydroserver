@@ -57,6 +57,7 @@
                 <v-checkbox-btn
                   v-if="showCheckboxes"
                   :model-value="isSelected(option.value)"
+                  color="primary"
                   density="compact"
                   :aria-label="`${label}: ${option.label}`"
                   @click.stop="emit('toggle', option.value)"
@@ -134,7 +135,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{ toggle: [value: string] }>()
 const search = defineModel<string>('search', { default: '' })
-const open = ref(false)
+const open = defineModel<boolean>({ default: false })
 const sectionHeading = computed(() => props.sectionLabel || props.label)
 const selectedHeading = computed(
   () => `Selected ${sectionHeading.value.toLocaleLowerCase()}`

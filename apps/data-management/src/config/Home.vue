@@ -6,11 +6,11 @@
       <div>
         <img
           :src="hydroWhiteImg"
-          alt="Hydro Logo"
+          alt="Hydro logo"
           style="max-width: 500px; width: 100%"
         />
         <h4 class="hs-text-lg mb-8 has-text-shadow">
-          Collect and Manage Your Operational Hydrologic Data
+          Collect and manage your operational hydrologic data
         </h4>
       </div>
 
@@ -24,14 +24,14 @@
         <h5 class="hs-text-md mb-8 has-text-shadow">
           Create an account to get started
         </h5>
-        <v-btn-primary :href="hs.session.getAccountSignupUrl()">Sign Up</v-btn-primary>
+        <v-btn-primary :href="hs.session.getAccountSignupUrl()">Sign up</v-btn-primary>
       </div>
     </div>
   </div>
 
   <v-container class="my-8">
     <div class="d-flex flex-column align-center text-center">
-      <h2 class="hs-text-lg mb-4">Manage your Operational Data</h2>
+      <h2 class="hs-text-lg mb-4">Manage your operational data</h2>
 
       <p class="mb-8 text-medium-emphasis">
         <small>
@@ -50,7 +50,7 @@
           </div>
           <div>
             <p class="hs-text-sm font-weight-bold mb-2">
-              Data Streaming
+              Data streaming
             </p>
             <p class="text-medium-emphasis mb-2">
               <small>
@@ -69,7 +69,7 @@
           </div>
           <div>
             <p class="hs-text-sm font-weight-bold mb-2">
-              Performant Data Storage
+              Performant data storage
             </p>
             <p class="text-medium-emphasis mb-2">
               <small>
@@ -88,7 +88,7 @@
           </div>
           <div>
             <p class="hs-text-sm font-weight-bold mb-2">
-              Easy Web Configuration
+              Easy web configuration
             </p>
             <p class="text-medium-emphasis mb-2">
               <small>
@@ -107,7 +107,7 @@
           </div>
           <div>
             <p class="hs-text-sm font-weight-bold mb-2">
-              Public Access to Your Data
+              Public access to your data
             </p>
             <p class="text-medium-emphasis mb-2">
               <small>
@@ -147,7 +147,7 @@
         ></v-img>
       </v-col>
       <v-col class="d-flex justify-center flex-column" cols="12" sm="7">
-        <h4 class="hs-text-lg mb-4">Operational Data for Modeling</h4>
+        <h4 class="hs-text-lg mb-4">Operational data for modeling</h4>
         <p class="hs-text-sm mb-2 font-weight-bold">
           Your data can improve NOAA's water prediction services
         </p>
@@ -168,7 +168,7 @@
   <v-container class="my-8">
     <v-row>
       <v-col class="d-flex flex-column justify-center" cols="12" sm="6">
-        <h4 class="hs-text-lg mb-8">Open Standards Data Sharing</h4>
+        <h4 class="hs-text-lg mb-8">Open standards data sharing</h4>
         <p class="text-medium-emphasis">
           <small>
           Share your data publicly using the latest Open Geospatial Consortium
@@ -189,7 +189,7 @@
           :src="sensorThingsLogo"
           width="100%"
           max-width="35rem"
-          alt="SensorThings Database Schema"
+          alt="SensorThings database schema"
         ></v-img>
         <h4 class="hs-text-lg">SensorThings</h4>
       </v-col>
