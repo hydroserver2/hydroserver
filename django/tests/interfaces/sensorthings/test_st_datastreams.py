@@ -35,6 +35,19 @@ def test_get_datastream_returns_200(client):
     assert response.json()["@iot.id"] == str(datastream.id)
 
 
+def test_get_thing_datastreams_count_with_orderby_includes_every_datastream(client):
+    site = MonitoringSiteFactory()
+    DatastreamFactory.create_batch(3, monitoring_site=site)
+
+    response = client.get(
+        f"/api/sensorthings/v1.1/Things('{site.id}')/Datastreams",
+        {"$count": "true", "$orderby": "name"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["@iot.count"] == 3
+
+
 def test_get_datastream_with_unit_without_definition_returns_200(client):
     datastream = DatastreamFactory(unit__definition=None)
 

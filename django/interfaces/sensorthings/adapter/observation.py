@@ -48,6 +48,7 @@ class ObservationMixin(SensorThingsUtils):
             observations = observations.filter(datastream_id__in=group_by[1])
             obs_counts = dict(
                 observations
+                .order_by()
                 .values(group_by[0])
                 .annotate(total=Count("id"))
                 .values_list(group_by[0], "total")
