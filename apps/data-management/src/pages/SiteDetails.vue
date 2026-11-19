@@ -104,37 +104,6 @@
             :workspace-id="monitoringSite.workspaceId"
           />
         </v-dialog>
-
-        <div class="site-details-subtitle hs-text-sm" data-testid="site-subtitle">
-          <span class="site-details-subtitle__item">
-            <span class="text-medium-emphasis">Site UUID</span>
-            <span class="hs-font-data">{{ monitoringSite.id }}</span>
-            <HsCopyButton
-              :value="monitoringSite.id"
-              :label="monitoringSite.name"
-              data-testid="copy-site-id"
-              @copied="Snackbar.success('Site UUID copied to clipboard')"
-              @error="Snackbar.error('Failed to copy site UUID')"
-            />
-          </span>
-          <span v-if="monitoringSite.code" class="site-details-subtitle__item">
-            <span class="text-medium-emphasis">Site code</span>
-            <span class="hs-font-data">{{ monitoringSite.code }}</span>
-          </span>
-          <span v-if="monitoringSite.type" class="site-details-subtitle__item">
-            <span class="text-medium-emphasis">Site type</span>
-            <span>{{ monitoringSite.type }}</span>
-          </span>
-          <v-chip
-            size="small"
-            variant="tonal"
-            :color="monitoringSite.isPrivate ? 'error' : 'success'"
-            :prepend-icon="monitoringSite.isPrivate ? mdiLock : mdiLockOpenVariant"
-            data-testid="site-privacy-chip"
-          >
-            {{ monitoringSite.isPrivate ? 'Private' : 'Public' }}
-          </v-chip>
-        </div>
       </v-col>
     </v-row>
 
@@ -148,6 +117,45 @@
 
         <v-card class="site-details-card" flat>
           <h2 class="site-details-card__title hs-text-md">Site information</h2>
+          <dl class="site-details-facts hs-text-sm" data-testid="site-facts">
+            <div class="site-details-facts__row site-details-facts__row--stacked">
+              <dt>Site UUID</dt>
+              <dd class="site-details-facts__uuid">
+                <span class="hs-font-data">{{ monitoringSite.id }}</span>
+                <HsCopyButton
+                  :value="monitoringSite.id"
+                  :label="monitoringSite.name"
+                  data-testid="copy-site-id"
+                  @copied="Snackbar.success('Site UUID copied to clipboard')"
+                  @error="Snackbar.error('Failed to copy site UUID')"
+                />
+              </dd>
+            </div>
+            <div v-if="monitoringSite.code" class="site-details-facts__row">
+              <dt>Site code</dt>
+              <dd class="hs-font-data">{{ monitoringSite.code }}</dd>
+            </div>
+            <div v-if="monitoringSite.type" class="site-details-facts__row">
+              <dt>Site type</dt>
+              <dd>{{ monitoringSite.type }}</dd>
+            </div>
+            <div class="site-details-facts__row">
+              <dt>Privacy</dt>
+              <dd>
+                <v-chip
+                  size="small"
+                  variant="tonal"
+                  :color="monitoringSite.isPrivate ? 'error' : 'success'"
+                  :prepend-icon="
+                    monitoringSite.isPrivate ? mdiLock : mdiLockOpenVariant
+                  "
+                  data-testid="site-privacy-chip"
+                >
+                  {{ monitoringSite.isPrivate ? 'Private' : 'Public' }}
+                </v-chip>
+              </dd>
+            </div>
+          </dl>
           <p class="site-details-card__body hs-text-sm">
             {{ monitoringSite.description || 'No description provided.' }}
           </p>
@@ -566,8 +574,7 @@ onMounted(async () => {
   top: var(--v-layout-top, 0);
   z-index: 10;
   margin: 0;
-  padding: var(--hs-space-20) var(--site-details-page-gutter)
-    var(--hs-space-12);
+  padding: var(--hs-space-16) var(--site-details-page-gutter);
   background: var(--hs-surface);
   border-bottom: 1px solid var(--hs-border);
 }
@@ -582,27 +589,6 @@ onMounted(async () => {
   flex: 1 1 0%;
   min-width: min(100%, 20rem);
   overflow-wrap: anywhere;
-}
-
-.site-details-subtitle {
-  display: flex;
-  flex-basis: 100%;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--hs-space-4) var(--hs-space-16);
-}
-
-.site-details-subtitle__item {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--hs-space-6);
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.site-details-subtitle__item > .text-medium-emphasis {
-  flex-shrink: 0;
-  white-space: nowrap;
 }
 
 /* Phone and tablet: map, then site context, then the tabs. */
@@ -675,6 +661,45 @@ onMounted(async () => {
   margin: 0;
   padding: var(--hs-space-12) var(--hs-space-16);
   white-space: pre-line;
+}
+
+/* Label/value rows; the UUID gets its own full-width line so it never wraps. */
+.site-details-facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--hs-space-8) var(--hs-space-16);
+  margin: 0;
+  padding: var(--hs-space-12) var(--hs-space-16);
+  border-bottom: 1px solid var(--hs-border);
+}
+
+.site-details-facts__row {
+  display: contents;
+}
+
+.site-details-facts__row dt {
+  color: var(--hs-text-secondary);
+}
+
+.site-details-facts__row dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.site-details-facts__row--stacked dt,
+.site-details-facts__row--stacked dd {
+  grid-column: 1 / -1;
+}
+
+.site-details-facts__row--stacked dd {
+  margin-top: calc(-1 * var(--hs-space-8));
+}
+
+.site-details-facts__uuid {
+  display: flex;
+  align-items: center;
+  gap: var(--hs-space-4);
 }
 
 @media (max-width: 700px) {
