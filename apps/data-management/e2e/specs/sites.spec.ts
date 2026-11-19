@@ -478,7 +478,7 @@ test.describe('sites and workspaces', () => {
       page.getByRole('heading', { name: siteName, exact: true })
     ).toBeVisible()
     await expect(page.getByText(siteCode, { exact: true })).toBeVisible()
-    await expect(page.getByText('E2E: Registration')).toBeVisible()
+    await expect(page.getByTestId('site-tag-E2E')).toContainText('Registration')
 
     await page.goto('/browse')
     const createdSiteRow = page
@@ -591,39 +591,41 @@ test.describe('sites and workspaces', () => {
     await editDialog.getByRole('button', { name: 'Add', exact: true }).click()
     await editDialog.getByRole('button', { name: 'Save' }).click()
 
-    await expect(page.getByText('E2E-Live: Reactive')).toBeVisible()
+    await expect(page.getByTestId('site-tag-E2E-Live')).toContainText('Reactive')
 
     await page.getByTestId('site-access-control-button').click()
     await page.getByTestId('site-privacy-checkbox').click()
     await page.getByRole('button', { name: 'Close' }).click()
-    await expect(
-      page.getByRole('row', { name: /Privacy Private/ })
-    ).toBeVisible()
+    await expect(page.getByTestId('site-privacy-chip')).toHaveText('Private')
 
     await page.getByTestId('site-access-control-button').click()
     await page.getByTestId('site-privacy-checkbox').click()
     await page.getByRole('button', { name: 'Close' }).click()
-    await expect(
-      page.getByRole('row', { name: /Privacy Public/ })
-    ).toBeVisible()
+    await expect(page.getByTestId('site-privacy-chip')).toHaveText('Public')
 
-    await page.getByTestId('edit-site-button').click()
+    // Photos are managed from their own tab, not the Edit site form.
+    await page.getByTestId('site-tab-photos').click()
+    await expect(page).toHaveURL(/[?&]tab=photos/)
+    await page.getByTestId('manage-site-photos-button').click()
     await page.getByTestId('site-photo-input').setInputFiles({
       name: 'site-photo.png',
       mimeType: 'image/png',
       buffer: sitePhotoPng,
     })
     await expect(page.getByTestId('site-photo-preview-0')).toBeVisible()
-    await page.getByRole('button', { name: 'Save' }).click()
+    await page.getByRole('dialog').getByRole('button', { name: 'Save' }).click()
 
-    await expect(page.getByText('1 photos')).toBeVisible()
+    await expect(page.getByText('1 photo', { exact: true })).toBeVisible()
+    await expect(page.getByTestId('site-photo-carousel-view-all')).toBeVisible()
 
-    await page.getByTestId('edit-site-button').click()
+    await page.getByTestId('manage-site-photos-button').click()
     await page.getByTestId('delete-existing-photo-0').click()
-    await page.getByRole('button', { name: 'Save' }).click()
+    await page.getByRole('dialog').getByRole('button', { name: 'Save' }).click()
 
     await expect(page.getByText('No photos added yet.')).toBeVisible()
+    await expect(page.getByTestId('site-photo-carousel-view-all')).toHaveCount(0)
 
+    await page.getByTestId('site-tab-datastreams').click()
     await page.getByTestId('add-datastream-button').click()
     await chooseAutocompleteOption(
       page,

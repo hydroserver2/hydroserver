@@ -8,7 +8,7 @@
         cols="12"
         class="d-flex align-center flex-wrap justify-space-between gap-2 max-[600px]:flex-col max-[600px]:items-start"
       >
-        <h1 class="hs-heading ma-0">{{ monitoringSite.name }}</h1>
+        <h1 class="site-details-title hs-heading ma-0">{{ monitoringSite.name }}</h1>
 
         <div
           class="flex items-center flex-wrap gap-2 max-[600px]:w-full max-[600px]:flex-col max-[600px]:items-stretch"
@@ -104,117 +104,177 @@
             :workspace-id="monitoringSite.workspaceId"
           />
         </v-dialog>
+
+        <div class="site-details-subtitle hs-text-sm" data-testid="site-subtitle">
+          <span class="site-details-subtitle__item">
+            <span class="text-medium-emphasis">Site UUID</span>
+            <span class="hs-font-data">{{ monitoringSite.id }}</span>
+            <HsCopyButton
+              :value="monitoringSite.id"
+              :label="monitoringSite.name"
+              data-testid="copy-site-id"
+              @copied="Snackbar.success('Site UUID copied to clipboard')"
+              @error="Snackbar.error('Failed to copy site UUID')"
+            />
+          </span>
+          <span v-if="monitoringSite.code" class="site-details-subtitle__item">
+            <span class="text-medium-emphasis">Site code</span>
+            <span class="hs-font-data">{{ monitoringSite.code }}</span>
+          </span>
+          <span v-if="monitoringSite.type" class="site-details-subtitle__item">
+            <span class="text-medium-emphasis">Site type</span>
+            <span>{{ monitoringSite.type }}</span>
+          </span>
+          <v-chip
+            size="small"
+            variant="tonal"
+            :color="monitoringSite.isPrivate ? 'error' : 'success'"
+            :prepend-icon="monitoringSite.isPrivate ? mdiLock : mdiLockOpenVariant"
+            data-testid="site-privacy-chip"
+          >
+            {{ monitoringSite.isPrivate ? 'Private' : 'Public' }}
+          </v-chip>
+        </div>
       </v-col>
     </v-row>
 
-    <div class="site-details-content flex flex-col gap-2">
-      <v-row v-if="monitoringSite">
-        <v-col>
-          <div class="w-full">
-            <div class="h-88 w-full max-[960px]:h-72">
-              <OpenLayersMap
-                :monitoringSites="[monitoringSite]"
-                startInSatellite
-                class="h-full w-full"
-              >
-                <template #overlay>
-                  <v-card
-                    v-if="!isMobile"
-                    class="mb-2 ml-2 max-w-[18rem] bg-white/95 px-3 py-2"
-                    elevation="4"
-                  >
-                    <div class="hs-text-sm font-weight-medium mb-2">
-                      Location
-                    </div>
-                    <div class="grid gap-1">
-                      <div
-                        v-for="detail in locationDetails"
-                        :key="detail.label"
-                        class="flex flex-col"
-                      >
-                        <span class="hs-text-2xs text-medium-emphasis">
-                          {{ detail.label }}
-                        </span>
-                        <span class="hs-text-sm">{{ detail.value }}</span>
-                      </div>
-                    </div>
-                  </v-card>
-                </template>
-              </OpenLayersMap>
-            </div>
-            <v-card
-              v-if="isMobile"
-              class="mt-3 w-full bg-white/95 px-3 py-2"
-              elevation="4"
-            >
-              <div class="hs-text-sm font-weight-medium mb-2">Location</div>
-              <div class="grid gap-1">
-                <div
-                  v-for="detail in locationDetails"
-                  :key="detail.label"
-                  class="flex flex-col"
-                >
-                  <span class="hs-text-2xs text-medium-emphasis">
-                    {{ detail.label }}
-                  </span>
-                  <span class="hs-text-sm">{{ detail.value }}</span>
-                </div>
-              </div>
-            </v-card>
-          </div>
-        </v-col>
-      </v-row>
+    <div v-if="monitoringSite" class="site-details-layout">
+      <aside class="site-details-aside" aria-label="About this site">
+        <SitePhotoCarousel
+          :photos="photos ?? []"
+          @open="openPhoto"
+          @view-all="activeTab = 'photos'"
+        />
 
-      <v-row class="mb-0">
-        <v-col cols="12" md="8">
-          <SiteDetailsTable :rating-curve-count="ratingCurveCount" />
-        </v-col>
+        <v-card class="site-details-card" flat>
+          <h2 class="site-details-card__title hs-text-md">Site information</h2>
+          <p class="site-details-card__body hs-text-sm">
+            {{ monitoringSite.description || 'No description provided.' }}
+          </p>
+        </v-card>
 
-        <v-col cols="12" md="4">
-          <div class="d-flex align-center justify-space-between mb-2">
-            <h5 class="hs-text-md mb-0">Site photos</h5>
-            <span v-if="hasPhotos" class="hs-text-2xs text-medium-emphasis">
-              {{ photos?.length }} photos
-            </span>
-          </div>
-          <div
-            v-if="hasPhotos"
-            class="grid grid-cols-[repeat(auto-fill,minmax(90px,1fr))] gap-2 min-[961px]:grid-cols-[repeat(auto-fit,85px)] min-[961px]:justify-start min-[961px]:max-h-48 min-[961px]:overflow-hidden"
+        <SiteTagList
+          :tags="monitoringSite.tags"
+          :can-edit="canEditMonitoringSite"
+          @edit="isRegisterModalOpen = true"
+        />
+      </aside>
+
+      <section class="site-details-map" aria-label="Site location">
+        <div class="h-80 w-full max-[960px]:h-72">
+          <OpenLayersMap
+            :monitoringSites="[monitoringSite]"
+            startInSatellite
+            class="h-full w-full"
           >
-            <button
-              v-for="(photo, index) in visiblePhotos"
-              :key="photo.id"
-              class="relative block aspect-square cursor-pointer appearance-none overflow-hidden rounded-lg border border-black/10 bg-transparent p-0"
-              type="button"
-              @click="openPhoto(photo)"
-            >
-              <v-img :src="photo.link" cover class="h-full w-full" />
-              <div
-                v-if="index === visiblePhotos.length - 1 && extraPhotoCount > 0"
-                class="absolute inset-0 flex items-center justify-center bg-black/55 hs-subheading text-white"
+            <template #overlay>
+              <v-card
+                v-if="!isMobile"
+                class="mb-2 ml-2 max-w-[18rem] bg-white/95 px-3 py-2"
+                elevation="4"
               >
-                +{{ extraPhotoCount }}
-              </div>
-            </button>
+                <div class="hs-text-sm font-weight-medium mb-2">Location</div>
+                <div class="grid gap-1">
+                  <div
+                    v-for="detail in locationDetails"
+                    :key="detail.label"
+                    class="flex flex-col"
+                  >
+                    <span class="hs-text-2xs text-medium-emphasis">
+                      {{ detail.label }}
+                    </span>
+                    <span class="hs-text-sm">{{ detail.value }}</span>
+                  </div>
+                </div>
+              </v-card>
+            </template>
+          </OpenLayersMap>
+        </div>
+        <div v-if="isMobile" class="px-3 py-2">
+          <div class="hs-text-sm font-weight-medium mb-2">Location</div>
+          <div class="grid gap-1">
+            <div
+              v-for="detail in locationDetails"
+              :key="detail.label"
+              class="flex flex-col"
+            >
+              <span class="hs-text-2xs text-medium-emphasis">
+                {{ detail.label }}
+              </span>
+              <span class="hs-text-sm">{{ detail.value }}</span>
+            </div>
           </div>
-          <div v-else-if="loading" class="text-center">
-            <p>
-              Your photos are being uploaded. They will appear once the upload
-              is complete.
-            </p>
-            <v-progress-circular indeterminate color="primary" />
-          </div>
-          <div v-else class="text-medium-emphasis">
-            <small>No photos added yet.</small>
-          </div>
-        </v-col>
-      </v-row>
+        </div>
+      </section>
 
-      <DatastreamTable
-        v-if="monitoringSite && workspace"
-        :workspace="workspace"
-        :target-datastream-id="targetDatastreamId"
-      />
+      <v-card class="site-details-tabs" flat>
+        <v-tabs
+          v-model="activeTab"
+          color="primary"
+          density="comfortable"
+          show-arrows
+          class="site-details-tabs__bar"
+        >
+          <v-tab value="datastreams" data-testid="site-tab-datastreams">
+            Datastreams
+          </v-tab>
+          <v-tab value="photos" data-testid="site-tab-photos">
+            Photos
+            <v-chip size="x-small" variant="tonal" class="ml-2">
+              {{ photos?.length ?? 0 }}
+            </v-chip>
+          </v-tab>
+          <v-tab value="rating-curves" data-testid="site-tab-rating-curves">
+            Rating curves
+            <v-chip size="x-small" variant="tonal" class="ml-2">
+              {{ ratingCurveCount }}
+            </v-chip>
+          </v-tab>
+        </v-tabs>
+
+        <v-window v-model="activeTab" :touch="false">
+          <v-window-item
+            value="datastreams"
+            :transition="false"
+            :reverse-transition="false"
+          >
+            <div class="site-details-tabs__panel">
+              <DatastreamTable
+                v-if="workspace"
+                :workspace="workspace"
+                :target-datastream-id="targetDatastreamId"
+              />
+            </div>
+          </v-window-item>
+          <v-window-item
+            value="photos"
+            :transition="false"
+            :reverse-transition="false"
+          >
+            <SitePhotosPanel
+              :monitoring-site-id="monitoringSiteId"
+              :can-edit="canEditMonitoringSite"
+              @open="openPhoto"
+            />
+          </v-window-item>
+          <v-window-item
+            value="rating-curves"
+            :transition="false"
+            :reverse-transition="false"
+          >
+            <div class="site-details-tabs__panel">
+              <RatingCurveTable
+                :monitoring-site-id="monitoringSiteId"
+                :workspace-id="monitoringSite.workspaceId"
+                :can-edit="canEditMonitoringSite"
+                inline-read-only
+                download-only
+                @rating-curves-changed="ratingCurveCount = $event.length"
+              />
+            </div>
+          </v-window-item>
+        </v-window>
+      </v-card>
     </div>
 
     <v-dialog v-model="isPhotoViewerOpen" width="60rem">
@@ -281,9 +341,16 @@ import OpenLayersMap from '@/components/Maps/OpenLayersMap.vue'
 import SiteForm from '@/components/Site/SiteForm.vue'
 import SiteAccessControl from '@/components/Site/SiteAccessControl.vue'
 import DatastreamTable from '@/components/Datastream/DatastreamTable.vue'
-import SiteDetailsTable from '@/components/Site/SiteDetailsTable.vue'
 import SiteDeleteModal from '@/components/Site/SiteDeleteModal.vue'
-import { HsFullScreenLoader as FullScreenLoader } from '@hydroserver/design-system/vue'
+import SitePhotoCarousel from '@/components/Site/SitePhotoCarousel.vue'
+import SitePhotosPanel from '@/components/Site/SitePhotosPanel.vue'
+import SiteTagList from '@/components/Site/SiteTagList.vue'
+import RatingCurveTable from '@/components/Orchestration/data-products/RatingCurveTable.vue'
+import {
+  HsCopyButton,
+  HsFullScreenLoader as FullScreenLoader,
+} from '@hydroserver/design-system/vue'
+import { Snackbar } from '@/utils/notifications'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import { useHydroShare } from '@/composables/useHydroShare'
 import { useHydroShareStore } from '@/store/hydroShare'
@@ -296,6 +363,8 @@ import {
   mdiChevronDown,
   mdiCogSyncOutline,
   mdiLanguagePython,
+  mdiLock,
+  mdiLockOpenVariant,
 } from '@mdi/js'
 import { useDisplay } from 'vuetify/lib/framework.mjs'
 
@@ -308,6 +377,26 @@ const targetDatastreamId = computed(() => {
   const param = route.query.datastream
   return Array.isArray(param) ? param[0] ?? '' : `${param ?? ''}`
 })
+
+const siteTabs = ['datastreams', 'photos', 'rating-curves'] as const
+type SiteTab = (typeof siteTabs)[number]
+
+// The selected tab lives in the URL (?tab=photos) so views can be linked and
+// the back button works. A ?datastream= deep link always opens Datastreams.
+const activeTab = computed<SiteTab>({
+  get() {
+    if (targetDatastreamId.value) return 'datastreams'
+    const param = route.query.tab
+    const value = Array.isArray(param) ? param[0] : param
+    return siteTabs.includes(value as SiteTab) ? (value as SiteTab) : 'datastreams'
+  },
+  set(tab) {
+    const { tab: _currentTab, datastream: _datastream, ...query } = route.query
+    void router.replace({
+      query: tab === 'datastreams' ? query : { ...query, tab },
+    })
+  },
+})
 const orchestrationIngestionRoute = computed(() => ({
   name: 'OrchestrationView',
   params: { view: 'ingestion' },
@@ -316,7 +405,7 @@ const orchestrationIngestionRoute = computed(() => ({
     site_id: monitoringSiteId,
   },
 }))
-const { photos, loading } = storeToRefs(usePhotosStore())
+const { photos } = storeToRefs(usePhotosStore())
 const workspace = ref<Workspace>()
 
 const { isConnectionEnabled: hydroShareEnabled, isConnected: hydroShareConnected } =
@@ -332,15 +421,6 @@ const { xs } = useDisplay()
 const isMobile = computed(() => xs.value)
 const canEditMonitoringSite = computed(() =>
   hasPermission(PermissionResource.MonitoringSite, PermissionAction.Edit)
-)
-
-const hasPhotos = computed(() => !loading.value && photos.value?.length > 0)
-const maxPhotoThumbnails = 6
-const visiblePhotos = computed(() =>
-  photos.value ? photos.value.slice(0, maxPhotoThumbnails) : []
-)
-const extraPhotoCount = computed(() =>
-  Math.max(0, (photos.value?.length ?? 0) - maxPhotoThumbnails)
 )
 
 const isRegisterModalOpen = ref(false)
@@ -404,8 +484,6 @@ async function loadRatingCurveCount() {
 
 function onSiteFormClosed() {
   isRegisterModalOpen.value = false
-  void loadMonitoringSitePhotos()
-  void loadRatingCurveCount()
 }
 
 function openPhoto(photo: LinkedResource) {
@@ -498,8 +576,105 @@ onMounted(async () => {
   padding: 0;
 }
 
-.site-details-content {
-  margin: var(--hs-space-12) var(--site-details-page-gutter);
+/* Basis 0 so the stacked phone header (flex-direction: column) doesn't turn
+   the basis into a fixed height; min-width makes the buttons wrap on desktop. */
+.site-details-title {
+  flex: 1 1 0%;
+  min-width: min(100%, 20rem);
+  overflow-wrap: anywhere;
+}
+
+.site-details-subtitle {
+  display: flex;
+  flex-basis: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--hs-space-4) var(--hs-space-16);
+}
+
+.site-details-subtitle__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hs-space-6);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.site-details-subtitle__item > .text-medium-emphasis {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* Phone and tablet: map, then site context, then the tabs. */
+.site-details-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    'map'
+    'aside'
+    'tabs';
+  gap: var(--hs-space-16);
+  margin: var(--hs-space-16) var(--site-details-page-gutter);
+}
+
+/* Desktop: site context column on the left, map above the tabs on the right. */
+@media (min-width: 960px) {
+  .site-details-layout {
+    grid-template-columns: minmax(18rem, 22rem) minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      'aside map'
+      'aside tabs';
+    gap: var(--hs-space-16) var(--hs-space-24);
+  }
+}
+
+.site-details-aside {
+  grid-area: aside;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: var(--hs-space-16);
+  min-width: 0;
+}
+
+.site-details-map {
+  grid-area: map;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--hs-border);
+  border-radius: var(--hs-radius-md);
+}
+
+.site-details-tabs {
+  grid-area: tabs;
+  align-self: start;
+  min-width: 0;
+  border: 1px solid var(--hs-border);
+}
+
+.site-details-tabs__bar {
+  border-bottom: 1px solid var(--hs-border);
+}
+
+.site-details-tabs__panel {
+  padding: var(--hs-space-16);
+}
+
+.site-details-card {
+  border: 1px solid var(--hs-border);
+}
+
+.site-details-card__title {
+  margin: 0;
+  padding: var(--hs-space-10) var(--hs-space-16);
+  border-bottom: 1px solid var(--hs-border);
+}
+
+.site-details-card__body {
+  margin: 0;
+  padding: var(--hs-space-12) var(--hs-space-16);
+  white-space: pre-line;
 }
 
 @media (max-width: 700px) {

@@ -2669,6 +2669,11 @@ const loadDatastreams = async () => {
     align-items: flex-start;
     flex-direction: column;
   }
+  /* .hs-table-tools stacks vertically on phones, where a 28rem basis would
+     become a 28rem-tall gap under the heading. */
+  .site-datastreams__tools-primary {
+    flex-basis: auto;
+  }
   .site-datastreams__sparkline {
     flex-basis: calc(4 * var(--hs-space-32));
   }

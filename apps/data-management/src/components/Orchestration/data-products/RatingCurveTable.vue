@@ -650,12 +650,10 @@ const fittingMethodOptions = [
 ]
 
 const canEditMonitoringSite = computed(() => props.canEdit)
-const inlineReadOnly = computed(
-  () => props.inlineReadOnly && !canEditMonitoringSite.value
-)
-const showManageButton = computed(
-  () => canEditMonitoringSite.value && !inlineReadOnly.value
-)
+// The inline list is shown to everyone who asks for it; editors also get the
+// Manage button, which opens the dialog where rating curves are changed.
+const inlineReadOnly = computed(() => props.inlineReadOnly)
+const showManageButton = computed(() => canEditMonitoringSite.value)
 const readOnlyTooltip =
   'You have read-only access to this site. Ask an editor or owner to make changes.'
 const downloadTooltipText = 'Download rating curve'

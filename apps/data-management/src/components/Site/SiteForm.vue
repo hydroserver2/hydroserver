@@ -83,17 +83,6 @@
                   ></v-textarea>
                 </v-col>
               </v-row>
-
-              <v-row class="mt-2">
-                <v-col>
-                  <RatingCurveTable
-                    :monitoring-site-id="monitoringSiteId"
-                    :workspace-id="workspaceId"
-                    :can-edit="true"
-                    :defer-persist="true"
-                  />
-                </v-col>
-              </v-row>
             </v-col>
             <v-col cols="12" md="6">
               <h6 class="hs-text-md my-4">Site location</h6>
@@ -177,12 +166,6 @@
                   <SiteTagManager :monitoring-site-id="monitoringSiteId" />
                 </v-col>
               </v-row>
-
-              <v-row>
-                <v-col>
-                  <SitePhotoManager :monitoring-site-id="monitoringSiteId" />
-                </v-col>
-              </v-row>
             </v-col>
           </v-row>
         </v-card-text>
@@ -203,13 +186,8 @@ import { useMonitoringSiteStore } from '@/store/monitoringSite'
 import { VForm } from 'vuetify/components'
 import { rules } from '@/utils/rules'
 import { storeToRefs } from 'pinia'
-import SitePhotoManager from '@/components/Site/SitePhotoManager.vue'
 import SiteTagManager from '@/components/Site/SiteTagManager.vue'
-import RatingCurveTable from '@/components/Orchestration/data-products/RatingCurveTable.vue'
-import { usePhotosStore } from '@/store/photos'
-import { useRatingCurveStore } from '@/store/ratingCurves'
 import { useTagStore } from '@/store/tags'
-import { Snackbar } from '@/utils/notifications'
 import countryList from 'country-list'
 import { useVocabularyStore } from '@/composables/useVocabulary'
 import hs, { MonitoringSite } from '@hydroserver/client'
@@ -222,8 +200,6 @@ const countryTitle = (item: { name: string; code: string } | undefined) => {
 }
 
 const { monitoringSite: storedMonitoringSite } = storeToRefs(useMonitoringSiteStore())
-const { updatePhotos, resetPendingPhotos } = usePhotosStore()
-const { updateRatingCurves, resetRatingCurves } = useRatingCurveStore()
 const { tags, previewTags } = storeToRefs(useTagStore())
 const { updateTags } = useTagStore()
 const vocabularyStore = useVocabularyStore()
@@ -245,8 +221,6 @@ function cloneMonitoringSite(source?: MonitoringSite) {
 }
 
 function resetPendingSiteChanges() {
-  resetPendingPhotos()
-  resetRatingCurves()
   previewTags.value = props.monitoringSiteId ? { ...tags.value } : {}
 }
 
@@ -293,19 +267,6 @@ async function uploadMonitoringSite() {
 
   await updateTags(storedMonitoringSite.value!.id)
   if (storedMonitoringSite.value) storedMonitoringSite.value.tags = tags.value
-  await updatePhotos(storedMonitoringSite.value!.id)
-  const ratingCurveResult = await updateRatingCurves(storedMonitoringSite.value!.id)
-  if (!ratingCurveResult.ok) {
-    const firstFailure =
-      ratingCurveResult.message ||
-      ratingCurveResult.failedCreates[0]?.message ||
-      ratingCurveResult.failedMetadataUpdates[0]?.message ||
-      ratingCurveResult.failedReplaces[0]?.message ||
-      ratingCurveResult.failedDeletes[0]?.message ||
-      'Some rating curve changes could not be saved.'
-    Snackbar.error(firstFailure)
-    return
-  }
   closeDialog()
 }
 
