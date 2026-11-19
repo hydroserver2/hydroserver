@@ -23,10 +23,10 @@ class TaskService(HydroServerBaseService):
         workspace: Optional[Union[UUID, str]] = ...,
         data_connection: Optional[Union[UUID, str]] = ...,
         latest_run_status: str = ...,
-        latest_run_started_at_min: Optional[datetime] = ...,
-        latest_run_started_at_max: Optional[datetime] = ...,
-        latest_run_finished_at_min: Optional[datetime] = ...,
-        latest_run_finished_at_max: Optional[datetime] = ...,
+        min_latest_run_started_at: Optional[datetime] = ...,
+        max_latest_run_started_at: Optional[datetime] = ...,
+        min_latest_run_finished_at: Optional[datetime] = ...,
+        max_latest_run_finished_at: Optional[datetime] = ...,
         fetch_all: bool = False,
     ) -> List[EtlTask]:
         """Fetch a collection of ETL tasks."""
@@ -39,10 +39,10 @@ class TaskService(HydroServerBaseService):
             workspace_id=normalize_uuid(workspace),
             data_connection_id=normalize_uuid(data_connection),
             latest_run_status=latest_run_status,
-            latest_run_started_at_min=latest_run_started_at_min,
-            latest_run_started_at_max=latest_run_started_at_max,
-            latest_run_finished_at_min=latest_run_finished_at_min,
-            latest_run_finished_at_max=latest_run_finished_at_max,
+            min_latest_run_started_at=min_latest_run_started_at,
+            max_latest_run_started_at=max_latest_run_started_at,
+            min_latest_run_finished_at=min_latest_run_finished_at,
+            max_latest_run_finished_at=max_latest_run_finished_at,
         )
 
     def create(
@@ -133,10 +133,10 @@ class TaskService(HydroServerBaseService):
         limit: int = ...,
         sortby: List[str] = ...,
         status: str = ...,
-        started_at_min: datetime = ...,
-        started_at_max: datetime = ...,
-        finished_at_min: datetime = ...,
-        finished_at_max: datetime = ...,
+        min_started_at: datetime = ...,
+        max_started_at: datetime = ...,
+        min_finished_at: datetime = ...,
+        max_finished_at: datetime = ...,
     ) -> List[TaskRun]:
         """Fetch a collection of task runs for an ETL task."""
 
@@ -145,10 +145,10 @@ class TaskService(HydroServerBaseService):
             "limit": limit,
             "sortby": [sortby_to_camel(o) for o in sortby] if sortby is not ... else sortby,
             "status": status,
-            "startedAtMin": started_at_min,
-            "startedAtMax": started_at_max,
-            "finishedAtMin": finished_at_min,
-            "finishedAtMax": finished_at_max,
+            "minStartedAt": min_started_at,
+            "maxStartedAt": max_started_at,
+            "minFinishedAt": min_finished_at,
+            "maxFinishedAt": max_finished_at,
         }
         params = {k: v for k, v in params.items() if v is not ...}
 

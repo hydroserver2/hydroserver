@@ -2911,6 +2911,18 @@
             "title": "Limit",
             "type": "integer"
           },
+          "maxValueCount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Datastreams with at most this many observations.",
+            "title": "Maxvaluecount"
+          },
           "methodId": {
             "default": [],
             "description": "Datastreams produced by this method. Matches `id` in `methods`.",
@@ -2920,6 +2932,18 @@
             },
             "title": "Methodid",
             "type": "array"
+          },
+          "minValueCount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Datastreams with at least this many observations.",
+            "title": "Minvaluecount"
           },
           "monitoringSiteId": {
             "default": [],
@@ -3125,30 +3149,6 @@
             },
             "title": "Unitid",
             "type": "array"
-          },
-          "valueCountMax": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Datastreams with at most this many observations.",
-            "title": "Valuecountmax"
-          },
-          "valueCountMin": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Datastreams with at least this many observations.",
-            "title": "Valuecountmin"
           },
           "workspaceId": {
             "default": [],
@@ -3956,70 +3956,6 @@
             "title": "Include",
             "type": "array"
           },
-          "latestRunFinishedAtMax": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "ETL tasks whose latest run finished at or before this RFC 3339 date-time.",
-            "title": "Latestrunfinishedatmax"
-          },
-          "latestRunFinishedAtMin": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "ETL tasks whose latest run finished at or after this RFC 3339 date-time.",
-            "title": "Latestrunfinishedatmin"
-          },
-          "latestRunStartedAtMax": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "ETL tasks whose latest run started at or before this RFC 3339 date-time.",
-            "title": "Latestrunstartedatmax"
-          },
-          "latestRunStartedAtMin": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "ETL tasks whose latest run started at or after this RFC 3339 date-time.",
-            "title": "Latestrunstartedatmin"
-          },
           "latestRunStatus": {
             "default": [],
             "description": "ETL tasks whose latest run has this status: `PENDING`, `STARTED`, `SUCCESS`, or `FAILURE`. `null` matches tasks that have never run.",
@@ -4044,6 +3980,70 @@
             "minimum": 0,
             "title": "Limit",
             "type": "integer"
+          },
+          "maxLatestRunFinishedAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ETL tasks whose latest run finished at or before this RFC 3339 date-time.",
+            "title": "Maxlatestrunfinishedat"
+          },
+          "maxLatestRunStartedAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ETL tasks whose latest run started at or before this RFC 3339 date-time.",
+            "title": "Maxlatestrunstartedat"
+          },
+          "minLatestRunFinishedAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ETL tasks whose latest run finished at or after this RFC 3339 date-time.",
+            "title": "Minlatestrunfinishedat"
+          },
+          "minLatestRunStartedAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ETL tasks whose latest run started at or after this RFC 3339 date-time.",
+            "title": "Minlatestrunstartedat"
           },
           "monitoringSiteId": {
             "default": [],
@@ -14967,38 +14967,6 @@
       },
       "TaskRunQueryParameters": {
         "properties": {
-          "finishedAtMax": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Task runs that finished at or before this RFC 3339 date-time.",
-            "title": "Finishedatmax"
-          },
-          "finishedAtMin": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Task runs that finished at or after this RFC 3339 date-time.",
-            "title": "Finishedatmin"
-          },
           "include": {
             "anyOf": [
               {
@@ -15018,6 +14986,70 @@
             "minimum": 0,
             "title": "Limit",
             "type": "integer"
+          },
+          "maxFinishedAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Task runs that finished at or before this RFC 3339 date-time.",
+            "title": "Maxfinishedat"
+          },
+          "maxStartedAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Task runs that started at or before this RFC 3339 date-time.",
+            "title": "Maxstartedat"
+          },
+          "minFinishedAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Task runs that finished at or after this RFC 3339 date-time.",
+            "title": "Minfinishedat"
+          },
+          "minStartedAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Task runs that started at or after this RFC 3339 date-time.",
+            "title": "Minstartedat"
           },
           "offset": {
             "anyOf": [
@@ -15071,38 +15103,6 @@
             },
             "title": "Sortby",
             "type": "array"
-          },
-          "startedAtMax": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Task runs that started at or before this RFC 3339 date-time.",
-            "title": "Startedatmax"
-          },
-          "startedAtMin": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Task runs that started at or after this RFC 3339 date-time.",
-            "title": "Startedatmin"
           },
           "status": {
             "default": [],
@@ -18704,7 +18704,7 @@
           {
             "description": "Task runs that started at or before this RFC 3339 date-time.",
             "in": "query",
-            "name": "startedAtMax",
+            "name": "maxStartedAt",
             "required": false,
             "schema": {
               "anyOf": [
@@ -18720,13 +18720,13 @@
                 }
               ],
               "description": "Task runs that started at or before this RFC 3339 date-time.",
-              "title": "Startedatmax"
+              "title": "Maxstartedat"
             }
           },
           {
             "description": "Task runs that started at or after this RFC 3339 date-time.",
             "in": "query",
-            "name": "startedAtMin",
+            "name": "minStartedAt",
             "required": false,
             "schema": {
               "anyOf": [
@@ -18742,13 +18742,13 @@
                 }
               ],
               "description": "Task runs that started at or after this RFC 3339 date-time.",
-              "title": "Startedatmin"
+              "title": "Minstartedat"
             }
           },
           {
             "description": "Task runs that finished at or before this RFC 3339 date-time.",
             "in": "query",
-            "name": "finishedAtMax",
+            "name": "maxFinishedAt",
             "required": false,
             "schema": {
               "anyOf": [
@@ -18764,13 +18764,13 @@
                 }
               ],
               "description": "Task runs that finished at or before this RFC 3339 date-time.",
-              "title": "Finishedatmax"
+              "title": "Maxfinishedat"
             }
           },
           {
             "description": "Task runs that finished at or after this RFC 3339 date-time.",
             "in": "query",
-            "name": "finishedAtMin",
+            "name": "minFinishedAt",
             "required": false,
             "schema": {
               "anyOf": [
@@ -18786,7 +18786,7 @@
                 }
               ],
               "description": "Task runs that finished at or after this RFC 3339 date-time.",
-              "title": "Finishedatmin"
+              "title": "Minfinishedat"
             }
           }
         ],
@@ -20768,7 +20768,7 @@
           {
             "description": "Datastreams with at most this many observations.",
             "in": "query",
-            "name": "valueCountMax",
+            "name": "maxValueCount",
             "required": false,
             "schema": {
               "anyOf": [
@@ -20780,13 +20780,13 @@
                 }
               ],
               "description": "Datastreams with at most this many observations.",
-              "title": "Valuecountmax"
+              "title": "Maxvaluecount"
             }
           },
           {
             "description": "Datastreams with at least this many observations.",
             "in": "query",
-            "name": "valueCountMin",
+            "name": "minValueCount",
             "required": false,
             "schema": {
               "anyOf": [
@@ -20798,7 +20798,7 @@
                 }
               ],
               "description": "Datastreams with at least this many observations.",
-              "title": "Valuecountmin"
+              "title": "Minvaluecount"
             }
           },
           {
@@ -23783,7 +23783,7 @@
           {
             "description": "ETL tasks whose latest run started at or after this RFC 3339 date-time.",
             "in": "query",
-            "name": "latestRunStartedAtMin",
+            "name": "minLatestRunStartedAt",
             "required": false,
             "schema": {
               "anyOf": [
@@ -23799,13 +23799,13 @@
                 }
               ],
               "description": "ETL tasks whose latest run started at or after this RFC 3339 date-time.",
-              "title": "Latestrunstartedatmin"
+              "title": "Minlatestrunstartedat"
             }
           },
           {
             "description": "ETL tasks whose latest run started at or before this RFC 3339 date-time.",
             "in": "query",
-            "name": "latestRunStartedAtMax",
+            "name": "maxLatestRunStartedAt",
             "required": false,
             "schema": {
               "anyOf": [
@@ -23821,13 +23821,13 @@
                 }
               ],
               "description": "ETL tasks whose latest run started at or before this RFC 3339 date-time.",
-              "title": "Latestrunstartedatmax"
+              "title": "Maxlatestrunstartedat"
             }
           },
           {
             "description": "ETL tasks whose latest run finished at or after this RFC 3339 date-time.",
             "in": "query",
-            "name": "latestRunFinishedAtMin",
+            "name": "minLatestRunFinishedAt",
             "required": false,
             "schema": {
               "anyOf": [
@@ -23843,13 +23843,13 @@
                 }
               ],
               "description": "ETL tasks whose latest run finished at or after this RFC 3339 date-time.",
-              "title": "Latestrunfinishedatmin"
+              "title": "Minlatestrunfinishedat"
             }
           },
           {
             "description": "ETL tasks whose latest run finished at or before this RFC 3339 date-time.",
             "in": "query",
-            "name": "latestRunFinishedAtMax",
+            "name": "maxLatestRunFinishedAt",
             "required": false,
             "schema": {
               "anyOf": [
@@ -23865,7 +23865,7 @@
                 }
               ],
               "description": "ETL tasks whose latest run finished at or before this RFC 3339 date-time.",
-              "title": "Latestrunfinishedatmax"
+              "title": "Maxlatestrunfinishedat"
             }
           },
           {
@@ -24481,7 +24481,7 @@
           {
             "description": "Task runs that started at or before this RFC 3339 date-time.",
             "in": "query",
-            "name": "startedAtMax",
+            "name": "maxStartedAt",
             "required": false,
             "schema": {
               "anyOf": [
@@ -24497,13 +24497,13 @@
                 }
               ],
               "description": "Task runs that started at or before this RFC 3339 date-time.",
-              "title": "Startedatmax"
+              "title": "Maxstartedat"
             }
           },
           {
             "description": "Task runs that started at or after this RFC 3339 date-time.",
             "in": "query",
-            "name": "startedAtMin",
+            "name": "minStartedAt",
             "required": false,
             "schema": {
               "anyOf": [
@@ -24519,13 +24519,13 @@
                 }
               ],
               "description": "Task runs that started at or after this RFC 3339 date-time.",
-              "title": "Startedatmin"
+              "title": "Minstartedat"
             }
           },
           {
             "description": "Task runs that finished at or before this RFC 3339 date-time.",
             "in": "query",
-            "name": "finishedAtMax",
+            "name": "maxFinishedAt",
             "required": false,
             "schema": {
               "anyOf": [
@@ -24541,13 +24541,13 @@
                 }
               ],
               "description": "Task runs that finished at or before this RFC 3339 date-time.",
-              "title": "Finishedatmax"
+              "title": "Maxfinishedat"
             }
           },
           {
             "description": "Task runs that finished at or after this RFC 3339 date-time.",
             "in": "query",
-            "name": "finishedAtMin",
+            "name": "minFinishedAt",
             "required": false,
             "schema": {
               "anyOf": [
@@ -24563,7 +24563,7 @@
                 }
               ],
               "description": "Task runs that finished at or after this RFC 3339 date-time.",
-              "title": "Finishedatmin"
+              "title": "Minfinishedat"
             }
           }
         ],
@@ -30702,7 +30702,7 @@
           {
             "description": "Task runs that started at or before this RFC 3339 date-time.",
             "in": "query",
-            "name": "startedAtMax",
+            "name": "maxStartedAt",
             "required": false,
             "schema": {
               "anyOf": [
@@ -30718,13 +30718,13 @@
                 }
               ],
               "description": "Task runs that started at or before this RFC 3339 date-time.",
-              "title": "Startedatmax"
+              "title": "Maxstartedat"
             }
           },
           {
             "description": "Task runs that started at or after this RFC 3339 date-time.",
             "in": "query",
-            "name": "startedAtMin",
+            "name": "minStartedAt",
             "required": false,
             "schema": {
               "anyOf": [
@@ -30740,13 +30740,13 @@
                 }
               ],
               "description": "Task runs that started at or after this RFC 3339 date-time.",
-              "title": "Startedatmin"
+              "title": "Minstartedat"
             }
           },
           {
             "description": "Task runs that finished at or before this RFC 3339 date-time.",
             "in": "query",
-            "name": "finishedAtMax",
+            "name": "maxFinishedAt",
             "required": false,
             "schema": {
               "anyOf": [
@@ -30762,13 +30762,13 @@
                 }
               ],
               "description": "Task runs that finished at or before this RFC 3339 date-time.",
-              "title": "Finishedatmax"
+              "title": "Maxfinishedat"
             }
           },
           {
             "description": "Task runs that finished at or after this RFC 3339 date-time.",
             "in": "query",
-            "name": "finishedAtMin",
+            "name": "minFinishedAt",
             "required": false,
             "schema": {
               "anyOf": [
@@ -30784,7 +30784,7 @@
                 }
               ],
               "description": "Task runs that finished at or after this RFC 3339 date-time.",
-              "title": "Finishedatmin"
+              "title": "Minfinishedat"
             }
           }
         ],

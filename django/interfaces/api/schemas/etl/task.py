@@ -120,16 +120,16 @@ class EtlTaskQueryParameters(EtlTaskFilterFields, CollectionQueryParameters, Ext
         description="ETL tasks whose latest run has this status: `PENDING`, `STARTED`, `SUCCESS`, or "
         "`FAILURE`. `null` matches tasks that have never run.",
     )
-    latest_run_started_at_min: ISODatetime | None = Query(
+    min_latest_run_started_at: ISODatetime | None = Query(
         None, description="ETL tasks whose latest run started at or after this RFC 3339 date-time."
     )
-    latest_run_started_at_max: ISODatetime | None = Query(
+    max_latest_run_started_at: ISODatetime | None = Query(
         None, description="ETL tasks whose latest run started at or before this RFC 3339 date-time."
     )
-    latest_run_finished_at_min: ISODatetime | None = Query(
+    min_latest_run_finished_at: ISODatetime | None = Query(
         None, description="ETL tasks whose latest run finished at or after this RFC 3339 date-time."
     )
-    latest_run_finished_at_max: ISODatetime | None = Query(
+    max_latest_run_finished_at: ISODatetime | None = Query(
         None, description="ETL tasks whose latest run finished at or before this RFC 3339 date-time."
     )
 
