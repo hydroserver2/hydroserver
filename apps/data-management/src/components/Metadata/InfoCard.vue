@@ -24,7 +24,7 @@
     <v-divider />
 
     <v-card-text class="py-2 px-4">
-      <v-row dense>
+      <v-row density="comfortable">
         <template v-for="(item, i) in items" :key="i">
           <v-col cols="5" class="font-weight-medium">
             {{ item.label }}

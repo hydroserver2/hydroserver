@@ -572,11 +572,11 @@ async function onDeleteMonitoringSite() {
 
 onMounted(async () => {
   photos.value = []
-  void loadMonitoringSitePhotos().catch((error) =>
-    console.error('Error fetching photos from DB', error)
-  )
   void loadRatingCurveCount().catch((error) =>
     console.error('Error fetching rating curves from DB', error)
+  )
+  void loadMonitoringSitePhotos().catch((error) =>
+    console.error('Error fetching photos from DB', error)
   )
   void loadDatastreamCount().catch((error) =>
     console.error('Error fetching datastream count', error)

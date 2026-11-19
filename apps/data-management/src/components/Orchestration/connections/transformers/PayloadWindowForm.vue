@@ -4,7 +4,7 @@
   </v-card-item>
   <v-card-text class="pt-0">
     <p class="hs-text-sm text-medium-emphasis mb-2">Data ingestion window start</p>
-    <v-row align="center" dense>
+    <v-row align="center" density="comfortable">
       <v-col cols="12" sm="5">
         <v-select
           v-model="startAnchor"
@@ -59,7 +59,7 @@
     </v-row>
 
     <p class="hs-text-sm text-medium-emphasis mt-4 mb-2">Data ingestion window end</p>
-    <v-row align="center" dense>
+    <v-row align="center" density="comfortable">
       <v-col cols="12" sm="5">
         <v-select
           v-model="endAnchor"

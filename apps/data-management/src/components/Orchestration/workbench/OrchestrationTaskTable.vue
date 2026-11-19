@@ -111,7 +111,7 @@
                   </v-card-title>
                   <v-divider />
                   <v-card-text class="py-2 px-4">
-                    <v-row dense>
+                    <v-row density="comfortable">
                       <template
                         v-for="rule in task.qualityRuleBreakdown ?? []"
                         :key="rule.label"
