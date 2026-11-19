@@ -164,10 +164,11 @@ async function onDrop(event: DragEvent) {
   min-height: 12rem;
 }
 
+/* Same 16px inset as the rating curves tab, so the green buttons line up. */
 .site-photos-panel__toolbar {
   display: flex;
   justify-content: flex-end;
-  padding: var(--hs-space-12) var(--hs-space-16) 0;
+  padding: var(--hs-space-16) var(--hs-space-16) 0;
 }
 
 .site-photos-panel__manage {

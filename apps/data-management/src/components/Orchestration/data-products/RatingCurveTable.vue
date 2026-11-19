@@ -25,75 +25,19 @@
       @change="onEditFileSelected"
     />
 
-    <v-expand-transition>
-      <section
-        v-if="openCreate"
-        class="rating-curve-form"
-        aria-labelledby="rating-curve-create-title"
-        data-testid="rating-curve-create-form"
-      >
-        <h3 id="rating-curve-create-title" class="hs-text-md mb-3">
+    <!-- Same layout as Manage photos: no extra container, and Cancel/Save sit
+         on the heading line where the Add rating curve button was. -->
+    <section
+      v-if="openCreate"
+      class="rating-curve-create"
+      aria-labelledby="rating-curve-create-title"
+      data-testid="rating-curve-create-form"
+    >
+      <div class="rating-curve-create__heading">
+        <h3 id="rating-curve-create-title" class="hs-text-md mb-0">
           Add rating curve
         </h3>
-        <input
-          ref="createFileInput"
-          type="file"
-          accept=".csv,text/csv"
-          class="d-none"
-          data-testid="rating-curve-create-file"
-          @change="onCreateFileSelected"
-        />
-        <div class="rating-curve-form__file">
-          <v-btn variant="outlined" color="primary" @click="openCreateFilePicker">
-            {{ selectedFile ? 'Change CSV file' : 'Choose CSV file *' }}
-          </v-btn>
-          <span v-if="selectedFile" class="hs-text-2xs text-medium-emphasis">
-            <strong>{{ selectedFile.name }}</strong>
-            ({{ formatFileSize(selectedFile.size) }})
-          </span>
-          <v-btn
-            v-if="selectedFile"
-            variant="text"
-            size="small"
-            @click="clearCreateFile"
-          >
-            Clear
-          </v-btn>
-        </div>
-        <v-alert
-          v-if="createFileValidationError"
-          type="error"
-          variant="tonal"
-          density="compact"
-          class="mb-3"
-        >
-          {{ createFileValidationError }}
-        </v-alert>
-        <div
-          v-else-if="createFileValidationPending"
-          class="hs-text-2xs text-medium-emphasis mb-3"
-        >
-          Validating rating curve CSV...
-        </div>
-
-        <div class="rating-curve-form__fields">
-          <v-text-field v-model="attachmentName" label="Rating curve name *" />
-          <v-select
-            v-model="attachmentFittingMethod"
-            :items="fittingMethodOptions"
-            item-title="title"
-            item-value="value"
-            label="Fitting method *"
-          />
-          <v-textarea
-            v-model="attachmentDescription"
-            label="Description"
-            rows="2"
-            class="rating-curve-form__wide"
-          />
-        </div>
-
-        <div class="rating-curve-form__actions">
+        <div class="hs-table-actions">
           <v-btn-cancel @click="openCreate = false">Cancel</v-btn-cancel>
           <v-btn-dialog-action
             :loading="saving"
@@ -104,8 +48,65 @@
             Save
           </v-btn-dialog-action>
         </div>
-      </section>
-    </v-expand-transition>
+      </div>
+      <input
+        ref="createFileInput"
+        type="file"
+        accept=".csv,text/csv"
+        class="d-none"
+        data-testid="rating-curve-create-file"
+        @change="onCreateFileSelected"
+      />
+      <div class="rating-curve-form__file">
+        <v-btn variant="outlined" color="primary" @click="openCreateFilePicker">
+          {{ selectedFile ? 'Change CSV file' : 'Choose CSV file *' }}
+        </v-btn>
+        <span v-if="selectedFile" class="hs-text-2xs text-medium-emphasis">
+          <strong>{{ selectedFile.name }}</strong>
+          ({{ formatFileSize(selectedFile.size) }})
+        </span>
+        <v-btn
+          v-if="selectedFile"
+          variant="text"
+          size="small"
+          @click="clearCreateFile"
+        >
+          Clear
+        </v-btn>
+      </div>
+      <v-alert
+        v-if="createFileValidationError"
+        type="error"
+        variant="tonal"
+        density="compact"
+        class="mb-3"
+      >
+        {{ createFileValidationError }}
+      </v-alert>
+      <div
+        v-else-if="createFileValidationPending"
+        class="hs-text-2xs text-medium-emphasis mb-3"
+      >
+        Validating rating curve CSV...
+      </div>
+
+      <div class="rating-curve-form__fields">
+        <v-text-field v-model="attachmentName" label="Rating curve name *" />
+        <v-select
+          v-model="attachmentFittingMethod"
+          :items="fittingMethodOptions"
+          item-title="title"
+          item-value="value"
+          label="Fitting method *"
+        />
+        <v-textarea
+          v-model="attachmentDescription"
+          label="Description"
+          rows="2"
+          class="rating-curve-form__wide"
+        />
+      </div>
+    </section>
 
     <v-progress-linear v-if="loading" indeterminate color="primary" />
 
@@ -291,6 +292,8 @@
             <div class="rating-curve-item-actions">
               <v-btn-icon
                 :icon="mdiDownload"
+                size="small"
+                class="hs-table-icon-action"
                 :aria-label="`Download ${attachment.name}`"
                 :loading="isDownloading(attachment.id)"
                 :disabled="isDownloading(attachment.id)"
@@ -299,13 +302,16 @@
               <template v-if="canEditMonitoringSite">
                 <v-btn-icon
                   :icon="mdiPencil"
+                  size="small"
+                  class="hs-table-icon-action"
                   :aria-label="`Edit ${attachment.name}`"
                   :data-testid="`edit-rating-curve-${attachment.id}`"
                   @click="openEditDialog(attachment)"
                 />
                 <v-btn-icon
                   :icon="mdiTrashCanOutline"
-                  color="delete"
+                  size="small"
+                  class="hs-table-icon-action hs-table-icon-action--danger"
                   :aria-label="`Delete ${attachment.name}`"
                   :data-testid="`delete-rating-curve-${attachment.id}`"
                   :loading="isValidatingDelete(attachment.id)"
@@ -1377,7 +1383,22 @@ watch(openEdit, (isOpen) => {
 .rating-curves__toolbar {
   display: flex;
   justify-content: flex-end;
-  margin-bottom: var(--hs-space-12);
+  margin-bottom: var(--hs-space-16);
+}
+
+.rating-curve-create {
+  padding-bottom: var(--hs-space-12);
+  margin-bottom: var(--hs-space-8);
+  border-bottom: 1px solid var(--hs-border);
+}
+
+.rating-curve-create__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--hs-space-8);
+  margin-bottom: var(--hs-space-16);
 }
 
 .rating-curves__empty {
@@ -1459,7 +1480,7 @@ watch(openEdit, (isOpen) => {
 .rating-curve-item-actions {
   display: flex;
   align-items: center;
-  gap: var(--hs-space-2);
+  gap: var(--hs-space-4);
 }
 
 .rating-curve-confirm {
