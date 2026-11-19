@@ -164,19 +164,37 @@ def test_get_result_qualifiers_q_searches_name_and_description(client):
 def test_get_result_qualifiers_q_matches_word_prefixes(client):
     ResultQualifierFactory(global_=True, name="Name 1", description="")
     ResultQualifierFactory(global_=True, name="Groundwater", description="")
+    ResultQualifierFactory(global_=True, name="Air temperatures", description="")
 
-    for q in ["n", "Na", "name 1", "nam,zzz"]:
+    for q, expected in [
+        ("n", ["Name 1"]),
+        ("Na", ["Name 1"]),
+        ("name 1", ["Name 1"]),
+        ("nam,zzz", ["Name 1"]),
+        # "a" is an English stopword, but still matches as a prefix while typing.
+        ("a", ["Air temperatures"]),
+        # Full words still match their stems ("temperature" -> "temperatur").
+        ("temperature", ["Air temperatures"]),
+    ]:
         response = client.get(RESULT_QUALIFIERS_URL, {"q": q})
         assert response.status_code == 200
-        assert [item["name"] for item in response.json()["data"]] == ["Name 1"], q
+        assert [item["name"] for item in response.json()["data"]] == expected, q
 
 
 def test_get_result_qualifiers_q_ignores_search_syntax(client):
     ResultQualifierFactory(global_=True, name="Surface water", description="")
 
-    for q in ["surface & !", "(surf:*)", "'", "&|!"]:
+    for q, expected in [
+        ("surface & !", ["Surface water"]),
+        ("(surf:*)", ["Surface water"]),
+        # No letters or digits left to search: nothing matches, not everything.
+        ("'", []),
+        ("&|!", []),
+        (", ,", []),
+    ]:
         response = client.get(RESULT_QUALIFIERS_URL, {"q": q})
         assert response.status_code == 200, q
+        assert [item["name"] for item in response.json()["data"]] == expected, q
 
 
 def test_get_result_qualifiers_sortby_name_descending(client):

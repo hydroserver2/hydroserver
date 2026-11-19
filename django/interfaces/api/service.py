@@ -295,15 +295,14 @@ class APIService:
         cls, queryset: QuerySet, q: Optional[str], field: str = "search_vector"
     ) -> tuple[QuerySet, bool]:
         """
-        Filters a queryset by the `q` full-text search parameter and annotates a `rank`
-        field for relevance ordering.
+        Filters a queryset by the `q` full-text search and annotates a `rank` for relevance.
 
-        Comma-separated terms are combined with OR; the whitespace-separated words within
-        each term are combined with AND. Each word matches as a prefix, so partially typed
-        words match (e.g. "temp" matches "temperature"). Matching is case-insensitive.
+        Commas separate OR terms; words within a term are ANDed. Each word is a
+        case-insensitive prefix, matched both stemmed and unstemmed so stopword prefixes
+        still match (e.g. "a" matches "air"). A query without letters or digits matches
+        nothing.
 
-        Returns the (possibly unchanged) queryset and whether search was applied, so
-        callers can pass that through to `apply_sorting`'s `rank` argument.
+        Returns the queryset and whether search was applied (for `apply_sorting`'s `rank`).
         """
 
         if not q or not q.strip():
@@ -313,15 +312,16 @@ class APIService:
         groups = [re.findall(r"[^\W_]+", group) for group in q.split(",")]
         groups = [words for words in groups if words]
         if not groups:
-            return queryset, False
+            return queryset.none(), False
 
         search_query = None
         for words in groups:
-            group_query = SearchQuery(
-                " & ".join(f"{word}:*" for word in words),
-                config=cls.SEARCH_CONFIG,
-                search_type="raw",
-            )
+            group_query = None
+            for word in words:
+                word_query = SearchQuery(
+                    f"{word}:*", config=cls.SEARCH_CONFIG, search_type="raw"
+                ) | SearchQuery(f"{word}:*", config="simple", search_type="raw")
+                group_query = word_query if group_query is None else group_query & word_query
             search_query = group_query if search_query is None else search_query | group_query
 
         queryset = queryset.annotate(rank=SearchRank(F(field), search_query)).filter(
