@@ -1383,7 +1383,6 @@ watch(openEdit, (isOpen) => {
 .rating-curves__toolbar {
   display: flex;
   justify-content: flex-end;
-  margin-bottom: var(--hs-space-16);
 }
 
 .rating-curve-create {
@@ -1448,6 +1447,10 @@ watch(openEdit, (isOpen) => {
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.rating-curves__toolbar ~ .rating-curve-list {
+  margin-top: var(--hs-space-8);
 }
 
 .rating-curve-entry {
