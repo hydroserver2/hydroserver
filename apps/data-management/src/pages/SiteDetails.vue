@@ -120,6 +120,53 @@
 
     <div class="site-details-body">
       <div v-if="monitoringSite" class="site-details-layout">
+        <section class="site-details-map" aria-label="Site location">
+          <div class="h-80 w-full max-[960px]:h-72">
+            <OpenLayersMap
+              :monitoringSites="[monitoringSite]"
+              startInSatellite
+              class="h-full w-full"
+            >
+              <template #overlay>
+                <v-card
+                  v-if="!isMobile"
+                  class="mb-2 ml-2 max-w-[18rem] bg-white/95 px-3 py-2"
+                  elevation="4"
+                >
+                  <div class="hs-text-sm font-weight-medium mb-2">Location</div>
+                  <div class="grid gap-1">
+                    <div
+                      v-for="detail in locationDetails"
+                      :key="detail.label"
+                      class="flex flex-col"
+                    >
+                      <span class="hs-text-2xs text-medium-emphasis">
+                        {{ detail.label }}
+                      </span>
+                      <span class="hs-text-sm">{{ detail.value }}</span>
+                    </div>
+                  </div>
+                </v-card>
+              </template>
+            </OpenLayersMap>
+          </div>
+          <div v-if="isMobile" class="px-3 py-2">
+            <div class="hs-text-sm font-weight-medium mb-2">Location</div>
+            <div class="grid gap-1">
+              <div
+                v-for="detail in locationDetails"
+                :key="detail.label"
+                class="flex flex-col"
+              >
+                <span class="hs-text-2xs text-medium-emphasis">
+                  {{ detail.label }}
+                </span>
+                <span class="hs-text-sm">{{ detail.value }}</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <aside class="site-details-aside" aria-label="About this site">
           <SitePhotoCarousel
             :photos="photos ?? []"
@@ -189,58 +236,12 @@
           </v-card>
 
           <SiteTagList
+            class="site-details-tags"
             :tags="monitoringSite.tags"
             :can-edit="canEditMonitoringSite"
             @edit="isRegisterModalOpen = true"
           />
         </aside>
-
-        <section class="site-details-map" aria-label="Site location">
-          <div class="h-80 w-full max-[960px]:h-72">
-            <OpenLayersMap
-              :monitoringSites="[monitoringSite]"
-              startInSatellite
-              class="h-full w-full"
-            >
-              <template #overlay>
-                <v-card
-                  v-if="!isMobile"
-                  class="mb-2 ml-2 max-w-[18rem] bg-white/95 px-3 py-2"
-                  elevation="4"
-                >
-                  <div class="hs-text-sm font-weight-medium mb-2">Location</div>
-                  <div class="grid gap-1">
-                    <div
-                      v-for="detail in locationDetails"
-                      :key="detail.label"
-                      class="flex flex-col"
-                    >
-                      <span class="hs-text-2xs text-medium-emphasis">
-                        {{ detail.label }}
-                      </span>
-                      <span class="hs-text-sm">{{ detail.value }}</span>
-                    </div>
-                  </div>
-                </v-card>
-              </template>
-            </OpenLayersMap>
-          </div>
-          <div v-if="isMobile" class="px-3 py-2">
-            <div class="hs-text-sm font-weight-medium mb-2">Location</div>
-            <div class="grid gap-1">
-              <div
-                v-for="detail in locationDetails"
-                :key="detail.label"
-                class="flex flex-col"
-              >
-                <span class="hs-text-2xs text-medium-emphasis">
-                  {{ detail.label }}
-                </span>
-                <span class="hs-text-sm">{{ detail.value }}</span>
-              </div>
-            </div>
-          </div>
-        </section>
 
         <v-card class="site-details-tabs" flat>
           <v-tabs
@@ -664,19 +665,28 @@ onMounted(async () => {
   overflow-wrap: anywhere;
 }
 
-/* Phone and tablet: map, then site context, then the tabs. */
 .site-details-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-areas:
-    'map'
-    'aside'
-    'tabs';
   gap: var(--hs-space-16);
   margin: var(--hs-space-16) var(--site-details-page-gutter);
 }
 
-/* Desktop: site context column on the left, map above the tabs on the right. */
+@media (width < 960px) {
+  .site-details-layout {
+    reading-flow: grid-rows;
+  }
+
+  .site-details-aside {
+    display: contents;
+  }
+
+  .site-details-tags {
+    order: 1;
+  }
+}
+
+/* Desktop keeps the site context together in the left column. */
 @media (min-width: 960px) {
   .site-details-layout {
     grid-template-columns: minmax(18rem, 22rem) minmax(0, 1fr);
@@ -686,19 +696,26 @@ onMounted(async () => {
       'aside tabs';
     gap: var(--hs-space-16) var(--hs-space-24);
   }
-}
 
-.site-details-aside {
-  grid-area: aside;
-  align-self: start;
-  display: flex;
-  flex-direction: column;
-  gap: var(--hs-space-16);
-  min-width: 0;
+  .site-details-aside {
+    grid-area: aside;
+    align-self: start;
+    display: flex;
+    flex-direction: column;
+    gap: var(--hs-space-16);
+    min-width: 0;
+  }
+
+  .site-details-map {
+    grid-area: map;
+  }
+
+  .site-details-tabs {
+    grid-area: tabs;
+  }
 }
 
 .site-details-map {
-  grid-area: map;
   min-width: 0;
   overflow: hidden;
   border: 1px solid var(--hs-border);
@@ -706,7 +723,6 @@ onMounted(async () => {
 }
 
 .site-details-tabs {
-  grid-area: tabs;
   align-self: start;
   min-width: 0;
   border: 1px solid var(--hs-border);
