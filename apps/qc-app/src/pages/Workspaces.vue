@@ -1,7 +1,7 @@
 ﻿<template>
   <v-container class="py-8" style="max-width: 720px">
     <div class="d-flex align-center mb-6">
-      <v-icon icon="mdi-view-grid-outline" color="primary" size="28" class="mr-3" />
+      <v-icon :icon="mdiViewGridOutline" color="primary" size="28" class="mr-3" />
       <div>
         <h1 class="text-headline-medium mb-1">Select a workspace</h1>
         <p class="text-body-medium text-medium-emphasis mb-0">
@@ -34,7 +34,7 @@
       v-else-if="!availableWorkspaces.length"
       class="pa-6 text-center"
     >
-      <v-icon icon="mdi-alert-outline" color="warning" size="32" class="mb-2" />
+      <v-icon :icon="mdiAlertOutline" color="warning" size="32" class="mb-2" />
       <div class="text-body-medium">
         You don't have access to any workspaces yet. Ask a workspace
         owner to add you as a collaborator, then reload this page.
@@ -52,7 +52,7 @@
           <template #prepend>
             <v-icon
               :icon="
-                ws.isPrivate ? 'mdi-lock-outline' : 'mdi-earth'
+                ws.isPrivate ? mdiLockOutline : mdiEarth
               "
               :color="isCurrent(ws) ? 'primary' : undefined"
             />
@@ -81,7 +81,7 @@
                     size="x-small"
                     variant="tonal"
                     :color="canEdit(ws) ? 'primary' : 'grey-darken-1'"
-                    :prepend-icon="canEdit(ws) ? 'mdi-pencil' : 'mdi-eye-outline'"
+                    :prepend-icon="canEdit(ws) ? mdiPencil : mdiEyeOutline"
                   >
                     {{ roleName(ws) }}
                   </v-chip>
@@ -101,7 +101,7 @@
                         ? 'primary'
                         : 'grey-darken-1'
                     "
-                    prepend-icon="mdi-chart-timeline-variant"
+                    :prepend-icon="mdiChartTimelineVariant"
                   >
                     <template v-if="datastreamCountsLoading">…</template>
                     <template v-else>
@@ -124,7 +124,7 @@
                         ? 'primary'
                         : 'grey-darken-1'
                     "
-                    prepend-icon="mdi-flag-outline"
+                    :prepend-icon="mdiFlagOutline"
                   >
                     <template v-if="qualifierCountsLoading">…</template>
                     <template v-else>
@@ -138,7 +138,7 @@
                 size="small"
                 variant="flat"
                 color="primary"
-                :append-icon="isCurrent(ws) ? 'mdi-arrow-right' : undefined"
+                :append-icon="isCurrent(ws) ? mdiArrowRight : undefined"
                 @click.stop="onPick(ws.id)"
               >
                 {{ isCurrent(ws) ? 'Continue' : 'Select' }}
@@ -153,6 +153,17 @@
 </template>
 
 <script setup lang="ts">
+import {
+  mdiAlertOutline,
+  mdiArrowRight,
+  mdiChartTimelineVariant,
+  mdiEarth,
+  mdiEyeOutline,
+  mdiFlagOutline,
+  mdiLockOutline,
+  mdiPencil,
+  mdiViewGridOutline,
+} from '@mdi/js'
 import { onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter, useRoute } from 'vue-router'

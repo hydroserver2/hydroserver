@@ -1,7 +1,7 @@
 <template>
   <div class="qc-session-list">
     <div class="qc-session-list__header px-1 py-1 d-flex align-center ga-2">
-      <v-icon icon="mdi-source-branch" color="primary" size="16" />
+      <v-icon :icon="mdiSourceBranch" color="primary" size="16" />
       <span class="text-body-small font-weight-medium">Sessions</span>
       <v-spacer />
       <v-btn
@@ -99,6 +99,7 @@
 </template>
 
 <script setup lang="ts">
+import { mdiSourceBranch } from '@mdi/js'
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useQcSessionStore } from '@/store/qcSession'

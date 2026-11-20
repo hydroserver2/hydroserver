@@ -78,7 +78,7 @@
       <v-btn
         color="primary"
         variant="tonal"
-        prepend-icon="mdi-plus"
+        :prepend-icon="mdiPlus"
         :disabled="isUpdating || !canAdd"
         @click="onAddFilter"
       >
@@ -98,6 +98,7 @@
 </template>
 
 <script setup lang="ts">
+import { mdiPlus } from '@mdi/js'
 import { computed, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import {

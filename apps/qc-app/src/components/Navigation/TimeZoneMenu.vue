@@ -15,7 +15,7 @@
             data-testid="nav-rail-time-zone"
           >
             <span class="rail-pill rail-pill-secondary">
-              <v-icon icon="mdi-earth" size="22" />
+              <v-icon :icon="mdiEarth" size="22" />
             </span>
             <span class="rail-label">{{ abbreviation }}</span>
           </button>
@@ -26,7 +26,7 @@
 
     <v-card width="380" data-testid="time-zone-menu">
       <v-card-title class="text-title-medium d-flex align-center ga-2">
-        <v-icon icon="mdi-earth" size="20" />
+        <v-icon :icon="mdiEarth" size="20" />
         Time zone
       </v-card-title>
       <v-card-text class="pt-1">
@@ -79,7 +79,7 @@
         <v-btn
           size="small"
           variant="text"
-          prepend-icon="mdi-crosshairs-gps"
+          :prepend-icon="mdiCrosshairsGps"
           :disabled="isBrowserZone"
           data-testid="time-zone-browser"
           @click="setZone(browserZone())"
@@ -92,6 +92,7 @@
 </template>
 
 <script setup lang="ts">
+import { mdiCrosshairsGps, mdiEarth } from '@mdi/js'
 /** The rail's time zone setting: UTC, a fixed UTC offset or an IANA zone,
  *  the same choice a data connection's timestamps offer. */
 

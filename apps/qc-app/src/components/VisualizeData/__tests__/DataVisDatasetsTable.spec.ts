@@ -8,6 +8,11 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { ref, type Component } from 'vue'
 import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest'
 import { createTestVuetify } from '@/utils/test/vuetify'
+import {
+  mdiCheckboxMarked,
+  mdiCheckboxIntermediate,
+  mdiCheckboxBlankOutline,
+} from '@mdi/js'
 import PlotSourceDialog from '../PlotSourceDialog.vue'
 import DatastreamInformationCard from '../DatastreamInformationCard.vue'
 ;(globalThis as any).ResizeObserver ||= class {
@@ -237,22 +242,25 @@ describe('DataVisDatasetsTable plot checkbox', () => {
   it('shows a checked box when the raw datastream is plotted', async () => {
     plottedDatastreams.value = [raw]
     const wrapper = await mountTable()
-    expect(checkbox(wrapper, 'src').html()).toContain('mdi-checkbox-marked')
+    expect(checkbox(wrapper, 'src').find('svg path').attributes('d')).toBe(
+      mdiCheckboxMarked
+    )
   })
 
   // The row must not claim the raw line is plotted when only a QC version is.
   it('shows an indeterminate box when only a managed datastream is plotted', async () => {
     plottedDatastreams.value = [{ id: 'mgd', name: 'Raw (QC)' }]
     const wrapper = await mountTable()
-    const html = checkbox(wrapper, 'src').html()
-    expect(html).toContain('mdi-checkbox-intermediate')
+    expect(checkbox(wrapper, 'src').find('svg path').attributes('d')).toBe(
+      mdiCheckboxIntermediate
+    )
     expect(checkbox(wrapper, 'src').attributes('aria-pressed')).toBe('true')
   })
 
   it('shows an empty box when nothing from the group is plotted', async () => {
     const wrapper = await mountTable()
-    expect(checkbox(wrapper, 'src').html()).toContain(
-      'mdi-checkbox-blank-outline'
+    expect(checkbox(wrapper, 'src').find('svg path').attributes('d')).toBe(
+      mdiCheckboxBlankOutline
     )
   })
 })

@@ -31,7 +31,7 @@
         :model-value="search"
         @update:model-value="$emit('update:search', $event ?? '')"
         clearable
-        prepend-inner-icon="mdi-magnify"
+        :prepend-inner-icon="mdiMagnify"
         placeholder="Search…"
         hide-details
         density="compact"
@@ -44,6 +44,7 @@
 </template>
 
 <script setup lang="ts">
+import { mdiMagnify } from '@mdi/js'
 defineProps<{
   icon: string
   label: string

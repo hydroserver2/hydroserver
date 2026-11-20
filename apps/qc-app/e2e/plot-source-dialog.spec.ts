@@ -8,6 +8,7 @@
  */
 
 import { expect, test } from '@playwright/test'
+import { mdiCheckboxIntermediate } from '@mdi/js'
 import { installMocks } from './support/mocks'
 import {
   seedWorkspaceSelection,
@@ -88,7 +89,9 @@ test.describe('plot source chooser', () => {
     // plotted, but not the raw datastream.
     const checkbox = page.getByTestId(`plot-checkbox-${DATASTREAM_ID}`)
     await expect(checkbox).toHaveAttribute('aria-pressed', 'true')
-    await expect(checkbox.locator('.mdi-checkbox-intermediate')).toBeVisible()
+    await expect(
+      checkbox.locator(`svg path[d="${mdiCheckboxIntermediate}"]`)
+    ).toBeVisible()
   })
 
   test('reopens with the current selection and can clear it', async ({

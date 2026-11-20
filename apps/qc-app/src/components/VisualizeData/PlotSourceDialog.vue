@@ -38,7 +38,7 @@
             <template #label>
               <div class="d-flex align-center ga-2" style="min-width: 0">
                 <v-icon
-                  :icon="row.raw ? 'mdi-chart-line' : 'mdi-pencil-box-outline'"
+                  :icon="row.raw ? mdiChartLine : mdiPencilBoxOutline"
                   :color="row.raw ? undefined : 'primary'"
                   size="18"
                 />
@@ -51,7 +51,7 @@
                       color="primary"
                       variant="flat"
                       label
-                      prepend-icon="mdi-pencil"
+                      :prepend-icon="mdiPencil"
                       :data-testid="`plot-option-editing-${row.id}`"
                     >
                       Editing
@@ -97,6 +97,7 @@
 </template>
 
 <script setup lang="ts">
+import { mdiChartLine, mdiPencil, mdiPencilBoxOutline } from '@mdi/js'
 import { computed, ref, watch } from 'vue'
 import type { Datastream, DatastreamExtended } from '@hydroserver/client'
 import type { ManagedDatastreamOption } from '@/composables/useManagedDatastreams'

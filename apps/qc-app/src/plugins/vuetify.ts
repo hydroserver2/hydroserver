@@ -1,11 +1,11 @@
-import '@mdi/font/css/materialdesignicons.css'
-import '@fortawesome/fontawesome-free/css/all.css'
 import 'vuetify/styles'
 
 import { createVuetify, ThemeDefinition } from 'vuetify'
 import { VBtn } from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 import { md3 } from 'vuetify/blueprints'
+import { aliases, mdi } from 'vuetify/iconsets/mdi-svg'
+import { mdiPlus } from '@mdi/js'
 
 // Material theme Colors: https://vuetifyjs.com/en/styles/colors/
 const light: ThemeDefinition = {
@@ -99,11 +99,16 @@ export default createVuetify({
     },
     VBtnAdd: {
       color: 'secondary',
-      prependIcon: 'mdi-plus',
+      prependIcon: mdiPlus,
       rounded: true,
       density: 'comfortable',
       variant: 'elevated',
     },
+  },
+  icons: {
+    defaultSet: 'mdi',
+    aliases,
+    sets: { mdi },
   },
   theme: {
     defaultTheme: 'light',

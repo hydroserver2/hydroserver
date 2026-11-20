@@ -34,7 +34,7 @@
           <v-btn
             color="error"
             variant="tonal"
-            prepend-icon="mdi-backup-restore"
+            :prepend-icon="mdiBackupRestore"
             data-testid="leave-discard-edits-btn"
             :disabled="!!leaveWork"
             :loading="leaveWork === 'discard-edits'"
@@ -45,7 +45,7 @@
           <v-btn
             color="primary"
             variant="flat"
-            prepend-icon="mdi-content-save-outline"
+            :prepend-icon="mdiContentSaveOutline"
             data-testid="leave-save-btn"
             :disabled="!!leaveWork || !leavePrompt.canSave"
             :loading="leaveWork === 'save'"
@@ -59,7 +59,7 @@
           <v-btn
             color="error"
             variant="tonal"
-            prepend-icon="mdi-delete-outline"
+            :prepend-icon="mdiDeleteOutline"
             data-testid="leave-discard-session-btn"
             :disabled="!!leaveWork"
             :loading="leaveWork === 'discard-session'"
@@ -70,7 +70,7 @@
           <v-btn
             color="primary"
             variant="flat"
-            prepend-icon="mdi-pause-circle-outline"
+            :prepend-icon="mdiPauseCircleOutline"
             data-testid="leave-keep-btn"
             :disabled="!!leaveWork"
             @click="keepSession"
@@ -83,7 +83,7 @@
           <v-btn
             color="primary"
             variant="flat"
-            prepend-icon="mdi-close"
+            :prepend-icon="mdiClose"
             data-testid="leave-close-btn"
             :disabled="!!leaveWork"
             @click="keepSession"
@@ -97,6 +97,15 @@
 </template>
 
 <script setup lang="ts">
+import {
+  mdiBackupRestore,
+  mdiClose,
+  mdiContentSaveAlertOutline,
+  mdiContentSaveOutline,
+  mdiDeleteOutline,
+  mdiHelpCircleOutline,
+  mdiPauseCircleOutline,
+} from '@mdi/js'
 /**
  * The one dialog for leaving an edit session. Every exit routes through
  * `useLeaveSession`, which decides which of the three cases applies and
@@ -125,7 +134,7 @@ const copy = computed(() => {
     const count = prompt.unsavedCount
     return {
       color: 'warning',
-      icon: 'mdi-content-save-alert-outline',
+      icon: mdiContentSaveAlertOutline,
       title: `Unsaved edits${on}`,
       subtitle: count
         ? `${count} edit${count === 1 ? '' : 's'} not yet saved to the session`
@@ -138,7 +147,7 @@ const copy = computed(() => {
   if (prompt?.kind === 'empty') {
     return {
       color: 'error',
-      icon: 'mdi-help-circle-outline',
+      icon: mdiHelpCircleOutline,
       title: `Your session${on} has no edits`,
       subtitle: 'Nothing saved, nothing unsaved',
       body: `Keep it and it stays in progress. ${RESUME} Discard it and it is deleted from the server.`,
@@ -146,7 +155,7 @@ const copy = computed(() => {
   }
   return {
     color: 'primary',
-    icon: 'mdi-pause-circle-outline',
+    icon: mdiPauseCircleOutline,
     title: `Close your session${on}?`,
     subtitle: 'Every edit is saved to the session',
     body: `Your work stays where it is. The session stays in progress. ${RESUME}`,

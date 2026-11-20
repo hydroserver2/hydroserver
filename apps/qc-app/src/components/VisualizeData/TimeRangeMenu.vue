@@ -13,7 +13,7 @@
         :variant="showSourceContext ? 'tonal' : 'text'"
         :color="showSourceContext ? 'primary' : undefined"
         :prepend-icon="
-          showSourceContext ? 'mdi-calendar-range' : 'mdi-eye-off-outline'
+          showSourceContext ? mdiCalendarRange : mdiEyeOffOutline
         "
         data-testid="time-range-btn"
         :data-context-on="showSourceContext"
@@ -31,7 +31,7 @@
         size="small"
         variant="tonal"
         color="primary"
-        prepend-icon="mdi-calendar-range"
+        :prepend-icon="mdiCalendarRange"
         data-testid="time-range-btn"
         :title="`Time range: ${rangeLabel}`"
       >
@@ -71,6 +71,7 @@
 </template>
 
 <script setup lang="ts">
+import { mdiCalendarRange, mdiEyeOffOutline } from '@mdi/js'
 import DataVisTimeFilters from '@/components/VisualizeData/DataVisTimeFilters.vue'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { SOURCE_CONTEXT_COLOR } from '@/utils/plotting/plotly'

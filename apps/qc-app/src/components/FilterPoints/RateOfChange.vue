@@ -21,7 +21,7 @@
         type="number"
         step="1"
         clearable
-        append-inner-icon="mdi-percent-outline"
+        :append-inner-icon="mdiPercentOutline"
         v-model="rateOfChangeValue"
         density="comfortable"
         variant="outlined"
@@ -51,6 +51,7 @@
 </template>
 
 <script setup lang="ts">
+import { mdiPercentOutline } from '@mdi/js'
 import { useFilterDispatch } from '@/composables/useFilterDispatch'
 import { usePlotlyStore } from '@/store/plotly'
 import { useUIStore } from '@/store/userInterface'

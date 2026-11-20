@@ -1,14 +1,14 @@
 <template>
   <v-card class="datastream-info-card" rounded="lg">
     <v-toolbar flat color="primary" density="comfortable">
-      <v-icon icon="mdi-database-outline" class="ms-4 me-2" />
+      <v-icon :icon="mdiDatabaseOutline" class="ms-4 me-2" />
       <v-toolbar-title class="text-white font-weight-medium">
         Datastream Information
       </v-toolbar-title>
       <v-spacer />
       <v-btn
         :loading="downloading"
-        prepend-icon="mdi-download"
+        :prepend-icon="mdiDownload"
         variant="tonal"
         color="white"
         class="me-2"
@@ -34,7 +34,7 @@
           size="small"
           color="primary"
           variant="tonal"
-          prepend-icon="mdi-map-marker"
+          :prepend-icon="mdiMapMarker"
           :title="`Filter table by site: ${datastream.monitoringSite.name}`"
           @click="filterBySite"
         >
@@ -45,7 +45,7 @@
           size="small"
           color="blue-grey"
           variant="tonal"
-          prepend-icon="mdi-water"
+          :prepend-icon="mdiWater"
           :title="`Filter table by observed property: ${datastream.observedProperty.name}`"
           @click="filterByObservedProperty"
         >
@@ -56,7 +56,7 @@
           size="small"
           color="deep-purple"
           variant="tonal"
-          prepend-icon="mdi-layers"
+          :prepend-icon="mdiLayers"
           :title="`Filter table by processing level: ${datastream.processingLevel.name}`"
           @click="filterByProcessingLevel"
         >
@@ -66,7 +66,7 @@
           size="small"
           color="teal"
           variant="tonal"
-          prepend-icon="mdi-counter"
+          :prepend-icon="mdiCounter"
         >
           {{ datastream.valueCount?.toLocaleString() ?? 0 }} observations
         </v-chip>
@@ -74,7 +74,7 @@
           size="small"
           :color="datastream.isPrivate ? 'orange' : 'green'"
           variant="tonal"
-          :prepend-icon="datastream.isPrivate ? 'mdi-lock' : 'mdi-lock-open-variant'"
+          :prepend-icon="datastream.isPrivate ? mdiLock : mdiLockOpenVariant"
         >
           {{ datastream.isPrivate ? 'Private' : 'Public' }}
         </v-chip>
@@ -93,7 +93,7 @@
         <v-expansion-panel value="general">
           <v-expansion-panel-title>
             <template #default>
-              <v-icon icon="mdi-information-outline" color="primary" class="me-3" />
+              <v-icon :icon="mdiInformationOutline" color="primary" class="me-3" />
               <span class="font-weight-medium">General</span>
             </template>
           </v-expansion-panel-title>
@@ -128,7 +128,7 @@
         <v-expansion-panel value="location">
           <v-expansion-panel-title>
             <template #default>
-              <v-icon icon="mdi-map-marker-outline" color="primary" class="me-3" />
+              <v-icon :icon="mdiMapMarkerOutline" color="primary" class="me-3" />
               <span class="font-weight-medium">Site &amp; Location</span>
             </template>
           </v-expansion-panel-title>
@@ -140,7 +140,7 @@
         <v-expansion-panel value="method">
           <v-expansion-panel-title>
             <template #default>
-              <v-icon icon="mdi-gauge" color="primary" class="me-3" />
+              <v-icon :icon="mdiGauge" color="primary" class="me-3" />
               <span class="font-weight-medium">Method</span>
             </template>
           </v-expansion-panel-title>
@@ -152,7 +152,7 @@
         <v-expansion-panel value="observedProperty">
           <v-expansion-panel-title>
             <template #default>
-              <v-icon icon="mdi-water-outline" color="primary" class="me-3" />
+              <v-icon :icon="mdiWaterOutline" color="primary" class="me-3" />
               <span class="font-weight-medium">Observed Property</span>
             </template>
           </v-expansion-panel-title>
@@ -164,7 +164,7 @@
         <v-expansion-panel value="unit">
           <v-expansion-panel-title>
             <template #default>
-              <v-icon icon="mdi-ruler" color="primary" class="me-3" />
+              <v-icon :icon="mdiRuler" color="primary" class="me-3" />
               <span class="font-weight-medium">Unit</span>
             </template>
           </v-expansion-panel-title>
@@ -176,7 +176,7 @@
         <v-expansion-panel value="processingLevel">
           <v-expansion-panel-title>
             <template #default>
-              <v-icon icon="mdi-layers-outline" color="primary" class="me-3" />
+              <v-icon :icon="mdiLayersOutline" color="primary" class="me-3" />
               <span class="font-weight-medium">Processing Level</span>
             </template>
           </v-expansion-panel-title>
@@ -193,7 +193,7 @@
       <v-spacer />
       <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
       <v-btn-primary
-        prepend-icon="mdi-plus"
+        :prepend-icon="mdiPlus"
         color="blue-lighten-3"
         @click="addToPlot(datastream)"
       >
@@ -201,7 +201,7 @@
       </v-btn-primary>
       <v-btn-primary
         type="submit"
-        prepend-icon="mdi-chart-line"
+        :prepend-icon="mdiChartLine"
         @click="clearAndPlot(datastream)"
       >
         Clear and Plot
@@ -211,6 +211,24 @@
 </template>
 
 <script setup lang="ts">
+import {
+  mdiChartLine,
+  mdiCounter,
+  mdiDatabaseOutline,
+  mdiDownload,
+  mdiGauge,
+  mdiInformationOutline,
+  mdiLayers,
+  mdiLayersOutline,
+  mdiLock,
+  mdiLockOpenVariant,
+  mdiMapMarker,
+  mdiMapMarkerOutline,
+  mdiPlus,
+  mdiRuler,
+  mdiWater,
+  mdiWaterOutline,
+} from '@mdi/js'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { storeToRefs } from 'pinia'
 import { computed, ref, h } from 'vue'

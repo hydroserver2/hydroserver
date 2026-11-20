@@ -10,7 +10,7 @@
         :disabled="!canClearPlot"
         size="x-small"
         variant="text"
-        prepend-icon="mdi-close-circle-outline"
+        :prepend-icon="mdiCloseCircleOutline"
         :title="
           qcDatastream
             ? 'Close the datastream being edited and unplot everything'
@@ -52,7 +52,7 @@
         <v-icon
           v-if="!isPinned(datastream)"
           class="plotted-item__drag cursor-grab"
-          icon="mdi-drag-vertical"
+          :icon="mdiDragVertical"
           size="16"
           :color="contextCount > 1 ? 'grey' : 'grey-lighten-2'"
           title="Drag to reorder"
@@ -72,7 +72,7 @@
         >
           <v-icon
             :icon="
-              visibleDict[datastream.id] === false ? 'mdi-eye-off' : 'mdi-eye'
+              visibleDict[datastream.id] === false ? mdiEyeOff : mdiEye
             "
             size="16"
             :color="
@@ -97,8 +97,8 @@
           <v-icon
             :icon="
               hiddenAxisIds.has(datastream.id)
-                ? 'mdi-toggle-switch-off-outline'
-                : 'mdi-toggle-switch'
+                ? mdiToggleSwitchOffOutline
+                : mdiToggleSwitch
             "
             size="16"
             :color="
@@ -126,8 +126,8 @@
           <v-icon
             :icon="
               lockedAxisIds.has(datastream.id)
-                ? 'mdi-lock'
-                : 'mdi-lock-open-variant-outline'
+                ? mdiLock
+                : mdiLockOpenVariantOutline
             "
             size="16"
             :color="
@@ -151,7 +151,7 @@
           >
             <v-icon
               v-if="snapshotFor(datastream.id)"
-              icon="mdi-history"
+              :icon="mdiHistory"
               size="14"
               class="flex-shrink-0"
             />
@@ -189,7 +189,7 @@
                 <v-icon
                   v-bind="tp"
                   class="plotted-item__empty-flag flex-shrink-0"
-                  icon="mdi-database-off-outline"
+                  :icon="mdiDatabaseOffOutline"
                   size="14"
                   color="warning"
                   aria-label="No data in window"
@@ -221,7 +221,7 @@
           aria-label="Remove from plot"
           @click="toggleDatastream(datastream)"
         >
-          <v-icon icon="mdi-close" size="14" />
+          <v-icon :icon="mdiClose" size="14" />
         </button>
         <span v-else />
       </li>
@@ -230,6 +230,19 @@
 </template>
 
 <script setup lang="ts">
+import {
+  mdiClose,
+  mdiCloseCircleOutline,
+  mdiDatabaseOffOutline,
+  mdiDragVertical,
+  mdiEye,
+  mdiEyeOff,
+  mdiHistory,
+  mdiLock,
+  mdiLockOpenVariantOutline,
+  mdiToggleSwitch,
+  mdiToggleSwitchOffOutline,
+} from '@mdi/js'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 import {

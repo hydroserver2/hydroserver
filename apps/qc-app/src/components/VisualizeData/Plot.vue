@@ -13,10 +13,10 @@
           class="plot-toolbar__tabs"
           @update:model-value="onTabChange"
         >
-          <v-btn value="plot" size="small" prepend-icon="mdi-chart-line">
+          <v-btn value="plot" size="small" :prepend-icon="mdiChartLine">
             Plot
           </v-btn>
-          <v-btn value="table" size="small" prepend-icon="mdi-table">
+          <v-btn value="table" size="small" :prepend-icon="mdiTable">
             Table
           </v-btn>
         </v-btn-toggle>
@@ -38,7 +38,7 @@
             class="plot-toolbar__selection-count d-inline-flex align-center ga-1"
             aria-live="polite"
           >
-            <v-icon icon="mdi-selection-drag" size="16" />
+            <v-icon :icon="mdiSelectionDrag" size="16" />
             <b>{{ selectedCount.toLocaleString() }}</b>
             <span>point{{ selectedCount === 1 ? '' : 's' }} selected</span>
           </div>
@@ -50,7 +50,7 @@
             title="Clear selection"
             @click="clearSelected()"
           >
-            <v-icon icon="mdi-close" size="14" />
+            <v-icon :icon="mdiClose" size="14" />
             Clear
           </button>
         </div>
@@ -96,7 +96,7 @@
             :aria-pressed="areTooltipsEnabled"
             @click="toggleTooltips"
           >
-            <v-icon icon="mdi-chart-timeline-variant" size="18" />
+            <v-icon :icon="mdiChartTimelineVariant" size="18" />
           </button>
 
           <span class="plot-toolbar__points-divider" aria-hidden="true" />
@@ -115,7 +115,7 @@
                 class="plot-toolbar__points-cell plot-toolbar__points-cell--caret d-inline-flex align-center justify-center cursor-pointer"
                 :aria-label="`Data points mode: ${tooltipsModeLabel}`"
               >
-                <v-icon icon="mdi-menu-down" size="18" />
+                <v-icon :icon="mdiMenuDown" size="18" />
               </button>
             </template>
             <v-list
@@ -139,8 +139,8 @@
                   <v-icon
                     :icon="
                       tooltipsMode === opt.value
-                        ? 'mdi-check-circle'
-                        : 'mdi-circle-outline'
+                        ? mdiCheckCircle
+                        : mdiCircleOutline
                     "
                     :color="tooltipsMode === opt.value ? 'primary' : 'grey'"
                     size="18"
@@ -197,7 +197,7 @@
           v-if="tab === 'plot' && !isPlotPreview"
           size="small"
           variant="text"
-          icon="mdi-share-variant-outline"
+          :icon="mdiShareVariantOutline"
           title="Copy shareable link"
           aria-label="Copy shareable link"
           @click="copyShareableLink"
@@ -215,7 +215,7 @@
               v-bind="menuProps"
               variant="text"
               size="small"
-              icon="mdi-help-circle-outline"
+              :icon="mdiHelpCircleOutline"
               title="Plot controls"
               aria-label="Plot controls"
             />
@@ -302,7 +302,7 @@
                 <v-icon
                   size="12"
                   :icon="
-                    contextPlotCollapsed ? 'mdi-chevron-up' : 'mdi-chevron-down'
+                    contextPlotCollapsed ? mdiChevronUp : mdiChevronDown
                   "
                 />
               </div>
@@ -328,7 +328,7 @@
               </span>
               <v-icon
                 class="plot-axis-chip__tri"
-                icon="mdi-triangle-small-down"
+                :icon="mdiTriangleSmallDown"
                 size="18"
               />
             </div>
@@ -384,6 +384,29 @@
 </template>
 
 <script setup lang="ts">
+import {
+  mdiArrowExpandVertical,
+  mdiArrowUpDown,
+  mdiChartAreaspline,
+  mdiChartLine,
+  mdiChartTimelineVariant,
+  mdiCheckCircle,
+  mdiChevronDown,
+  mdiChevronUp,
+  mdiCircleOutline,
+  mdiClose,
+  mdiCursorDefaultClickOutline,
+  mdiCursorMove,
+  mdiHelpCircleOutline,
+  mdiMenuDown,
+  mdiMouse,
+  mdiRedoVariant,
+  mdiSelectionDrag,
+  mdiShareVariantOutline,
+  mdiTable,
+  mdiTriangleSmallDown,
+  mdiUndoVariant,
+} from '@mdi/js'
 import { computed, nextTick, ref, onMounted, onBeforeUnmount, watch } from 'vue'
 
 import { usePlotlyStore } from '@/store/plotly'
@@ -617,33 +640,33 @@ const applyThreshold = () => {
 
 const allGestures = [
   {
-    icon: 'mdi-cursor-default-click-outline',
+    icon: mdiCursorDefaultClickOutline,
     title: 'Click a point to toggle it',
     desc: 'Adds or removes a single point from the selection without affecting the rest.',
   },
   {
-    icon: 'mdi-mouse',
+    icon: mdiMouse,
     title: 'Scroll to zoom time',
     desc: 'Wheel up zooms in on the cursor, wheel down zooms out. Y axes stay put.',
   },
   {
-    icon: 'mdi-arrow-expand-vertical',
+    icon: mdiArrowExpandVertical,
     title: 'Rescale one axis',
     desc: 'Drag near either end of an axis to stretch it',
   },
   {
-    icon: 'mdi-arrow-up-down',
+    icon: mdiArrowUpDown,
     title: 'Pan one axis',
     desc: 'Drag the middle of an axis to translate only that axis.',
   },
   {
-    icon: 'mdi-chart-areaspline',
+    icon: mdiChartAreaspline,
     title: 'Use the overview strip',
     desc: 'Drag the band on the bottom mini-plot to set the visible time window.',
     overview: true,
   },
   {
-    icon: 'mdi-cursor-move',
+    icon: mdiCursorMove,
     title: 'Crosshair on hover',
     desc: 'Lines up the cursor across X and Y axes, even when tooltips are off.',
   },
@@ -655,13 +678,13 @@ const gestures = computed(() =>
 
 const keyboardShortcuts = [
   {
-    icon: 'mdi-undo-variant',
+    icon: mdiUndoVariant,
     title: 'Undo',
     keys: 'Ctrl+Z',
     desc: 'Reverts the last filter or edit.',
   },
   {
-    icon: 'mdi-redo-variant',
+    icon: mdiRedoVariant,
     title: 'Redo',
     keys: 'Ctrl+Y',
     desc: 'Re-applies the last undone step (Ctrl+Shift+Z also works).',

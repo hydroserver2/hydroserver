@@ -21,7 +21,7 @@
         size="x-small"
         variant="tonal"
         :color="preset.active ? 'primary' : undefined"
-        :prepend-icon="preset.active ? 'mdi-check' : undefined"
+        :prepend-icon="preset.active ? mdiCheck : undefined"
         @click="applyPreset(preset)"
       >
         {{ preset.label }}
@@ -38,7 +38,7 @@
       color="info"
       variant="tonal"
       density="compact"
-      icon="mdi-cursor-move"
+      :icon="mdiCursorMove"
     >
       <div class="text-body-small">
         Range overlay hidden while the zoom, box-select, or lasso tool is
@@ -52,7 +52,7 @@
       color="warning"
       variant="tonal"
       density="compact"
-      icon="mdi-alert-outline"
+      :icon="mdiAlertOutline"
     >
       <div class="text-body-small">{{ rangeWarning }}</div>
     </v-alert>
@@ -60,6 +60,7 @@
 </template>
 
 <script setup lang="ts">
+import { mdiAlertOutline, mdiCheck, mdiCursorMove } from '@mdi/js'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { usePlotlyStore } from '@/store/plotly'

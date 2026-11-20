@@ -32,7 +32,7 @@
           class="mb-3"
         >
           <div class="px-3 py-2 d-flex align-center ga-2">
-            <v-icon icon="mdi-pencil-box-outline" color="primary" size="18" />
+            <v-icon :icon="mdiPencilBoxOutline" color="primary" size="18" />
             <div class="d-flex flex-column" style="min-width: 0">
               <span class="text-body-medium font-weight-medium">
                 {{ opt.managed.name }}
@@ -43,7 +43,7 @@
             </div>
             <v-spacer />
             <v-btn
-              icon="mdi-trash-can-outline"
+              :icon="mdiTrashCanOutline"
               size="small"
               variant="text"
               color="error"
@@ -149,7 +149,7 @@
                      datastream, so only the in-progress one can be deleted. -->
                 <v-btn
                   v-if="s.status === 'in_progress'"
-                  icon="mdi-trash-can-outline"
+                  :icon="mdiTrashCanOutline"
                   size="x-small"
                   variant="text"
                   color="error"
@@ -169,7 +169,7 @@
           block
           :variant="options.length ? 'text' : 'tonal'"
           color="primary"
-          prepend-icon="mdi-plus"
+          :prepend-icon="mdiPlus"
           data-testid="chooser-create-managed"
           @click="emit('create')"
         >
@@ -198,7 +198,7 @@
     >
       <div class="d-flex align-center ga-3 px-6 pt-5 pb-2">
         <v-avatar color="error" variant="tonal" size="40">
-          <v-icon icon="mdi-delete-alert-outline" size="22" />
+          <v-icon :icon="mdiDeleteAlertOutline" size="22" />
         </v-avatar>
         <div class="d-flex flex-column">
           <div class="text-title-large font-weight-bold">
@@ -242,7 +242,7 @@
         <v-btn
           color="error"
           variant="flat"
-          prepend-icon="mdi-delete-outline"
+          :prepend-icon="mdiDeleteOutline"
           :data-testid="
             pendingDelete.session
               ? `confirm-delete-session-${pendingDelete.session.id}`
@@ -258,6 +258,13 @@
 </template>
 
 <script setup lang="ts">
+import {
+  mdiDeleteAlertOutline,
+  mdiDeleteOutline,
+  mdiPencilBoxOutline,
+  mdiPlus,
+  mdiTrashCanOutline,
+} from '@mdi/js'
 import { computed, ref } from 'vue'
 import type { Datastream, QualityControlSession } from '@hydroserver/client'
 import type { ManagedDatastreamOption } from '@/composables/useManagedDatastreams'

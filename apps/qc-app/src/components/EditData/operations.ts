@@ -1,3 +1,20 @@
+import {
+  mdiAlignVerticalCenter,
+  mdiCalendar,
+  mdiCalendarRange,
+  mdiChartSankey,
+  mdiCircleSmall,
+  mdiCursorDefaultClick,
+  mdiDelta,
+  mdiDotsHorizontal,
+  mdiFlag,
+  mdiKeyboardSpace,
+  mdiPencil,
+  mdiPlus,
+  mdiSwapVertical,
+  mdiTransitConnectionHorizontal,
+  mdiTrashCan,
+} from '@mdi/js'
 import { markRaw, type Component } from 'vue'
 import {
   EnumEditOperations,
@@ -41,7 +58,7 @@ export const operations: OperationMeta[] = [
     id: 'valueThreshold',
     title: 'Value thresholds',
     description: 'Flag points outside a min/max range',
-    icon: 'mdi-align-vertical-center',
+    icon: mdiAlignVerticalCenter,
     group: 'filter',
     requiresSelection: false,
     component: markRaw(ValueThreshold),
@@ -50,7 +67,7 @@ export const operations: OperationMeta[] = [
     id: 'datetimeRange',
     title: 'Datetime range',
     description: 'Select points within a datetime range',
-    icon: 'mdi-calendar-range',
+    icon: mdiCalendarRange,
     group: 'filter',
     requiresSelection: false,
     component: markRaw(DatetimeRange),
@@ -59,7 +76,7 @@ export const operations: OperationMeta[] = [
     id: 'change',
     title: 'Change threshold',
     description: 'Flag abrupt changes between consecutive points',
-    icon: 'mdi-swap-vertical',
+    icon: mdiSwapVertical,
     group: 'filter',
     requiresSelection: false,
     component: markRaw(Change),
@@ -68,7 +85,7 @@ export const operations: OperationMeta[] = [
     id: 'rateOfChange',
     title: 'Rate of change',
     description: 'Flag points by value change per unit time',
-    icon: 'mdi-delta',
+    icon: mdiDelta,
     group: 'filter',
     requiresSelection: false,
     component: markRaw(RateOfChange),
@@ -77,7 +94,7 @@ export const operations: OperationMeta[] = [
     id: 'gaps',
     title: 'Find gaps',
     description: 'Locate time gaps larger than a threshold',
-    icon: 'mdi-keyboard-space',
+    icon: mdiKeyboardSpace,
     group: 'filter',
     requiresSelection: false,
     component: markRaw(Gaps),
@@ -86,7 +103,7 @@ export const operations: OperationMeta[] = [
     id: 'persistence',
     title: 'Persistence',
     description: 'Flag runs of identical repeated values',
-    icon: 'mdi-dots-horizontal',
+    icon: mdiDotsHorizontal,
     group: 'filter',
     requiresSelection: false,
     component: markRaw(Persistence),
@@ -96,7 +113,7 @@ export const operations: OperationMeta[] = [
     id: 'driftCorrection',
     title: 'Drift correction',
     description: 'Apply linear drift correction to a range',
-    icon: 'mdi-chart-sankey',
+    icon: mdiChartSankey,
     group: 'edit',
     requiresSelection: true,
     component: markRaw(DriftCorrection),
@@ -105,7 +122,7 @@ export const operations: OperationMeta[] = [
     id: 'interpolate',
     title: 'Interpolate',
     description: 'Fill selected points by interpolation',
-    icon: 'mdi-transit-connection-horizontal',
+    icon: mdiTransitConnectionHorizontal,
     group: 'edit',
     requiresSelection: true,
     component: markRaw(Interpolate),
@@ -114,7 +131,7 @@ export const operations: OperationMeta[] = [
     id: 'changeValues',
     title: 'Change values',
     description: 'Set or offset values of selected points',
-    icon: 'mdi-pencil',
+    icon: mdiPencil,
     group: 'edit',
     requiresSelection: true,
     component: markRaw(ChangeValues),
@@ -123,7 +140,7 @@ export const operations: OperationMeta[] = [
     id: 'shiftDatetimes',
     title: 'Shift datetimes',
     description: 'Shift timestamps of selected points',
-    icon: 'mdi-calendar',
+    icon: mdiCalendar,
     group: 'edit',
     requiresSelection: true,
     component: markRaw(ShiftDatetimes),
@@ -132,7 +149,7 @@ export const operations: OperationMeta[] = [
     id: 'deletePoints',
     title: 'Delete points',
     description: 'Remove selected data points',
-    icon: 'mdi-trash-can',
+    icon: mdiTrashCan,
     group: 'edit',
     requiresSelection: true,
     component: markRaw(DeletePoints),
@@ -144,7 +161,7 @@ export const operations: OperationMeta[] = [
         id: 'qualifyingComments',
         title: 'Qualifying comments',
         description: 'Attach qualifier flags to selected points',
-        icon: 'mdi-flag',
+        icon: mdiFlag,
         group: 'add' as const,
         requiresSelection: true,
         component: markRaw(QualifyingComments),
@@ -155,7 +172,7 @@ export const operations: OperationMeta[] = [
     id: 'addPoints',
     title: 'Add points',
     description: 'Insert new data points manually',
-    icon: 'mdi-plus',
+    icon: mdiPlus,
     group: 'add',
     requiresSelection: false,
     component: markRaw(AddPoints),
@@ -164,7 +181,7 @@ export const operations: OperationMeta[] = [
     id: 'fillGaps',
     title: 'Fill gaps',
     description: 'Generate points in detected time gaps',
-    icon: 'mdi-keyboard-space',
+    icon: mdiKeyboardSpace,
     group: 'add',
     requiresSelection: false,
     component: markRaw(FillGaps),
@@ -215,13 +232,13 @@ export function iconForMethod(method: string): string {
     if (op) return op.icon
   }
   if (method === EnumFilterOperations.SELECTION) {
-    return 'mdi-cursor-default-click'
+    return mdiCursorDefaultClick
   }
-  if (method === EnumEditOperations.ASSIGN_VALUES_BULK) return 'mdi-pencil'
+  if (method === EnumEditOperations.ASSIGN_VALUES_BULK) return mdiPencil
   if (method === EnumEditOperations.ASSIGN_DATETIMES_BULK) {
-    return 'mdi-calendar'
+    return mdiCalendar
   }
-  return 'mdi-circle-small'
+  return mdiCircleSmall
 }
 
 /** Vuetify color tokens per operation group. Used by the edit drawer

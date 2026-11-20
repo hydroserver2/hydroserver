@@ -27,7 +27,7 @@
             size="x-small"
             variant="text"
             density="comfortable"
-            icon="mdi-close"
+            :icon="mdiClose"
             @click="close"
           />
         </template>
@@ -41,7 +41,7 @@
       class="px-3 py-4 d-flex flex-column align-center text-center"
       data-testid="operation-read-only-blocked"
     >
-      <v-icon icon="mdi-lock-outline" size="28" color="primary" class="mb-2" />
+      <v-icon :icon="mdiLockOutline" size="28" color="primary" class="mb-2" />
       <div class="text-body-small text-medium-emphasis">
         This session is committed and read-only. Return to the current
         session, or start a new one, to keep editing.
@@ -53,7 +53,7 @@
       class="px-3 py-4 d-flex flex-column align-center text-center"
       data-testid="operation-preview-blocked"
     >
-      <v-icon icon="mdi-eye-outline" size="28" color="primary" class="mb-2" />
+      <v-icon :icon="mdiEyeOutline" size="28" color="primary" class="mb-2" />
       <div class="text-body-small text-medium-emphasis">
         An earlier history step is being previewed. Go back to the latest
         step in the edit history to continue editing.
@@ -65,7 +65,7 @@
       class="px-3 py-4 d-flex flex-column align-center text-center"
     >
       <v-icon
-        icon="mdi-selection-ellipse-arrow-inside"
+        :icon="mdiSelectionEllipseArrowInside"
         size="28"
         color="warning"
         class="mb-2"
@@ -97,7 +97,7 @@
                 size="x-small"
                 variant="text"
                 density="comfortable"
-                icon="mdi-close"
+                :icon="mdiClose"
                 aria-label="Disable date range mask"
                 @click="filterRangeActive = false"
               />
@@ -115,7 +115,7 @@
             size="small"
             variant="outlined"
             color="primary"
-            prepend-icon="mdi-arrow-expand-horizontal"
+            :prepend-icon="mdiArrowExpandHorizontal"
             @click="filterRangeActive = true"
           >
             Enable date range mask
@@ -154,6 +154,13 @@
 </template>
 
 <script setup lang="ts">
+import {
+  mdiArrowExpandHorizontal,
+  mdiClose,
+  mdiEyeOutline,
+  mdiLockOutline,
+  mdiSelectionEllipseArrowInside,
+} from '@mdi/js'
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useUIStore } from '@/store/userInterface'

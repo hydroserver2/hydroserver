@@ -45,7 +45,7 @@
       class="data-vis-state flex-grow-1 d-flex flex-column align-center justify-center pa-6 text-center"
     >
       <v-icon
-        icon="mdi-calendar-remove-outline"
+        :icon="mdiCalendarRemoveOutline"
         size="56"
         color="warning"
         class="mb-3"
@@ -68,7 +68,7 @@
         <div class="data-vis-state__step">
           <div class="data-vis-state__step-num d-inline-flex align-center justify-center rounded-pill text-white">1</div>
           <v-icon
-            icon="mdi-filter-variant"
+            :icon="mdiFilterVariant"
             size="24"
             color="primary"
             class="data-vis-state__step-icon"
@@ -85,7 +85,7 @@
         <div class="data-vis-state__step">
           <div class="data-vis-state__step-num d-inline-flex align-center justify-center rounded-pill text-white">2</div>
           <v-icon
-            icon="mdi-checkbox-marked-outline"
+            :icon="mdiCheckboxMarkedOutline"
             size="24"
             color="primary"
             class="data-vis-state__step-icon"
@@ -101,7 +101,7 @@
         <div class="data-vis-state__step">
           <div class="data-vis-state__step-num d-inline-flex align-center justify-center rounded-pill text-white">3</div>
           <v-icon
-            icon="mdi-calendar-range"
+            :icon="mdiCalendarRange"
             size="24"
             color="primary"
             class="data-vis-state__step-icon"
@@ -118,7 +118,7 @@
         <div class="data-vis-state__step">
           <div class="data-vis-state__step-num d-inline-flex align-center justify-center rounded-pill text-white">4</div>
           <v-icon
-            icon="mdi-pencil"
+            :icon="mdiPencil"
             size="24"
             color="primary"
             class="data-vis-state__step-icon"
@@ -137,6 +137,13 @@
 </template>
 
 <script setup lang="ts">
+import {
+  mdiCalendarRange,
+  mdiCalendarRemoveOutline,
+  mdiCheckboxMarkedOutline,
+  mdiFilterVariant,
+  mdiPencil,
+} from '@mdi/js'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'

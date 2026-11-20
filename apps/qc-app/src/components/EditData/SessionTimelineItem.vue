@@ -13,6 +13,7 @@
 </template>
 
 <script setup lang="ts">
+import { mdiCheck, mdiPencil, mdiPlus } from '@mdi/js'
 /**
  * One node of a session timeline: a session, or the "start a new session"
  * action that heads the chooser's timeline. Shared by the editor's session
@@ -27,16 +28,16 @@ defineProps<{
 
 const MARKERS = {
   in_progress: {
-    icon: 'mdi-pencil',
+    icon: mdiPencil,
     color: 'warning',
     modifier: 'qc-timeline__item--active',
   },
   committed: {
-    icon: 'mdi-check',
+    icon: mdiCheck,
     color: 'success',
     modifier: 'qc-timeline__item--done',
   },
-  new: { icon: 'mdi-plus', color: 'primary', modifier: 'qc-timeline__item--new' },
+  new: { icon: mdiPlus, color: 'primary', modifier: 'qc-timeline__item--new' },
 }
 </script>
 

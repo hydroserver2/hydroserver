@@ -42,7 +42,7 @@
         size="x-small"
         variant="tonal"
         color="primary"
-        :prepend-icon="chip.active ? 'mdi-check' : undefined"
+        :prepend-icon="chip.active ? mdiCheck : undefined"
         @click="applySnap(chip)"
       >
         {{ chip.label }}
@@ -52,7 +52,7 @@
     <v-alert
       class="mt-4"
       :color="gapCount > 0 ? 'info' : 'success'"
-      :icon="gapCount > 0 ? 'mdi-magnify-scan' : 'mdi-check-circle-outline'"
+      :icon="gapCount > 0 ? mdiMagnifyScan : mdiCheckCircleOutline"
       variant="tonal"
       density="compact"
     >
@@ -88,6 +88,7 @@
 </template>
 
 <script setup lang="ts">
+import { mdiCheck, mdiCheckCircleOutline, mdiMagnifyScan } from '@mdi/js'
 import { computed, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'

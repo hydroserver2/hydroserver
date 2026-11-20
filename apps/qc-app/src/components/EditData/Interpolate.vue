@@ -3,7 +3,7 @@
     <v-card-title>Interpolate</v-card-title>
     <v-card-subtitle>
       <span class="selected-count-badge">
-        <v-icon icon="mdi-vector-selection" size="14" />
+        <v-icon :icon="mdiVectorSelection" size="14" />
         {{ selectedData?.length }} point{{
           selectedData?.length === 1 ? '' : 's'
         }}
@@ -41,6 +41,7 @@
 </template>
 
 <script setup lang="ts">
+import { mdiVectorSelection } from '@mdi/js'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { EnumEditOperations } from '@uwrl/qc-utils'

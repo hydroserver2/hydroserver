@@ -20,7 +20,6 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-free": "^7.2.0",
     "@hydroserver/client": "file:../../packages/hydroserver-ts",
     "@mdi/js": "^7.4.47",
     "@uwrl/qc-utils": "file:../../packages/qc-utils",
@@ -41,7 +40,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",
-    "@mdi/font": "^7.4.47",
     "@playwright/test": "^1.60.0",
     "@types/lodash-es": "^4.17.12",
     "@types/node": "^25.9.3",
