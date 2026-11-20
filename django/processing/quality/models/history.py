@@ -27,7 +27,7 @@ class QCHistory(models.Model):
         return f"{self.managed_datastream_id} - {self.id}"
 
     def clean(self):
-        if not self.managed_datastream_id or not self.source_datastream_id:
+        if not self.managed_datastream_id:
             return
 
         try:
@@ -35,10 +35,17 @@ class QCHistory(models.Model):
         except ObjectDoesNotExist:
             return
 
+        self.managed_datastream.ensure_time_series("QC datastreams")
+
+        if not self.source_datastream_id:
+            return
+
         try:
             source_workspace_id = self.source_datastream.monitoring_site.workspace_id
         except ObjectDoesNotExist:
             return
+
+        self.source_datastream.ensure_time_series("QC datastreams")
 
         if managed_workspace_id != source_workspace_id:
             raise ValidationError(

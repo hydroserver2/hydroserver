@@ -1,14 +1,15 @@
 import math
 from datetime import datetime, timezone
 from ninja.errors import HttpError
-from django.db.models import Min, Max, Count, F, Sum
+from django.core.exceptions import ValidationError
+from django.db.models import Count, F, Sum
 from django.db.utils import IntegrityError, DatabaseError, DataError
 from psycopg.errors import UniqueViolation
 from sensorthings.types import Absent
 from core.iam.permissions.anonymous import AnonymousPrincipal
-from core.sta.models import Observation, Datastream
+from core.sta.models import Observation, Datastream, normalize_z_values
 from sensorthings.versions.v1_1.dto import EntityResultSetDTO, CollectionDTO, ObservationDTO
-from interfaces.api.services.sta.datastream import DatastreamAPIService
+from interfaces.api.services.sta.datastream import DatastreamAPIService, OBSERVATION_STATISTICS_FIELDS
 from .utils import SensorThingsUtils
 
 datastream_service = DatastreamAPIService()
@@ -99,6 +100,10 @@ class ObservationMixin(SensorThingsUtils):
                         }
                         if needs_result_quality else Absent
                     ),
+                    parameters=(
+                        self.select_field(select, "parameters", {"z": float(obs.z)})
+                        if obs.z is not None else Absent
+                    ),
                     datastream_id=obs.datastream_id,
                 )
                 for obs in obs_list
@@ -135,10 +140,19 @@ class ObservationMixin(SensorThingsUtils):
                 )
 
             try:
+                z_values = normalize_z_values(
+                    datastream,
+                    [dto.parameters.get("z") if isinstance(dto.parameters, dict) else None for dto in dtos],
+                )
+            except ValidationError as e:
+                raise HttpError(400, " ".join(e.messages))
+
+            try:
                 new_observations = Observation.objects.bulk_copy([
                     Observation(
                         datastream_id=datastream_id,
                         phenomenon_time=now if dto.phenomenon_time is Absent else dto.phenomenon_time,
+                        z=z,
                         result=(
                             dto.result
                             if not (isinstance(dto.result, float) and math.isnan(dto.result))
@@ -151,13 +165,13 @@ class ObservationMixin(SensorThingsUtils):
                             else None
                         ),
                     )
-                    for dto in dtos
+                    for dto, z in zip(dtos, z_values)
                 ])
             except (IntegrityError, UniqueViolation):
-                raise HttpError(409, "Duplicate phenomenonTime found on this datastream.")
+                raise HttpError(409, "Duplicate observation found on this datastream.")
 
             new_ids.extend(obs.id for obs in new_observations)
-            self._update_value_count(datastream_id)
+            datastream_service.update_observation_statistics(datastream, OBSERVATION_STATISTICS_FIELDS)
 
         return new_ids
 
@@ -166,16 +180,3 @@ class ObservationMixin(SensorThingsUtils):
 
     def delete_observations(self, entity_ids, context=None):
         raise HttpError(403, "This operation is not permitted.")
-
-    @staticmethod
-    def _update_value_count(datastream_id):
-        aggregate = Observation.objects.filter(datastream_id=datastream_id).aggregate(
-            min_time=Min("phenomenon_time"),
-            max_time=Max("phenomenon_time"),
-            count=Count("id"),
-        )
-        Datastream.objects.filter(pk=datastream_id).update(
-            phenomenon_begin_time=aggregate["min_time"],
-            phenomenon_end_time=aggregate["max_time"],
-            value_count=aggregate["count"],
-        )

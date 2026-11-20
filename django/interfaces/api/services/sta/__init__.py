@@ -14,3 +14,4 @@ from .result_qualifier import ResultQualifierAPIService
 from .sampled_medium import SampledMediumAPIService
 from .aggregation_statistic import AggregationStatisticAPIService
 from .datastream_status import DatastreamStatusAPIService
+from .z_reference import ZReferenceAPIService

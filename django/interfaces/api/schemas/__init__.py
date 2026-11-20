@@ -119,6 +119,11 @@ from interfaces.api.schemas.sta.datastream_status import (
     DatastreamStatusPostBody,
     DatastreamStatusPatchBody,
 )
+from interfaces.api.schemas.sta.z_reference import (
+    ZReferenceResponse,
+    ZReferencePostBody,
+    ZReferencePatchBody,
+)
 from interfaces.api.schemas.sta.datastream import (
     DatastreamVisualizationBootstrapQueryParameters,
     DatastreamVisualizationBootstrapResponse,

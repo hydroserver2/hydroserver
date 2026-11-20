@@ -15,6 +15,7 @@ from tests.core.sta.factories import (
     SampledMediumFactory,
     UnitFactory,
     UnitTypeFactory,
+    ZReferenceFactory,
 )
 
 pytestmark = pytest.mark.django_db
@@ -35,6 +36,7 @@ NON_SPATIAL_COLLECTIONS = [
     "sampled-mediums",
     "aggregation-statistics",
     "datastream-statuses",
+    "z-references",
     "roles",
     "etl-data-connections",
     "etl-mappings",
@@ -65,6 +67,7 @@ ITEM_FACTORIES = {
     "sampled-mediums": lambda workspace: SampledMediumFactory(),
     "aggregation-statistics": lambda workspace: AggregationStatisticFactory(),
     "datastream-statuses": lambda workspace: DatastreamStatusFactory(),
+    "z-references": lambda workspace: ZReferenceFactory(),
 }
 
 

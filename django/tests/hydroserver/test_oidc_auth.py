@@ -330,6 +330,7 @@ COLLECTION_SCOPES = {
     "collections/linked-resource-types": (DATA_READ, DATA_WRITE),
     "collections/datastreams": (DATA_READ, DATA_WRITE),
     "collections/datastream-statuses": (DATA_READ, DATA_WRITE),
+    "collections/z-references": (DATA_READ, DATA_WRITE),
     "collections/aggregation-statistics": (DATA_READ, DATA_WRITE),
     "collections/observations": (DATA_READ, DATA_WRITE),
     "collections/observed-properties": (DATA_READ, DATA_WRITE),

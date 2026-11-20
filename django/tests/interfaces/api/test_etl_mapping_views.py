@@ -134,6 +134,27 @@ def test_create_etl_mapping_succeeds_for_workspace_owner(client):
     assert detail.json()["data"]["etlTaskId"] == str(task.id)
 
 
+def test_create_etl_mapping_returns_400_for_profile_target_datastream(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task = _make_task(workspace)
+    target = DatastreamFactory(monitoring_site=MonitoringSiteFactory(workspace=workspace), profile=True)
+    client.force_login(owner)
+
+    response = client.post(
+        MAPPINGS_URL,
+        data={
+            "etlTaskId": str(task.id),
+            "sourceIdentifier": "col_a",
+            "targetDatastreamId": str(target.id),
+        },
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+    assert "not supported as ETL targets" in response.json()["message"]
+
+
 def test_create_etl_mapping_returns_403_without_create_permission(client):
     workspace = WorkspaceFactory()
     task = _make_task(workspace)

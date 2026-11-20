@@ -20,6 +20,7 @@ from core.sta.models import (
     UnitType,
     AggregationStatistic,
     DatastreamStatus,
+    ZReference,
     SampledMedium,
     LinkedResourceType,
 )
@@ -323,6 +324,29 @@ class DatastreamStatusAdmin(admin.ModelAdmin, VocabularyAdmin):
         )
 
 
+class ZReferenceAdmin(admin.ModelAdmin, VocabularyAdmin):
+    list_display = ("id", "name")
+    change_list_template = "admin/sta/zreference/change_list.html"
+
+    def get_urls(self):
+        urls = super().get_urls()
+
+        return [
+            path(
+                "load-default-z-reference-data/",
+                self.admin_site.admin_view(self.load_default_data),
+                name="z_reference_load_default_data",
+            ),
+        ] + urls
+
+    def load_default_data(self, request):
+        return self.load_fixtures(
+            request,
+            "admin:sta_zreference_changelist",
+            ["core/sta/fixtures/default_z_references.yaml"],
+        )
+
+
 class SampledMediumAdmin(admin.ModelAdmin, VocabularyAdmin):
     list_display = ("id", "name")
     change_list_template = "admin/sta/sampledmedium/change_list.html"
@@ -385,4 +409,5 @@ admin.site.register(ObservedPropertyType, ObservedPropertyTypeAdmin)
 admin.site.register(UnitType, UnitTypeAdmin)
 admin.site.register(AggregationStatistic, AggregationStatisticAdmin)
 admin.site.register(DatastreamStatus, DatastreamStatusAdmin)
+admin.site.register(ZReference, ZReferenceAdmin)
 admin.site.register(SampledMedium, SampledMediumAdmin)

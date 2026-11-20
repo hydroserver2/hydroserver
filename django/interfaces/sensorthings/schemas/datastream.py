@@ -5,6 +5,16 @@ from uuid import UUID
 from .workspace import WorkspaceProperties
 
 
+class DatastreamZUnit(BaseModel):
+    id: UUID
+    name: str
+    symbol: str
+
+    model_config = ConfigDict(
+        populate_by_name=True, str_strip_whitespace=True, alias_generator=to_camel
+    )
+
+
 class DatastreamProperties(BaseModel):
     type: str
     status: Optional[str] = None
@@ -23,6 +33,10 @@ class DatastreamProperties(BaseModel):
     time_aggregation_interval_unit_of_measurement: Literal[
         "seconds", "minutes", "hours", "days"
     ]
+    z_reference: Optional[str] = None
+    z_unit: Optional[DatastreamZUnit] = None
+    z_min: Optional[float] = None
+    z_max: Optional[float] = None
     is_private: bool
     is_restricted: bool
     workspace: WorkspaceProperties

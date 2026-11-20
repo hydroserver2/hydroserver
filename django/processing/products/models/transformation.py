@@ -223,6 +223,7 @@ class DataProductTransformation(models.Model, ResourcePermissionMixin):
             output_site_id = self.output_datastream.monitoring_site_id
         except ObjectDoesNotExist:
             return
+        self.output_datastream.ensure_time_series("transformation outputs")
         try:
             task_workspace_id = self.task.monitoring_site.workspace_id
             task_site_id = self.task.monitoring_site_id
@@ -326,6 +327,7 @@ class DataProductTransformationInput(models.Model):
             datastream_workspace_id = self.datastream.monitoring_site.workspace_id
         except ObjectDoesNotExist:
             return
+        self.datastream.ensure_time_series("transformation inputs")
         try:
             task_workspace_id = self.transformation.task.monitoring_site.workspace_id
         except ObjectDoesNotExist:

@@ -155,6 +155,28 @@ def test_create_qc_history_returns_400_when_processing_levels_match(client):
     assert response.status_code == 400
 
 
+@pytest.mark.parametrize("profile_side", ["managed", "source"])
+def test_create_qc_history_returns_400_for_profile_datastream(client, profile_side):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    managed = DatastreamFactory(monitoring_site=monitoring_site, profile=profile_side == "managed")
+    source = DatastreamFactory(monitoring_site=monitoring_site, profile=profile_side == "source")
+    client.force_login(owner)
+
+    response = client.post(
+        QC_HISTORIES_URL,
+        data={
+            "managedDatastreamId": str(managed.id),
+            "sourceDatastreamId": str(source.id),
+        },
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+    assert "not supported as QC datastreams" in response.json()["message"]
+
+
 def test_create_qc_history_returns_409_when_managed_datastream_already_has_history(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)

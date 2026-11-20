@@ -26,6 +26,7 @@ from interfaces.api.schemas.base import ItemId, NewItemId
 
 class ObservationFields(Schema):
     phenomenon_time: ISODatetime
+    z: Optional[float] = None
     result: float
     result_qualifiers: list[str] = []
 
@@ -51,7 +52,7 @@ OBSERVATION_INCLUDE_RELATIONS = {
 }
 ObservationIncludeRelation = Literal[*OBSERVATION_INCLUDE_RELATIONS.keys()]
 
-_sortby_fields = ("phenomenonTime", "datastreamId")
+_sortby_fields = ("phenomenonTime", "z", "datastreamId")
 ObservationSortByFields = Literal[
     *_sortby_fields, *[f"-{f}" for f in _sortby_fields]
 ]
@@ -101,6 +102,8 @@ class ObservationQueryParameters(ObservationFilterFields, CollectionQueryParamet
     result_qualifiers: list[str] = Query(
         [], description="Observations with this result qualifier. Matches `name` in `result-qualifiers`."
     )
+    min_z: Optional[float] = Query(None, description="Observations with a z at or above this value.")
+    max_z: Optional[float] = Query(None, description="Observations with a z at or below this value.")
 
 
 class ObservationProperties(BaseGetResponse, ObservationFields):
@@ -120,6 +123,7 @@ class ObservationResponse(ObservationProperties, ItemId):
 OBSERVATION_GROUP_FIELDS = {
     "id": "id",
     "phenomenonTime": "phenomenon_time",
+    "z": "z",
     "result": "result",
     "resultQualifiers": "result_qualifiers",
 }
@@ -162,6 +166,7 @@ class ObservationRowResponse(ObservationGroup):
 class ObservationColumns(BaseGetResponse):
     id: Optional[list[uuid.UUID]] = None
     phenomenon_time: Optional[list] = None
+    z: Optional[list] = None
     result: Optional[list] = None
     result_qualifiers: Optional[list] = None
 
@@ -199,10 +204,9 @@ class ObservationBulkPostQueryParameters(BaseQueryParameters):
         description="End of the range `replace` deletes. Requires `phenomenonTimeStart`.",
     )
 
-
 class ObservationBulkPostBody(BasePostBody):
     datastream_id: uuid.UUID
-    fields: list[Literal["phenomenonTime", "result", "resultQualifiers"]]
+    fields: list[Literal["phenomenonTime", "z", "result", "resultQualifiers"]]
     data: list[list]
 
     @model_validator(mode="after")
@@ -211,7 +215,7 @@ class ObservationBulkPostBody(BasePostBody):
         rows = self.data
 
         phenomenon_time_idx = field_map.get("phenomenonTime")
-        result_idx = field_map.get("result")
+        number_idxs = [field_map[field] for field in ("z", "result") if field in field_map]
 
         for row in rows:
             if phenomenon_time_idx is not None and isinstance(
@@ -220,8 +224,9 @@ class ObservationBulkPostBody(BasePostBody):
                 row[phenomenon_time_idx] = validate_iso_datetime(
                     row[phenomenon_time_idx]
                 )
-            if result_idx is not None and row[result_idx] is not None:
-                row[result_idx] = float(row[result_idx])
+            for idx in number_idxs:
+                if row[idx] is not None:
+                    row[idx] = float(row[idx])
 
         return self
 
@@ -229,6 +234,7 @@ class ObservationBulkPostBody(BasePostBody):
 class ObservationBulkColumnarPostBody(BasePostBody):
     datastream_id: uuid.UUID
     phenomenon_time: list[ISODatetime]
+    z: list[Optional[float]] = []
     result: list[Optional[float]]
     result_qualifiers: list[list[str]] = []
 
@@ -237,6 +243,8 @@ class ObservationBulkColumnarPostBody(BasePostBody):
         n = len(self.phenomenon_time)
         if len(self.result) != n:
             raise ValueError("result must have the same length as phenomenonTime")
+        if self.z and len(self.z) != n:
+            raise ValueError("z must have the same length as phenomenonTime")
         if self.result_qualifiers and len(self.result_qualifiers) != n:
             raise ValueError(
                 "resultQualifiers must have the same length as phenomenonTime"
@@ -247,10 +255,12 @@ class ObservationBulkColumnarPostBody(BasePostBody):
 
     @property
     def fields(self) -> list[str]:
-        return ["phenomenonTime", "result", "resultQualifiers"]
+        return ["phenomenonTime", *(["z"] if self.z else []), "result", "resultQualifiers"]
 
     @property
     def data(self) -> list[tuple]:
+        if self.z:
+            return list(zip(self.phenomenon_time, self.z, self.result, self.result_qualifiers))
         return list(zip(self.phenomenon_time, self.result, self.result_qualifiers))
 
 
