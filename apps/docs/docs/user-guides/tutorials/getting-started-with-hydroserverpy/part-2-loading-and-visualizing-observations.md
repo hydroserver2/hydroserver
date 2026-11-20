@@ -1,3 +1,7 @@
+---
+v1Notice: true
+---
+
 # Part 2: Loading and Visualizing Observations
 
 Now that we have a datastream set up, let's put some data in it. In this part we'll generate a month of sample discharge observations, load them into HydroServer, fetch them back, and plot them.

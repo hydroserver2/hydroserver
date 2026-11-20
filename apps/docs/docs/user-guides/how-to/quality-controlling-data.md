@@ -1,3 +1,8 @@
+---
+v1Notice: true
+playgroundNotice: true
+---
+
 # Quality Controlling Data with the QC App
 
 :::warning

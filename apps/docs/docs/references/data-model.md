@@ -1,3 +1,7 @@
+---
+v1Notice: true
+---
+
 # HydroServer Data Model 
 
 The following are entity relationship diagrams illustrating the HydroServer data model design. You can also access a [data dictionary](/references/data-dictionary.md) that describes each of the entities and attributes along with data types and descriptive information.

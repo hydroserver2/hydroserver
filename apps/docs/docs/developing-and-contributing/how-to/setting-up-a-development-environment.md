@@ -1,3 +1,7 @@
+---
+v1Notice: true
+---
+
 # Setting Up a Development Environment
 
 This guide will walk you through setting up HydroServer for local development.

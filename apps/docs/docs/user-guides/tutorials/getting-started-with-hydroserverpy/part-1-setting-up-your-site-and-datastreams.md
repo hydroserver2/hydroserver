@@ -1,3 +1,8 @@
+---
+v1Notice: true
+playgroundNotice: true
+---
+
 # Part 1: Setting Up Your Site and Datastreams
 
 In this first part, we'll connect to HydroServer and create everything needed to represent a monitoring site: a workspace, a site, linked metadata (method, observed property, unit, and processing level), and a datastream. By the end you'll have a fully described datastream ready to receive observations in the next part.

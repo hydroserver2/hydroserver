@@ -1,3 +1,8 @@
+---
+v1Notice: true
+playgroundNotice: true
+---
+
 # Part 4: Creating Data Products
 
 > **Note:** Like Part 3, this part requires HydroServer's orchestration system to be installed and running. The playground instance does not currently support data product tasks.

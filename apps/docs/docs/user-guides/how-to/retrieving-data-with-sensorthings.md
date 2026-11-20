@@ -1,3 +1,7 @@
+---
+v1Notice: true
+---
+
 # Retrieving Data with the SensorThings API
 
 The HydroServer SensorThings API allows you to access various sensor-related data via HTTP GET requests. SensorThings

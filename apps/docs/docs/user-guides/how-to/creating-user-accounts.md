@@ -1,3 +1,7 @@
+---
+v1Notice: true
+---
+
 # Creating a HydroServer User Account
 
 While you can navigate to a HydroServer instance and interact with any metadata and data that have been made public, creating a workspace or becoming a collaborator on a workspace requires creating a user account. HydroServer enables multiple options for user account creation that are controlled by the administrator of the HydroServer instance. The default option is simple authentication (an email as a username and a chosen password). Administrators can also enable sign-in with third-party accounts such as Google, ORCID, or HydroShare.

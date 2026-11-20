@@ -1,3 +1,8 @@
+---
+v1Notice: true
+playgroundNotice: true
+---
+
 # How to Use the HydroServer Streaming Data Loader
 
 This guide explains how to use the **HydroServer Streaming Data Loader** to upload data from a comma-separated values (CSV) file into HydroServer.

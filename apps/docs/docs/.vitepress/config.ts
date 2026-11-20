@@ -17,7 +17,12 @@ export default defineConfig({
   themeConfig: {
     logo: "/logo.png",
     // https://vitepress.dev/reference/default-theme-config
-    nav: [{ text: "Home", link: "/" }],
+    nav: [
+      { text: "Home", link: "/" },
+      // The v1 docs are a separate build served at /v1/ (see deploy.yml);
+      // target "_self" makes the link bypass the SPA router.
+      { text: "v1 Docs", link: "/v1/", target: "_self" },
+    ],
 
     sidebar: [
       {

@@ -19,3 +19,26 @@ html.dark .light-only {
 html:not(.dark) .dark-only {
   display: none !important;
 }
+
+/* Wrapper for VersionNotices on the home layout, aligned with the hero. */
+.home-version-notices {
+  max-width: 1152px;
+  margin: 0 auto;
+  padding: 24px 24px 0;
+}
+
+@media (min-width: 640px) {
+  .home-version-notices {
+    padding: 32px 48px 0;
+  }
+}
+
+@media (min-width: 960px) {
+  .home-version-notices {
+    padding: 32px 64px 0;
+  }
+}
+
+.home-version-notices .version-notices {
+  margin-bottom: 0;
+}

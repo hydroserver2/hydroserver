@@ -1,3 +1,7 @@
+---
+v1Notice: true
+---
+
 # Workspaces and Access Control
 
 HydroServer is built to handle not only multiple users with varying permission levels for one organization, but multiple organizations that may be sharing the same instance of HydroServer. This is accomplished primarily through workspaces.

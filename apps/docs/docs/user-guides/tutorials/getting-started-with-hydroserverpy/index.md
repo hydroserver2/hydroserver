@@ -1,3 +1,7 @@
+---
+playgroundNotice: true
+---
+
 # Getting Started with hydroserverpy
 
 `hydroserverpy` is HydroServer's official Python client library. It lets you do everything you can do in the web interface — creating sites, loading data, setting up automated ingestion — but from a Python script or notebook, which makes it easy to automate, repeat, and share your workflows.

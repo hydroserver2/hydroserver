@@ -1,3 +1,7 @@
+---
+v1Notice: true
+---
+
 # Managing Access Control
 
 HydroServer's access control is role-based and set at the Workspace level. The person who creates the workspace is automatically the owner. That user can then share the workspace with any other HydroServer user as a collaborator. Unless workspace creation has been disabled by a HydroServer administrator, users can create multiple workspaces and can be a collaborator on any number of workspaces.

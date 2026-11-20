@@ -1,3 +1,7 @@
+---
+v1Notice: true
+---
+
 # Datastreams
 
 A `datastream` is a time series of observations for a particular observed property created at a monitoring site. The datastream concept encompasses all of the metadata describing exactly one time series or "stream" of data at that monitoring site.

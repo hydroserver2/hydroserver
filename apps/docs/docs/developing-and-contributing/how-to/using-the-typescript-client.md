@@ -1,3 +1,8 @@
+---
+v1Notice: true
+playgroundNotice: true
+---
+
 # Using the TypeScript Client
 
 To perform data management operations, initialize a HydroServer client once at app startup.

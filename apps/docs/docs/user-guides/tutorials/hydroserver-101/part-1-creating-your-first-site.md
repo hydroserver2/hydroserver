@@ -1,3 +1,8 @@
+---
+v1Notice: true
+playgroundNotice: true
+---
+
 # Part 1: Creating Your First Site
 
 ## Create an account on our playground instance

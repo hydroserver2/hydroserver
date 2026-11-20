@@ -1,3 +1,8 @@
+---
+v1Notice: true
+playgroundNotice: true
+---
+
 # Getting Started
 
 ## Explore Our Playground Instance

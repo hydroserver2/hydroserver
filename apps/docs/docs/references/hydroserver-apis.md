@@ -1,3 +1,8 @@
+---
+v1Notice: true
+playgroundNotice: true
+---
+
 # HydroServer APIs
 
 HydroServer provides two web APIs: the HydroServer Data Management API and the SensorThings API. Both are served by your HydroServer instance under `/api/`.

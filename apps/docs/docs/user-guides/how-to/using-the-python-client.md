@@ -1,3 +1,7 @@
+---
+v1Notice: true
+---
+
 # Python Client Reference — hydroserverpy
 
 `hydroserverpy` is HydroServer's official Python client library. This page is a reference for the classes, properties, and methods it exposes. If you're new to the library, start with the [Getting Started with hydroserverpy](/user-guides/tutorials/getting-started-with-hydroserverpy/) tutorial series.

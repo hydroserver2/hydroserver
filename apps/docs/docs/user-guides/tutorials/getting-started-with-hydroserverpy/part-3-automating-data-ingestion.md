@@ -1,3 +1,8 @@
+---
+v1Notice: true
+playgroundNotice: true
+---
+
 # Part 3: Automating Data Ingestion
 
 > **Note:** This part requires HydroServer's orchestration system to be installed and running alongside your HydroServer instance. The public playground at `https://playground.hydroserver.org` does not currently have the orchestration system enabled. You can read through this part on playground, but ETL tasks won't execute until you're working with a self-hosted instance that has the orchestration system set up.

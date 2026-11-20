@@ -1,3 +1,7 @@
+---
+playgroundNotice: true
+---
+
 # Part 5: Setting Up Monitoring
 
 > **Note:** Like Parts 3 and 4, this part requires HydroServer's orchestration system to be installed and running. The playground instance does not currently support monitoring tasks.

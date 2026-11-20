@@ -1,3 +1,7 @@
+---
+v1Notice: true
+---
+
 # Managing Datastream Metadata
 
 Datastreams represent time series of observations measured at or created at a monitoring site. You must first create the metadata for a datastream before loading observation values into that datastream.

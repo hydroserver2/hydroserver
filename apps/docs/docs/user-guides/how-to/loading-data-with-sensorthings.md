@@ -1,3 +1,7 @@
+---
+v1Notice: true
+---
+
 # Loading Data with the SensorThings API
 
 The HydroServer SensorThings API currently only supports posting Observations data. Other metadata can be posted or

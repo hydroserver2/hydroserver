@@ -1,3 +1,8 @@
+---
+v1Notice: true
+v1Page: false
+---
+
 # Migrating from HydroServer v1 to v2
 
 HydroServer v2 restructures much of the v1 data model. Upgrading runs a set of database migrations that convert your

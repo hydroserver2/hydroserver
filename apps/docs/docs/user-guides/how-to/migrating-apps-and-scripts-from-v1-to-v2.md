@@ -1,3 +1,8 @@
+---
+v1Notice: true
+v1Page: false
+---
+
 # Migrating Apps and Scripts from v1 to v2
 
 HydroServer v2 changes the Data Management API, the Python and TypeScript clients, and how apps sign users in. This

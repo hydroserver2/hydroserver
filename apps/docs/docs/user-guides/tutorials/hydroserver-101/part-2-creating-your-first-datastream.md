@@ -1,3 +1,8 @@
+---
+v1Notice: true
+playgroundNotice: true
+---
+
 # Part 2: Creating Your First Datastream
 
 Now that your site is created, we'll next define a new datastream to specify what kind of data we'll be loading in the next step. If you're not already on the site details page of your new site, open **Browse monitoring sites**, select your site in the panel, and click **View details**.

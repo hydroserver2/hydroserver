@@ -1,3 +1,7 @@
+---
+v1Notice: true
+---
+
 # Using the Django Admin Dashboard
 
 Once HydroServer is running and accessible, instance administrators can use the Django admin dashboard to manage

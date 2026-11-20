@@ -1,3 +1,8 @@
+---
+v1Notice: true
+playgroundNotice: true
+---
+
 # Building Your First App
 
 This tutorial will guide you through how to build a simple web application backed by HydroServer data.

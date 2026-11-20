@@ -1,3 +1,8 @@
+---
+v1Notice: true
+playgroundNotice: true
+---
+
 # Part 3: Setting up the Streaming Data Loader
 
 Now that we have a site and datastream created, we're just about ready to load some data. There are many ways to load data in HydroServer which range from simply POSTing data via the API to setting up automated workflows. For this tutorial, we'll set up a simple automated workflow. We'll download the Streaming Data Loader desktop application and use it to extract a CSV file off your computer and into HydroServer.

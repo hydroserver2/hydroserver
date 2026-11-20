@@ -1,3 +1,7 @@
+---
+v1Notice: true
+---
+
 # Managing Site Metadata
 
 The Data Management Web App provides straightforward user interfaces for creating the metadata for monitoring sites. Once metadata for a site and the datastreams measured at that site have been set up, observational data can be loaded into the site's datastreams.

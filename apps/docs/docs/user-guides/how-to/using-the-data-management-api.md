@@ -1,3 +1,8 @@
+---
+playgroundNotice: true
+v1Page: false
+---
+
 # Using the Data Management API
 
 The HydroServer Data Management API is HydroServer's primary API for creating, managing, and retrieving data and metadata. It implements [OGC API - Features](https://ogcapi.ogc.org/features/), so each type of resource (monitoring sites, datastreams, observations, units, tasks, and so on) is an OGC API collection of items. Every HydroServer instance serves it at `/api/ogc`, with interactive documentation of every endpoint at `/api/ogc/docs`.

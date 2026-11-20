@@ -1,3 +1,7 @@
+---
+playgroundNotice: true
+---
+
 # Part 4: Loading Data
 
 ## Copy this CSV file

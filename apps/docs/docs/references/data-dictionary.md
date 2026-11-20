@@ -1,3 +1,7 @@
+---
+v1Notice: true
+---
+
 # HydroServer Data Model Data Dictionary
 
 This document describes the Django model fields that back HydroServer's core data model.
