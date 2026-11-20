@@ -56,7 +56,7 @@ The `json_string` is the payload of the POST request. The `http_response` stores
 
 ### Constructing the HTTP POST Header
 
-To send a request, you need to construct the POST request header to send to the server. The header needs to contain a valid API-key for the HydroServer workspace into which you are loading data. If you don't have an API-key, you need to set that up first via the Workspace access control window in HydroServer's Data Management App. The Campbell Scientific `HTTPPost()` function automatically prepends `POST /` onto the beginning of the request along with the `Content-Length` parameter. Your construction of the header might look something like the following:
+To send a request, you need to construct the POST request header to send to the server. The header needs to contain a valid API key for the HydroServer workspace into which you are loading data. API keys belong to service accounts. If you don't have one, create a service account with the Data Loader role first: in HydroServer's Data Management App, open **Manage workspaces**, select the workspace, and use the **Service accounts** tab (see [Service Accounts and API Keys](/user-guides/how-to/managing-access-control.md#service-accounts-and-api-keys)). The Campbell Scientific `HTTPPost()` function automatically prepends `POST /` onto the beginning of the request along with the `Content-Length` parameter. Your construction of the header might look something like the following:
 
 ```vb
 ' Construct the main HTTP POST header string

@@ -58,7 +58,7 @@ http://example-server.org/data/CR800_Station_Data.dat
 
 ## 2. Open the Job Orchestration Page
 
-In HydroServer, go to the top navigation menu and select: Data management → Job orchestration
+In HydroServer, click **Job orchestration** in the main navigation at the top of the page.
 
 <img src="/job-orchestration/ingestion_3_job_orchestration.png" alt="Select Job Orchestration" width="750">
 
@@ -94,7 +94,7 @@ Select `ISO 8601` if the timestamps use the standard ISO 8601 date/time format. 
 
 ### Advanced Features
 
-If you toggle the "Use Advanced features" option, you can add a description to your data connection. You can also add an authentication header if you are connecting to an API that requires authentication. Finally, you can specify a list of email addresses for people who should be notified if tasks associated with the data connection fail to execute. You can add any number of email addresses for notification recipients.
+If you toggle the "Use Advanced features" option, you can add a description to your data connection. You can also add an authentication header if you are connecting to an API that requires authentication. Finally, you can specify a list of email addresses for people who should receive a summary of the data connection's task runs, including any failures, on a notification schedule. Each summary covers the task runs since the previous scheduled summary. You can add any number of email addresses for notification recipients.
 
 After all settings are filled in, click the **Save** button at the bottom of the form. The data connection you just created will appear in the left-side **Connections** list. 
 
@@ -248,7 +248,14 @@ When retrieving data from an API, you need to specify the type of payload return
 * **JMESPath**: this is the path to the data values within the JSON data structure. JMESPath is a query language for JSON data that allows you to extract and transform elements from a JSON document. See [https://jmespath.org/](https://jmespath.org/) for information on building JMESPath expressions.
 * **Timestamp**: Like CSV file payloads, you also need to specify the name of the element in the JSON payload that contains the timestamp values.
 * **Timestamp format**: As with a CSV payload, specify the timestamp format.
-* **Data ingestion window**: These options allow you to specify a starting date for data ingestion and an ending date for data ingestion. For example, by specifying a starting date, any data in the database already after that date will be replaced by what is newly retrieved. By setting an ending date, any data in the response after that date will be ignored and not added to the database. These settings are useful when loading data from data sources where data values may change. For example, data values may be transitioned from provisional to approved over time and you want to load the latest data, but reload data when the values have been approved.
+* **Data ingestion window**: These options allow you to specify a starting date for data ingestion and an ending date for data ingestion. For example, by specifying a starting date, any data in the database already after that date will be replaced by what is newly retrieved. By setting an ending date, any data in the response after that date will be ignored and not added to the database. These settings are useful when loading data from data sources where data values may change. For example, data values may be transitioned from provisional to approved over time and you want to load the latest data, but reload data when the values have been approved. The window applies to CSV payloads as well as JSON payloads. Each end of the window has an **Anchor**:
+  * **Latest observation timestamp**: the time of the most recent observation already loaded. When a task loads several datastreams, HydroServer uses the earliest of their latest timestamps, so no datastream is skipped.
+  * **Job execution time**: the time the task runs.
+  * **Fixed datetime**: a specific date and time that you enter.
+
+  For the first two anchors, you can also set a **Lookback** amount and **Unit** (minutes, hours, or days) to move that end of the window earlier. For example, a start anchor of **Latest observation timestamp** with a lookback of `7` days reloads the last week of data on every run, which picks up values the source has revised. Leave an end of the window unset to leave it open.
+
+  The resolved window start and end can also fill URL placeholders: choose **Data ingestion window start** or **Data ingestion window end** as a placeholder's runtime source so the request to the source only asks for data inside the window.
 * **Timezone**: Specify the timezone associated with the timestamps in the JSON payload.
 
 <img src="/job-orchestration/ingestion_10_json_payload.png" alt="JSON Payload Options" width="750">

@@ -1,0 +1,93 @@
+---
+- model: sta.monitoringsitetype
+  pk: 01a0b67f-d61c-7386-aefa-a5af17e9a3b0
+  fields:
+    name: Conveyance
+- model: sta.monitoringsitetype
+  pk: 01a0b67f-d61c-7386-aefa-a5b099e8ef76
+  fields:
+    name: Stream
+- model: sta.monitoringsitetype
+  pk: 01a0b67f-d61c-7386-aefa-a5b19343c2f1
+  fields:
+    name: Reservoir / Lake
+- model: sta.monitoringsitetype
+  pk: 01a0b67f-d61c-7386-aefa-a5b27e119373
+  fields:
+    name: Reservoir Release
+- model: sta.monitoringsitetype
+  pk: 01a0b67f-d61c-7386-aefa-a5b38d2703b0
+  fields:
+    name: Dam / Control Structure
+- model: sta.monitoringsitetype
+  pk: 01a0b67f-d61c-7386-aefa-a5b4c88ecddb
+  fields:
+    name: Groundwater Well
+- model: sta.monitoringsitetype
+  pk: 01a0b67f-d61c-7386-aefa-a5b5cb2a82ce
+  fields:
+    name: Irrigation
+- model: sta.monitoringsitetype
+  pk: 01a0b67f-d61c-7386-aefa-a5b62914c5ef
+  fields:
+    name: Hydropower
+- model: sta.monitoringsitetype
+  pk: 01a0b67f-d61c-7386-aefa-a5b749dcf0b1
+  fields:
+    name: Pump Station
+- model: sta.monitoringsitetype
+  pk: 01a0b67f-d61c-7386-aefa-a5b805f598f5
+  fields:
+    name: Spring
+- model: sta.monitoringsitetype
+  pk: 01a0b67f-d61c-7386-aefa-a5b933623f09
+  fields:
+    name: Wetland
+- model: sta.monitoringsitetype
+  pk: 01a0b67f-d61c-7386-aefa-a5ba4e4fed24
+  fields:
+    name: Coastal
+- model: sta.monitoringsitetype
+  pk: 01a0b67f-d61c-7386-aefa-a5bbced4b2f0
+  fields:
+    name: Snow / Ice
+- model: sta.monitoringsitetype
+  pk: 01a0b67f-d61c-7386-aefa-a5bc0a338533
+  fields:
+    name: Weather / Atmosphere
+- model: sta.monitoringsitetype
+  pk: 01a0b67f-d61c-7386-aefa-a5bdfd24782a
+  fields:
+    name: Soil
+- model: sta.monitoringsitetype
+  pk: 01a0b67f-d61c-7386-aefa-a5be85f62e69
+  fields:
+    name: Stormwater
+- model: sta.monitoringsitetype
+  pk: 01a0b67f-d61c-7386-aefa-a5bf56a763e8
+  fields:
+    name: Gaging Station
+- model: sta.monitoringsitetype
+  pk: 01a0b67f-d61c-7386-aefa-a5c0939a0bbf
+  fields:
+    name: Water Quality Station
+- model: sta.monitoringsitetype
+  pk: 01a0b67f-d61c-7386-aefa-a5c17a58744c
+  fields:
+    name: Discrete Sample
+- model: sta.monitoringsitetype
+  pk: 01a0b67f-d61c-7386-aefa-a5c20238a58f
+  fields:
+    name: Modeled / Calculated
+- model: sta.monitoringsitetype
+  pk: 01a0b67f-d61c-7386-aefa-a5c3182dfb4d
+  fields:
+    name: House
+- model: sta.monitoringsitetype
+  pk: 01a0b67f-d61c-7386-aefa-a5c46304f8ed
+  fields:
+    name: Land
+- model: sta.monitoringsitetype
+  pk: 01a0b67f-d61c-7386-aefa-a5c58e7f6d9b
+  fields:
+    name: Pavement

@@ -5,12 +5,27 @@
 .pytest_cache
 __pycache__/
 db.sqlite3
-/static/
-!*/static/
+/static/*
+!/static/css/
+/static/css/*
+!/static/css/auth.css
+!/static/js/
+/static/js/*
+!/static/js/phone-input.js
+!/static/vendor/
+/static/vendor/*
+!/static/vendor/maska/
+!/static/img/
+/static/img/*
+!/static/img/hydroserver-icon-min.png
+!/static/img/icon-color-thick.svg
+!/static/img/hydroserver-auth-topography.png
+!/static/img/archivo-latin-wght-normal.woff2
+!/static/img/favicon-16x16.png
+!/static/img/favicon-32x32.png
+!/static/img/ColoradoSite.svg
 /media/
 staticfiles/
-/static
-!/static/**/
 /web/static/web/*
 *.db
 *test.ipynb
@@ -21,6 +36,7 @@ coverage.txt
 photos/
 csrf_test.py
 tmp/
+dev_oidc_private_key.pem
 .env
 
 # Elastic Beanstalk Files

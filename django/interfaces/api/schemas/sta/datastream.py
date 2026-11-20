@@ -1,7 +1,10 @@
 import uuid
-from pydantic import AliasPath, AliasChoices
+
+from typing import Optional, Literal, Annotated
+from pydantic import AliasPath, AliasChoices, BeforeValidator, WithJsonSchema, field_validator
+from pydantic.alias_generators import to_camel
 from ninja import Schema, Field, Query
-from typing import Optional, Literal, TYPE_CHECKING
+
 from core.types import ISODatetime
 from interfaces.api.schemas import (
     BaseGetResponse,
@@ -9,37 +12,40 @@ from interfaces.api.schemas import (
     BasePatchBody,
     BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
+    WorkspaceResponse,
+    MonitoringSiteResponse,
+    ObservedPropertyResponse,
+    UnitResponse,
+    MethodResponse,
+    ProcessingLevelResponse,
+    split_comma_separated,
+    comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
+    QueryBool,
 )
-from interfaces.api.schemas.sta.attachment import TagGetResponse, TagPostBody, FileAttachmentGetResponse
+from interfaces.api.schemas.sta.linked_resource import LinkedResourceGetResponse
+from interfaces.api.schemas.sta.tags import reject_empty_tag_keys_and_values
+from interfaces.api.schemas.sta.vocabulary import VocabularyResponse
+from core.sta.models import SampledMedium, AggregationStatistic, DatastreamStatus
+from interfaces.api.schemas.base import ItemId, NewItemId
 
-if TYPE_CHECKING:
-    from interfaces.api.schemas import WorkspaceSummaryResponse
-    from interfaces.api.schemas import (
-        ThingSummaryResponse,
-        ObservedPropertySummaryResponse,
-        UnitSummaryResponse,
-        SensorSummaryResponse,
-        ProcessingLevelSummaryResponse,
-    )
+
+DatastreamType = Literal["timeSeriesCoverage"]
 
 
 class DatastreamFields(Schema):
     name: str = Field(..., max_length=255)
     description: str
-    observation_type: str = Field(..., max_length=255)
+    type: DatastreamType = "timeSeriesCoverage"
     sampled_medium: str = Field(..., max_length=255)
     no_data_value: float
     aggregation_statistic: str = Field(..., max_length=255)
     time_aggregation_interval: float
     status: Optional[str] = Field(None, max_length=255)
-    result_type: str = Field(..., max_length=255)
-    value_count: Optional[int] = Field(None, ge=0)
-    phenomenon_begin_time: Optional[ISODatetime] = None
-    phenomenon_end_time: Optional[ISODatetime] = None
-    result_begin_time: Optional[ISODatetime] = None
-    result_end_time: Optional[ISODatetime] = None
     is_private: bool = False
-    is_visible: bool = True
+    is_restricted: bool = False
     time_aggregation_interval_unit: Literal["seconds", "minutes", "hours", "days"]
     intended_time_spacing: Optional[float] = None
     intended_time_spacing_unit: Optional[
@@ -47,156 +53,233 @@ class DatastreamFields(Schema):
     ] = None
 
 
+class DatastreamStatisticsFields(Schema):
+    """Observation statistics the server maintains; returned in responses but never writable."""
+
+    value_count: Optional[int] = Field(None, ge=0)
+    phenomenon_begin_time: Optional[ISODatetime] = None
+    phenomenon_end_time: Optional[ISODatetime] = None
+    result_begin_time: Optional[ISODatetime] = None
+    result_end_time: Optional[ISODatetime] = None
+
+
 class DatastreamRelatedFields(Schema):
-    thing_id: uuid.UUID
-    sensor_id: uuid.UUID
+    monitoring_site_id: uuid.UUID
+    method_id: uuid.UUID
     observed_property_id: uuid.UUID
     processing_level_id: uuid.UUID
     unit_id: uuid.UUID
 
 
-_order_by_fields = (
+DATASTREAM_INCLUDE_RELATIONS = {
+    "workspace": {
+        "path": "monitoring_site__workspace",
+        "bucket": "workspaces",
+        "response_schema": WorkspaceResponse,
+    },
+    "monitoringSite": {
+        "path": "monitoring_site",
+        "bucket": "monitoringSites",
+        "response_schema": MonitoringSiteResponse,
+    },
+    "method": {
+        "path": "method",
+        "bucket": "methods",
+        "response_schema": MethodResponse,
+    },
+    "observedProperty": {
+        "path": "observed_property",
+        "bucket": "observedProperties",
+        "response_schema": ObservedPropertyResponse,
+    },
+    "processingLevel": {
+        "path": "processing_level",
+        "bucket": "processingLevels",
+        "response_schema": ProcessingLevelResponse,
+    },
+    "unit": {
+        "path": "unit",
+        "bucket": "units",
+        "response_schema": UnitResponse,
+    },
+    "sampledMedium": {
+        "bucket": "sampledMediums",
+        "response_schema": VocabularyResponse,
+        "vocabulary_model": SampledMedium,
+        "value_field": "sampled_medium",
+    },
+    "aggregationStatistic": {
+        "bucket": "aggregationStatistics",
+        "response_schema": VocabularyResponse,
+        "vocabulary_model": AggregationStatistic,
+        "value_field": "aggregation_statistic",
+    },
+    "status": {
+        "bucket": "datastreamStatuses",
+        "response_schema": VocabularyResponse,
+        "vocabulary_model": DatastreamStatus,
+        "value_field": "status",
+    },
+}
+DatastreamIncludeRelation = Literal[*DATASTREAM_INCLUDE_RELATIONS.keys()]
+
+_sortby_fields = (
     "name",
-    "observationType",
+    "type",
     "sampledMedium",
     "status",
-    "resultType",
     "isPrivate",
+    "isRestricted",
+    "aggregationStatistic",
     "valueCount",
     "phenomenonBeginTime",
     "phenomenonEndTime",
     "resultBeginTime",
     "resultEndTime",
 )
-
-DatastreamOrderByFields = Literal[
-    *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
+DatastreamSortByFields = Literal[
+    *_sortby_fields, *[f"-{f}" for f in _sortby_fields]
 ]
 
+_property_fields = (
+    "id",
+    "workspaceId",
+    *(to_camel(name) for name in DatastreamFields.model_fields),
+    *(to_camel(name) for name in DatastreamStatisticsFields.model_fields),
+    *(to_camel(name) for name in DatastreamRelatedFields.model_fields),
+    "tags",
+    "linkedResources",
+)
+DatastreamPropertyName = Literal[*_property_fields]
 
-class DatastreamQueryParameters(CollectionQueryParameters):
-    expand_related: Optional[bool] = None
-    order_by: Optional[list[DatastreamOrderByFields]] = Query(
-        [], description="Select one or more fields to order the response by."
+
+class DatastreamFilterFields(Schema):
+    properties: Annotated[
+        Optional[list[DatastreamPropertyName]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(DatastreamPropertyName)),
+    ] = Query(
+        None,
+        description="Comma-separated list of properties to include in the response. "
+        "All properties are returned if omitted.",
     )
-    thing__workspace_id: list[uuid.UUID] = Query(
-        [], description="Filter datastreams by workspace ID.", alias="workspace_id"
+    include: Annotated[
+        Optional[list[DatastreamIncludeRelation]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(DatastreamIncludeRelation)),
+    ] = Query(
+        None,
+        description="Comma-separated list of related resources to include in the response.",
     )
-    thing_id: list[uuid.UUID] = Query([], description="Filter datastreams by thing ID.")
-    sensor_id: list[uuid.UUID] = Query(
-        [], description="Filter datastreams by sensor ID."
+
+
+class DatastreamItemQueryParameters(DatastreamFilterFields, BaseQueryParameters):
+    pass
+
+
+class DatastreamQueryParameters(DatastreamFilterFields, CollectionQueryParameters, ExtentQueryParameters):
+    sortby: Annotated[
+        Optional[list[DatastreamSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(DatastreamSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
+    q: Optional[str] = Query(
+        None,
+        description="Full-text search query. Comma-separated terms are combined with OR; "
+        "whitespace-separated words within a term are combined with AND.",
+    )
+    monitoring_site__workspace_id: list[uuid.UUID] = Query(
+        [], description="Datastreams in this workspace. Matches `id` in `workspaces`.", alias="workspaceId"
+    )
+    monitoring_site_id: list[uuid.UUID] = Query(
+        [],
+        description="Datastreams at this monitoring site. Matches `id` in `monitoring-sites`.",
+    )
+    method_id: list[uuid.UUID] = Query(
+        [], description="Datastreams produced by this method. Matches `id` in `methods`."
     )
     observed_property_id: list[uuid.UUID] = Query(
-        [], description="Filter datastreams by observed property ID."
+        [],
+        description="Datastreams that observe this observed property. Matches `id` in `observed-properties`.",
     )
     processing_level_id: list[uuid.UUID] = Query(
-        [], description="Filter datastreams by processing level ID."
+        [], description="Datastreams at this processing level. Matches `id` in `processing-levels`."
     )
-    unit_id: list[uuid.UUID] = Query([], description="Filter datastreams by unit ID.")
+    unit_id: list[uuid.UUID] = Query([], description="Datastreams in this unit. Matches `id` in `units`.")
     observations__result_qualifier_id: list[uuid.UUID] = Query(
         [],
-        description="Filter datastreams by observation result qualifier ID.",
-        alias="result_qualifier_id",
+        description="Not supported yet. Any value returns no datastreams.",
+        alias="resultQualifier",
     )
-    observation_type: list[str] = Query(
-        [], description="Filter things by observation type."
-    )
+    type: list[DatastreamType] = Query([], description="Datastreams of this type.")
     sampled_medium: list[str] = Query(
-        [], description="Filter things by sampled medium."
+        [], description="Datastreams with this sampled medium. Matches `name` in `sampled-mediums`."
     )
-    status: list[str] = Query([], description="Filter things by status.")
-    result_type: list[str] = Query([], description="Filter things by result type.")
+    status: list[str | Literal["null"]] = Query(
+        [],
+        description="Datastreams with this status. Matches `name` in `datastream-statuses`. `null` matches "
+        "datastreams without a status.",
+    )
     tag: list[str] = Query(
-        [], description="Filter datastreams by tag. Format tag filters as {key}:{value}"
+        [],
+        description="Datastreams with this tag, as `{key}:{value}`. Repeat the parameter to require several "
+        "tags.",
     )
-    is_private: Optional[bool] = Query(
+    is_private: Optional[QueryBool] = Query(
         None,
-        description="Controls whether the datastreams should be private or public.",
+        description="`false` returns only datastreams that are public at every level: the datastream, its "
+        "monitoring site, and its workspace. `true` returns only datastreams that are private at "
+        "every level.",
     )
     value_count__lte: Optional[int] = Query(
         None,
-        description="Sets the maximum value count of filtered datastreams.",
-        alias="value_count_max",
+        description="Datastreams with at most this many observations.",
+        alias="maxValueCount",
     )
     value_count__gte: Optional[int] = Query(
         None,
-        description="Sets the minimum value count of filtered datastreams.",
-        alias="value_count_min",
-    )
-    phenomenon_begin_time__lte: Optional[ISODatetime] = Query(
-        None,
-        description="Sets the maximum phenomenon begin time of filtered datastreams.",
-        alias="phenomenon_begin_time_max",
-    )
-    phenomenon_begin_time__gte: Optional[ISODatetime] = Query(
-        None,
-        description="Sets the minimum phenomenon begin time of filtered datastreams.",
-        alias="phenomenon_begin_time_min",
-    )
-    phenomenon_end_time__lte: Optional[ISODatetime] = Query(
-        None,
-        description="Sets the maximum phenomenon end time of filtered datastreams.",
-        alias="phenomenon_end_time_max",
-    )
-    phenomenon_end_time__gte: Optional[ISODatetime] = Query(
-        None,
-        description="Sets the minimum phenomenon end time of filtered datastreams.",
-        alias="phenomenon_end_time_min",
-    )
-    result_begin_time__lte: Optional[ISODatetime] = Query(
-        None,
-        description="Sets the maximum result begin time of filtered datastreams.",
-        alias="result_begin_time_max",
-    )
-    result_begin_time__gte: Optional[ISODatetime] = Query(
-        None,
-        description="Sets the minimum result begin time of filtered datastreams.",
-        alias="result_begin_time_min",
-    )
-    result_end_time__lte: Optional[ISODatetime] = Query(
-        None,
-        description="Sets the maximum result end time of filtered datastreams.",
-        alias="result_end_time_max",
-    )
-    result_end_time__gte: Optional[ISODatetime] = Query(
-        None,
-        description="Sets the minimum result end time of filtered datastreams.",
-        alias="result_end_time_min",
+        description="Datastreams with at least this many observations.",
+        alias="minValueCount",
     )
 
 
 class DatastreamVisualizationBootstrapQueryParameters(BaseQueryParameters):
-    thing__workspace_id: list[uuid.UUID] = Query(
-        [], description="Filter visualization bootstrap datastreams by workspace ID.", alias="workspace_id"
+    monitoring_site__workspace_id: list[uuid.UUID] = Query(
+        [], description="Datastreams in this workspace. Matches `id` in `workspaces`.", alias="workspaceId"
     )
 
 
-class VisualizationThingResponse(BaseGetResponse):
-    id: uuid.UUID
+class VisualizationMonitoringSiteResponse(BaseGetResponse, ItemId):
     workspace_id: uuid.UUID
     name: str = Field(..., max_length=200)
-    sampling_feature_code: str = Field(..., max_length=200)
+    code: str = Field(..., max_length=200)
 
 
-class VisualizationObservedPropertyResponse(BaseGetResponse):
-    id: uuid.UUID
+class VisualizationObservedPropertyResponse(BaseGetResponse, ItemId):
     name: str = Field(..., max_length=255)
-    code: str = Field(..., max_length=255)
+    code: Optional[str] = Field(None, max_length=255)
 
 
-class VisualizationProcessingLevelResponse(BaseGetResponse):
-    id: uuid.UUID
-    definition: Optional[str] = None
-
-
-class VisualizationDatastreamResponse(BaseGetResponse):
-    id: uuid.UUID
+class VisualizationProcessingLevelResponse(BaseGetResponse, ItemId):
     name: str = Field(..., max_length=255)
-    thing_id: uuid.UUID
+
+
+class VisualizationDatastreamResponse(BaseGetResponse, ItemId):
+    name: str = Field(..., max_length=255)
+    monitoring_site_id: uuid.UUID
+    method_id: uuid.UUID
+    method_name: str = Field(..., max_length=255)
     observed_property_id: uuid.UUID
     processing_level_id: uuid.UUID
     unit_id: uuid.UUID
+    unit_name: str = Field(..., max_length=255)
+    unit_symbol: str = Field(..., max_length=255)
     no_data_value: float
+    aggregation_statistic: str = Field(..., max_length=255)
+    time_aggregation_interval: float
+    time_aggregation_interval_unit: Literal[
+        "seconds", "minutes", "hours", "days"
+    ]
     value_count: Optional[int] = Field(None, ge=0)
     phenomenon_begin_time: Optional[ISODatetime] = None
     phenomenon_end_time: Optional[ISODatetime] = None
@@ -207,45 +290,33 @@ class VisualizationDatastreamResponse(BaseGetResponse):
 
 
 class DatastreamVisualizationBootstrapResponse(BaseGetResponse):
-    things: list[VisualizationThingResponse]
+    monitoring_sites: list[VisualizationMonitoringSiteResponse]
     datastreams: list[VisualizationDatastreamResponse]
     observed_properties: list[VisualizationObservedPropertyResponse]
     processing_levels: list[VisualizationProcessingLevelResponse]
 
 
-class DatastreamSummaryResponse(
-    BaseGetResponse, DatastreamFields, DatastreamRelatedFields
+class DatastreamProperties(
+    BaseGetResponse, DatastreamFields, DatastreamStatisticsFields, DatastreamRelatedFields
 ):
-    id: uuid.UUID
     workspace_id: uuid.UUID = Field(
-        ..., validation_alias=AliasChoices("workspaceId", AliasPath("thing", "workspace_id"))
+        ..., validation_alias=AliasChoices("workspaceId", AliasPath("monitoring_site", "workspace_id"))
     )
-    datastream_tags: list[TagGetResponse] = Field(..., alias="tags")
-    datastream_file_attachments: list[FileAttachmentGetResponse] = Field(
-        ..., alias="fileAttachments"
-    )
+    tags: dict[str, str] = {}
+    datastream_linked_resources: list[LinkedResourceGetResponse] = Field(..., alias="linkedResources")
 
 
-class DatastreamDetailResponse(BaseGetResponse, DatastreamFields):
-    id: uuid.UUID
-    workspace: "WorkspaceSummaryResponse" = Field(
-        ..., validation_alias=AliasPath("thing", "workspace")
-    )
-    thing: "ThingSummaryResponse"
-    sensor: "SensorSummaryResponse"
-    observed_property: "ObservedPropertySummaryResponse"
-    processing_level: "ProcessingLevelSummaryResponse"
-    unit: "UnitSummaryResponse"
-    datastream_tags: list[TagGetResponse] = Field(..., alias="tags")
-    datastream_file_attachments: list[FileAttachmentGetResponse] = Field(
-        ..., alias="fileAttachments"
-    )
+class DatastreamResponse(DatastreamProperties, ItemId):
+    pass
 
 
-class DatastreamPostBody(BasePostBody, DatastreamFields, DatastreamRelatedFields):
-    id: Optional[uuid.UUID] = None
-    tags: list[TagPostBody] = []
+class DatastreamPostBody(BasePostBody, DatastreamFields, DatastreamRelatedFields, NewItemId):
+    tags: dict[str, str] = {}
+
+    _validate_tags = field_validator("tags", mode="after")(reject_empty_tag_keys_and_values)
 
 
 class DatastreamPatchBody(BasePatchBody, DatastreamFields, DatastreamRelatedFields):
-    pass
+    tags: dict[str, str | None] = {}
+
+    _validate_tags = field_validator("tags", mode="after")(reject_empty_tag_keys_and_values)

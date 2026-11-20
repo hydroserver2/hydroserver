@@ -534,7 +534,7 @@ describe('StartEditingFlow', () => {
       source,
       processingLevelId: 'pl',
       description: 'Cleaned series',
-      sensorId: 'sn-1',
+      methodId: 'sn-1',
     })
     await flushPromises()
 

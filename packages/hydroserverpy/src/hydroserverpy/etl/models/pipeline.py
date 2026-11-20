@@ -182,6 +182,11 @@ class ETLPipeline(BaseModel):
         If raise_on_error is True, the first exception raised by any stage
         will be propagated to the caller. If raise_on_error is False, the
         ETLContext will be marked as failed and returned.
+
+        Resulting status: FAILED if any stage raised, including the loader's
+        up-front check that every target exists; INCOMPLETE if at least one
+        target failed while uploading; otherwise SUCCESS, even if every target
+        was skipped because it had no new observations.
         """
 
         context = ETLContext()

@@ -37,6 +37,12 @@ docker compose up
 
 Upon successful completion, HydroServer will be available locally at localhost:8000.
 
+To create an admin account, run:
+
+```bash
+docker compose exec hydroserver python manage.py createsuperuser
+```
+
 To stop the service, run:
 
 ```bash

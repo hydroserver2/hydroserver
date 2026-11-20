@@ -41,13 +41,12 @@
   fields:
     name: QC Managed Datastream
     description: Managed datastream for QC history H1
-    thing: 819260c8-2543-4046-b8c4-7431243ed7c5
-    sensor: b2cc0c86-c131-4721-8080-9f5f722224ec
+    monitoring_site: 819260c8-2543-4046-b8c4-7431243ed7c5
+    method: b2cc0c86-c131-4721-8080-9f5f722224ec
     observed_property: 6a1bcf8e-2112-4cd0-80f3-1399f72364ca
     processing_level: fa3c97ce-41b8-4c12-b91a-9127ce0c083a
     unit: 3264c5f7-ccad-4e5b-b7a0-faf175be4750
-    observation_type: Field Observation
-    result_type: Time Series
+    type: timeSeriesCoverage
     status: Ongoing
     sampled_medium: Surface Water
     value_count: 6
@@ -60,7 +59,7 @@
     phenomenon_begin_time: 2025-01-01 01:00:00.000 -0700
     phenomenon_end_time: 2025-01-01 06:00:00.000 -0700
     is_private: True
-    is_visible: True
+    is_restricted: False
 
 # Managed datastream with no existing QC history (used for create() tests)
 - model: sta.datastream
@@ -68,13 +67,12 @@
   fields:
     name: QC Managed Datastream (No History)
     description: Managed datastream with no QC history, for create() tests
-    thing: 819260c8-2543-4046-b8c4-7431243ed7c5
-    sensor: b2cc0c86-c131-4721-8080-9f5f722224ec
+    monitoring_site: 819260c8-2543-4046-b8c4-7431243ed7c5
+    method: b2cc0c86-c131-4721-8080-9f5f722224ec
     observed_property: 6a1bcf8e-2112-4cd0-80f3-1399f72364ca
     processing_level: fa3c97ce-41b8-4c12-b91a-9127ce0c083a
     unit: 3264c5f7-ccad-4e5b-b7a0-faf175be4750
-    observation_type: Field Observation
-    result_type: Time Series
+    type: timeSeriesCoverage
     status: Ongoing
     sampled_medium: Surface Water
     no_data_value: -9999
@@ -84,7 +82,7 @@
     time_aggregation_interval: 1
     time_aggregation_interval_unit: hours
     is_private: True
-    is_visible: True
+    is_restricted: False
 
 # --- QC Histories ---
 

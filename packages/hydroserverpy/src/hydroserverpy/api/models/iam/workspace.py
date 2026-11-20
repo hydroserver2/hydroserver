@@ -1,7 +1,7 @@
 from typing import List, Union, Optional, ClassVar, TYPE_CHECKING
 from uuid import UUID
 from datetime import datetime
-from pydantic import Field, EmailStr, AliasPath
+from pydantic import Field, EmailStr, AliasPath, AliasChoices
 from ..base import HydroServerBaseModel
 
 if TYPE_CHECKING:
@@ -9,16 +9,14 @@ if TYPE_CHECKING:
     from hydroserverpy.api.models import (
         Role,
         Collaborator,
-        APIKey,
-        Account,
-        Thing,
+        ServiceAccount,
+        MonitoringSite,
         ObservedProperty,
-        Sensor,
+        Method,
         Unit,
         ProcessingLevel,
         ResultQualifier,
         Datastream,
-        OrchestrationSystem,
         Task,
         DataConnection,
     )
@@ -27,11 +25,11 @@ if TYPE_CHECKING:
 class Workspace(HydroServerBaseModel):
     name: str = Field(..., max_length=255)
     is_private: bool
-    owner: "Account"
+    owner_email: EmailStr
     collaborator_role_id: Optional[Union[UUID, str]] = Field(
-        None, validation_alias=AliasPath("collaboratorRole", "id")
+        None, validation_alias=AliasChoices("collaboratorRoleId", AliasPath("collaboratorRole", "id"))
     )
-    pending_transfer_to: Optional["Account"] = None
+    pending_transfer_to_email: Optional[EmailStr] = None
 
     _editable_fields: ClassVar[set[str]] = {"name", "is_private"}
 
@@ -41,28 +39,27 @@ class Workspace(HydroServerBaseModel):
         self._roles = None
         self._collaborators = None
         self._collaborator_role = None
-        self._apikeys = None
-        self._things = None
+        self._serviceaccounts = None
+        self._monitoring_sites = None
         self._observedproperties = None
         self._processinglevels = None
         self._resultqualifiers = None
         self._units = None
-        self._sensors = None
+        self._methods = None
         self._datastreams = None
-        self._orchestrationsystems = None
         self._dataconnections = None
         self._tasks = None
 
     @classmethod
     def get_route(cls):
-        return "workspaces"
+        return "collections/workspaces/items"
 
     @property
     def roles(self) -> List["Role"]:
-        """The roles that can be assigned for this workspace."""
+        """The roles that can be assigned for this workspace, including system roles."""
 
         if self._roles is None:
-            self._roles = self.client.roles.list(workspace=self.uid, fetch_all=True).items
+            self._roles = self.client.roles.list(workspace=[self.uid, None], fetch_all=True).items
 
         return self._roles
 
@@ -85,22 +82,22 @@ class Workspace(HydroServerBaseModel):
         return self._collaborator_role
 
     @property
-    def apikeys(self) -> List["APIKey"]:
-        """The API keys associated with this workspace."""
+    def serviceaccounts(self) -> List["ServiceAccount"]:
+        """The service accounts associated with this workspace."""
 
-        if self._apikeys is None:
-            self._apikeys = self.client.workspaces.list_api_keys(uid=self.uid)
+        if self._serviceaccounts is None:
+            self._serviceaccounts = self.client.workspaces.list_service_accounts(uid=self.uid)
 
-        return self._apikeys
+        return self._serviceaccounts
 
     @property
-    def things(self) -> List["Thing"]:
-        """The things associated with this workspace."""
+    def monitoring_sites(self) -> List["MonitoringSite"]:
+        """The monitoring_sites associated with this workspace."""
 
-        if self._things is None:
-            self._things = self.client.things.list(workspace=self.uid, fetch_all=True).items
+        if self._monitoring_sites is None:
+            self._monitoring_sites = self.client.monitoring_sites.list(workspace=self.uid, fetch_all=True).items
 
-        return self._things
+        return self._monitoring_sites
 
     @property
     def observedproperties(self) -> List["ObservedProperty"]:
@@ -139,13 +136,13 @@ class Workspace(HydroServerBaseModel):
         return self._units
 
     @property
-    def sensors(self) -> List["Sensor"]:
-        """The sensors associated with this workspace."""
+    def methods(self) -> List["Method"]:
+        """The methods associated with this workspace."""
 
-        if self._sensors is None:
-            self._sensors = self.client.sensors.list(workspace=self.uid, fetch_all=True).items
+        if self._methods is None:
+            self._methods = self.client.methods.list(workspace=self.uid, fetch_all=True).items
 
-        return self._sensors
+        return self._methods
 
     @property
     def datastreams(self) -> List["Datastream"]:
@@ -155,15 +152,6 @@ class Workspace(HydroServerBaseModel):
             self._datastreams = self.client.datastreams.list(workspace=self.uid, fetch_all=True).items
 
         return self._datastreams
-
-    @property
-    def orchestrationsystems(self) -> List["OrchestrationSystem"]:
-        """The orchestration systems associated with this workspace."""
-
-        if self._orchestrationsystems is None:
-            self._orchestrationsystems = self.client.orchestrationsystems.list(workspace=self.uid, fetch_all=True).items
-
-        return self._orchestrationsystems
 
     @property
     def dataconnections(self) -> List["DataConnection"]:
@@ -183,75 +171,73 @@ class Workspace(HydroServerBaseModel):
 
         return self._tasks
 
-    def create_api_key(
+    def create_service_account(
         self,
-        role: Union["Role", UUID, str],
         name: str,
         description: Optional[str] = None,
         is_active: bool = True,
-        expires_at: Optional[datetime] = None
+        key_expires_at: Optional[datetime] = None,
+        role: Optional[Union["Role", UUID, str]] = None,
     ):
-        """Create an API key associated with this workspace."""
+        """Create a service account associated with this workspace."""
 
-        response, key = self.client.workspaces.create_api_key(
+        response, key = self.client.workspaces.create_service_account(
             uid=self.uid,
-            role=role,
             name=name,
             description=description,
             is_active=is_active,
-            expires_at=expires_at
+            key_expires_at=key_expires_at,
+            role=role,
         )
-        self._apikeys = None
+        self._serviceaccounts = None
 
         return response, key
 
-    def update_api_key(
+    def update_service_account(
         self,
-        api_key_id: Union[UUID, str],
-        role: Union["Role", UUID, str] = ...,
+        service_account_id: Union[UUID, str],
         name: str = ...,
         description: Optional[str] = ...,
         is_active: bool = ...,
-        expires_at: Optional[datetime] = ...
+        key_expires_at: Optional[datetime] = ...,
     ):
-        """Create an API key associated with this workspace."""
+        """Update a service account associated with this workspace."""
 
-        response = self.client.workspaces.update_api_key(
+        response = self.client.workspaces.update_service_account(
             uid=self.uid,
-            api_key_id=api_key_id,
-            role=role,
+            service_account_id=service_account_id,
             name=name,
             description=description,
             is_active=is_active,
-            expires_at=expires_at
+            key_expires_at=key_expires_at,
         )
-        self._apikeys = None
+        self._serviceaccounts = None
 
         return response
 
-    def delete_api_key(self, api_key_id: Union[UUID, str]):
-        """Delete an API key associated with this workspace."""
+    def delete_service_account(self, service_account_id: Union[UUID, str]):
+        """Delete a service account associated with this workspace."""
 
-        self.client.workspaces.delete_api_key(
+        self.client.workspaces.delete_service_account(
             uid=self.uid,
-            api_key_id=api_key_id
+            service_account_id=service_account_id
         )
-        self._apikeys = None
+        self._serviceaccounts = None
 
-    def regenerate_api_key(self, api_key_id: Union[UUID, str]):
-        """Regenerate an API key associated with this workspace."""
+    def regenerate_service_account_key(self, service_account_id: Union[UUID, str]):
+        """Regenerate a service account's key associated with this workspace."""
 
-        api_key, key = self.client.workspaces.regenerate_api_key(
+        service_account, key = self.client.workspaces.regenerate_service_account_key(
             uid=self.uid,
-            api_key_id=api_key_id
+            service_account_id=service_account_id
         )
 
-        return api_key, key
+        return service_account, key
 
     def add_collaborator(
-        self, email: EmailStr, role: Union["Role", UUID, str]
+        self, email: Union[EmailStr, "ServiceAccount"], role: Union["Role", UUID, str]
     ) -> "Collaborator":
-        """Add a new collaborator to the workspace."""
+        """Add a new collaborator (a user or a service account) to the workspace."""
 
         response = self.client.workspaces.add_collaborator(
             uid=self.uid, email=email, role=role
@@ -261,7 +247,7 @@ class Workspace(HydroServerBaseModel):
         return response
 
     def edit_collaborator_role(
-        self, email: EmailStr, role: Union["Role", UUID, str]
+        self, email: Union[EmailStr, "ServiceAccount"], role: Union["Role", UUID, str]
     ) -> "Collaborator":
         """Edit a collaborator's role in this workspace."""
 
@@ -272,7 +258,7 @@ class Workspace(HydroServerBaseModel):
 
         return response
 
-    def remove_collaborator(self, email: EmailStr) -> None:
+    def remove_collaborator(self, email: Union[EmailStr, "ServiceAccount"]) -> None:
         """Remove a collaborator from the workspace."""
 
         self.client.workspaces.remove_collaborator(uid=self.uid, email=email)

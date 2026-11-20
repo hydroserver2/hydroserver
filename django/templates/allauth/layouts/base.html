@@ -1,0 +1,23 @@
+{% load static i18n account_navigation %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block head_title %}{% endblock %} - HydroServer</title>
+    <link rel="stylesheet" href="{% static 'design-system/html.css' %}">
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'img/favicon-32x32.png' %}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'img/favicon-16x16.png' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="auth-page">
+    <div class="auth-shell">
+        <main class="auth-main">
+            {% block content_outer %}{% block content %}{% endblock %}{% endblock %}
+        </main>
+    </div>
+    {% block extra_body %}{% endblock %}
+</body>
+</html>

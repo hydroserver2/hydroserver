@@ -1,6 +1,6 @@
 <template>
   <template v-if="showLoading">
-    <div class="run-loading">
+    <div class="run-loading hs-text-sm">
       <v-progress-circular
         indeterminate
         size="20"
@@ -26,21 +26,26 @@
               class="run-entry-status"
             />
           </div>
-          <div class="run-entry-summary" :title="run.message">
+          <div
+            class="run-entry-summary hs-text-sm font-weight-medium"
+            :title="run.message"
+          >
             {{ run.message }}
           </div>
-          <div class="run-entry-runid-right">Run {{ shortId(run.id) }}</div>
+          <div class="run-entry-runid-right hs-text-sm font-weight-bold">
+            Run {{ shortId(run.id) }}
+          </div>
         </div>
 
         <div class="run-entry-meta">
           <div class="run-entry-meta-row">
-            <div class="run-entry-times-inline">
+            <div class="run-entry-times-inline hs-text-sm">
               <span class="run-entry-time">
-                <span class="run-entry-meta-label">Started</span>
+                <span class="run-entry-meta-label hs-label">Started</span>
                 {{ run.startedAt }}
               </span>
             </div>
-            <div class="run-entry-duration">
+            <div class="run-entry-duration hs-text-sm font-weight-bold">
               {{ runDurationText(run.raw) }}
             </div>
           </div>
@@ -52,7 +57,9 @@
         >
           <div class="run-entry-footer-content">
             <div v-if="run.runtimeUrl" class="run-entry-detail-row">
-              <div class="run-entry-detail-label">Runtime source URI</div>
+              <div class="run-entry-detail-label hs-text-sm font-weight-bold">
+                Runtime source URI
+              </div>
               <div class="run-entry-detail-value">
                 <div class="run-entry-detail-linkwrap">
                   <a
@@ -86,7 +93,9 @@
               v-if="run.violations.length"
               class="run-entry-detail-row run-entry-violations-row"
             >
-              <div class="run-entry-detail-label">Rule violations</div>
+              <div class="run-entry-detail-label hs-text-sm font-weight-bold">
+                Rule violations
+              </div>
               <div class="run-entry-detail-value">
                 <div class="run-entry-violations">
                   <div
@@ -94,13 +103,19 @@
                     :key="violation.key"
                     class="run-entry-violation"
                   >
-                    <div class="run-entry-violation-title">
+                    <div
+                      class="run-entry-violation-title hs-text-sm font-weight-bold"
+                    >
                       {{ violation.datastreamName }}
-                      <span class="run-entry-violation-type">
+                      <span
+                        class="run-entry-violation-type hs-text-sm font-weight-bold"
+                      >
                         {{ violation.ruleTypeLabel }}
                       </span>
                     </div>
-                    <div class="run-entry-violation-meta">
+                    <div
+                      class="run-entry-violation-meta hs-text-sm font-weight-semibold"
+                    >
                       {{ violation.violationCount }} violating observation{{
                         violation.violationCount === 1 ? '' : 's'
                       }}
@@ -134,7 +149,7 @@
     </div>
   </template>
 
-  <div v-else class="run-empty">No run history available yet.</div>
+  <small v-else class="run-empty">No run history available yet.</small>
 </template>
 
 <script setup lang="ts">
@@ -214,21 +229,19 @@ const runDurationText = (run?: TaskRun | null) => {
   gap: 12px;
   padding: 24px 0;
   color: #475569;
-  font-size: 13px;
 }
 
 .run-empty {
   padding: 40px 20px;
   text-align: center;
   color: #5f5a67;
-  font-size: 13px;
 }
 
 .run-entry {
   border-radius: 10px;
   overflow: hidden;
-  background: #ffffff;
-  border: 1px solid #ebebeb;
+  background: var(--hs-surface);
+  border: 1px solid var(--hs-border);
 }
 
 .run-entry-top {
@@ -249,8 +262,6 @@ const runDurationText = (run?: TaskRun | null) => {
   flex: 0 0 auto;
   margin-left: auto;
   padding-top: 2px;
-  font-size: 0.75rem;
-  font-weight: 700;
   color: #0e7490;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -265,9 +276,7 @@ const runDurationText = (run?: TaskRun | null) => {
 .run-entry-summary {
   flex: 1 1 auto;
   min-width: 0;
-  font-weight: 500;
   color: #475569;
-  font-size: 0.88rem;
   line-height: 1.35;
   word-break: break-word;
   white-space: normal;
@@ -292,24 +301,19 @@ const runDurationText = (run?: TaskRun | null) => {
   gap: 8px;
   min-width: 0;
   color: #475569;
-  font-size: 0.85rem;
 }
 
 .run-entry-meta-label {
-  font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: #64748b;
   margin-right: 6px;
-  font-size: 0.68rem;
   white-space: nowrap;
 }
 
 .run-entry-duration {
-  font-size: 0.78rem;
-  font-weight: 700;
   color: #334155;
-  background: #ffffff;
+  background: var(--hs-surface);
   border: 1px solid #e2e8f0;
   border-radius: 999px;
   padding: 2px 10px;
@@ -334,8 +338,6 @@ const runDurationText = (run?: TaskRun | null) => {
 }
 
 .run-entry-detail-label {
-  font-size: 0.7rem;
-  font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: #64748b;
@@ -366,31 +368,25 @@ const runDurationText = (run?: TaskRun | null) => {
 }
 
 .run-entry-violation {
-  border: 1px solid #fee2e2;
+  border: 1px solid var(--hs-danger);
   border-radius: 6px;
-  background: #fff7f7;
+  background: var(--hs-danger-bg);
   padding: 8px 10px;
 }
 
 .run-entry-violation-title {
   color: #7f1d1d;
-  font-size: 0.82rem;
-  font-weight: 800;
   line-height: 1.25;
 }
 
 .run-entry-violation-type {
   color: #991b1b;
-  font-size: 0.72rem;
-  font-weight: 700;
   margin-left: 6px;
   text-transform: uppercase;
 }
 
 .run-entry-violation-meta {
   color: #64748b;
-  font-size: 0.78rem;
-  font-weight: 600;
   line-height: 1.35;
   margin-top: 3px;
 }
@@ -410,7 +406,7 @@ const runDurationText = (run?: TaskRun | null) => {
     background: rgba(255, 235, 59, 0.35);
   }
   100% {
-    background: #ffffff;
+    background: var(--hs-surface);
   }
 }
 

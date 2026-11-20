@@ -41,13 +41,15 @@ function singularizeKebab(resource: string): string {
   const last = parts.pop() || ''
   let singular = last
   if (last.endsWith('ies')) singular = last.slice(0, -3) + 'y'
+  // Sibilant plurals ("statuses", "boxes", "churches") add -es, not just -s.
+  else if (/(?:s|x|z|ch|sh)es$/.test(last)) singular = last.slice(0, -2)
   else if (last.endsWith('s') && !last.endsWith('ss'))
     singular = last.slice(0, -1)
   parts.push(singular)
   return parts.join('-')
 }
 
-/** "#/components/schemas/Thing" -> "Data.components['schemas']['Thing']" */
+/** "#/components/schemas/MonitoringSite" -> "Data.components['schemas']['MonitoringSite']" */
 function refName(ref?: string): string | null {
   if (!ref) return null
   const name = ref.split('/').pop()
@@ -87,9 +89,12 @@ function derefRequestBody(spec: OAS, ref: string) {
 
 function findJsonSchemaFromContent(content?: any) {
   if (!content || typeof content !== 'object') return undefined
+  const keys = Object.keys(content)
+  // Prefer plain JSON over other JSON media types, such as application/geo+json alternatives.
   const key =
-    Object.keys(content).find((k) => k.toLowerCase().includes('json')) ??
-    Object.keys(content)[0]
+    keys.find((k) => k.toLowerCase() === 'application/json') ??
+    keys.find((k) => k.toLowerCase().includes('json')) ??
+    keys[0]
   return key ? content[key]?.schema : undefined
 }
 
@@ -217,6 +222,39 @@ function pickAnyOfRef(schema: any, preferRegex: RegExp): string | null {
   return null
 }
 
+/**
+ * If `ref` points at a `PaginatedResponse[X]` envelope schema (the current
+ * list-endpoint response shape: `{data: X[], meta: PaginationMeta}`), return
+ * X's ref instead. Otherwise return `ref` unchanged.
+ */
+function unwrapPaginatedRef(spec: OAS, ref: string | null): string | null {
+  if (!ref) return ref
+  const name = dataRefToSchemaName(ref)
+  const wrapperSchema = name ? spec.components?.schemas?.[name] : null
+  const itemRef = wrapperSchema?.properties?.data?.items?.$ref
+  return itemRef ? refName(itemRef) ?? ref : ref
+}
+
+/**
+ * anyOf[ {$ref: PaginatedResponse<Summary>}, {$ref: PaginatedResponse<Detail>} ]
+ * union — the current list-endpoint response shape (Django Ninja "fields"
+ * expansion wraps each variant in the pagination envelope). Unwrap each
+ * variant's ref one level (via unwrapPaginatedRef) before matching.
+ */
+function pickAnyOfPaginatedItemRef(
+  spec: OAS,
+  schema: any,
+  preferRegex: RegExp
+): string | null {
+  if (!Array.isArray(schema?.anyOf)) return null
+  for (const variant of schema.anyOf) {
+    if (!variant?.$ref) continue
+    const rn = unwrapPaginatedRef(spec, refName(variant.$ref))
+    if (rn && preferRegex.test(dataRefToSchemaName(rn))) return rn
+  }
+  return null
+}
+
 /* ----------------------- writable keys ------------------------- */
 
 function gatherObjectProps(
@@ -287,7 +325,7 @@ function analyzeResource(
     colGet?.type === 'array' && colGet.items?.$ref
       ? refName(colGet.items.$ref)
       : colGetSchema?.$ref
-      ? refName(colGetSchema.$ref)
+      ? unwrapPaginatedRef(spec, refName(colGetSchema.$ref))
       : null
 
   const detailByResponse = itemGetSchema?.$ref
@@ -303,8 +341,13 @@ function analyzeResource(
       summaryRef = refName(colGet.items.$ref)
     }
     if (!summaryRef) {
-      // anyOf[ array<Summary>, array<Detail> ] union (Django-Ninja fields expansion)
+      // anyOf[ array<Summary>, array<Detail> ] union (older Django-Ninja fields expansion)
       summaryRef = pickAnyOfArrayRef(colGetSchema, /Summary(Response)?$/i)
+    }
+    if (!summaryRef) {
+      // anyOf[ PaginatedResponse<Summary>, PaginatedResponse<Detail> ] union
+      // (current list-endpoint response shape)
+      summaryRef = pickAnyOfPaginatedItemRef(spec, colGetSchema, /Summary(Response)?$/i)
     }
     if (!summaryRef) {
       const refs: string[] = []

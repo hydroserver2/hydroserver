@@ -24,6 +24,7 @@ const {
   hasSessionOperations,
   push,
   assign,
+  logout,
   showView,
 } = vi.hoisted(() => {
   const { ref: r, computed: c } = require('vue') as typeof import('vue')
@@ -51,6 +52,7 @@ const {
     hasSessionOperations: r(false),
     push: vi.fn(async () => {}),
     assign: vi.fn(),
+    logout: vi.fn(),
     showView: vi.fn((view: string) => {
       currentView.value = view
       selectedDrawer.value = view
@@ -110,7 +112,7 @@ vi.mock('@/store/hydroserver', async () => {
   const { ref } = await import('vue')
   return {
     useHydroServer: defineStore('hydroserver', () => ({
-      hs: ref({ session: { logout: vi.fn() } }),
+      hs: ref({ session: { logout } }),
     })),
   }
 })
@@ -262,7 +264,8 @@ describe('NavigationRail leaving the editor', () => {
 
     expect(resumeDatastreamId.value).toBeNull()
     expect(qcDatastreamId.value).toBeNull()
-    expect(assign).toHaveBeenCalledWith('/login')
+    // Logging out redirects; the session ends before it does.
+    expect(logout).toHaveBeenCalledWith('/browse')
     wrapper.unmount()
   })
 

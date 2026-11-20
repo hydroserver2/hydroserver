@@ -5,16 +5,14 @@ import { useUserStore } from '@/store/user'
 import {
   PermissionResource,
   PermissionAction,
-  Permission,
   Workspace,
 } from '@hydroserver/client'
 
 export function useWorkspacePermissions(
   localWorkspace?: Ref<Workspace | undefined>
 ) {
-  const { selectedWorkspace: globalStoredWorkspace, workspaces } = storeToRefs(
-    useWorkspaceStore()
-  )
+  const { selectedWorkspace: globalStoredWorkspace, workspaces } =
+    storeToRefs(useWorkspaceStore())
   const { user } = storeToRefs(useUserStore())
 
   /** Some pages need to be in the context of a specific workspace that isn't the globally
@@ -37,12 +35,13 @@ export function useWorkspacePermissions(
   }
 
   function isAdmin() {
-    return user.value?.accountType === 'admin'
+    return user.value?.isSuperuser === true
   }
   const getUserRoleName = (workspace: Workspace): string => {
     if (isOwner(workspace)) return 'Owner'
-    if (workspace.collaboratorRole?.name) return workspace.collaboratorRole.name
-    if (isAdmin()) return 'None (Admin)'
+    const roleName = workspace.collaboratorRole?.name
+    if (roleName) return isAdmin() ? `${roleName} (Admin)` : roleName
+    if (isAdmin()) return 'Admin'
     return ''
   }
 
@@ -55,19 +54,20 @@ export function useWorkspacePermissions(
     if (!w) return false
     if (isOwner(w) || isAdmin()) return true
 
+    if (
+      resource === PermissionResource.Workspace &&
+      [PermissionAction.Edit, PermissionAction.Delete].includes(action)
+    ) {
+      return false
+    }
+
     const perms = w.collaboratorRole?.permissions ?? []
-    return (
-      hasGlobalPermissions(perms) ||
-      perms.some((p) => p.action === action && p.resource === resource)
+    return perms.some(
+      (permission) =>
+        [PermissionResource.Global, resource].includes(permission.resource) &&
+        permission.action === action
     )
   }
-
-  const hasGlobalPermissions = (permissions: Permission[]) =>
-    permissions.some(
-      (p) =>
-        p.resource === PermissionResource.Global &&
-        p.action === PermissionAction.Global
-    )
 
   function checkPermissionsByWorkspaceId(
     workspaceId: string,

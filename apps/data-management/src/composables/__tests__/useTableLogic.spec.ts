@@ -108,9 +108,10 @@ describe('useTableLogic', () => {
     await flushPromises()
 
     wrapper.vm.openDialog(unitFixtures[0], 'delete')
-    await wrapper.vm.onDelete()
+    const deleted = await wrapper.vm.onDelete()
     await flushPromises()
 
+    expect(deleted).toBe(true)
     expect(wrapper.vm.items).not.toContainEqual(unitFixtures[0])
     expect(wrapper.vm.openDelete).toBe(false)
   })
@@ -125,8 +126,9 @@ describe('useTableLogic', () => {
     await flushPromises()
 
     wrapper.vm.openDialog(unitFixtures[0], 'delete')
-    await wrapper.vm.onDelete()
+    const deleted = await wrapper.vm.onDelete()
 
+    expect(deleted).toBe(false)
     expect(consoleErrorSpy).toHaveBeenCalled()
     expect(wrapper.vm.openDelete).toBe(true)
     consoleErrorSpy.mockRestore()

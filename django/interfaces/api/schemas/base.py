@@ -1,11 +1,39 @@
 import copy
-from enum import Enum, EnumMeta
-from typing import Optional, Any, Union, Annotated
+import uuid
+
+from typing import Optional, Any, Union, Annotated, Generic, Literal, TypeVar, get_args, get_origin
 from ninja import Schema, Query
-from pydantic import AliasGenerator, AliasChoices, ConfigDict, field_validator
 from pydantic.alias_generators import to_camel
+from pydantic import (
+    AfterValidator,
+    AliasGenerator,
+    AliasChoices,
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    ValidationInfo,
+    field_validator,
+    model_serializer,
+    model_validator,
+    SerializationInfo,
+    WithJsonSchema,
+)
 
 from core.types import Unset
+from interfaces.api.http.content_negotiation import response_required_fields
+from interfaces.api.http.links import (
+    Link,
+    build_alternate_links,
+    build_collection_link,
+    build_page_links,
+    build_self_link,
+    get_request,
+)
+
+MAX_LIMIT = 100000
+NULL_QUERY_VALUE = "null"
+
+T = TypeVar("T")
 
 base_alias_generator = AliasGenerator(
     serialization_alias=lambda field_name: to_camel(field_name),
@@ -13,56 +41,181 @@ base_alias_generator = AliasGenerator(
 )
 
 
-class OrderByMeta(EnumMeta):
-    def __new__(mcs, name, bases, namespace):
-        for key in list(namespace._member_names):  # noqa
-            api_name, orm_field = namespace[key]
-            namespace[f"{key}_desc"] = (f"-{api_name}", f"-{orm_field}")
+def split_comma_separated(value: Any) -> Optional[list[str]]:
+    """
+    Splits a given input into a list of non-empty, comma-separated strings.
 
-        return super().__new__(mcs, name, bases, namespace)
+    If the input is a string or an iterable, this function splits the elements
+    by commas, trims any leading or trailing whitespaces, and filters out
+    empty strings. Returns None if the input is None.
+    """
+
+    if value is None:
+        return None
+
+    parts = [value] if isinstance(value, str) else list(value)
+    result: list[str] = []
+
+    for part in parts:
+        result.extend(p.strip() for p in part.split(",") if p.strip())
+
+    return result
 
 
-class OrderByField(str, Enum, metaclass=OrderByMeta):
-    def __new__(cls, api_name: str, orm_field: str):
-        obj = str.__new__(cls, api_name)
-        obj._value_ = api_name
-        obj.orm_field = orm_field
+def split_sortby(value: Any) -> Optional[list[str]]:
+    """
+    Splits sortby values like split_comma_separated and drops a leading '+', which means
+    ascending, the same as no prefix (OGC API - Features Part 8 Req 5). An unencoded '+' arrives
+    as a space, which the split already trims.
+    """
 
-        return obj
+    fields = split_comma_separated(value)
+
+    if fields is None:
+        return None
+
+    return [
+        field[1:] if field.startswith("+") and field[1:2] not in ("+", "-") else field
+        for field in fields
+    ]
+
+
+def parse_query_bool(value: Any) -> Any:
+    """Accepts only the lowercase strings 'true' and 'false' for a boolean query parameter."""
+
+    if isinstance(value, bool):
+        return value
+
+    if value == "true":
+        return True
+    if value == "false":
+        return False
+
+    raise ValueError("Boolean query parameters must be 'true' or 'false'")
+
+
+def clamp_limit(value: Optional[int]) -> Optional[int]:
+    """Caps a page size at MAX_LIMIT."""
+
+    return value if value is None else min(value, MAX_LIMIT)
+
+
+def accepts_null(annotation: Any) -> bool:
+    """Returns whether a query parameter's type admits the value 'null'."""
+
+    if get_origin(annotation) is Literal:
+        return NULL_QUERY_VALUE in get_args(annotation)
+
+    return any(accepts_null(arg) for arg in get_args(annotation))
+
+
+def comma_array_schema(literal_type: Any) -> dict:
+    """
+    Generates a JSON schema for an array of strings based on a given Python Literal type.
+
+    This function is used to create a schema that defines an array of strings, where each string
+    in the array is restricted to a specific predefined set of values, as determined by the provided
+    Literal type.
+    """
+
+    return {
+        "type": "array",
+        "items": {"type": "string", "enum": list(get_args(literal_type))},
+        "style": "form",
+        "explode": False,
+    }
+
+
+def sortby_array_schema(literal_type: Any) -> dict:
+    """
+    Generates the JSON schema for a comma-separated sortby parameter. The enum lists each field
+    in the given Literal type, which holds 'field' and '-field', plus '+field' for ascending.
+    """
+
+    schema = comma_array_schema(literal_type)
+    fields = schema["items"]["enum"]
+    schema["items"]["enum"] = [
+        *fields,
+        *[f"+{field}" for field in fields if not field.startswith("-")],
+    ]
+
+    return schema
+
+
+QueryBool = Annotated[
+    bool,
+    BeforeValidator(parse_query_bool),
+    WithJsonSchema({"type": "boolean"}),
+]
+
+LimitQuery = Annotated[
+    Optional[int],
+    AfterValidator(clamp_limit),
+    WithJsonSchema({"type": "integer", "minimum": 0, "maximum": MAX_LIMIT}),
+]
+
+
+def properties_query():
+    return Query(
+        None,
+        description="Comma-separated list of properties to include in the response. "
+        "All properties are returned if omitted.",
+    )
+
+
+def offset_query():
+    return Query(0, ge=0, description="Number of items to skip.")
+
+
+def limit_query():
+    return Query(
+        100,
+        ge=0,
+        description=f"The maximum number of items to return. (default: 100, maximum: {MAX_LIMIT})",
+    )
 
 
 class BaseQueryParameters(Schema):
-    model_config = ConfigDict(populate_by_name=True, str_strip_whitespace=True)
+    model_config = ConfigDict(
+        populate_by_name=True, str_strip_whitespace=True, alias_generator=to_camel
+    )
 
     @field_validator("*", mode="after")
-    def convert_null_strings(value: Any) -> Any:  # noqa
-        if isinstance(value, str) and value.lower() == "null":
+    @classmethod
+    def convert_null_values(cls, value: Any, info: ValidationInfo) -> Any:
+        """
+        Converts 'null' to None for parameters whose type declares Literal["null"], where it
+        selects items whose value is null. Matching is case-sensitive, and parameters that
+        don't declare it treat 'null' as an ordinary value.
+        """
+
+        if not accepts_null(cls.model_fields[info.field_name].annotation):
+            return value
+
+        if value == NULL_QUERY_VALUE:
             return None
         if isinstance(value, list):
-            return [
-                None if isinstance(v, str) and v.lower() == "null" else v for v in value
-            ]
+            return [None if v == NULL_QUERY_VALUE else v for v in value]
+
         return value
 
 
 class CollectionQueryParameters(BaseQueryParameters):
-    page: Optional[int] = Query(1, ge=1, description="Page number (1-based).")
-    page_size: Optional[int] = Query(
-        100, ge=0, le=100000, description="The number of items per page."
+    properties: Optional[str] = properties_query()
+    include: Optional[str] = Query(
+        None,
+        description="Comma-separated list of related resources to include in the response.",
     )
+    offset: Optional[int] = offset_query()
+    limit: LimitQuery = limit_query()
 
 
-class VocabularyQueryParameters(CollectionQueryParameters):
-    order_desc: Optional[bool] = Query(
-        False,
-        description="Sort terms by descending.",
-    )
+class PaginatedQueryParameters(BaseQueryParameters):
+    """CollectionQueryParameters without include, for collections whose items have no related resources."""
 
-
-class BaseGetResponse(Schema):
-    model_config = ConfigDict(
-        populate_by_name=True, str_strip_whitespace=True, alias_generator=to_camel
-    )
+    properties: Optional[str] = properties_query()
+    offset: Optional[int] = offset_query()
+    limit: LimitQuery = limit_query()
 
 
 class BasePostBody(Schema):
@@ -90,11 +243,9 @@ class PartialMetaclass(type(Schema)):
         cls, name: str, bases: tuple[type, ...], attrs: dict, **kwargs
     ) -> "PartialMetaclass":
         new_cls = super().__new__(cls, name, bases, attrs, **kwargs)
-        new_cls.model_fields = {
-            k: copy.deepcopy(v) for k, v in new_cls.model_fields.items()
-        }
+        fields = {k: copy.deepcopy(v) for k, v in new_cls.model_fields.items()}
 
-        for field in new_cls.model_fields.values():
+        for field in fields.values():
             field.default = Unset
 
             metadata = field.metadata
@@ -108,6 +259,10 @@ class PartialMetaclass(type(Schema)):
 
             field.annotation = Union[constrained_arm, type(Unset)]
 
+        # `model_fields` is a read-only view of `__pydantic_fields__` as of newer
+        # pydantic versions, so the canonical field mapping must be updated directly
+        # for schema regeneration to pick up the mutated defaults/annotations.
+        new_cls.__pydantic_fields__ = fields
         new_cls.model_rebuild(force=True)  # noqa
 
         return new_cls
@@ -123,3 +278,170 @@ class BasePatchBody(Schema, metaclass=PartialMetaclass):
     model_config = ConfigDict(
         populate_by_name=True, str_strip_whitespace=True, alias_generator=to_camel
     )
+
+
+def parse_requested_properties(info: SerializationInfo) -> Optional[set[str]]:
+    """
+    Parses and retrieves the requested properties from the serialization context.
+
+    Extracts the "properties" parameter from the serialization context's request and
+    converts it into a set of property names. If no properties are specified in the
+    request, the function returns None.
+    """
+
+    request = (info.context or {}).get("request") if info.context else None
+    query_dict = getattr(request, "GET", None) if request is not None else None
+    raw_values = query_dict.getlist("properties") if query_dict is not None else []
+    parsed = split_comma_separated(raw_values)
+
+    if not parsed:
+        return None
+
+    return set(parsed) | response_required_fields(request)
+
+
+def filter_requested_properties(item: Any, requested: set[str]) -> Any:
+    """
+    Filters properties of a dictionary based on a specified set of keys.
+
+    This function takes a dictionary and a set of requested keys and returns a new dictionary
+    containing only the key-value pairs where the key exists in the requested set. If the input
+    item is not a dictionary, it is returned as is.
+    """
+
+    if not isinstance(item, dict):
+        return item
+
+    return {k: v for k, v in item.items() if k in requested}
+
+
+def page_links(info: SerializationInfo, meta: "PaginationMeta", returned: int) -> Optional[list[dict]]:
+    """Serialized self, next and prev links for a page of results, or None without a request."""
+
+    request = get_request(info)
+    if request is None:
+        return None
+
+    return [
+        link.model_dump(exclude_none=True)
+        for link in build_page_links(request, meta.offset, meta.limit, returned)
+    ]
+
+
+class ItemId(Schema):
+    """Identifies an item by UUID."""
+
+    id: uuid.UUID = Field(..., description="The item's unique identifier.")
+
+
+class NewItemId(Schema):
+    """Lets a client supply a new item's UUID."""
+
+    id: Optional[uuid.UUID] = Field(None, description="The new item's identifier. Generated if omitted.")
+
+
+class BaseGetResponse(Schema):
+    model_config = ConfigDict(
+        populate_by_name=True, str_strip_whitespace=True, alias_generator=to_camel
+    )
+
+
+class CreatedResponse(ItemId):
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
+
+
+def _require_number_returned(schema: dict) -> None:
+    schema["required"] = [*schema.get("required", []), "numberReturned"]
+    schema["properties"]["numberReturned"].pop("default", None)
+
+
+class PaginationMeta(Schema):
+    limit: int
+    offset: int
+    number_matched: int = Field(
+        ...,
+        description="The number of items that match the request's selection parameters."
+    )
+    number_returned: int = Field(
+        default=0,
+        description="The number of items in the response.",
+    )
+
+    model_config = ConfigDict(
+        populate_by_name=True, alias_generator=to_camel, json_schema_extra=_require_number_returned
+    )
+
+
+class ItemResponse(Schema, Generic[T]):
+    included: Optional[dict[str, list[Any]]] = None
+    data: T
+    links: list[Link] = []
+
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
+
+    @model_serializer(mode="wrap")
+    def _finalize(self, handler, info: SerializationInfo):
+        data = handler(self)
+        if not isinstance(data, dict):
+            return data
+
+        requested = parse_requested_properties(info)
+        if requested is not None:
+            data["data"] = filter_requested_properties(data.get("data"), requested)
+
+        if self.links:
+            data["links"] = [link.model_dump(exclude_none=True) for link in self.links]
+            return data
+
+        request = get_request(info)
+        if request is not None:
+            links = [build_self_link(request), *build_alternate_links(request), build_collection_link(request)]
+            data["links"] = [link.model_dump(exclude_none=True) for link in links if link is not None]
+
+        return data
+
+
+class PaginatedResponse(Schema, Generic[T]):
+    """
+    A page of items. Item schemas whose entries aren't one per item, such as observation groups, set returned to the
+    number of items on the page, which paging follows, and define filter_properties(item, requested) to apply the
+    properties parameter to an entry.
+    """
+
+    included: Optional[dict[str, list[Any]]] = None
+    data: list[T]
+    meta: PaginationMeta
+    links: list[Link] = []
+    returned: Optional[int] = Field(None, exclude=True)
+
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
+
+    @model_validator(mode="after")
+    def _set_number_returned(self):
+        self.meta.number_returned = self.returned if self.returned is not None else len(self.data)
+        return self
+
+    @model_serializer(mode="wrap")
+    def _finalize(self, handler, info: SerializationInfo):
+        data = handler(self)
+        if not isinstance(data, dict):
+            return data
+
+        if not data.get("included"):
+            data.pop("included", None)
+
+        requested = parse_requested_properties(info)
+        if requested is not None and isinstance(data.get("data"), list):
+            filter_item = getattr(self.item_schema(), "filter_properties", filter_requested_properties)
+            data["data"] = [filter_item(item, requested) for item in data["data"]]
+
+        links = page_links(info, self.meta, self.returned if self.returned is not None else len(self.data))
+        if links is not None:
+            data["links"] = links
+
+        return data
+
+    @classmethod
+    def item_schema(cls) -> Optional[type]:
+        args = cls.__pydantic_generic_metadata__.get("args") or ()
+        return args[0] if args else None

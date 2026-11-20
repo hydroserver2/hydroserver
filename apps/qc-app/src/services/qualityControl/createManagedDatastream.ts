@@ -12,12 +12,10 @@ import type {
   Datastream,
   DatastreamExtended,
   HydroServer,
+  QualityControlHistory,
   QualityControlHistoryService,
-  QualityControlHistoryContract,
 } from '@hydroserver/client'
 import { unwrap } from './unwrap'
-
-type QcHistoryDetail = QualityControlHistoryContract.DetailResponse
 
 export interface CreateManagedDatastreamInput {
   /** Source datastream to derive the managed datastream from. */
@@ -31,7 +29,7 @@ export interface CreateManagedDatastreamInput {
 export interface CreateManagedDatastreamResult {
   /** Expanded shape, so it can be appended to the data-vis catalog as-is. */
   managedDatastream: Datastream & DatastreamExtended
-  history: QcHistoryDetail
+  history: QualityControlHistory
 }
 
 /**
@@ -43,10 +41,10 @@ function flatDatastreamIds(source: Datastream) {
   const s = source as Datastream & Partial<DatastreamExtended>
   return {
     workspaceId: s.workspaceId ?? s.workspace?.id ?? '',
-    thingId: s.thingId ?? s.thing?.id ?? '',
+    monitoringSiteId: s.monitoringSiteId ?? s.monitoringSite?.id ?? '',
     unitId: s.unitId ?? s.unit?.id ?? '',
     observedPropertyId: s.observedPropertyId ?? s.observedProperty?.id ?? '',
-    sensorId: s.sensorId ?? s.sensor?.id ?? '',
+    methodId: s.methodId ?? s.method?.id ?? '',
     processingLevelId: s.processingLevelId ?? s.processingLevel?.id ?? '',
   }
 }
@@ -90,8 +88,8 @@ export async function createManagedDatastream(
   }
 
   const body = buildManagedDatastreamBody(source, processingLevelId, overrides)
-  // Without `expand_related` the 201 body is the flat shape (FK ids only);
-  // the data-vis catalog this datastream joins is expanded.
+  // Read back with `expand_related`: the data-vis catalog this datastream
+  // joins carries the nested relations.
   const response = await hs.datastreams.create(body, { expand_related: true })
   if (!response.ok) {
     throw new Error(
@@ -100,8 +98,8 @@ export async function createManagedDatastream(
       }`
     )
   }
-  // The SDK types every create response as the flat model; `expand_related`
-  // above is what actually makes the nested relations present.
+  // The SDK types every read as the flat model; `expand_related` above is
+  // what actually makes the nested relations present.
   const managedDatastream = response.data as Datastream & DatastreamExtended
   if (!managedDatastream?.id) {
     throw new Error(
@@ -109,12 +107,14 @@ export async function createManagedDatastream(
     )
   }
 
-  const history = unwrap(
+  // The API answers a create with the new id; read the history back for the rest.
+  const { id: historyId } = unwrap(
     await qcHistories.create({
       managedDatastreamId: managedDatastream.id,
       sourceDatastreamId: source.id,
     })
   )
+  const history = unwrap(await qcHistories.get(historyId))
 
   return { managedDatastream, history }
 }

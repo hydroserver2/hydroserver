@@ -11,11 +11,11 @@ import { defineStore, storeToRefs } from 'pinia'
 import { computed, ref } from 'vue'
 import { useHydroServer } from '@/store/hydroserver'
 import { useEditResumeStore } from '@/store/editResume'
-import { unwrap } from '@/services/qualityControl'
+import { unwrap, withOperations } from '@/services/qualityControl'
 import { commitOrder } from '@/utils/sessionGraph'
-import type { Datastream, QualityControlSession } from '@hydroserver/client'
+import type { Datastream } from '@hydroserver/client'
 import type { HistoryItem } from '@uwrl/qc-utils'
-import { sessionOperations } from '@/utils/qcHistory'
+import { sessionOperations, type QcSession } from '@/utils/qcHistory'
 
 export const useQcSessionStore = defineStore('qcSession', () => {
   const historyId = ref<string | null>(null)
@@ -25,7 +25,7 @@ export const useQcSessionStore = defineStore('qcSession', () => {
   const { resumeDatastreamId } = storeToRefs(useEditResumeStore())
   /** Raw datastream behind the managed one, resolved when editing begins. */
   const sourceDatastream = ref<Datastream | null>(null)
-  const sessions = ref<QualityControlSession[]>([])
+  const sessions = ref<QcSession[]>([])
   /** The single in-progress (editable) session, if any. */
   const currentSessionId = ref<string | null>(null)
   /** The session currently being viewed. */
@@ -79,19 +79,16 @@ export const useQcSessionStore = defineStore('qcSession', () => {
 
   /** A history's sessions with their operations. Writes nothing, so a caller
    *  can drop the result if it went stale while loading. */
-  async function fetchSessions(id: string): Promise<QualityControlSession[]> {
+  async function fetchSessions(id: string): Promise<QcSession[]> {
     const { hs } = storeToRefs(useHydroServer())
-    // `expand_related` embeds each session's operations.
-    return unwrap(
-      await hs.value.qualityControlSessions.list(id, {
-        fetch_all: true,
-        expand_related: true,
-      })
+    const list = unwrap(
+      await hs.value.qualityControlSessions.list(id, { fetch_all: true })
     )
+    return withOperations(hs.value.qualityControlOperations, id, list)
   }
 
   /** Adopt a history's sessions; default the view to the in-progress session. */
-  function applySessions(id: string, list: QualityControlSession[]): void {
+  function applySessions(id: string, list: QcSession[]): void {
     historyId.value = id
     sessions.value = list
     const inProgress = list.find((s) => s.status === 'in_progress') ?? null

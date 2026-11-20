@@ -1,0 +1,18 @@
+{
+  "name": "oidc-test-client",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@hydroserver/client": "file:../../packages/hydroserver-ts",
+    "oidc-client-ts": "^3.5.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "vite": "^7.3.1"
+  }
+}

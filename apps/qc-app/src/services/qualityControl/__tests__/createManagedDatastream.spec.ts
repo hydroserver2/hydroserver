@@ -13,17 +13,17 @@ const makeSource = (overrides: Partial<Datastream> = {}): Datastream =>
     workspaceId: 'ws-1',
     name: 'Raw Temperature',
     description: 'raw sensor data',
-    thingId: 'thing-1',
-    observationType: 'OM_Measurement',
+    monitoringSiteId: 'site-1',
+    type: 'timeSeriesCoverage',
     sampledMedium: 'Air',
     noDataValue: -9999,
     aggregationStatistic: 'Continuous',
     unitId: 'unit-1',
     observedPropertyId: 'op-1',
-    sensorId: 'sensor-1',
+    methodId: 'method-1',
     processingLevelId: 'pl-raw',
     isPrivate: false,
-    isVisible: true,
+    isRestricted: false,
     timeAggregationInterval: null,
     valueCount: 1000,
     phenomenonBeginTime: '2024-01-01T00:00:00Z',
@@ -49,10 +49,10 @@ describe('buildManagedDatastreamBody', () => {
     expect(body.phenomenonBeginTime).toBeNull()
     expect(body.phenomenonEndTime).toBeNull()
     // metadata carried over from source
-    expect(body.thingId).toBe('thing-1')
+    expect(body.monitoringSiteId).toBe('site-1')
     expect(body.unitId).toBe('unit-1')
     expect(body.observedPropertyId).toBe('op-1')
-    expect(body.sensorId).toBe('sensor-1')
+    expect(body.methodId).toBe('method-1')
   })
 
   it('applies overrides last', () => {
@@ -60,12 +60,12 @@ describe('buildManagedDatastreamBody', () => {
       name: 'QC Temperature',
       description: 'Cleaned temperature',
       status: 'complete',
-      sensorId: 'sensor-2',
+      methodId: 'method-2',
     })
     expect(body.name).toBe('QC Temperature')
     expect(body.description).toBe('Cleaned temperature')
     expect(body.status).toBe('complete')
-    expect(body.sensorId).toBe('sensor-2')
+    expect(body.methodId).toBe('method-2')
   })
 
   // The API takes no status rather than an empty one.
@@ -82,18 +82,18 @@ describe('buildManagedDatastreamBody', () => {
     const nested = {
       id: 's-1',
       name: 'Raw',
-      thing: { id: 'thing-x' },
+      monitoringSite: { id: 'site-x' },
       unit: { id: 'unit-x' },
       observedProperty: { id: 'op-x' },
-      sensor: { id: 'sensor-x' },
+      method: { id: 'method-x' },
       processingLevel: { id: 'pl-raw' },
       workspace: { id: 'ws-x' },
     } as any
     const body = buildManagedDatastreamBody(nested, 'pl-qc')
-    expect(body.thingId).toBe('thing-x')
+    expect(body.monitoringSiteId).toBe('site-x')
     expect(body.unitId).toBe('unit-x')
     expect(body.observedPropertyId).toBe('op-x')
-    expect(body.sensorId).toBe('sensor-x')
+    expect(body.methodId).toBe('method-x')
     expect(body.processingLevelId).toBe('pl-qc')
   })
 })
@@ -114,22 +114,22 @@ describe('createManagedDatastream', () => {
     const body = create.mock.calls[0][0] as Datastream
     expect(body.processingLevelId).toBe('pl-qc')
     expect(body.valueCount).toBe(0)
-    expect(body.thingId).toBe('thing-1')
+    expect(body.monitoringSiteId).toBe('site-1')
 
     // history links source and managed, and is persisted in the client
-    expect(result.history.managedDatastream.id).toBe('managed-1')
-    expect(result.history.sourceDatastream.id).toBe('source-1')
+    expect(result.history.managedDatastreamId).toBe('managed-1')
+    expect(result.history.sourceDatastreamId).toBe('source-1')
     expect(unwrap(await qc.histories.list())).toHaveLength(1)
   })
 
   it('requests the expanded datastream so the catalog keeps its nested relations', async () => {
     // The data-vis catalog is loaded with `expand_related`, and its consumers
-    // read `ds.processingLevel.id` / `ds.thing.id`. A flat create response
+    // read `ds.processingLevel.id` / `ds.monitoringSite.id`. A flat create response
     // appended to that list would blow up on the missing nested objects.
     const created = {
       id: 'managed-1',
       name: 'Raw Temperature (QC)',
-      thing: { id: 'thing-1' },
+      monitoringSite: { id: 'site-1' },
       observedProperty: { id: 'op-1' },
       processingLevel: { id: 'pl-qc' },
     } as any
@@ -143,7 +143,7 @@ describe('createManagedDatastream', () => {
 
     expect(create.mock.calls[0][1]).toEqual({ expand_related: true })
     expect(result.managedDatastream.processingLevel.id).toBe('pl-qc')
-    expect(result.managedDatastream.thing.id).toBe('thing-1')
+    expect(result.managedDatastream.monitoringSite.id).toBe('site-1')
   })
 
   it('rejects a processing level equal to the source', async () => {

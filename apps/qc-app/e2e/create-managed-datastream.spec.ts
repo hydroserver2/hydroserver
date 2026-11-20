@@ -7,7 +7,7 @@
 import { expect, test } from '@playwright/test'
 import { installMocks } from './support/mocks'
 import { gotoHome } from './support/app'
-import { DATASTREAM_ID, QC_PROC_LEVEL_ID, SENSOR_ID_B } from './support/fixtures'
+import { DATASTREAM_ID, QC_PROC_LEVEL_ID, METHOD_ID_B } from './support/fixtures'
 
 /** Open a Vuetify select and pick one of its options. */
 async function pick(page: import('@playwright/test').Page, testId: string, option: string) {
@@ -37,7 +37,7 @@ test.describe('create managed datastream', () => {
       page.getByTestId('create-description').getByRole('textbox')
     ).toHaveValue('Synthetic sine-wave dataset for QC tests')
     await expect(page.getByTestId('create-status')).toContainText('ongoing')
-    await expect(page.getByTestId('create-sensor')).toContainText(
+    await expect(page.getByTestId('create-method')).toContainText(
       'ADVelocity Sensor'
     )
 
@@ -47,7 +47,7 @@ test.describe('create managed datastream', () => {
       .getByRole('textbox')
       .fill('Quality-controlled streamflow')
     await pick(page, 'create-status', 'complete')
-    await pick(page, 'create-sensor', 'Thermistor Sensor')
+    await pick(page, 'create-method', 'Thermistor Sensor')
 
     await page.getByTestId('create-confirm').click()
 
@@ -56,7 +56,7 @@ test.describe('create managed datastream', () => {
       name: 'Streamflow Datastream (QC)',
       description: 'Quality-controlled streamflow',
       status: 'complete',
-      sensorId: SENSOR_ID_B,
+      methodId: METHOD_ID_B,
       processingLevelId: QC_PROC_LEVEL_ID,
       valueCount: 0,
     })

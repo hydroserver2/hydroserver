@@ -16,34 +16,34 @@ class ResultQualifierService(HydroServerBaseService):
 
     def list(
         self,
-        page: int = ...,
-        page_size: int = ...,
-        order_by: List[str] = ...,
+        offset: int = ...,
+        limit: int = ...,
+        sortby: List[str] = ...,
         workspace: Optional[Union["Workspace", UUID, str]] = ...,
         fetch_all: bool = False,
     ) -> List["ResultQualifier"]:
         """Fetch a collection of result qualifiers."""
 
         return super().list(
-            page=page,
-            page_size=page_size,
-            order_by=order_by,
+            offset=offset,
+            limit=limit,
+            sortby=sortby,
             workspace_id=normalize_uuid(workspace),
             fetch_all=fetch_all,
         )
 
     def create(
         self,
-        code: str,
+        name: str,
         description: Optional[str] = None,
         workspace: Optional[Union["Workspace", UUID, str]] = None,
         uid: Optional[UUID] = None,
     ) -> "ResultQualifier":
-        """Create a new result qualifier."""
+        """Create a result qualifier; pass optional arguments by keyword."""
 
         body = {
             "id": normalize_uuid(uid),
-            "code": code,
+            "name": name,
             "description": description,
             "workspaceId": normalize_uuid(workspace),
         }
@@ -53,13 +53,13 @@ class ResultQualifierService(HydroServerBaseService):
     def update(
         self,
         uid: Union[UUID, str],
-        code: str = ...,
-        description: str = ...,
+        name: str = ...,
+        description: Optional[str] = ...,
     ) -> "ResultQualifier":
         """Update a result qualifier."""
 
         body = {
-            "code": code,
+            "name": name,
             "description": description,
         }
 

@@ -4,7 +4,7 @@
  * filter-gaps so there's something to fill.
  */
 
-import { test } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 import { installMocks } from './support/mocks'
 import { openOp, setupEditView } from './support/app'
 import { expectHistoryContains } from './support/ops'
@@ -45,5 +45,19 @@ test.describe('edit: fill gaps', () => {
     await amountInputs.nth(1).fill('15')
     await panel.getByRole('button', { name: /fill gaps/i }).click()
     await expectHistoryContains(page, 'Fill Gaps')
+  })
+
+  test('refuses a cadence that would add too many points', async ({ page }) => {
+    await openOp(page, 'fillGaps')
+    const panel = page.getByTestId('operation-panel-fillGaps')
+    const amountInputs = panel.locator('input[type="number"]')
+    await amountInputs.nth(0).fill('30')
+    await amountInputs.nth(1).fill('0.01')
+    await expect(panel.getByTestId('fill-gaps-over-limit')).toBeVisible()
+    await expect(panel.getByRole('button', { name: /fill gaps/i })).toBeDisabled()
+
+    await amountInputs.nth(1).fill('15')
+    await expect(panel.getByTestId('fill-gaps-over-limit')).toHaveCount(0)
+    await expect(panel.getByRole('button', { name: /fill gaps/i })).toBeEnabled()
   })
 })

@@ -1,165 +1,365 @@
 <template>
-  <v-row align="center">
-    <v-col cols="auto" class="pr-0">
-      <v-card-item>
-        <v-card-title> Collaborators </v-card-title>
-      </v-card-item>
-    </v-col>
-    <v-col class="pl-0">
-      <v-icon
-        @click="showAddCollaboratorHelp = !showAddCollaboratorHelp"
-        color="grey"
-        small
-        :icon="mdiHelpCircleOutline"
+  <v-alert
+    v-if="loadError"
+    type="error"
+    variant="tonal"
+    density="compact"
+    class="mb-3"
+  >
+    <div class="d-flex align-center ga-2">
+      <span>{{ loadError }}</span>
+      <v-spacer />
+      <v-btn size="small" @click="loadCollaboratorData">
+        Retry
+      </v-btn>
+    </div>
+  </v-alert>
+  <v-progress-linear v-if="isLoading" indeterminate class="mb-2" />
+
+  <v-card
+    v-if="showAddCollaborator"
+    class="collaborator-add-card mb-4"
+    variant="outlined"
+  >
+    <v-card-text>
+      <v-text-field
+        v-model="newCollaboratorEmail"
+        class="required-label"
+        label="New collaborator's email"
+        data-testid="new-collaborator-email"
       />
-    </v-col>
-
-    <v-spacer />
-
-    <PermissionTooltip
-      :has-permission="
-        hasPermission(
-          PermissionResource.Collaborator,
-          PermissionAction.Create,
-          workspace
-        )
-      "
-    >
-      <template #default>
-        <v-btn
-          variant="text"
-          :prepend-icon="mdiPlus"
-          class="mr-4"
-          data-testid="add-collaborator-button"
-          @click="showAddCollaborator = true"
-          >Add collaborator</v-btn
-        >
-      </template>
-
-      <template #denied>
-        <v-btn
-          disabled
-          variant="text"
-          :prepend-icon="mdiPlus"
-          class="mr-4"
-          data-testid="add-collaborator-button"
-          @click="showAddCollaborator = true"
-          >Add collaborator</v-btn
-        >
-      </template>
-    </PermissionTooltip>
-  </v-row>
-
-  <v-card-text v-if="showAddCollaboratorHelp">
-    You can add collaborators to this workspace with either Editor or Viewer
-    roles. Viewers can see everything in the workspace but cannot edit. Editors
-    can create, read, update, and delete all sites, metadata, and datastreams as
-    well as set their visibility. Users can remove themselves as collaborators.
-  </v-card-text>
-
-  <v-card-text v-if="showAddCollaborator">
-    <v-text-field
-      v-model="newCollaboratorEmail"
-      label="New collaborator's email"
-      data-testid="new-collaborator-email"
-    />
-    <v-select
-      v-model="selectedRole"
-      :items="roles"
-      label="New collaborator's role"
-      item-title="name"
-      :return-object="true"
-      variant="outlined"
-      data-testid="new-collaborator-role"
-    />
+      <v-select
+        v-model="selectedRole"
+        :items="roles"
+        class="required-label"
+        label="New collaborator's role"
+        item-title="name"
+        :return-object="true"
+        data-testid="new-collaborator-role"
+      />
+    </v-card-text>
+    <v-divider />
     <v-card-actions>
       <v-spacer />
       <v-btn-cancel @click="cancelAddCollaborator">Cancel</v-btn-cancel>
-      <v-btn-primary @click="onAddCollaborator">Add collaborator</v-btn-primary>
+      <v-btn-primary
+        data-testid="submit-collaborator-button"
+        :loading="isAdding"
+        :disabled="isAdding"
+        @click="onAddCollaborator"
+      >
+        Add collaborator
+      </v-btn-primary>
     </v-card-actions>
-  </v-card-text>
+  </v-card>
 
-  <v-card-text>
-    <div class="collaborator-list-container">
-      <v-list lines="three" v-model:selected="selection" select-strategy="leaf">
-        <v-list-group v-for="item in collaboratorList" :key="item.value">
-          <template v-slot:activator="{ props }">
-            <v-list-item
-              v-bind="props"
-              :title="item.name"
-              :value="item.value"
-              active-class="text-red"
-              :data-testid="`collaborator-row-${item.email}`"
-            >
-              <v-list-item-subtitle
-                v-if="item.isBeingEdited"
-                class="mb-1 text-high-emphasis opacity-100"
-              >
-                <v-select
-                  v-model="item.pendingRole"
-                  :items="roles"
-                  item-title="name"
-                  @click.stop
-                  @mousedown.stop
-                  :return-object="true"
-                  variant="outlined"
-                  hide-details
-                />
-                <div class="d-flex my-2">
-                  <v-btn-cancel class="mr-2" @click="onCancelEdit(item)"
-                    >Cancel</v-btn-cancel
-                  >
-                  <v-btn
-                    :data-testid="`save-collaborator-${item.email}`"
-                    @click="onSaveRole(item)"
-                    >Save</v-btn
-                  >
-                </div>
-              </v-list-item-subtitle>
-              <v-list-item-subtitle
-                v-else
-                class="mb-1 text-high-emphasis opacity-100"
-              >
-                {{ item.role.name }}
-              </v-list-item-subtitle>
+  <div class="hs-table-tools">
+    <div class="hs-query-search">
+      <v-icon :icon="mdiMagnify" size="16" class="hs-query-search__icon" />
+      <div class="hs-query-search__highlight hs-text-sm" aria-hidden="true">
+        <span
+          v-for="(segment, index) in highlightSegments"
+          :key="index"
+          :class="segment.cls"
+          >{{ segment.text }}</span
+        >
+      </div>
+      <input
+        ref="searchInputEl"
+        v-model="search"
+        placeholder="Search collaborators…"
+        class="hs-query-search__input hs-text-sm"
+        aria-label="Search collaborators"
+        autocomplete="off"
+        spellcheck="false"
+        role="combobox"
+        aria-autocomplete="list"
+        :aria-expanded="!!activeSuggestion"
+        @input="onSearchInput"
+        @click="syncCaret"
+        @keyup="syncCaret"
+        @keydown="onSearchKeydown"
+        @focus="onSearchFocus"
+        @blur="onSearchBlur"
+      />
+      <button
+        v-if="search"
+        type="button"
+        class="hs-query-search__clear"
+        aria-label="Clear collaborator search and filters"
+        @mousedown.prevent
+        @click="clearSearchAndFilters"
+      >
+        <v-icon :icon="mdiClose" size="16" />
+      </button>
+    </div>
 
-              <v-list-item-subtitle class="mb-2 text-high-emphasis opacity-60">
+    <v-btn-icon
+      :icon="mdiHelpCircleOutline"
+      size="small"
+      title="About collaborators"
+      aria-label="Toggle collaborator help"
+      :aria-expanded="showAddCollaboratorHelp"
+      @click="showAddCollaboratorHelp = !showAddCollaboratorHelp"
+    />
+
+    <div class="hs-table-actions">
+      <PermissionTooltip
+        :has-permission="canCreate"
+        message="You don't have permission to add collaborators to this workspace."
+      >
+        <template #default>
+          <v-btn-page-action
+            data-testid="add-collaborator-button"
+            @click="showAddCollaborator = true"
+            >Add collaborator</v-btn-page-action
+          >
+        </template>
+
+        <template #denied>
+          <v-btn-page-action
+            disabled
+            data-testid="add-collaborator-button"
+            @click="showAddCollaborator = true"
+            >Add collaborator</v-btn-page-action
+          >
+        </template>
+      </PermissionTooltip>
+    </div>
+  </div>
+
+  <Teleport to="body">
+    <div
+      v-if="activeSuggestion && activeSuggestion.items.length"
+      class="hs-query-search-popover"
+      :style="suggestionStyle"
+      role="listbox"
+    >
+      <div class="hs-query-search-popover__title">
+        {{
+          activeSuggestion.type === 'key'
+            ? 'Filter by…'
+            : `${activeSuggestion.key === 'role' ? 'Role' : 'Organization'} values`
+        }}
+      </div>
+      <button
+        v-for="(item, index) in activeSuggestion.items"
+        :key="item"
+        type="button"
+        class="hs-query-search-popover__option"
+        :class="{
+          'hs-query-search-popover__option--active': index === suggestionIndex,
+        }"
+        role="option"
+        :aria-selected="index === suggestionIndex"
+        @mousedown.prevent="applySuggestion(item)"
+      >
+        {{ item }}{{ activeSuggestion.type === 'key' ? ':' : '' }}
+      </button>
+    </div>
+  </Teleport>
+
+  <p v-if="showAddCollaboratorHelp" class="collaborators-help-text">
+    <small>
+      You can add collaborators to this workspace with either Editor or Viewer
+      roles. Viewers can see everything in the workspace but cannot edit.
+      Editors can create, read, update, and delete all sites, metadata, and
+      datastreams as well as set their visibility. Users can remove themselves
+      as collaborators.
+    </small>
+  </p>
+
+  <v-card class="hs-table-card collaborators-table-card" flat>
+    <v-table class="collaborator-table">
+      <thead>
+        <tr>
+          <th>
+            <div class="collaborator-header-filters">
+              <HsTableFilterMenu
+                v-model:search="roleFilterSearch"
+                title="Filter by role"
+                label="Role"
+                section-label="Roles"
+                :options="availableRoles.map((value) => ({ value, label: value }))"
+                :selected="selectedRoles"
+                case-insensitive
+                search-placeholder="Filter roles"
+                empty-text="No roles found"
+                @toggle="toggleRole"
+              >
+                <template #activator="{ props: menuProps }">
+                  <v-btn-cancel
+                    v-bind="menuProps"
+                    size="small"
+                    class="collaborator-filter-button"
+                    :class="{
+                      'collaborator-filter-button--active': selectedRoles.length,
+                    }"
+                    :append-icon="mdiChevronDown"
+                    :aria-label="`Filter by role${selectedRoles.length ? ` (${selectedRoles.length} selected)` : ''}`"
+                  >
+                    Role
+                    <span v-if="selectedRoles.length" class="filter-count hs-label">
+                      {{ selectedRoles.length }}
+                    </span>
+                  </v-btn-cancel>
+                </template>
+              </HsTableFilterMenu>
+
+              <HsTableFilterMenu
+                v-model:search="organizationFilterSearch"
+                title="Filter by organization"
+                label="Organization"
+                section-label="Organizations"
+                :options="availableOrganizations.map((value) => ({ value, label: value }))"
+                :selected="selectedOrganizations"
+                case-insensitive
+                search-placeholder="Filter organizations"
+                empty-text="No organizations found"
+                @toggle="toggleOrganization"
+              >
+                <template #activator="{ props: menuProps }">
+                  <v-btn-cancel
+                    v-bind="menuProps"
+                    size="small"
+                    class="collaborator-filter-button"
+                    :class="{
+                      'collaborator-filter-button--active': selectedOrganizations.length,
+                    }"
+                    :append-icon="mdiChevronDown"
+                    :aria-label="`Filter by organization${selectedOrganizations.length ? ` (${selectedOrganizations.length} selected)` : ''}`"
+                  >
+                    Organization
+                    <span v-if="selectedOrganizations.length" class="filter-count">
+                      {{ selectedOrganizations.length }}
+                    </span>
+                  </v-btn-cancel>
+                </template>
+              </HsTableFilterMenu>
+            </div>
+          </th>
+          <th class="collaborator-actions-column text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          v-for="item in filteredCollaborators"
+          :key="item.email"
+          :data-testid="`collaborator-row-${item.email}`"
+        >
+          <td>
+            <div class="collaborator-name font-weight-medium">
+              {{ item.name }}
+            </div>
+            <div class="hs-text-sm text-medium-emphasis">
+              <span v-if="!item.isBeingEdited">
+                {{ collaboratorRoleLabel(item) }} · {{ item.email }} ·
                 {{ item.organization }}
-              </v-list-item-subtitle>
-            </v-list-item>
-          </template>
-
-          <v-list-item>
-            <template v-slot:append>
-              <v-btn
-                variant="outlined"
+              </span>
+              <v-select
+                v-else
+                v-model="item.pendingRole"
+                :items="roles"
+                item-title="name"
+                :return-object="true"
+                density="compact"
+                hide-details
+                class="collaborator-role-editor"
+              />
+            </div>
+          </td>
+          <td class="text-right">
+            <template v-if="item.isBeingEdited">
+              <v-btn-cancel
+                size="small"
                 class="mr-2"
-                :disabled="item.isOwner || item.isBeingEdited"
-                :data-testid="`edit-collaborator-${item.email}`"
-                @click="item.isBeingEdited = true"
-                >Edit role</v-btn
+                @click="onCancelEdit(item)"
+                >Cancel</v-btn-cancel
               >
-              <v-btn-delete
-                variant="outlined"
-                :disabled="item.isOwner || item.isBeingEdited"
-                :data-testid="`remove-collaborator-${item.email}`"
-                @click="onRemoveCollaborator(item.email)"
-                >Remove collaborator</v-btn-delete
+              <v-btn-primary
+                size="small"
+                :loading="item.isSaving"
+                :disabled="item.isSaving"
+                :data-testid="`save-collaborator-${item.email}`"
+                @click="onSaveRole(item)"
+                >Save</v-btn-primary
               >
             </template>
-          </v-list-item>
-        </v-list-group>
-      </v-list>
-    </div>
-  </v-card-text>
+            <template v-else>
+              <PermissionTooltip
+                :has-permission="canEditCollaborator(item)"
+                :message="collaboratorEditDeniedMessage(item)"
+              >
+                <template #default>
+                  <v-btn-icon
+                    size="small"
+                    class="hs-table-icon-action"
+                    :icon="mdiPencil"
+                    :data-testid="`edit-collaborator-${item.email}`"
+                    :aria-label="`Edit ${item.name}`"
+                    @click="item.isBeingEdited = true"
+                  />
+                </template>
+                <template #denied>
+                  <v-btn-icon
+                    size="small"
+                    class="hs-table-icon-action"
+                    :icon="mdiPencilOffOutline"
+                    disabled
+                    :aria-label="`Edit ${item.name} unavailable`"
+                  />
+                </template>
+              </PermissionTooltip>
+              <PermissionTooltip
+                :has-permission="canRemoveCollaborator(item)"
+                :message="collaboratorRemoveDeniedMessage(item)"
+              >
+                <template #default>
+                  <v-btn-icon
+                    size="small"
+                    class="hs-table-icon-action hs-table-icon-action--danger"
+                    :icon="mdiTrashCanOutline"
+                    :loading="removingEmail === item.email"
+                    :disabled="!!removingEmail"
+                    :data-testid="`remove-collaborator-${item.email}`"
+                    :aria-label="`Remove ${item.name}`"
+                    @click="onRemoveCollaborator(item.email)"
+                  />
+                </template>
+                <template #denied>
+                  <v-btn-icon
+                    size="small"
+                    class="hs-table-icon-action hs-table-icon-action--danger"
+                    :icon="mdiDeleteOffOutline"
+                    disabled
+                    :aria-label="`Remove ${item.name} unavailable`"
+                  />
+                </template>
+              </PermissionTooltip>
+            </template>
+          </td>
+        </tr>
+        <tr v-if="!filteredCollaborators.length">
+          <td colspan="2" class="text-center text-medium-emphasis">
+            {{
+              search || hasActiveFilters
+                ? 'No matching collaborators.'
+                : 'No collaborators yet.'
+            }}
+          </td>
+        </tr>
+      </tbody>
+    </v-table>
+  </v-card>
 </template>
 
 <script setup lang="ts">
+import { HsTableFilterMenu } from '@hydroserver/design-system/vue'
 import { useUserStore } from '@/store/user'
 import { Snackbar } from '@/utils/notifications'
 import { storeToRefs } from 'pinia'
-import { onMounted, ref } from 'vue'
-import router from '@/router/router'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import hs, {
   PermissionAction,
   PermissionResource,
@@ -167,42 +367,446 @@ import hs, {
   CollaboratorRole,
   Workspace,
 } from '@hydroserver/client'
-import { mdiHelpCircleOutline, mdiPlus } from '@mdi/js'
+import {
+  mdiChevronDown,
+  mdiClose,
+  mdiDeleteOffOutline,
+  mdiHelpCircleOutline,
+  mdiMagnify,
+  mdiPencil,
+  mdiPencilOffOutline,
+  mdiTrashCanOutline,
+} from '@mdi/js'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import PermissionTooltip from '@/components/PermissionTooltip.vue'
 
 const props = defineProps({
   workspace: { type: Object as () => Workspace, required: true },
 })
+const emits = defineEmits(['self-removed', 'changed'])
+
+const route = useRoute()
+const router = useRouter()
 
 const { user } = storeToRefs(useUserStore())
-const { hasPermission } = useWorkspacePermissions()
+const { hasPermission, isAdmin } = useWorkspacePermissions()
+const isDataReady = ref(false)
+const canCreate = computed(
+  () =>
+    isDataReady.value &&
+    hasPermission(
+      PermissionResource.Collaborator,
+      PermissionAction.Create,
+      props.workspace
+    )
+)
+const canEdit = computed(
+  () =>
+    isDataReady.value &&
+    hasPermission(
+      PermissionResource.Collaborator,
+      PermissionAction.Edit,
+      props.workspace
+    )
+)
+const canDelete = computed(() =>
+  hasPermission(
+    PermissionResource.Collaborator,
+    PermissionAction.Delete,
+    props.workspace
+  )
+)
+const canRemove = (item: { email: string }) =>
+  canDelete.value || item.email === user.value?.email
+const canEditCollaborator = (item: { isOwner?: boolean }) =>
+  canEdit.value && !item.isOwner
+const canRemoveCollaborator = (item: { email: string; isOwner?: boolean }) =>
+  canRemove(item) && !item.isOwner
 
-const selection = ref([])
+function collaboratorRoleLabel(item: {
+  email: string
+  isOwner?: boolean
+  role: { name: string }
+}) {
+  const isCurrentAdmin =
+    !item.isOwner && item.email === user.value.email && isAdmin()
+  return isCurrentAdmin ? `${item.role.name} (Admin)` : item.role.name
+}
+
+const collaboratorEditDeniedMessage = (item: { isOwner?: boolean }) =>
+  item.isOwner
+    ? 'The workspace owner cannot be edited.'
+    : "You don't have permission to edit collaborators."
+const collaboratorRemoveDeniedMessage = (item: {
+  email: string
+  isOwner?: boolean
+}) =>
+  item.isOwner
+    ? 'The workspace owner cannot be removed.'
+    : "You don't have permission to remove collaborators."
+
 const showAddCollaboratorHelp = ref(false)
 const showAddCollaborator = ref(false)
 const selectedRole = ref()
 const newCollaboratorEmail = ref('')
 const roles = ref<CollaboratorRole[]>([])
 const collaboratorList = ref<any[]>([])
+const roleFilterSearch = ref('')
+const organizationFilterSearch = ref('')
+
+// The search bar is the single source of truth for filtering, following the
+// GitHub issues search pattern: typed qualifiers like `role:Editor` and
+// `organization:"Utah State University"` drive both the filter menus and the
+// URL, so the whole filter state can be shared or bookmarked as a link.
+const QUALIFIER_PATTERN = /(role|organization):(?:"([^"]*)"|(\S+))/gi
+
+function quoteIfNeeded(value: string) {
+  return /\s/.test(value) ? `"${value}"` : value
+}
+
+function parseCollaboratorQuery(raw: string) {
+  const roleValues: string[] = []
+  const organizationValues: string[] = []
+  const textParts: string[] = []
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+  QUALIFIER_PATTERN.lastIndex = 0
+  while ((match = QUALIFIER_PATTERN.exec(raw))) {
+    textParts.push(raw.slice(lastIndex, match.index))
+    const key = match[1].toLocaleLowerCase()
+    const value = (match[2] ?? match[3] ?? '').trim()
+    if (value) (key === 'role' ? roleValues : organizationValues).push(value)
+    lastIndex = QUALIFIER_PATTERN.lastIndex
+  }
+  textParts.push(raw.slice(lastIndex))
+  return {
+    roles: roleValues,
+    organizations: organizationValues,
+    text: textParts.join(' ').replace(/\s+/g, ' ').trim(),
+  }
+}
+
+function serializeCollaboratorQuery(
+  roleValues: string[],
+  organizationValues: string[],
+  text: string
+) {
+  return [
+    ...roleValues.map((role) => `role:${quoteIfNeeded(role)}`),
+    ...organizationValues.map(
+      (organization) => `organization:${quoteIfNeeded(organization)}`
+    ),
+    ...(text.trim() ? [text.trim()] : []),
+  ].join(' ')
+}
+
+const search = ref('')
+const parsedQuery = computed(() => parseCollaboratorQuery(search.value))
+
+function clearSearchAndFilters() {
+  search.value = ''
+  roleFilterSearch.value = ''
+  organizationFilterSearch.value = ''
+  suggestionsEnabled.value = false
+  caret.value = 0
+  nextTick(() => searchInputEl.value?.focus())
+}
+
+const selectedRoles = computed<string[]>({
+  get: () => parsedQuery.value.roles,
+  set: (value) =>
+    (search.value = serializeCollaboratorQuery(
+      value,
+      parsedQuery.value.organizations,
+      parsedQuery.value.text
+    )),
+})
+const selectedOrganizations = computed<string[]>({
+  get: () => parsedQuery.value.organizations,
+  set: (value) =>
+    (search.value = serializeCollaboratorQuery(
+      parsedQuery.value.roles,
+      value,
+      parsedQuery.value.text
+    )),
+})
+
+function toggleRole(role: string) {
+  selectedRoles.value = selectedRoles.value.includes(role)
+    ? selectedRoles.value.filter((r) => r !== role)
+    : [...selectedRoles.value, role]
+}
+
+function toggleOrganization(organization: string) {
+  selectedOrganizations.value = selectedOrganizations.value.includes(
+    organization
+  )
+    ? selectedOrganizations.value.filter((o) => o !== organization)
+    : [...selectedOrganizations.value, organization]
+}
+
+const hasActiveFilters = computed(
+  () => selectedRoles.value.length > 0 || selectedOrganizations.value.length > 0
+)
+const availableRoles = computed(() =>
+  [
+    ...new Set(
+      collaboratorList.value.map((item) => item.role?.name).filter(Boolean)
+    ),
+  ].sort((a, b) => a.localeCompare(b))
+)
+const availableOrganizations = computed(() =>
+  [
+    ...new Set(
+      collaboratorList.value.map((item) => item.organization).filter(Boolean)
+    ),
+  ].sort((a, b) => a.localeCompare(b))
+)
+const filteredCollaborators = computed(() => {
+  const {
+    roles: roleValues,
+    organizations: organizationValues,
+    text,
+  } = parsedQuery.value
+  const query = text.toLocaleLowerCase()
+  return collaboratorList.value.filter(
+    (collaborator) =>
+      (!query ||
+        [
+          collaborator.name,
+          collaborator.email,
+          collaborator.organization,
+          collaborator.role?.name,
+        ].some((value) =>
+          String(value ?? '')
+            .toLocaleLowerCase()
+            .includes(query)
+        )) &&
+      (!roleValues.length ||
+        roleValues.some(
+          (role) =>
+            role.toLocaleLowerCase() ===
+            String(collaborator.role?.name ?? '').toLocaleLowerCase()
+        )) &&
+      (!organizationValues.length ||
+        organizationValues.some(
+          (organization) =>
+            organization.toLocaleLowerCase() ===
+            String(collaborator.organization ?? '').toLocaleLowerCase()
+        ))
+  )
+})
+// Syntax highlighting: colors the value of a `key:value` pair primary when
+// it matches a real role/organization, the way GitHub highlights valid
+// qualifier values in its issue search bar.
+function isValidQualifierValue(key: string, value: string) {
+  const pool =
+    key === 'role' ? availableRoles.value : availableOrganizations.value
+  return pool.some(
+    (item) => item.toLocaleLowerCase() === value.toLocaleLowerCase()
+  )
+}
+
+const highlightSegments = computed(() => {
+  const raw = search.value
+  const segments: { text: string; cls: string }[] = []
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+  QUALIFIER_PATTERN.lastIndex = 0
+  while ((match = QUALIFIER_PATTERN.exec(raw))) {
+    if (match.index > lastIndex)
+      segments.push({ text: raw.slice(lastIndex, match.index), cls: '' })
+    const key = match[1].toLocaleLowerCase()
+    const quoted = match[2] !== undefined
+    const value = match[2] ?? match[3] ?? ''
+    segments.push({ text: match[1], cls: 'hl-key' })
+    segments.push({ text: ':', cls: 'hl-colon' })
+    segments.push({
+      text: quoted ? `"${value}"` : value,
+      cls: value && isValidQualifierValue(key, value) ? 'hl-value-valid' : '',
+    })
+    lastIndex = QUALIFIER_PATTERN.lastIndex
+  }
+  if (lastIndex < raw.length)
+    segments.push({ text: raw.slice(lastIndex), cls: '' })
+  return segments
+})
+
+// Autocomplete: suggests `role`/`organization` while a qualifier key is being
+// typed, and suggests the matching values once a key is followed by `:`,
+// mirroring GitHub's issue search qualifier picker.
+const QUALIFIER_KEYS = ['role', 'organization'] as const
+
+const searchInputEl = ref<HTMLInputElement | null>(null)
+const caret = ref(0)
+const suggestionIndex = ref(0)
+const suggestionsEnabled = ref(false)
+const suggestionStyle = computed(() => {
+  const input = searchInputEl.value
+  if (!input) return {}
+  const rect = input.getBoundingClientRect()
+  return {
+    top: `${rect.bottom + 4}px`,
+    left: `${rect.left}px`,
+  }
+})
+
+function syncCaret() {
+  const el = searchInputEl.value
+  if (el) caret.value = el.selectionStart ?? el.value.length
+}
+
+function onSearchInput() {
+  syncCaret()
+  suggestionsEnabled.value = true
+}
+
+function onSearchFocus() {
+  suggestionsEnabled.value = true
+  syncCaret()
+}
+
+function onSearchBlur() {
+  suggestionsEnabled.value = false
+}
+
+// Finds where the qualifier token under the caret begins, treating a space
+// inside an open quote as part of the value rather than a token boundary
+// (so `organization:"Utah State |` still resolves to the `organization` key).
+function findTokenStart(raw: string, caretPos: number) {
+  let inQuotes = false
+  let tokenStart = 0
+  for (let i = 0; i < caretPos; i++) {
+    const char = raw[i]
+    if (char === '"') inQuotes = !inQuotes
+    else if (char === ' ' && !inQuotes) tokenStart = i + 1
+  }
+  return tokenStart
+}
+
+const currentToken = computed(() => {
+  const raw = search.value
+  const end = Math.min(caret.value, raw.length)
+  const start = findTokenStart(raw, end)
+  return { start, end, text: raw.slice(start, end) }
+})
+
+const activeSuggestion = computed(() => {
+  if (!suggestionsEnabled.value) return null
+  const { text, start, end } = currentToken.value
+  if (!text) return null
+
+  const colonIndex = text.indexOf(':')
+  if (colonIndex === -1) {
+    const query = text.toLocaleLowerCase()
+    const items = QUALIFIER_KEYS.filter((key) => key.startsWith(query))
+    return items.length
+      ? { type: 'key' as const, key: null, items, start, end }
+      : null
+  }
+
+  const key = text.slice(0, colonIndex).toLocaleLowerCase()
+  if (key !== 'role' && key !== 'organization') return null
+
+  let valueQuery = text.slice(colonIndex + 1)
+  if (valueQuery.startsWith('"')) valueQuery = valueQuery.slice(1)
+  if (valueQuery.endsWith('"')) valueQuery = valueQuery.slice(0, -1)
+  const query = valueQuery.toLocaleLowerCase()
+
+  const pool =
+    key === 'role' ? availableRoles.value : availableOrganizations.value
+  const selected =
+    key === 'role' ? selectedRoles.value : selectedOrganizations.value
+  const items = pool.filter(
+    (value) =>
+      !selected.includes(value) && value.toLocaleLowerCase().includes(query)
+  )
+  return { type: 'value' as const, key, items, start, end }
+})
+
+watch(activeSuggestion, () => {
+  suggestionIndex.value = 0
+})
+
+function replaceCurrentToken(replacement: string) {
+  const { start, end } = currentToken.value
+  const raw = search.value
+  const nextCaret = start + replacement.length
+  search.value = raw.slice(0, start) + replacement + raw.slice(end)
+  nextTick(() => {
+    const el = searchInputEl.value
+    if (!el) return
+    el.focus()
+    el.setSelectionRange(nextCaret, nextCaret)
+    caret.value = nextCaret
+  })
+}
+
+function applySuggestion(item: string) {
+  const suggestion = activeSuggestion.value
+  if (!suggestion) return
+  // replaceCurrentToken swaps out the whole token (e.g. the full "role:"
+  // typed so far), so a value pick has to re-include the key prefix rather
+  // than just the value.
+  replaceCurrentToken(
+    suggestion.type === 'key'
+      ? `${item}:`
+      : `${suggestion.key}:${quoteIfNeeded(item)} `
+  )
+}
+
+function onSearchKeydown(event: KeyboardEvent) {
+  const suggestion = activeSuggestion.value
+  if (!suggestion?.items.length) return
+  if (event.key === 'ArrowDown') {
+    event.preventDefault()
+    suggestionIndex.value =
+      (suggestionIndex.value + 1) % suggestion.items.length
+  } else if (event.key === 'ArrowUp') {
+    event.preventDefault()
+    suggestionIndex.value =
+      (suggestionIndex.value - 1 + suggestion.items.length) %
+      suggestion.items.length
+  } else if (event.key === 'Enter' || event.key === 'Tab') {
+    event.preventDefault()
+    applySuggestion(suggestion.items[suggestionIndex.value])
+  } else if (event.key === 'Escape') {
+    suggestionsEnabled.value = false
+  }
+}
+
+const isLoading = ref(false)
+const loadError = ref('')
+const isAdding = ref(false)
+const removingEmail = ref('')
 
 /**
  * Save the new role, then reset editing state
  */
 async function onSaveRole(item: any) {
-  const res = await hs.workspaces.updateCollaboratorRole(
-    props.workspace.id,
-    item.email,
-    item.pendingRole.id
-  )
-  if (res.ok) {
-    item.role = res.data.role
-    item.isBeingEdited = false
-    Snackbar.success('Collaborator role updated.')
-  } else {
-    console.error('Error updating collaborator role:', res)
-    Snackbar.error(res.message)
-    item.isBeingEdited = true
+  if (!canEdit.value || item.isSaving) return
+  item.isSaving = true
+  try {
+    const res = await hs.workspaces.updateCollaboratorRole(
+      props.workspace.id,
+      item.email,
+      item.pendingRole.id
+    )
+    if (res.ok) {
+      item.role = item.pendingRole
+      item.isBeingEdited = false
+      Snackbar.success('Collaborator role updated.')
+      emits('changed')
+    } else {
+      console.error('Error updating collaborator role:', res)
+      Snackbar.error(res.message || 'Unable to update the collaborator role.')
+      item.isBeingEdited = true
+    }
+  } catch (error) {
+    console.error('Error updating collaborator role:', error)
+    Snackbar.error('Unable to update the collaborator role.')
+  } finally {
+    item.isSaving = false
   }
 }
 
@@ -213,46 +817,73 @@ function cancelAddCollaborator() {
 }
 
 async function onAddCollaborator() {
+  if (!canCreate.value || isAdding.value) return
   if (!newCollaboratorEmail.value || !selectedRole.value) {
     Snackbar.warn('Please fill out collaborator email and role.')
     return
   }
 
-  const res = await hs.workspaces.addCollaborator(
-    props.workspace!.id,
-    newCollaboratorEmail.value,
-    selectedRole.value.id
-  )
-  if (res.ok) {
-    collaboratorList.value.push(collaboratorToFormData(res.data))
-    collaboratorList.value.sort((a, b) => a.name.localeCompare(b.name))
-    Snackbar.success('Collaborator added to workspace.')
-    showAddCollaborator.value = false
-  } else {
-    console.error('Error adding secondary owner', res)
-    Snackbar.error(res.message)
-    return
+  isAdding.value = true
+  try {
+    const res = await hs.workspaces.addCollaborator(
+      props.workspace!.id,
+      newCollaboratorEmail.value,
+      selectedRole.value.id
+    )
+    if (res.ok) {
+      if (res.data.user) {
+        collaboratorList.value.push(collaboratorToFormData(res.data))
+      }
+      collaboratorList.value.sort((a, b) => a.name.localeCompare(b.name))
+      Snackbar.success('Collaborator added to workspace.')
+      showAddCollaborator.value = false
+      newCollaboratorEmail.value = ''
+      selectedRole.value = ''
+      emits('changed')
+    } else {
+      console.error('Error adding collaborator', res)
+      Snackbar.error(res.message || 'Unable to add the collaborator.')
+    }
+  } catch (error) {
+    console.error('Error adding collaborator', error)
+    Snackbar.error('Unable to add the collaborator.')
+  } finally {
+    isAdding.value = false
   }
-  newCollaboratorEmail.value = ''
-  selectedRole.value = ''
 }
 
 async function onRemoveCollaborator(email: string) {
-  const res = await hs.workspaces.removeCollaborator(props.workspace!.id, email)
+  if (removingEmail.value || (!canDelete.value && email !== user.value?.email))
+    return
+  removingEmail.value = email
+  try {
+    const res = await hs.workspaces.removeCollaborator(
+      props.workspace!.id,
+      email
+    )
 
-  if (res.ok) {
-    const index = collaboratorList.value.findIndex((c) => c.email === email)
-    if (index !== -1) collaboratorList.value.splice(index, 1)
-    Snackbar.success('Collaborator removed.')
-    if (email === user.value.email) await router.push({ name: 'Sites' })
-  } else {
-    console.error('Error removing collaborator', res)
-    Snackbar.error(res.message)
+    if (res.ok) {
+      const index = collaboratorList.value.findIndex((c) => c.email === email)
+      if (index !== -1) collaboratorList.value.splice(index, 1)
+      Snackbar.success('Collaborator removed.')
+      emits('changed')
+      if (email === user.value.email) emits('self-removed')
+    } else {
+      console.error('Error removing collaborator', res)
+      Snackbar.error(res.message || 'Unable to remove the collaborator.')
+    }
+  } catch (error) {
+    console.error('Error removing collaborator', error)
+    Snackbar.error('Unable to remove the collaborator.')
+  } finally {
+    removingEmail.value = ''
   }
 }
 
 const setCollaboratorList = (collaborators: Collaborator[]) => {
-  collaboratorList.value = collaborators.map((c) => collaboratorToFormData(c))
+  collaboratorList.value = collaborators
+    .filter((collaborator) => collaborator.user && !collaborator.serviceAccount)
+    .map((collaborator) => collaboratorToFormData(collaborator))
 
   if (props.workspace?.owner) {
     collaboratorList.value.unshift({
@@ -260,9 +891,10 @@ const setCollaboratorList = (collaborators: Collaborator[]) => {
       value: props.workspace.owner.email,
       name: props.workspace.owner.name,
       role: { name: 'Owner' },
-      organization: props.workspace.owner.organizationName || 'No Organization',
+      organization: props.workspace.owner.organizationName || 'No organization',
       isOwner: true,
       isBeingEdited: false,
+      isSaving: false,
     })
   }
   collaboratorList.value.sort((a, b) => a.name.localeCompare(b.name))
@@ -273,44 +905,130 @@ async function onCancelEdit(item: any) {
   item.isBeingEdited = false
 }
 
-const collaboratorToFormData = (c: Collaborator) => ({
-  email: c.user.email,
-  value: c.user.email,
-  name: c.user.name,
-  role: c.role,
-  pendingRole: c.role,
-  organization: c.user.organizationName || 'No Organization',
-  isOwner: false,
-  isBeingEdited: false,
+const collaboratorToFormData = (c: Collaborator) => {
+  const contact = c.user
+  return {
+    email: contact?.email ?? '',
+    value: contact?.email ?? '',
+    name: contact?.name ?? '',
+    role: c.role,
+    pendingRole: c.role,
+    organization: c.user?.organizationName || 'No organization',
+    isOwner: false,
+    isBeingEdited: false,
+    isSaving: false,
+  }
+}
+
+async function loadCollaboratorData() {
+  isLoading.value = true
+  loadError.value = ''
+  isDataReady.value = false
+  try {
+    const [cRes, rolesResponse] = await Promise.all([
+      hs.workspaces.getCollaborators(props.workspace.id),
+      hs.workspaces.getRoles({
+        sortby: ['name'],
+      }),
+    ])
+
+    if (!cRes.ok || !rolesResponse.ok) {
+      console.error('Error fetching workspace collaborators', {
+        collaborators: cRes,
+        roles: rolesResponse,
+      })
+      loadError.value = 'Unable to load all collaborator data.'
+    }
+
+    roles.value = rolesResponse.ok
+      ? rolesResponse.data.filter(
+          (role: CollaboratorRole) =>
+            role.workspaceId === null || role.workspaceId === props.workspace.id
+        )
+      : []
+    setCollaboratorList(cRes.ok ? cRes.data : [])
+    isDataReady.value = cRes.ok && rolesResponse.ok
+  } catch (error) {
+    console.error('Error fetching workspace collaborators', error)
+    loadError.value = 'Unable to load collaborator data.'
+    roles.value = []
+    setCollaboratorList([])
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// The `q` query param mirrors the search bar so the current filter/search
+// state can be reloaded or shared as a link, mirroring GitHub's issue search.
+function queryString(value: unknown) {
+  return `${Array.isArray(value) ? (value[0] ?? '') : (value ?? '')}`
+}
+
+onMounted(() => {
+  const queryValue = queryString(route.query.q)
+  if (queryValue) search.value = queryValue
+  loadCollaboratorData()
 })
 
-onMounted(async () => {
-  const [cRes, rolesResponse] = await Promise.all([
-    hs.workspaces.getCollaborators(props.workspace.id),
-    hs.workspaces.getRoles({
-      order_by: ['name'],
-      is_user_role: true,
-    }),
-  ])
-
-  if (!cRes.ok)
-    console.error('Error fetching collaborators for workspace', cRes)
-  if (!rolesResponse.ok)
-    console.error('Error fetching collaborators for workspace', rolesResponse)
-
-  roles.value = rolesResponse.ok
-    ? rolesResponse.data.filter(
-        (r: CollaboratorRole) =>
-          r.workspaceId === null || r.workspaceId == props.workspace.id
-      )
-    : []
-  setCollaboratorList(cRes.ok ? cRes.data : [])
+watch(search, (value) => {
+  if (queryString(route.query.q) === value) return
+  void router.replace({ query: { ...route.query, q: value || undefined } })
 })
 </script>
 
 <style scoped>
-.collaborator-list-container {
-  max-height: 360px; /* max-height to about 4 collaborator items */
-  overflow-y: auto;
+.collaborator-add-card {
+  background-color: var(--hs-surface) !important;
+  border-color: var(--hs-border) !important;
+  opacity: 1;
+}
+
+.collaborator-add-card :deep(.v-field) {
+  background-color: var(--hs-surface-subtle);
+}
+
+.collaborators-help-text {
+  color: var(--hs-text-secondary);
+  line-height: 1.5;
+  max-width: 640px;
+  margin-bottom: var(--hs-space-10);
+}
+.collaborator-filter-button {
+  min-width: auto;
+  color: var(--hs-text-primary);
+  text-transform: none;
+}
+.collaborator-filter-button--active {
+  color: rgb(var(--v-theme-primary));
+}
+.filter-count {
+  min-width: var(--hs-space-20);
+  margin-left: var(--hs-space-2);
+  padding: 0 var(--hs-space-4);
+  border-radius: var(--hs-radius-pill);
+  background: rgb(var(--v-theme-primary));
+  color: rgb(var(--v-theme-on-primary));
+  text-align: center;
+}
+
+.collaborator-role-editor {
+  max-width: 200px;
+  margin-top: var(--hs-space-4);
+}
+.collaborators-table-card {
+  margin-top: 0;
+}
+.collaborator-header-filters {
+  display: flex;
+  align-items: center;
+  gap: var(--hs-space-8);
+}
+.collaborator-actions-column {
+  width: 190px;
+}
+.collaborator-table :deep(td) {
+  vertical-align: middle;
+  padding-top: var(--hs-space-12);
+  padding-bottom: var(--hs-space-12);
 }
 </style>

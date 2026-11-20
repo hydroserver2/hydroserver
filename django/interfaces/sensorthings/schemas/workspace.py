@@ -6,7 +6,6 @@ from uuid import UUID
 class WorkspaceProperties(BaseModel):
     id: UUID
     name: str
-    link: str
     is_private: bool
 
     model_config = ConfigDict(

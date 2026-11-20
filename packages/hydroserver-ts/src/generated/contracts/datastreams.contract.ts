@@ -1,16 +1,16 @@
 /* AUTO-GENERATED. DO NOT EDIT.
-   Generated from ../../django/contracts/openapi/data.openapi.json */
-import type * as Data from '../data.types'
+   Generated from ../../django/contracts/openapi/ogc.openapi.json */
+import type * as Data from '../ogc.types'
 
 export namespace DatastreamContract {
-  export const route = 'datastreams' as const
+  export const route = 'collections/datastreams/items' as const
   export type QueryParameters = ([Data.operations['interfaces_api_views_sta_datastream_get_datastreams']['parameters']['query']] extends [never] ? {} : NonNullable<Data.operations['interfaces_api_views_sta_datastream_get_datastreams']['parameters']['query']>)
-  export type SummaryResponse = Data.components['schemas']['DatastreamSummaryResponse']
-  export type DetailResponse  = Data.components['schemas']['DatastreamDetailResponse']
+  export type SummaryResponse = Data.components['schemas']['DatastreamResponse']
+  export type DetailResponse  = Data.components['schemas']['ItemResponse_DatastreamResponse_']
   export type PostBody        = Data.components['schemas']['DatastreamPostBody']
   export type PatchBody       = Data.components['schemas']['DatastreamPatchBody']
   export type DeleteBody      = never
-  export const writableKeys = ["aggregationStatistic","description","intendedTimeSpacing","intendedTimeSpacingUnit","isPrivate","isVisible","name","noDataValue","observationType","observedPropertyId","phenomenonBeginTime","phenomenonEndTime","processingLevelId","resultBeginTime","resultEndTime","resultType","sampledMedium","sensorId","status","thingId","timeAggregationInterval","timeAggregationIntervalUnit","unitId","valueCount"] as const
+  export const writableKeys = ["aggregationStatistic","description","intendedTimeSpacing","intendedTimeSpacingUnit","isPrivate","isRestricted","methodId","monitoringSiteId","name","noDataValue","observedPropertyId","processingLevelId","sampledMedium","status","tags","timeAggregationInterval","timeAggregationIntervalUnit","type","unitId"] as const
   export declare const __types: {
     SummaryResponse: SummaryResponse
     DetailResponse: DetailResponse

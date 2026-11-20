@@ -30,11 +30,11 @@ Data Management app's authenticated session. Endpoint groups used:
 | Session / auth     | `/auth/browser/session`                | Current session and logout. Login is handled by Data Management. |
 | Account            | `/auth/browser/account`                | Current user profile.                               |
 | Workspaces         | `/data/workspaces`                     | List, pick, create workspaces.                      |
-| Things (sites)     | `/data/things`                         | Sites the operator can browse.                      |
+| Monitoring sites     | `/data/monitoring-sites`                         | Sites the operator can browse.                      |
 | Datastreams        | `/data/datastreams`                    | List + fetch metadata + observations + bulk replace.|
 | Observations       | `/data/datastreams/{id}/observations`  | Paged columnar read, bulk POST with `mode=replace`. |
 | Result qualifiers  | `/data/result-qualifiers`              | Qualifier code lookups per workspace.               |
-| Observed props / processing levels / units / sensors | `/data/observed-properties`, `/data/processing-levels`, `/data/units`, `/data/sensors` | Filter taxonomy. |
+| Observed props / processing levels / units / methods | `/data/observed-properties`, `/data/processing-levels`, `/data/units`, `/data/methods` | Filter taxonomy. |
 
 The QC App uses `@hydroserver/client` for these endpoints; the legacy
 qc-utils service layer lives under `packages/qc-utils/src/services/`.
@@ -43,11 +43,14 @@ qc-utils service layer lives under `packages/qc-utils/src/services/`.
 
 - **REST + JSON over HTTPS.** Authentication is session cookies issued by
   the HydroServer backend; CSRF tokens are read from the same domain.
-- **HydroServer columnar response format** is the preferred shape for
-  observation fetches (`format=column`). It returns parallel
-  `phenomenonTime[]` + `result[]` arrays and is dramatically faster than
-  the row-oriented response. The QC App can decode both, but uses column
-  format end-to-end today (see `src/utils/observations.ts:33`).
+- **HydroServer's column profile** is the preferred shape for observation
+  fetches (`profile=https://hydroserver.org/profiles/observations/column`,
+  `ObservationProfile.Column` in `@hydroserver/client`). It groups
+  observations by datastream, with parallel `phenomenonTime[]` and
+  `result[]` arrays in each group's `columns`, and is far faster than
+  observation records. The QC App requests only `phenomenonTime` and
+  `result` with the `properties` parameter (see
+  `src/utils/observations.ts:23`).
 - **No OData, no GraphQL, no OGC SensorThings.** Bridging to those
   standards is a HydroServer-backend concern; the QC App will inherit
   whatever HydroServer exposes.
@@ -55,9 +58,11 @@ qc-utils service layer lives under `packages/qc-utils/src/services/`.
 
 ### Observation read
 
-Paged GET against `/data/datastreams/{id}/observations` with
-`format=column`, `order_by=phenomenonTime`, `page_size=50000`, and
-`phenomenon_time_min` / `phenomenon_time_max` ISO-8601 bounds. The app
+Paged GET against `/api/ogc/collections/observations/items` with
+`datastreamId={id}`, the column `profile`,
+`properties=phenomenonTime,result`, `sortby=phenomenonTime`,
+`limit=50000`, and a `datetime` interval (`start/end`, RFC 3339). The
+response holds one group for the datastream. The app
 paginates client-side and caches the merged window in
 `useObservationStore`.
 
@@ -72,14 +77,14 @@ hs.datastreams.createObservations(
   },
   {
     mode: 'replace',
-    phenomenon_time_start: session.phenomenonTimeStart,
-    phenomenon_time_end: session.phenomenonTimeEnd,
+    phenomenonTimeStart: session.phenomenonTimeStart,
+    phenomenonTimeEnd: session.phenomenonTimeEnd,
   }
 )
 ```
 
-Replace mode deletes every observation between `phenomenon_time_start` and
-`phenomenon_time_end`, then inserts the posted ones. The QC App always sends
+Replace mode deletes every observation between `phenomenonTimeStart` and
+`phenomenonTimeEnd`, then inserts the posted ones. The QC App always sends
 the session window as that range, so points deleted at the window's edges are
 removed too, and a session that deleted every point commits an empty body.
 Without the range, the backend falls back to the span of the posted
@@ -100,13 +105,25 @@ Composables are the public hook surface for components. They wrap stores
 
 ```ts
 const { runFilter } = useFilterDispatch()
-await runFilter(EnumFilterOperations.VALUE_THRESHOLD, [{ 'Greater than': 100 }])
+await runFilter(EnumFilterOperations.VALUE_THRESHOLD, [{ filters: [{ operator: 'Greater than', value: 100 }], match: 'any' }])
 ```
 
-- Calls `selectedSeries.data.dispatchFilter(...)` on the QC datastream.
+- Calls `selectedSeries.data.dispatchFilter(...)` on the QC datastream, or
+  `dispatchFilterWithin(base, ...)` while **Search only the selected
+  points** is on.
 - Appends a `HistoryItem` to the edit history.
 - Highlights the resulting selection on the plot.
 - Surfaces Snackbar errors on failure.
+
+### `useFilterWithinSelection()`
+
+```ts
+const { within, baseCount, selectedCount } = useFilterWithinSelection()
+within.value = true  // keeps the current selection as the base filters search
+```
+
+The filter panels' **Search only the selected points** switch. A hand-made
+selection becomes the new base; a filter's own result doesn't.
 
 ### `useDataSelection()`
 
@@ -337,22 +354,21 @@ const { managedDatastream, history } = await create({
   name,
   description,
   status, // omitted to create the datastream without one
-  sensorId, // the datastream's method
+  methodId,
 })
 ```
 
-`description`, `status` and `sensorId` are writable on a datastream create
-(see the client's `writableKeys`); there is no separate method field, since a
-datastream's method is its sensor. They are passed as overrides, so they win
+`description`, `status` and `methodId` are writable on a datastream create
+(see the client's `writableKeys`). They are passed as overrides, so they win
 over the values copied from the source.
 
 Delegates to the tested `createManagedDatastream` orchestration with the
-live client (`hs.datastreams` + `hs.qualityControlHistories`). The datastream
-is created with `expand_related: true`, so `managedDatastream` comes back in
-the same `Datastream & DatastreamExtended` shape as the `datastreams` catalog
-and can be appended to it directly. Without the flag the 201 body is the flat
-model (FK ids only) and catalog consumers reading `ds.processingLevel.id`
-would break.
+live client (`hs.datastreams` + `hs.qualityControlHistories`). A create
+answers with the new id only, so both are read back: the datastream with
+`expand_related: true`, so `managedDatastream` comes back in the same
+`Datastream & DatastreamExtended` shape as the `datastreams` catalog and can be
+appended to it directly. Without the flag the read is the flat model (FK ids
+only) and catalog consumers reading `ds.processingLevel.id` would break.
 
 ### `useManagedDatastreams()`
 
@@ -376,16 +392,27 @@ in-progress/committed sessions.
 ### `useDatastreamMetadata()`
 
 ```ts
-const { sensors, statuses, load } = useDatastreamMetadata()
+const { methods, statuses, load } = useDatastreamMetadata()
 await load()
 ```
 
-Reference data for the create-datastream form: the active workspace's sensors
-(`hs.sensors.listAllItems`, every page, including the system-level ones) and the datastream status
-vocabulary (`hs.datastreams.getStatuses`). Loaded on demand when the form
+Reference data for the create-datastream form: the active workspace's methods
+(`hs.methods`, every page, including the system-level ones) and the datastream
+status vocabulary (`hs.datastreamStatuses`). Loaded on demand when the form
 opens rather than with the workspace catalog in `App.vue`, since nothing else
 needs it. Neither request throws: a list that fails to load stays empty and
 the form falls back to the source datastream's own value.
+
+### `useWorkspaceCatalog()`
+
+```ts
+const { load, clear } = useWorkspaceCatalog()
+await load(workspaceId)
+```
+
+Loads every page of the workspace's sites, datastreams, processing levels
+and observed properties, plus all QC histories, into `useDataVisStore()`. A
+list that fails to load is left empty and named in a snackbar.
 
 ### `useWorkspacePermissions()`
 
@@ -458,7 +485,7 @@ there; catalogs, filters, and in-flight maps refetch cleanly on boot.
 
 | Name                                | Kind     | Type / signature                                  | Notes |
 |-------------------------------------|----------|---------------------------------------------------|-------|
-| `things`                            | state    | `Thing[]`                                         | Sites in the active workspace; fetched once on workspace mount. |
+| `monitoringSites`                            | state    | `MonitoringSite[]`                                         | Sites in the active workspace; fetched once on workspace mount. |
 | `datastreams`                       | state    | `(Datastream & DatastreamExtended)[]`             | All visible datastreams (with `expand_related` nested objects). |
 | `qcHistories`                       | state    | `QualityControlHistory[]`                         | Workspace QC histories (each links a managed datastream to its source); loaded with the catalog. |
 | `managedDatastreamIds`              | computed | `Set<string>`                                     | Ids of every managed (QC) datastream; hidden from the catalog (reached via the row Edit chooser). |
@@ -468,7 +495,7 @@ there; catalogs, filters, and in-flight maps refetch cleanly on boot.
 | `replaceDatastream`                 | action   | `(ds: Datastream & DatastreamExtended) => void`   | Swap a fresh copy into the catalog and plotted set (used after a commit moves a managed datastream's phenomenon times). |
 | `observedProperties`                | state    | `ObservedProperty[]`                              | Taxonomy for the filter chips. |
 | `processingLevels`                  | state    | `ProcessingLevel[]`                               | Taxonomy for the filter chips. |
-| `selectedThings`                    | state    | `Thing[]`                                         | Site filter selection (sidebar). |
+| `selectedMonitoringSites`           | state    | `MonitoringSite[]`                                         | Site filter selection (sidebar). |
 | `selectedObservedPropertyNames`     | state    | `string[]`                                        | Observed-property filter selection. |
 | `selectedProcessingLevelNames`      | state    | `string[]`                                        | Processing-level filter selection. |
 | `filteredDatastreams`               | computed | `(Datastream & DatastreamExtended)[]`             | `datastreams` narrowed by the three filter selections, with managed (QC) datastreams excluded. |
@@ -492,7 +519,7 @@ there; catalogs, filters, and in-flight maps refetch cleanly on boot.
 | `editSourceDatastream`              | computed | `Datastream \| null`                             | The edit target's source datastream, however it is drawn. |
 | `showSourceContext`                 | state    | `boolean`                                         | Whether the edit target's source is drawn around it as context (default `true`). Persisted by `qcPreferences`. |
 | `setShowSourceContext`              | action   | `(show: boolean) => Promise<void>`                | Turn the source context on or off from the Context menu; rebuilds the plot while editing. |
-| `matchesSelectedThing`              | action   | `(ds) => boolean`                                 | Filter predicate; exposed so the table can reuse it on row updates. |
+| `matchesSelectedMonitoringSite`     | action   | `(ds) => boolean`                                 | Filter predicate; exposed so the table can reuse it on row updates. |
 | `matchesSelectedObservedProperty`   | action   | `(ds) => boolean`                                 | Same shape as above. |
 | `matchesSelectedProcessingLevel`    | action   | `(ds) => boolean`                                 | Same shape as above. |
 | `setDateRange`                      | action   | `({ begin?, end?, update?, custom? }) => Promise<void>` | No-ops when neither bound moves. Otherwise sets the bounds at once and queues a range reload as a plot load (see `rebuildPlot`), which joins a queued rebuild instead of loading on its own and is skipped when an earlier load already caught up with the range. While editing it reloads context only and preserves the zoom (`redraw(false, true)`), since the edit target's data isn't fetched here. Otherwise it clears zoom history and applies the new window. |
@@ -500,14 +527,15 @@ there; catalogs, filters, and in-flight maps refetch cleanly on boot.
 | `refreshGraphSeriesArray`           | action   | `() => Promise<unknown[]>`                        | Reconciles `graphSeriesArray` against `seriesDatastreams` (fetch deltas + reorder + recolor), skipping the edit target (its data is owned by the edit session, not this refresh). A managed datastream with a loaded working copy (`useWorkingCopiesStore`) uses it instead of fetching. Invalidates the working copy of any managed datastream no longer in `seriesDatastreams`, except the edit target. |
 | `resetState`                        | action   | `() => void`                                      | Clears filters, the plotted set, and the edit target, and drops every working copy, on a workspace swap; preserves the preset preference. |
 | `toggleDatastream`                  | action   | `(ds: Datastream) => Promise<void>`               | Plot if absent, unplot if present. |
-| `plotDatastream`                    | action   | `(ds: Datastream) => Promise<void>`               | Add to plot. Plotting never picks or changes the edit target. |
+| `plotDatastream`                    | action   | `(ds: Datastream) => Promise<void>`               | Add to plot. Plotting never picks or changes the edit target. Refused with a warning when `PLOT_CAP` datastreams are already plotted. |
 | `unplotDatastream`                  | action   | `(id: string) => Promise<void>`                   | Remove from the plotted set. Never touches the edit target. |
 | `clearPlottedDatastreams`           | action   | `() => Promise<void>`                             | Drop the entire plotted set. |
 | `sourceGroupIds`                    | action   | `(sourceId: string) => string[]`                  | The source datastream plus every managed (QC) datastream derived from it. |
-| `plotSourceSelection`               | action   | `(sourceId: string, ids: string[]) => Promise<void>` | Apply a whole "what to plot for this source" choice at once: `ids` is the complete set wanted from that source's group. Group members absent from `ids` are unplotted, additions are appended in `ids` order. One rebuild for the whole selection; never touches the edit target. |
+| `plotSourceSelection`               | action   | `(sourceId: string, ids: string[]) => Promise<void>` | Apply a whole "what to plot for this source" choice at once: `ids` is the complete set wanted from that source's group. Group members absent from `ids` are unplotted, additions are appended in `ids` order. One rebuild for the whole selection; never touches the edit target. Additions past `PLOT_CAP` are left off with a warning. |
 | `addSnapshotSeries`                 | action   | `(id: string, record: ObservationRecord, meta: SnapshotMeta) => Promise<void>` | Add a frozen history snapshot as an extra comparison line under the synthetic id `snap:<sessionId>:<opIndex>`. Never touches the edit target; `refreshGraphSeriesArray` skips its fetch. |
 | `removeSnapshotSeries`              | action   | `(id: string) => Promise<void>`                   | Drop one snapshot line. Leaves the edit target alone. |
-| `setPlottedDatastreams`             | action   | `(items: Datastream[]) => Promise<void>`          | Replace the plotted set wholesale (used by URL hydration). Doesn't touch the edit target. Hydrate that separately with `setEditTarget`. |
+| `refuseSnapshot`                    | action   | `(label: string) => boolean`                      | True, with a warning naming `label`, when `SNAPSHOT_CAP` (2) snapshots are already shown. `useHistorySnapshots` checks it before building one; `addSnapshotSeries` checks it too. |
+| `setPlottedDatastreams`             | action   | `(items: Datastream[]) => Promise<void>`          | Replace the plotted set wholesale (used by URL hydration). Keeps the first `PLOT_CAP` datastreams and warns, naming the rest. Doesn't touch the edit target. Hydrate that separately with `setEditTarget`. |
 | `setEditTarget`                     | action   | `(managedId: string) => Promise<void>`            | Begin editing `managedId`: drops snapshots, resets the `qcSession` store (not `resumeDatastreamId`) and clears zoom history when the target changes, sets `qcDatastreamId`, rebuilds the plot. Its data arrives later via `setEditRecord`. This action doesn't fetch it. |
 | `setEditRecord`                     | action   | `(record: ObservationRecord) => Promise<void>`    | Put the edit target's record on the plot: updates its graph series in place if one exists, otherwise adds it (`buildGraphSeries`), then re-plots keeping the x view and refitting the target's y axis (`handleNewPlot` with `refitSeriesIds`). The only path by which the edit target's data reaches the plot. Counted as plot work until drawn. |
 | `clearEditTarget`                   | action   | `() => Promise<void>`                             | Stop editing: drops snapshots, invalidates the edit target's working copy, clears `qcDatastreamId`, removes its graph series, and rebuilds. Plotted datastreams are left exactly as they were. |
@@ -578,6 +606,7 @@ ephemeral (DOM handles, live chart caches).
 | `crosshair`                | state    | `{ visible, cursorX, cursorY, plotLeft, plotBottom }` | CSS-driven crosshair position. |
 | `hiddenAxisIds`            | state    | `Set<string>`                                     | Datastream ids whose right-side y-axis chrome is hidden. |
 | `hiddenTraceIds`           | state    | `Set<string>`                                     | Datastream ids whose trace is fully hidden (eye toggle). |
+| `lockedAxisIds`            | state    | `Set<string>`                                     | Datastream ids whose y axis moves with the primary axis (lock toggle). |
 | `activeTab`                | state    | `'plot' \| 'table'`                               | Center-column tab; captured by the share URL. |
 | `tableScrollRequest`       | state    | `{ time: number; seq: number } \| null`           | Set when the plot zooms to the session window; `DataTable` scrolls to the first row at/after `time`. `seq` re-triggers on repeats. |
 | `requestTableScroll`       | action   | `(time: number) => void`                          | Publish a `tableScrollRequest` for the given epoch-ms range start (bumps `seq`). |
@@ -669,6 +698,9 @@ defaults are reseeded from the datastream on each mount.
 | `selectedChangeComparator` / `changeValue` | state | shape above / `number`                    | Change-threshold filter inputs. |
 | `filterRangeActive`               | state  | `boolean`                                         | Toggles the shared filter-window UX; the only persisted field. |
 | `filterRangeFromTs` / `filterRangeToTs` | state | `number \| null`                            | Filter-window epoch bounds; reseed on each panel mount. |
+| `filterWithinSelection`           | state  | `boolean`                                         | Filters search only `filterWithinBase` (`useFilterWithinSelection`). |
+| `filterWithinBase`                | state  | `number[] \| null`                                | The selection filters search while that is on. |
+| `filterWithinApplying`            | state  | `boolean`                                         | Set while a filter writes its own result, which doesn't become the base. |
 | `onRailItemClicked`               | action | `(title: DrawerType) => void`                     | Nav-rail click handler: toggles open/closed on repeat, switches view on first click. |
 | `showView`                        | action | `(view: View) => void`                            | Switch layouts (view + drawer). Layout only: an open edit session is untouched. |
 
@@ -688,7 +720,7 @@ workspace change.
 | `isLoading`                     | state    | `boolean`                                         | True while `loadQualifiers` is in flight. |
 | `qualifierById`                 | computed | `Record<string, Qualifier>`                       | Lookup map for the chips. |
 | `loadQualifiers`                | action   | `() => Promise<void>`                             | Fetch dictionary for the active workspace; triggers a plot refresh so the qualifier band materialises. |
-| `createQualifier`               | action   | `(code: string, description: string) => Promise<Qualifier>` | Server-side create with a local-only fallback when no workspace is active. |
+| `createQualifier`               | action   | `(name: string, description: string) => Promise<Qualifier>` | Server-side create with a local-only fallback when no workspace is active. |
 | `applyQualifiers`               | action   | `(datastreamId, indices, qualifierIds, appliedBy) => void` | Idempotent merge: already-applied (qualifier, index) pairs are skipped. |
 | `removeQualifier`               | action   | `(datastreamId, index, qualifierId) => void`      | Drops a single (qualifier, index) application. |
 | `getApplicationsForDatastream`  | action   | `(datastreamId) => Array<{ index, qualifierId, appliedAt, appliedBy }>` | Flat list suitable for plotting. |
@@ -744,6 +776,7 @@ ephemeral connection state).
 | Name | Kind  | Type / signature   | Notes |
 |------|-------|--------------------|-------|
 | `hs` | state | `Ref<HydroServer>` | Non-null after `main.ts` finishes settings load; type-asserted as non-null for ergonomic consumer code. |
+| `sessionExpired` | state | `Ref<boolean>` | Set by `main.ts` when the client emits `session:expired` (a request rejected with 401 while signed in). `SessionExpiredNotice` shows while it's true; a successful `saveDraft` or dismissing the notice clears it. |
 
 ### `useQcSessionStore()` (`src/store/qcSession.ts`)
 
@@ -951,7 +984,7 @@ Wire shape:
     "endDate":   "2024-06-30T23:59:59.999Z"
   },
   "operations": [
-    { "method": "VALUE_THRESHOLD", "args": [{ "Greater than": 100 }] },
+    { "method": "VALUE_THRESHOLD", "args": [{ "filters": [{ "operator": "Greater than", "value": 100 }], "match": "any" }] },
     { "method": "CHANGE_VALUES",   "args": ["ASSIGN", 11.5] }
   ]
 }

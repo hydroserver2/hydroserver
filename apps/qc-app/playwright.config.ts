@@ -22,20 +22,26 @@ export default defineConfig({
   globalSetup: './e2e/support/global-setup.ts',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 1,
-  workers: process.env.CI ? 1 : 2,
+  retries: 1,
+  workers: 2,
   reporter,
   outputDir: 'test-results',
   use: {
     baseURL: appBaseUrl,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
+    video: 'on-first-retry',
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
     {
-      name: 'firefox',
+      name: 'firefox-smoke',
+      testMatch: [
+        '**/smoke.spec.ts',
+        '**/navigation.spec.ts',
+        '**/all-operations.spec.ts',
+        '**/submit.spec.ts',
+      ],
       use: {
         ...devices['Desktop Firefox'],
         // The plots are WebGL. Without a GPU (CI) Firefox turns WebGL off and
@@ -45,7 +51,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `npm run dev -- --host ${appHost} --port ${appPort}`,
+    command: `npm run dev -- --host ${appHost} --port ${appPort} --base /`,
     url: appBaseUrl,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

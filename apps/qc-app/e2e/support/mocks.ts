@@ -1,7 +1,7 @@
 /**
  * Route-level HydroServer mocks for Playwright.
  *
- * The real QC app talks to a HydroServer instance (`/api/data/*` and
+ * The real QC app talks to a HydroServer instance (`/api/ogc/*` and
  * `/api/auth/*`). For e2e specs we don't want to depend on a live
  * backend: tests are slow, flaky, and can't set up the exact dataset
  * shape each spec needs. This module registers `page.route()` handlers
@@ -12,7 +12,7 @@
  *   await installMocks(page)
  *   await page.goto('/')
  *
- * The handlers match on path fragments (`/api/data/datastreams/...`)
+ * The handlers match on path fragments (`/api/ogc/collections/datastreams/items/...`)
  * regardless of host.
  */
 
@@ -32,12 +32,16 @@ import {
   qcHistories,
   qcSessions,
   resultQualifiers,
-  sensors,
+  methods,
   session,
-  things,
+  monitoringSites,
   units,
   workspaces,
 } from './fixtures'
+
+const appHost = process.env.E2E_APP_HOST || '127.0.0.1'
+const appPort = process.env.E2E_APP_PORT || '15173'
+const appOrigin = `http://${appHost}:${appPort}`
 
 export interface MockOptions {
   /**
@@ -129,7 +133,7 @@ function corsHeaders(route: Route): Record<string, string> {
     'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Allow-Methods': 'GET,POST,PATCH,DELETE,OPTIONS',
     'Access-Control-Allow-Headers': '*',
-    'Access-Control-Expose-Headers': 'X-Total-Pages,X-Total-Count,X-Checksum',
+    'Access-Control-Expose-Headers': 'X-Checksum',
   }
 }
 
@@ -139,11 +143,27 @@ function json(route: Route, body: unknown, status = 200, extraHeaders: Record<st
     contentType: 'application/json',
     headers: {
       ...corsHeaders(route),
-      'X-Total-Pages': '1',
       ...extraHeaders,
     },
     body: JSON.stringify(body),
   })
+}
+
+/**
+ * Pagination meta for a list response that always returns everything in one
+ * shot. The limit is one more than the count, so the client's pager sees a
+ * short page and doesn't ask for the next one (these routes ignore `offset`).
+ */
+function listMeta(count: number) {
+  return { offset: 0, limit: count + 1, numberMatched: count, numberReturned: count }
+}
+
+/**
+ * A single-item response. The API always sends `included` (null unless asked
+ * for), and the client only unwraps `data` from a body that has it.
+ */
+function item(data: unknown, included: unknown = null) {
+  return { data, included, links: [] }
 }
 
 /** Convenience: derives the path portion of the requested URL. */
@@ -174,6 +194,42 @@ export async function installMocks(
   const catalog = (
     withQcHistories ? [...datastreams, managedDatastream] : datastreams
   ).map((ds) => ({ ...ds, ...overrides[ds.id] }))
+  const catalogIncluded = {
+    workspaces,
+    monitoringSites,
+    methods,
+    observedProperties,
+    processingLevels,
+    units,
+  }
+  // What the app creates, so reading it back after a create finds it.
+  const createdHistories: Array<Record<string, any>> = []
+  const createdDatastreams: Array<Record<string, any>> = []
+
+  // Session authentication is now read synchronously from the
+  // server-rendered `current-user` script tag. Vite serves a static shell in
+  // e2e, so mirror Django's shell by adding that tag before the application
+  // module runs.
+  await page.route(
+    (url) =>
+      url.origin === appOrigin &&
+      (url.pathname === '/' || url.pathname === '/qc/'),
+    async (route) => {
+      const response = await route.fetch()
+      let body = await response.text()
+      if (authenticated) {
+        const currentUser = JSON.stringify(session.data.user).replaceAll(
+          '<',
+          '\\u003c'
+        )
+        body = body.replace(
+          '</head>',
+          `<script id="current-user" type="application/json">${currentUser}</script></head>`
+        )
+      }
+      return route.fulfill({ response, body })
+    }
+  )
 
   // Match only real HydroServer API calls by pathname. A bare `**/api/**`
   // glob also catches the dev server's own source modules. The QC app
@@ -214,7 +270,9 @@ export async function installMocks(
     }
 
     // --- Bulk observation create (submit) ---
-    const bulkCreate = path.match(/\/api\/data\/datastreams\/([^/]+)\/observations\/bulk-create/)
+    // Observations moved to a top-level resource: POST /collections/observations/bulk-create
+    // with datastreamId in the body, not the path.
+    const bulkCreate = path === '/api/ogc/collections/observations/bulk-create'
     if (bulkCreate && method === 'POST') {
       const params = new URL(url).searchParams
       const body = await safeJson(request)
@@ -223,140 +281,135 @@ export async function installMocks(
     }
 
     // --- Observations list (columnar) ---
-    const obsList = path.match(/\/api\/data\/datastreams\/([^/]+)\/observations$/)
+    // Same restructuring: GET /observations?datastreamId={id}, not nested
+    // under /datastreams/{id}/observations.
+    const obsList = path === '/api/ogc/collections/observations/items'
     if (obsList && method === 'GET') {
-      const dsId = obsList[1]
       const params = new URL(url).searchParams
-      const page = Number(params.get('page') ?? '1')
+      const dsId = params.get('datastreamId') ?? ''
       const series = observationsById[dsId] ?? observations
-      // Honour the `phenomenon_time_min` / `phenomenon_time_max`
-      // params the client always sends. Without this, the app's
-      // cache-extension logic in `fetchObservationsInRange` (which
-      // re-fetches the segment outside its cached window every time
+      // Honour the `datetime` interval the client always sends. Without
+      // this, the app's cache-extension logic in `fetchObservationsInRange`
+      // (which re-fetches the segment outside its cached window every time
       // the range moves) would receive the full fixture series on
       // each call and stack duplicates into the ObservationRecord,
       // visible as wrong point counts and a long phantom line
       // connecting the first and last observations.
-      const tMin = parseISOorNull(params.get('phenomenon_time_min'))
-      const tMax = parseISOorNull(params.get('phenomenon_time_max'))
+      const [tMin, tMax] = parseDatetimeInterval(params.get('datetime'))
       const sliced =
         tMin == null && tMax == null ? series : sliceSeries(series, tMin, tMax)
-      // Only the first page carries data; subsequent pages are empty
-      // so the client's pagination loop terminates.
-      const data = page === 1 ? sliced : { phenomenonTime: [], result: [] }
+      // Only the first page carries data, so the client's paging stops after it.
+      const offset = Number(params.get('offset') ?? 0)
+      const groups =
+        offset > 0 || !sliced.result.length ? [] : [{ datastreamId: dsId, columns: sliced }]
       // Every mocked session starts from this checksum, so the source never changes.
-      return json(route, { data }, 200, {
-        'X-Total-Pages': '1',
-        'X-Checksum': QC_SOURCE_CHECKSUM,
-      })
+      return json(
+        route,
+        { data: groups, meta: listMeta(sliced.result.length) },
+        200,
+        { 'X-Checksum': QC_SOURCE_CHECKSUM }
+      )
     }
 
     // --- Units ---
-    const unitGet = path.match(/\/api\/data\/units\/([^/]+)$/)
+    const unitGet = path.match(/\/api\/ogc\/collections\/units\/items\/([^/]+)$/)
     if (unitGet && method === 'GET') {
       const id = unitGet[1]
       const unit = units.find((u) => u.id === id) ?? units[0]
-      return json(route, { data: unit })
+      return json(route, unit)
     }
-    if (path.endsWith('/api/data/units') && method === 'GET') {
-      return json(route, { data: units })
+    if (path.endsWith('/api/ogc/collections/units/items') && method === 'GET') {
+      return json(route, { data: units, meta: listMeta(units.length) })
     }
 
     // --- Workspaces ---
-    if (path.endsWith('/api/data/workspaces') && method === 'GET') {
-      return json(route, { data: workspaces })
+    if (path.endsWith('/api/ogc/collections/workspaces/items') && method === 'GET') {
+      return json(route, { data: workspaces, meta: listMeta(workspaces.length) })
     }
 
     // --- Quality-control histories / sessions / operations ---
-    // Served ahead of the datastream routes: the history paths sit under
-    // the same `/api/data` prefix and would otherwise fall to the
-    // empty-list catch-all.
+    // Served ahead of the single-history route, which would otherwise match
+    // the start of every session path.
     const qcSessionRoute = path.match(
-      /\/api\/data\/quality-control\/histories\/([^/]+)\/sessions(?:\/([^/]+)(?:\/(commit|operations)(?:\/([^/]+))?)?)?$/
+      /\/api\/ogc\/collections\/quality-control-histories\/items\/([^/]+)\/sessions(?:\/([^/]+)(?:\/(commit|operations)(?:\/([^/]+))?)?)?$/
     )
     if (qcSessionRoute) {
       return handleQcSessions(route, sessionState, qcSessionRoute)
     }
-    if (path.endsWith('/api/data/quality-control/histories')) {
+    const historyGet = path.match(
+      /\/api\/ogc\/collections\/quality-control-histories\/items\/([^/]+)$/
+    )
+    if (historyGet && method === 'GET') {
+      const history = [...qcHistories, ...createdHistories].find(
+        (h) => h.id === historyGet[1]
+      )
+      if (!history) return json(route, { detail: 'History not found.' }, 404)
+      return json(route, item(history))
+    }
+    if (path.endsWith('/api/ogc/collections/quality-control-histories/items')) {
       if (method === 'POST') {
         const body = await safeJson(request)
-        return json(
-          route,
-          { data: { id: 'qch-e2e-new', ...body } },
-          201
-        )
+        createdHistories.push({ ...body, id: 'qch-e2e-new' })
+        return json(route, { id: 'qch-e2e-new' }, 201)
       }
-      return json(route, { data: withQcHistories ? qcHistories : [] })
+      const histories = withQcHistories ? qcHistories : []
+      return json(route, { data: histories, meta: listMeta(histories.length) })
     }
 
-    // --- Things / datastreams / processing levels / observed properties ---
-    if (path.endsWith('/api/data/things') && method === 'GET') {
-      return json(route, { data: things })
+    // --- Monitoring sites / datastreams / processing levels / observed properties ---
+    if (path.endsWith('/api/ogc/collections/monitoring-sites/items') && method === 'GET') {
+      return json(route, { data: monitoringSites, meta: listMeta(monitoringSites.length) })
     }
-    if (path.endsWith('/api/data/datastreams')) {
+    if (path.endsWith('/api/ogc/collections/datastreams/items')) {
       if (method === 'POST') {
         const body = await safeJson(request)
         datastreamCreates.push(body)
-        // Echo the body back the way the server does, with an assigned id
-        // and the nested relations `expand_related: true` asks for.
-        const created = { ...body, id: 'ds-qc-e2e-created' }
-        return json(
-          route,
-          {
-            data: {
-              ...created,
-              thing: things.find((t) => t.id === created.thingId),
-              unit: units.find((u) => u.id === created.unitId),
-              sensor: sensors.find((s) => s.id === created.sensorId),
-              observedProperty: observedProperties.find(
-                (o) => o.id === created.observedPropertyId
-              ),
-              processingLevel: processingLevels.find(
-                (p) => p.id === created.processingLevelId
-              ),
-            },
-          },
-          201
-        )
+        // The API answers with the new id; the client then reads the
+        // datastream back, which the single-datastream route serves.
+        createdDatastreams.push({ ...body, id: 'ds-qc-e2e-created' })
+        return json(route, { id: 'ds-qc-e2e-created' }, 201)
       }
-      return json(route, { data: catalog })
+      return json(route, {
+        data: catalog,
+        meta: listMeta(catalog.length),
+        included: catalogIncluded,
+      })
     }
-    // Ahead of the single-datastream route, which would otherwise treat
-    // "statuses" as a datastream id.
-    if (path.endsWith('/api/data/datastreams/statuses') && method === 'GET') {
-      return json(route, { data: datastreamStatuses })
+    if (path.endsWith('/api/ogc/collections/datastream-statuses/items') && method === 'GET') {
+      return json(route, { data: datastreamStatuses, meta: listMeta(datastreamStatuses.length) })
     }
-    if (path.endsWith('/api/data/processing-levels') && method === 'GET') {
-      return json(route, { data: processingLevels })
+    if (path.endsWith('/api/ogc/collections/processing-levels/items') && method === 'GET') {
+      return json(route, { data: processingLevels, meta: listMeta(processingLevels.length) })
     }
-    if (path.endsWith('/api/data/observed-properties') && method === 'GET') {
-      return json(route, { data: observedProperties })
+    if (path.endsWith('/api/ogc/collections/observed-properties/items') && method === 'GET') {
+      return json(route, { data: observedProperties, meta: listMeta(observedProperties.length) })
     }
-    if (path.endsWith('/api/data/sensors') && method === 'GET') {
-      return json(route, { data: sensors })
+    if (path.endsWith('/api/ogc/collections/methods/items') && method === 'GET') {
+      return json(route, { data: methods, meta: listMeta(methods.length) })
     }
-    if (path.endsWith('/api/data/result-qualifiers') && method === 'GET') {
-      return json(route, { data: resultQualifiers })
+    if (path.endsWith('/api/ogc/collections/result-qualifiers/items') && method === 'GET') {
+      return json(route, { data: resultQualifiers, meta: listMeta(resultQualifiers.length) })
     }
 
     // --- Single datastream ---
-    const dsGet = path.match(/\/api\/data\/datastreams\/([^/]+)$/)
+    const dsGet = path.match(/\/api\/ogc\/collections\/datastreams\/items\/([^/]+)$/)
     if (dsGet && method === 'GET') {
       const id = dsGet[1]
-      const ds = catalog.find((d) => d.id === id) ?? catalog[0]
-      return json(route, { data: ds })
+      const ds =
+        [...catalog, ...createdDatastreams].find((d) => d.id === id) ?? catalog[0]
+      return json(route, item(ds, catalogIncluded))
     }
 
     // --- Tags / attachments / other sub-resources the app may touch
     //     in DatastreamInformationCard: return empty arrays so the
     //     UI renders without errors.
-    if (path.includes('/tags') || path.includes('/attachments')) {
-      return json(route, { data: [] })
+    if (path.includes('/attachments')) {
+      return json(route, { data: [], meta: listMeta(0) })
     }
 
     // Catch-all: return an empty list so unexpected endpoints don't
     // 404 and trigger console noise that masks real failures.
-    return json(route, { data: [] })
+    return json(route, { data: [], meta: listMeta(0) })
   })
 }
 
@@ -378,19 +431,22 @@ async function handleQcSessions(
     route.fulfill({ status: 204, headers: corsHeaders(route) })
   const refuse = (detail: string) => json(route, { detail }, 400)
   const inHistory = state.filter((s) => s.historyId === historyId)
+  // Sessions are served without operations, which have their own route.
+  const withoutOperations = ({ operations: _ops, ...rest }: MockQcSession) => rest
 
   if (!sessionId) {
     if (method === 'GET') {
       const params = new URL(request.url()).searchParams
       const status = params.get('status')
-      const ancestorOf = params.get('ancestor_of')
+      const ancestorOf = params.get('ancestorOf')
       const ancestors = ancestorOf ? ancestorIds(inHistory, ancestorOf) : null
-      return json(route, {
-        data: inHistory.filter(
+      const matched = inHistory
+        .filter(
           (s) =>
             (!status || s.status === status) && (!ancestors || ancestors.has(s.id))
-        ),
-      })
+        )
+        .map(withoutOperations)
+      return json(route, { data: matched, meta: listMeta(matched.length) })
     }
     if (method === 'POST') {
       if (inHistory.some((s) => s.status === 'in_progress')) {
@@ -420,7 +476,7 @@ async function handleQcSessions(
         operations: [],
       }
       state.push(session)
-      return json(route, { data: session }, 201)
+      return json(route, { id: session.id }, 201)
     }
   }
 
@@ -434,11 +490,14 @@ async function handleQcSessions(
     if (!inProgress) return refuse('Only in-progress sessions can be committed.')
     session.status = 'committed'
     session.committedAt = now
-    return json(route, { data: session })
+    return noContent()
   }
 
   if (action === 'operations' && !operationId) {
-    if (method === 'GET') return json(route, { data: session.operations })
+    if (method === 'GET') {
+      const ops = [...session.operations].sort((a, b) => a.order - b.order)
+      return json(route, { data: ops, meta: listMeta(ops.length) })
+    }
     if (method === 'POST') {
       if (!inProgress) {
         return refuse('Operations can only be added to an in-progress session.')
@@ -453,7 +512,7 @@ async function handleQcSessions(
         createdBy: QC_SESSION_AUTHOR,
       }))
       session.operations.push(...created)
-      return json(route, { data: created }, 201)
+      return json(route, created.map(({ id }) => ({ id })), 201)
     }
   }
 
@@ -466,7 +525,7 @@ async function handleQcSessions(
     if (method === 'PATCH') {
       const body = await safeJson(request)
       session.operations[index]!.comment = body?.comment ?? null
-      return json(route, { data: session.operations[index] })
+      return noContent()
     }
     if (method === 'DELETE') {
       session.operations.splice(index, 1)
@@ -475,12 +534,12 @@ async function handleQcSessions(
   }
 
   if (!action) {
-    if (method === 'GET') return json(route, { data: session })
+    if (method === 'GET') return json(route, item(withoutOperations(session)))
     if (method === 'PATCH') {
       if (!inProgress) return refuse('Only in-progress sessions can be updated.')
       const body = await safeJson(request)
       if (body && 'description' in body) session.description = body.description
-      return json(route, { data: session })
+      return noContent()
     }
     if (method === 'DELETE') {
       if (!inProgress) return refuse('Only in-progress sessions can be deleted.')
@@ -516,15 +575,24 @@ async function safeJson(request: ReturnType<Page['request']> | any): Promise<any
   }
 }
 
-function parseISOorNull(value: string | null): number | null {
-  if (!value) return null
-  const t = Date.parse(value)
-  return Number.isFinite(t) ? t : null
+/** Parses a `datetime` instant or interval into [start, end] epoch ms; open ends are null. */
+function parseDatetimeInterval(value: string | null): [number | null, number | null] {
+  if (!value) return [null, null]
+  const parseEnd = (part: string | undefined): number | null => {
+    if (!part || part === '..') return null
+    const t = Date.parse(part)
+    return Number.isFinite(t) ? t : null
+  }
+  if (!value.includes('/')) {
+    const instant = parseEnd(value)
+    return [instant, instant]
+  }
+  const [start, end] = value.split('/')
+  return [parseEnd(start), parseEnd(end)]
 }
 
 /**
- * Mirror the real backend's `phenomenon_time_min` / `phenomenon_time_max`
- * filtering. Bounds are inclusive on both ends, matching how the QC
+ * Mirror the real backend's `datetime` filtering. Bounds are inclusive on both ends, matching how the QC
  * app issues its cache-extension queries.
  */
 function sliceSeries(

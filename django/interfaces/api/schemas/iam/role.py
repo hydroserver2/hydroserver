@@ -1,60 +1,94 @@
 import uuid
+
+from typing import Optional, Literal, Annotated
+from pydantic import BeforeValidator, WithJsonSchema
+from pydantic.alias_generators import to_camel
 from ninja import Schema, Field, Query
-from typing import Optional, Literal, TYPE_CHECKING
-from interfaces.api.schemas import BaseGetResponse, CollectionQueryParameters
-from core.iam.models.permission import PERMISSION_CHOICES, RESOURCE_TYPE_CHOICES
 
-if TYPE_CHECKING:
-    from interfaces.api.schemas import WorkspaceDetailResponse
+from core.iam.models.permission import PERMISSION_CHOICES
+from core.iam.permissions.registry import resource_types
+from interfaces.api.schemas import (
+    BaseGetResponse,
+    BaseQueryParameters,
+    CollectionQueryParameters,
+    ExtentQueryParameters,
+    split_comma_separated,
+    comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
+)
+from interfaces.api.schemas.base import ItemId
 
-RESOURCE_TYPES = Literal[*[choice[0] for choice in RESOURCE_TYPE_CHOICES]]
+RESOURCE_TYPES = Literal["*", *resource_types]
 PERMISSIONS = Literal[*[choice[0] for choice in PERMISSION_CHOICES]]
-
-
-class PermissionDetailResponse(BaseGetResponse):
-    resource_type: RESOURCE_TYPES = Field(..., alias="resource")
-    permission_type: PERMISSIONS = Field(..., alias="action")
 
 
 class RoleFields(Schema):
     name: str = Field(..., max_length=255)
-    description: str
-    is_user_role: bool
-    is_apikey_role: bool = Field(..., validation_alias="isAPIKeyRole")
+    description: str | None = None
 
 
-_order_by_fields = (
-    "name",
-    "isUserRole",
-    "isAPIKeyRole",
+class PermissionResponse(BaseGetResponse):
+    resource_type: RESOURCE_TYPES = Field(..., alias="resource")
+    permission_type: PERMISSIONS = Field(..., alias="action")
+
+
+_sortby_fields = ("name",)
+RoleSortByFields = Literal[*_sortby_fields, *[f"-{f}" for f in _sortby_fields]]
+
+_property_fields = (
+    "id",
+    "workspaceId",
+    *(to_camel(name) for name in RoleFields.model_fields),
+    "permissions",
 )
+RolePropertyName = Literal[*_property_fields]
 
-RoleOrderByFields = Literal[*_order_by_fields, *[f"-{f}" for f in _order_by_fields]]
 
-
-class RoleQueryParameters(CollectionQueryParameters):
-    expand_related: Optional[bool] = None
-    order_by: Optional[list[RoleOrderByFields]] = Query(
-        [], description="Select one or more fields to order the response by."
+class RoleFilterFields(Schema):
+    properties: Annotated[
+        Optional[list[RolePropertyName]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(RolePropertyName)),
+    ] = Query(
+        None,
+        description="Comma-separated list of properties to include in the response. "
+        "All properties are returned if omitted.",
     )
+
+
+class RoleItemQueryParameters(RoleFilterFields, BaseQueryParameters):
+    pass
+
+
+class RoleQueryParameters(RoleFilterFields, CollectionQueryParameters, ExtentQueryParameters):
+    sortby: Annotated[
+        Optional[list[RoleSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(RoleSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
     workspace_id: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter roles by workspace ID."
-    )
-    is_user_role: Optional[bool] = Query(
-        None, description="Controls whether the returned roles should be user roles."
-    )
-    is_apikey_role: Optional[bool] = Query(
-        None, description="Controls whether the returned roles should be API key roles."
+        [],
+        description="Roles that belong to this workspace. Matches `id` in `workspaces`. `null` matches "
+        "HydroServer's built-in roles, which are available in every workspace.",
     )
 
 
-class RoleSummaryResponse(BaseGetResponse, RoleFields):
-    id: uuid.UUID
+class RoleResponse(BaseGetResponse, RoleFields, ItemId):
     workspace_id: Optional[uuid.UUID]
-    permissions: list[PermissionDetailResponse]
+    permissions: list[PermissionResponse]
 
+    @staticmethod
+    def resolve_permissions(obj):
+        permissions = getattr(obj, "permissions", None)
+        if not hasattr(permissions, "all"):
+            return permissions
 
-class RoleDetailResponse(BaseGetResponse, RoleFields):
-    id: uuid.UUID
-    workspace: Optional["WorkspaceDetailResponse"]
-    permissions: list[PermissionDetailResponse]
+        actions = ("view", "create", "edit", "delete")
+
+        return [
+            {"resource": permission.resource_type, "action": action}
+            for permission in permissions.all()
+            for action in actions
+            if getattr(permission, f"can_{action}")
+        ]

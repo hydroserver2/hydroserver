@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Literal, Optional, Union, TYPE_CHECKING
 from uuid import UUID
 from hydroserverpy.api.models.monitoring.task import MonitoringTask
 from hydroserverpy.api.models.orchestration.run import TaskRun
-from hydroserverpy.api.utils import normalize_uuid, order_by_to_camel
+from hydroserverpy.api.utils import normalize_uuid, sortby_to_camel
 from ..base import HydroServerBaseService
 
 if TYPE_CHECKING:
@@ -17,10 +17,10 @@ class MonitoringTaskService(HydroServerBaseService):
 
     def list(
         self,
-        page: int = ...,
-        page_size: int = ...,
-        order_by: List[str] = ...,
-        thing: Optional[Union[UUID, str]] = ...,
+        offset: int = ...,
+        limit: int = ...,
+        sortby: List[str] = ...,
+        monitoring_site: Optional[Union[UUID, str]] = ...,
         workspace: Optional[Union[UUID, str]] = ...,
         latest_run_status: str = ...,
         datastream: Optional[Union[UUID, str]] = ...,
@@ -30,11 +30,11 @@ class MonitoringTaskService(HydroServerBaseService):
         """Fetch a collection of monitoring tasks."""
 
         return super().list(
-            page=page,
-            page_size=page_size,
-            order_by=order_by,
+            offset=offset,
+            limit=limit,
+            sortby=sortby,
             fetch_all=fetch_all,
-            thing_id=normalize_uuid(thing),
+            monitoring_site_id=normalize_uuid(monitoring_site),
             workspace_id=normalize_uuid(workspace),
             latest_run_status=latest_run_status,
             datastream_id=normalize_uuid(datastream),
@@ -44,7 +44,7 @@ class MonitoringTaskService(HydroServerBaseService):
     def create(
         self,
         name: str,
-        thing: Union[UUID, str],
+        monitoring_site: Union[UUID, str],
         description: Optional[str] = None,
         recipients: Optional[List[str]] = None,
         uid: Optional[UUID] = None,
@@ -58,7 +58,7 @@ class MonitoringTaskService(HydroServerBaseService):
 
         body = {
             "name": name,
-            "thingId": normalize_uuid(thing),
+            "monitoringSiteId": normalize_uuid(monitoring_site),
             "description": description,
             "recipients": recipients or [],
         }
@@ -114,45 +114,45 @@ class MonitoringTaskService(HydroServerBaseService):
         """Trigger an immediate run of a monitoring task."""
 
         path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/trigger"
-        response = self.client.request("post", path).json()
+        response = self.client.request("post", path).json()["data"]
 
         return TaskRun(**response)
 
     def list_runs(
         self,
         uid: Union[UUID, str],
-        page: int = ...,
-        page_size: int = ...,
-        order_by: List[str] = ...,
+        offset: int = ...,
+        limit: int = ...,
+        sortby: List[str] = ...,
         status: str = ...,
-        started_at_min: datetime = ...,
-        started_at_max: datetime = ...,
-        finished_at_min: datetime = ...,
-        finished_at_max: datetime = ...,
+        min_started_at: datetime = ...,
+        max_started_at: datetime = ...,
+        min_finished_at: datetime = ...,
+        max_finished_at: datetime = ...,
     ) -> List[TaskRun]:
         """Fetch a collection of task runs for a monitoring task."""
 
         params = {
-            "page": page,
-            "page_size": page_size,
-            "order_by": [order_by_to_camel(o) for o in order_by] if order_by is not ... else order_by,
+            "offset": offset,
+            "limit": limit,
+            "sortby": [sortby_to_camel(o) for o in sortby] if sortby is not ... else sortby,
             "status": status,
-            "started_at_min": started_at_min,
-            "started_at_max": started_at_max,
-            "finished_at_min": finished_at_min,
-            "finished_at_max": finished_at_max,
+            "minStartedAt": min_started_at,
+            "maxStartedAt": max_started_at,
+            "minFinishedAt": min_finished_at,
+            "maxFinishedAt": max_finished_at,
         }
         params = {k: v for k, v in params.items() if v is not ...}
 
         path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/runs"
         response = self.client.request("get", path, params=params)
 
-        return [TaskRun(**run) for run in response.json()]
+        return [TaskRun(**run) for run in response.json()["data"]]
 
     def get_run(self, uid: Union[UUID, str], run_id: Union[UUID, str]) -> TaskRun:
         """Fetch a single task run for a monitoring task."""
 
         path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/runs/{str(run_id)}"
-        response = self.client.request("get", path).json()
+        response = self.client.request("get", path).json()["data"]
 
         return TaskRun(**response)

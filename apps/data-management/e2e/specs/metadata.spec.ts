@@ -1,52 +1,151 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '../support/test'
 
 import { authenticateSession } from '../support/auth'
 import { fixtures, users } from '../support/fixtures'
-import { fillCombobox, selectWorkspace } from '../support/ui'
+import { fillCombobox, workspaceListItem } from '../support/ui'
+
+async function selectMetadataScope(
+  page: Page,
+  scope: 'all' | 'workspace' | 'system'
+) {
+  await page.getByTestId(`metadata-scope-${scope}`).click()
+  const table = page.getByTestId(`${scope}-metadata-table`)
+  await expect(table).toBeVisible()
+  return table
+}
 
 test.describe('metadata management', () => {
-  test('metadata page loads workspace and system tabs', async ({ page }) => {
-    await authenticateSession(page, users.owner.email, users.owner.password)
-    await page.goto('/metadata')
+  test('viewers can search, copy, and inspect metadata UUIDs on desktop and mobile', async ({
+    page,
+  }) => {
+    const method = fixtures.metadata.privateAssignedMethod
+    await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
+    await authenticateSession(page, users.viewer.email, users.viewer.password)
+    await page.goto(
+      `/workspaces?workspace=${fixtures.workspaces.private.id}&section=metadata`
+    )
+    const table = page.getByTestId('all-metadata-table')
+    await page.getByRole('tab', { name: 'Methods', exact: true }).click()
+    await table
+      .getByRole('textbox', { name: 'Search metadata' })
+      .fill(method.id)
 
-    await expect(
-      page.getByRole('heading', { name: 'Manage metadata' })
-    ).toBeVisible()
-    await expect(page.getByText('Selected workspace:', { exact: false })).toBeVisible()
-    await expect(page.getByRole('tab', { name: 'Methods' }).first()).toBeVisible()
-    await expect(
-      page.getByRole('tab', { name: 'Observed properties' }).first()
-    ).toBeVisible()
-    await expect(
-      page.getByRole('tab', { name: 'Processing levels' }).first()
-    ).toBeVisible()
-    await expect(page.getByRole('tab', { name: 'Units' }).first()).toBeVisible()
-    await expect(
-      page.getByRole('tab', { name: 'Result qualifiers' }).first()
-    ).toBeVisible()
-    await expect(page.getByTestId('system-metadata-table')).toBeVisible()
-    await expect(page.getByText('System metadata')).toBeVisible()
+    for (const width of [1280, 390]) {
+      await page.setViewportSize({ width, height: 844 })
+      const row = table.locator('tr').filter({ hasText: method.name })
+      await expect(row).toBeVisible()
+      await expect(
+        row.getByLabel('Edit metadata item unavailable')
+      ).toBeDisabled()
+      await expect(
+        row.getByLabel('Delete metadata item unavailable')
+      ).toBeDisabled()
+      await row.getByTestId(`copy-metadata-id-${method.id}`).click()
+      await expect
+        .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+        .toBe(method.id)
+      await row.getByTestId(`view-metadata-${method.id}`).click()
+      const dialog = page.getByRole('dialog')
+      await expect(dialog).toBeVisible()
+      await expect(dialog.getByText(method.id, { exact: true })).toBeVisible()
+      await expect(dialog.getByText(method.name, { exact: true })).toBeVisible()
+      await expect(dialog.getByRole('textbox')).toHaveCount(0)
+      await dialog.getByRole('button', { name: 'Close', exact: true }).click()
+      await expect(dialog).toBeHidden()
+    }
   })
 
-  test('system metadata entries are visible alongside workspace metadata', async ({
+  test('the metadata route redirects to the workspaces page metadata tab', async ({
     page,
   }) => {
     await authenticateSession(page, users.owner.email, users.owner.password)
     await page.goto('/metadata')
-    await selectWorkspace(page, fixtures.workspaces.private.name)
 
-    const workspaceTable = page.getByTestId('workspace-metadata-table')
-    const systemTable = page.getByTestId('system-metadata-table')
-
-    await workspaceTable.getByRole('tab', { name: 'Methods' }).click()
-    await systemTable.getByRole('tab', { name: 'Methods' }).click()
-
+    await expect(page).toHaveURL(/\/workspaces\?section=metadata/)
     await expect(
-      workspaceTable.locator('tr').filter({ hasText: 'Private Assigned Sensor' }).first()
+      page.getByRole('heading', { name: fixtures.workspaces.private.name })
+    ).toBeVisible()
+
+    // All metadata is shown by default, with its own type tabs.
+    await expect(page.getByTestId('all-metadata-table')).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'Methods' })).toBeVisible()
+    await expect(
+      page.getByRole('tab', { name: 'Observed properties' })
     ).toBeVisible()
     await expect(
-      systemTable.locator('tr').filter({ hasText: 'System Sensor' }).first()
+      page.getByRole('tab', { name: 'Processing levels' })
     ).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'Units' })).toBeVisible()
+    await expect(
+      page.getByRole('tab', { name: 'Result qualifiers' })
+    ).toBeVisible()
+    await expect(page.getByTestId('system-metadata-table')).toHaveCount(0)
+
+    // Switching scope swaps to the system-scoped table.
+    await selectMetadataScope(page, 'system')
+    await expect(page.getByTestId('all-metadata-table')).toHaveCount(0)
+  })
+
+  test('switching metadata scope shows workspace or system entries, not both at once', async ({
+    page,
+  }) => {
+    await authenticateSession(page, users.owner.email, users.owner.password)
+    await page.goto('/metadata')
+    await workspaceListItem(page, fixtures.workspaces.private.name).click()
+
+    await page.getByRole('tab', { name: 'Methods' }).click()
+    const workspaceTable = await selectMetadataScope(page, 'workspace')
+    await expect(
+      workspaceTable
+        .locator('tr')
+        .filter({ hasText: fixtures.metadata.privateAssignedMethod.name })
+        .first()
+    ).toBeVisible()
+    await expect(page.getByTestId('system-metadata-table')).toHaveCount(0)
+
+    const systemTable = await selectMetadataScope(page, 'system')
+    await expect(
+      systemTable
+        .locator('tr')
+        .filter({ hasText: fixtures.metadata.systemMethod.name })
+        .first()
+    ).toBeVisible()
+    await expect(page.getByTestId('workspace-metadata-table')).toHaveCount(0)
+  })
+
+  test('admins can update and delete system metadata from the all metadata table', async ({
+    page,
+  }) => {
+    const qualifier = fixtures.metadata.editableSystemResultQualifier
+    const renamedName = `${qualifier.name}-UPDATED`
+
+    await authenticateSession(page, users.admin.email, users.admin.password)
+    await page.goto(
+      `/workspaces?workspace=${fixtures.workspaces.admin.id}&section=metadata`
+    )
+
+    const allTable = await selectMetadataScope(page, 'all')
+    await page.getByRole('tab', { name: 'Result qualifiers' }).click()
+
+    await allTable
+      .getByRole('textbox', { name: 'Search metadata' })
+      .fill(qualifier.name)
+    const editButton = allTable.getByTestId(`edit-metadata-${qualifier.id}`)
+    const deleteButton = allTable.getByTestId(`delete-metadata-${qualifier.id}`)
+    await expect(editButton).toBeVisible()
+    await expect(deleteButton).toBeVisible()
+
+    await editButton.click()
+    await page.getByLabel('Name').fill(renamedName)
+    await page.getByRole('button', { name: 'Update', exact: true }).click()
+
+    const renamedRow = allTable.locator('tr').filter({ hasText: renamedName })
+    await expect(renamedRow).toBeVisible()
+
+    await renamedRow.getByLabel('Delete metadata item').click()
+    await expect(page.getByText(/isn't being used|not.*used/i)).toBeVisible()
+    await page.getByRole('button', { name: 'Delete', exact: true }).click()
+    await expect(renamedRow).toHaveCount(0)
   })
 
   test('workspace method metadata can be created, updated, and deleted', async ({
@@ -57,24 +156,28 @@ test.describe('metadata management', () => {
 
     await authenticateSession(page, users.owner.email, users.owner.password)
     await page.goto('/metadata')
-    await selectWorkspace(page, fixtures.workspaces.private.name)
+    await workspaceListItem(page, fixtures.workspaces.private.name).click()
 
-    const workspaceTable = page.getByTestId('workspace-metadata-table')
-    await workspaceTable.getByRole('tab', { name: 'Methods' }).click()
-    await workspaceTable.getByRole('button', { name: /Add new method/i }).click()
+    const workspaceTable = await selectMetadataScope(page, 'workspace')
+    await page.getByRole('tab', { name: 'Methods' }).click()
+    await workspaceTable
+      .getByRole('button', { name: /Add new method/i })
+      .click()
 
-    await fillCombobox(page, 'Method Type *', 'E2E Method Type')
-    await page.getByLabel('Description *').fill(
-      'Temporary method created by the Playwright metadata CRUD suite.'
-    )
-    await page.getByLabel('Name *').fill(methodName)
+    await fillCombobox(page, 'Type', 'E2E Method Type')
+    await page
+      .getByLabel('Description')
+      .fill('Temporary method created by the Playwright metadata CRUD suite.')
+    await page.getByLabel('Name').fill(methodName)
     await page.getByRole('button', { name: 'Save' }).click()
 
     const methodRow = page.locator('tr').filter({ hasText: methodName }).first()
     await expect(methodRow).toBeVisible()
 
-    await methodRow.locator('.v-icon').first().click()
-    await page.getByLabel('Name *').fill(renamedMethodName)
+    await methodRow
+      .getByRole('button', { name: 'Edit metadata item', exact: true })
+      .click()
+    await page.getByLabel('Name').fill(renamedMethodName)
     await page.getByRole('button', { name: 'Update' }).click()
 
     const renamedMethodRow = page
@@ -83,12 +186,64 @@ test.describe('metadata management', () => {
       .first()
     await expect(renamedMethodRow).toBeVisible()
 
-    await renamedMethodRow.locator('.v-icon').nth(1).click()
-    await expect(page.getByText("isn't being used by any datastreams")).toBeVisible()
-    await page.getByRole('button', { name: 'Delete' }).click()
+    await renamedMethodRow
+      .getByRole('button', { name: 'Delete metadata item', exact: true })
+      .click()
+    await expect(
+      page.getByText("isn't being used by any datastreams")
+    ).toBeVisible()
+    await page.getByRole('button', { name: 'Delete', exact: true }).click()
 
     await expect(
       page.locator('tr').filter({ hasText: renamedMethodName })
+    ).toHaveCount(0)
+  })
+
+  test('instrument methods require sensor details and derive their name', async ({
+    page,
+  }) => {
+    const manufacturer = `E2E Manufacturer ${Date.now()}`
+    const model = 'E2E Model'
+    const derivedName = `${manufacturer}: ${model}`
+
+    await authenticateSession(page, users.owner.email, users.owner.password)
+    await page.goto('/metadata')
+    await workspaceListItem(page, fixtures.workspaces.private.name).click()
+
+    const workspaceTable = await selectMetadataScope(page, 'workspace')
+    await page.getByRole('tab', { name: 'Methods' }).click()
+    await workspaceTable
+      .getByRole('button', { name: /Add new method/i })
+      .click()
+
+    await fillCombobox(page, 'Type', 'Instrument Deployment')
+    await page
+      .getByLabel('Description')
+      .fill('Instrument method created by the Playwright regression suite.')
+
+    await expect(page.getByLabel('Name', { exact: true })).toHaveCount(0)
+
+    const manufacturerField = page.getByLabel('Sensor model manufacturer')
+    const modelField = page.getByLabel('Sensor model', { exact: true })
+    await page.getByRole('button', { name: 'Save' }).click()
+    await expect(page.getByText('This field is required.')).toHaveCount(2)
+
+    await manufacturerField.fill(manufacturer)
+    await modelField.fill(model)
+    await page.getByRole('button', { name: 'Save' }).click()
+
+    const methodRow = page
+      .locator('tr')
+      .filter({ hasText: derivedName })
+      .first()
+    await expect(methodRow).toBeVisible()
+
+    await methodRow
+      .getByRole('button', { name: 'Delete metadata item', exact: true })
+      .click()
+    await page.getByRole('button', { name: 'Delete', exact: true }).click()
+    await expect(
+      page.locator('tr').filter({ hasText: derivedName })
     ).toHaveCount(0)
   })
 
@@ -100,26 +255,34 @@ test.describe('metadata management', () => {
 
     await authenticateSession(page, users.owner.email, users.owner.password)
     await page.goto('/metadata')
-    await selectWorkspace(page, fixtures.workspaces.private.name)
+    await workspaceListItem(page, fixtures.workspaces.private.name).click()
 
-    const workspaceTable = page.getByTestId('workspace-metadata-table')
-    await workspaceTable.getByRole('tab', { name: 'Observed properties' }).click()
+    const workspaceTable = await selectMetadataScope(page, 'workspace')
+    await page.getByRole('tab', { name: 'Observed properties' }).click()
     await workspaceTable
       .getByRole('button', { name: /Add new observed property/i })
       .click()
 
-    await fillCombobox(page, 'Variable Type *', 'E2E Variable Type')
-    await page.getByLabel('Definition *').fill('https://www.example.com/e2e-observed-property')
-    await page.getByLabel('Description *').fill('Temporary observed property created by the Playwright metadata CRUD suite.')
-    await page.getByLabel('Variable Code *').fill(`E2E-OP-${Date.now()}`)
-    await page.getByLabel('Name *').fill(propName)
+    await fillCombobox(page, 'Variable type', 'E2E Variable Type')
+    await page
+      .getByLabel('Definition')
+      .fill('https://www.example.com/e2e-observed-property')
+    await page
+      .getByLabel('Description')
+      .fill(
+        'Temporary observed property created by the Playwright metadata CRUD suite.'
+      )
+    await page.getByLabel('Code').fill(`E2E-OP-${Date.now()}`)
+    await page.getByLabel('Name').fill(propName)
     await page.getByRole('button', { name: 'Save' }).click()
 
     const propRow = page.locator('tr').filter({ hasText: propName }).first()
     await expect(propRow).toBeVisible()
 
-    await propRow.locator('.v-icon').first().click()
-    await page.getByLabel('Name *').fill(renamedPropName)
+    await propRow
+      .getByRole('button', { name: 'Edit metadata item', exact: true })
+      .click()
+    await page.getByLabel('Name').fill(renamedPropName)
     await page.getByRole('button', { name: 'Update' }).click()
 
     const renamedPropRow = page
@@ -128,9 +291,11 @@ test.describe('metadata management', () => {
       .first()
     await expect(renamedPropRow).toBeVisible()
 
-    await renamedPropRow.locator('.v-icon').nth(1).click()
+    await renamedPropRow
+      .getByRole('button', { name: 'Delete metadata item', exact: true })
+      .click()
     await expect(page.getByText(/isn't being used|not.*used/i)).toBeVisible()
-    await page.getByRole('button', { name: 'Delete' }).click()
+    await page.getByRole('button', { name: 'Delete', exact: true }).click()
 
     await expect(
       page.locator('tr').filter({ hasText: renamedPropName })
@@ -146,31 +311,44 @@ test.describe('metadata management', () => {
 
     await authenticateSession(page, users.owner.email, users.owner.password)
     await page.goto('/metadata')
-    await selectWorkspace(page, fixtures.workspaces.private.name)
+    await workspaceListItem(page, fixtures.workspaces.private.name).click()
 
-    const workspaceTable = page.getByTestId('workspace-metadata-table')
-    await workspaceTable.getByRole('tab', { name: 'Processing levels' }).click()
+    const workspaceTable = await selectMetadataScope(page, 'workspace')
+    await page.getByRole('tab', { name: 'Processing levels' }).click()
     await workspaceTable
       .getByRole('button', { name: /Add new processing level/i })
       .click()
 
-    await page.getByLabel('Code *').fill(levelCode)
-    await page.getByLabel('Definition').fill('E2E processing level definition')
+    await page.getByLabel('Name').fill('E2E Processing Level')
+    await page.getByLabel('Code').fill(levelCode)
+    await page
+      .getByLabel('Description')
+      .fill('E2E processing level description')
+    await page
+      .getByLabel('Definition')
+      .fill('https://example.com/processing-levels/e2e')
     await page.getByRole('button', { name: 'Save' }).click()
 
     const levelRow = page.locator('tr').filter({ hasText: levelCode }).first()
     await expect(levelRow).toBeVisible()
 
-    await levelRow.locator('.v-icon').first().click()
-    await page.getByLabel('Code *').fill(renamedCode)
+    await levelRow
+      .getByRole('button', { name: 'Edit metadata item', exact: true })
+      .click()
+    await page.getByLabel('Code').fill(renamedCode)
     await page.getByRole('button', { name: 'Update' }).click()
 
-    const renamedRow = page.locator('tr').filter({ hasText: renamedCode }).first()
+    const renamedRow = page
+      .locator('tr')
+      .filter({ hasText: renamedCode })
+      .first()
     await expect(renamedRow).toBeVisible()
 
-    await renamedRow.locator('.v-icon').nth(1).click()
+    await renamedRow
+      .getByRole('button', { name: 'Delete metadata item', exact: true })
+      .click()
     await expect(page.getByText(/isn't being used|not.*used/i)).toBeVisible()
-    await page.getByRole('button', { name: 'Delete' }).click()
+    await page.getByRole('button', { name: 'Delete', exact: true }).click()
 
     await expect(
       page.locator('tr').filter({ hasText: renamedCode })
@@ -186,23 +364,27 @@ test.describe('metadata management', () => {
 
     await authenticateSession(page, users.owner.email, users.owner.password)
     await page.goto('/metadata')
-    await selectWorkspace(page, fixtures.workspaces.private.name)
+    await workspaceListItem(page, fixtures.workspaces.private.name).click()
 
-    const workspaceTable = page.getByTestId('workspace-metadata-table')
-    await workspaceTable.getByRole('tab', { name: 'Units' }).click()
+    const workspaceTable = await selectMetadataScope(page, 'workspace')
+    await page.getByRole('tab', { name: 'Units' }).click()
     await workspaceTable.getByRole('button', { name: /Add new unit/i }).click()
 
-    await fillCombobox(page, 'Unit Type *', 'E2E Unit Type')
-    await page.getByLabel('Symbol *').fill(`e2e${stamp}`)
-    await page.getByLabel('Definition *').fill('E2E unit definition')
-    await page.getByLabel('Name *').fill(unitName)
+    await fillCombobox(page, 'Unit type', 'E2E Unit Type')
+    await page.getByLabel('Symbol').fill(`e2e${stamp}`)
+    await page
+      .getByLabel('Definition')
+      .fill(`https://example.com/units/e2e-${stamp}`)
+    await page.getByLabel('Name').fill(unitName)
     await page.getByRole('button', { name: 'Save' }).click()
 
     const unitRow = page.locator('tr').filter({ hasText: unitName }).first()
     await expect(unitRow).toBeVisible()
 
-    await unitRow.locator('.v-icon').first().click()
-    await page.getByLabel('Name *').fill(renamedUnitName)
+    await unitRow
+      .getByRole('button', { name: 'Edit metadata item', exact: true })
+      .click()
+    await page.getByLabel('Name').fill(renamedUnitName)
     await page.getByRole('button', { name: 'Update' }).click()
 
     const renamedUnitRow = page
@@ -211,9 +393,11 @@ test.describe('metadata management', () => {
       .first()
     await expect(renamedUnitRow).toBeVisible()
 
-    await renamedUnitRow.locator('.v-icon').nth(1).click()
+    await renamedUnitRow
+      .getByRole('button', { name: 'Delete metadata item', exact: true })
+      .click()
     await expect(page.getByText(/isn't being used|not.*used/i)).toBeVisible()
-    await page.getByRole('button', { name: 'Delete' }).click()
+    await page.getByRole('button', { name: 'Delete', exact: true }).click()
 
     await expect(
       page.locator('tr').filter({ hasText: renamedUnitName })
@@ -224,67 +408,71 @@ test.describe('metadata management', () => {
     page,
   }) => {
     const stamp = Date.now()
-    const qualifierCode = `E2E-RQ-${stamp}`
-    const renamedCode = `${qualifierCode}-UPD`
+    const qualifierName = `E2E-RQ-${stamp}`
+    const renamedName = `${qualifierName}-UPD`
 
     await authenticateSession(page, users.owner.email, users.owner.password)
     await page.goto('/metadata')
-    await selectWorkspace(page, fixtures.workspaces.private.name)
+    await workspaceListItem(page, fixtures.workspaces.private.name).click()
 
-    const workspaceTable = page.getByTestId('workspace-metadata-table')
-    await workspaceTable
-      .getByRole('tab', { name: 'Result qualifiers' })
-      .click()
+    const workspaceTable = await selectMetadataScope(page, 'workspace')
+    await page.getByRole('tab', { name: 'Result qualifiers' }).click()
     await workspaceTable
       .getByRole('button', { name: /Add new result qualifier/i })
       .click()
 
-    await page.getByLabel('Code *').fill(qualifierCode)
-    await page.getByLabel('Description').fill(
-      'Temporary result qualifier created by the Playwright metadata CRUD suite.'
-    )
+    await page.getByLabel('Name').fill(qualifierName)
+    await page
+      .getByLabel('Description')
+      .fill(
+        'Temporary result qualifier created by the Playwright metadata CRUD suite.'
+      )
     await page.getByRole('button', { name: 'Save' }).click()
 
     const qualifierRow = page
       .locator('tr')
-      .filter({ hasText: qualifierCode })
+      .filter({ hasText: qualifierName })
       .first()
     await expect(qualifierRow).toBeVisible()
 
-    await qualifierRow.locator('.v-icon').first().click()
-    await page.getByLabel('Code *').fill(renamedCode)
+    await qualifierRow
+      .getByRole('button', { name: 'Edit metadata item', exact: true })
+      .click()
+    await page.getByLabel('Name').fill(renamedName)
     await page.getByRole('button', { name: 'Update' }).click()
 
     const renamedRow = page
       .locator('tr')
-      .filter({ hasText: renamedCode })
+      .filter({ hasText: renamedName })
       .first()
     await expect(renamedRow).toBeVisible()
 
-    await renamedRow.locator('.v-icon').nth(1).click()
+    await renamedRow
+      .getByRole('button', { name: 'Delete metadata item', exact: true })
+      .click()
     await expect(page.getByText(/isn't being used|not.*used/i)).toBeVisible()
-    await page.getByRole('button', { name: 'Delete' }).click()
+    await page.getByRole('button', { name: 'Delete', exact: true }).click()
 
     await expect(
-      page.locator('tr').filter({ hasText: renamedCode })
+      page.locator('tr').filter({ hasText: renamedName })
     ).toHaveCount(0)
   })
 
   test('metadata search box filters visible rows', async ({ page }) => {
     await authenticateSession(page, users.owner.email, users.owner.password)
     await page.goto('/metadata')
-    await selectWorkspace(page, fixtures.workspaces.public.name)
+    await workspaceListItem(page, fixtures.workspaces.public.name).click()
 
-    const workspaceTable = page.getByTestId('workspace-metadata-table')
+    const workspaceTable = await selectMetadataScope(page, 'workspace')
 
-    const searchBox = page.getByRole('textbox', { name: /search/i }).first()
+    const searchBox = workspaceTable.getByPlaceholder('Search metadata…')
     await expect(searchBox).toBeVisible()
 
-    await searchBox.fill('Public Assigned Sensor')
+    await searchBox.fill(fixtures.metadata.publicAssignedMethod.name)
     await expect(
       workspaceTable
         .locator('tr')
-        .filter({ hasText: 'Public Assigned Sensor' })
+        .filter({ hasText: fixtures.metadata.publicAssignedMethod.name })
         .first()
     ).toBeVisible()
 
@@ -292,7 +480,7 @@ test.describe('metadata management', () => {
     await expect(
       workspaceTable
         .locator('tr')
-        .filter({ hasText: 'Public Assigned Sensor' })
+        .filter({ hasText: fixtures.metadata.publicAssignedMethod.name })
     ).toHaveCount(0)
 
     await searchBox.clear()
@@ -303,22 +491,26 @@ test.describe('metadata management', () => {
   }) => {
     await authenticateSession(page, users.owner.email, users.owner.password)
     await page.goto('/metadata')
-    await selectWorkspace(page, fixtures.workspaces.private.name)
+    await workspaceListItem(page, fixtures.workspaces.private.name).click()
 
-    const workspaceTable = page.getByTestId('workspace-metadata-table')
-    await workspaceTable.getByRole('tab', { name: 'Methods' }).click()
+    const workspaceTable = await selectMetadataScope(page, 'workspace')
+    await page.getByRole('tab', { name: 'Methods' }).click()
 
-    const assignedSensorRow = workspaceTable
+    const assignedMethodRow = workspaceTable
       .locator('tr')
-      .filter({ hasText: 'Private Assigned Sensor' })
+      .filter({ hasText: fixtures.metadata.privateAssignedMethod.name })
       .first()
-    await expect(assignedSensorRow).toBeVisible()
+    await expect(assignedMethodRow).toBeVisible()
 
-    await assignedSensorRow.locator('.v-icon').nth(1).click()
+    await assignedMethodRow
+      .getByRole('button', { name: 'Delete metadata item', exact: true })
+      .click()
     await expect(
       page.getByText("cannot be deleted because it's being referenced")
     ).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Delete' })).toHaveCount(0)
+    await expect(
+      page.getByRole('button', { name: 'Delete', exact: true })
+    ).toHaveCount(0)
     await page.getByRole('button', { name: 'Cancel' }).click()
   })
 })

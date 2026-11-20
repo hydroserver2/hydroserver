@@ -16,8 +16,9 @@ describe('useProcessingLevels.createProcessingLevel', () => {
       id: 'pl-new',
       workspaceId: 'ws-1',
       code: 'QC',
-      definition: 'Quality Controlled',
-      explanation: '',
+      name: 'Quality Controlled',
+      description: 'Reviewed readings',
+      definition: null,
     }
     const create = vi.fn().mockResolvedValue({ ok: true, data: created })
     setHs(create)
@@ -25,15 +26,17 @@ describe('useProcessingLevels.createProcessingLevel', () => {
 
     const { createProcessingLevel } = useProcessingLevels()
     const res = await createProcessingLevel({
+      name: 'Quality Controlled',
+      description: 'Reviewed readings',
       code: 'QC',
-      definition: 'Quality Controlled',
     })
 
     expect(create).toHaveBeenCalledTimes(1)
     expect(create.mock.calls[0][0]).toMatchObject({
       workspaceId: 'ws-1',
       code: 'QC',
-      definition: 'Quality Controlled',
+      name: 'Quality Controlled',
+      description: 'Reviewed readings',
     })
     expect(res.id).toBe('pl-new')
   })
@@ -41,7 +44,7 @@ describe('useProcessingLevels.createProcessingLevel', () => {
   it('throws when no workspace is selected', async () => {
     setHs(vi.fn())
     const { createProcessingLevel } = useProcessingLevels()
-    await expect(createProcessingLevel({ code: 'QC' })).rejects.toThrow(
+    await expect(createProcessingLevel({ name: 'QC', description: 'Reviewed' })).rejects.toThrow(
       /workspace/i
     )
   })
@@ -50,7 +53,7 @@ describe('useProcessingLevels.createProcessingLevel', () => {
     setHs(vi.fn().mockResolvedValue({ ok: false, message: 'Code already exists' }))
     useWorkspaceStore().selectedWorkspace = { id: 'ws-1' } as any
     const { createProcessingLevel } = useProcessingLevels()
-    await expect(createProcessingLevel({ code: 'QC' })).rejects.toThrow(
+    await expect(createProcessingLevel({ name: 'QC', description: 'Reviewed' })).rejects.toThrow(
       'Code already exists'
     )
   })

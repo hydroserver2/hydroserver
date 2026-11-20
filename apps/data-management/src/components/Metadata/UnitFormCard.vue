@@ -1,6 +1,6 @@
 <template>
   <v-card>
-    <v-toolbar :color="workspaceId ? 'brown' : 'deep-orange-darken-4'">
+    <v-toolbar flat color="primary">
       <v-card-title> {{ isEdit ? 'Edit' : 'Add' }} Unit </v-card-title>
     </v-toolbar>
     <v-divider />
@@ -14,22 +14,25 @@
       <v-card-text v-if="item">
         <v-text-field
           v-model="item.name"
-          label="Name *"
+          class="required-label"
+          label="Name"
           :rules="rules.requiredAndMaxLength255"
         />
         <v-text-field
           v-model="item.symbol"
-          label="Symbol *"
+          class="required-label"
+          label="Symbol"
           :rules="rules.requiredAndMaxLength255"
         />
         <v-text-field
           v-model="item.definition"
-          label="Definition *"
-          :rules="rules.requiredDescription"
+          label="Definition"
+          :rules="[...rules.maxLength(2000), ...(item.definition ? rules.urlFormat : [])]"
         />
         <v-text-field
           v-model="item.type"
-          label="Unit Type *"
+          class="required-label"
+          label="Unit type"
           :rules="rules.requiredAndMaxLength255"
         />
       </v-card-text>
@@ -39,9 +42,9 @@
       <v-card-actions>
         <v-spacer />
         <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
-        <v-btn-primary type="submit">{{
+        <v-btn-dialog-action type="submit">{{
           isEdit ? 'Update' : 'Save'
-        }}</v-btn-primary>
+        }}</v-btn-dialog-action>
       </v-card-actions>
     </v-form>
   </v-card>
@@ -71,14 +74,12 @@ async function onSubmit() {
   try {
     if (props.workspaceId) item.value.workspaceId = props.workspaceId
     const newItem = await uploadItem()
-    if (!newItem) {
-      if (isEdit.value) emit('close')
-      return
-    }
+    if (!newItem) return
     if (isEdit.value) emit('updated', newItem)
     else emit('created', newItem.id)
   } catch (error) {
     console.error('Error uploading unit', error)
+    return
   }
   emit('close')
 }

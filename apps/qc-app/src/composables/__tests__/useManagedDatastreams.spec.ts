@@ -65,14 +65,15 @@ describe('useManagedDatastreams.loadForSource', () => {
     historiesBySource.set('src-2', [
       {
         id: 'h-9',
-        managedDatastream: { id: 'mgd-missing', name: 'Orphan (QC)' },
-        sourceDatastream: { id: 'src-2' },
+        managedDatastreamId: 'mgd-missing',
+        sourceDatastreamId: 'src-2',
       },
     ])
     listAllItems.mockResolvedValue([])
     const { loadForSource } = useManagedDatastreams()
     const options = await loadForSource('src-2')
-    expect(options[0].managed).toEqual({ id: 'mgd-missing', name: 'Orphan (QC)' })
+    // A history names its datastreams by id only, so the stub shows the id.
+    expect(options[0].managed).toEqual({ id: 'mgd-missing', name: 'mgd-missing' })
   })
 
   it('deleteManaged removes the history then the datastream', async () => {

@@ -7,8 +7,8 @@
     <v-card-text>
       <v-row>
         <v-col cols="auto" class="pb-0">
-          <h6 class="text-h6 mt-4" v-if="thing">
-            Toggle Site Privacy
+          <h6 class="hs-text-md mt-4" v-if="monitoringSite">
+            Toggle site privacy
             <v-icon
               @click="showPrivacyHelp = !showPrivacyHelp"
               color="grey"
@@ -24,13 +24,13 @@
         and workspace metadata visible to only you and other collaborators of
         your workspace. Setting your site to public will make it visible to all
         users and guests of the system. By default, all related datastreams will
-        also be public, but can be made private from on the Site Details page.
+        also be public, but can be made private from the site details page.
       </p>
 
-      <v-row v-if="thing">
+      <v-row v-if="monitoringSite">
         <v-col cols="auto" class="py-0">
           <v-checkbox
-            v-model="thing.isPrivate"
+            v-model="monitoringSite.isPrivate"
             label="Make site private"
             color="primary"
             hide-details
@@ -51,7 +51,7 @@
 </template>
 
 <script setup lang="ts">
-import { useThingStore } from '@/store/thing'
+import { useMonitoringSiteStore } from '@/store/monitoringSite'
 import { storeToRefs } from 'pinia'
 import { ref } from 'vue'
 import hs from '@hydroserver/client'
@@ -59,10 +59,10 @@ import { mdiHelpCircleOutline } from '@mdi/js'
 
 const emits = defineEmits(['close'])
 const props = defineProps<{
-  thingId: string
+  monitoringSiteId: string
 }>()
 
-const { thing } = storeToRefs(useThingStore())
+const { monitoringSite } = storeToRefs(useMonitoringSiteStore())
 const showPrivacyHelp = ref(false)
 
 const isUpdating = ref(false)
@@ -71,13 +71,13 @@ async function toggleSitePrivacy() {
   try {
     isUpdating.value = true
 
-    const res = await hs.things.updatePrivacy(
-      props.thingId,
-      thing.value!.isPrivate
+    const res = await hs.monitoringSites.updatePrivacy(
+      props.monitoringSiteId,
+      monitoringSite.value!.isPrivate
     )
-    if (res.ok) thing.value = res.data
+    if (res.ok) monitoringSite.value = res.data
   } catch (error) {
-    console.error('Error updating thing privacy', error)
+    console.error('Error updating monitoringSite privacy', error)
   } finally {
     isUpdating.value = false
   }

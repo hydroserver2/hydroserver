@@ -8,14 +8,14 @@ Workspaces are used to organize content and to control access to data and metada
 
 ## Creating a New Workspace
 
-If you are logging into HydroServer for the first time, you will be taken to the 'Your Sites' page. The workspace panel will be displayed near the bottom of the page, ready for you to create a new workspace. If you need to navigate there, click on the 'Your Sites' link in the main navigation at the top of the page and then click on the 'Manage Workspaces' button just below the map.
+Click **Manage workspaces** in the main navigation at the top of the page. The page lists the workspaces you own or collaborate on in a sidebar on the left. Selecting a workspace shows its details in tabs: **Overview**, **Collaborators**, **Service accounts**, **Metadata**, **Privacy**, and, for the owner, **Ownership**.
 
 <img src="/data-management-app/manage-workspaces.png" alt="Manage workspaces" class="img-white-bg">
 
-Click the 'Add workspace' button at the top right of the workspaces table. Give you workspace a meaningful name that is descriptive of what it will contain. You can also choose whether to make your new workspace public or private. Click the 'Save' button to create the workspace.
+Click the **Add workspace** (+) button at the top of the workspaces sidebar. Give your workspace a meaningful name that is descriptive of what it will contain. You can also check 'Make this workspace private'. Click the 'Save' button to create the workspace.
 
 <img src="/data-management-app/create-workspace.png" alt="Create workspace dialog" class="img-white-bg">
 
 **NOTE**: Making your workspace private means that only you and specific HydroServer users that you add to the workspace as collaborators will be able to see any of the content within that workspace. 
 
-You will notice that your new workspace has been added to the list of workspaces in the table. You can click the Pencil button in the right column of the table if you want to edit the workspace name or change the workspace privacy.
+Your new workspace now appears in the workspaces sidebar. To rename it later, click the pencil button next to its name in the sidebar. To change its privacy, select the workspace and open the **Privacy** tab.

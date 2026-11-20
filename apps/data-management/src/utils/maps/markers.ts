@@ -1,10 +1,10 @@
-import { Thing } from '@hydroserver/client'
-import { MapThing, ThingMarker, ThingSiteSummary } from '@/types'
+import { getTagValue, MonitoringSite } from '@hydroserver/client'
+import { MapMonitoringSite, MonitoringSiteMarker, MonitoringSiteMapSummary } from '@/types'
 import { mapMarkerColors } from '@/utils/materialColors'
 
-type ColorableThing = Thing | ThingSiteSummary
+type ColorableMonitoringSite = MonitoringSite | MonitoringSiteMapSummary
 
-type ColorizedThing<T extends ColorableThing> = T & {
+type ColorizedMonitoringSite<T extends MapMonitoringSite> = T & {
   color?: {
     borderColor: string
     background: string
@@ -13,46 +13,81 @@ type ColorizedThing<T extends ColorableThing> = T & {
   tagValue?: string
 }
 
-export function hasThingTags(thing: MapThing): thing is ColorableThing {
-  return 'tags' in thing && Array.isArray(thing.tags)
+export function hasMonitoringSiteTags(
+  monitoringSite: MapMonitoringSite
+): monitoringSite is ColorableMonitoringSite {
+  return (
+    'tags' in monitoringSite &&
+    typeof monitoringSite.tags === 'object' &&
+    monitoringSite.tags !== null
+  )
 }
 
-export const addColorToMarkers = <T extends ColorableThing>(
-  things: T[],
-  key: string
-): Array<ColorizedThing<T>> => {
+const addColorToMarkersByValue = <T extends MapMonitoringSite>(
+  monitoringSites: T[],
+  getValue: (monitoringSite: T) => string | undefined
+): Array<ColorizedMonitoringSite<T>> => {
   let colorIndex = 0
-  const colorMap = new Map()
+  const colorMap = new Map<string, (typeof mapMarkerColors)[number]>()
 
-  return things.map((thing) => {
-    const tagValue = thing.tags.find((tag) => tag.key === key)?.value
-    if (tagValue === undefined) return thing
+  return monitoringSites.map((monitoringSite) => {
+    const value = getValue(monitoringSite)
+    if (!value) return monitoringSite
 
-    if (!colorMap.has(tagValue)) {
-      colorMap.set(
-        tagValue,
-        mapMarkerColors[colorIndex % mapMarkerColors.length]
-      )
+    if (!colorMap.has(value)) {
+      colorMap.set(value, mapMarkerColors[colorIndex % mapMarkerColors.length])
       colorIndex++
     }
-    return { ...thing, color: colorMap.get(tagValue), tagValue: tagValue }
+    return { ...monitoringSite, color: colorMap.get(value), tagValue: value }
   })
 }
 
-export function isThingMarker(markerData: MapThing): markerData is ThingMarker {
-  return !('location' in markerData)
+export const addColorToMarkers = <T extends ColorableMonitoringSite>(
+  monitoringSites: T[],
+  key: string,
+  untaggedColor: string
+): Array<ColorizedMonitoringSite<T>> =>
+  addColorToMarkersByValue(monitoringSites, (monitoringSite) =>
+    getTagValue(monitoringSite.tags, key)
+  ).map((monitoringSite) =>
+    monitoringSite.color
+      ? monitoringSite
+      : {
+          ...monitoringSite,
+          color: {
+            borderColor: untaggedColor,
+            background: untaggedColor,
+            glyphColor: untaggedColor,
+          },
+        }
+  )
+
+export const addWorkspaceColorToMarkers = <T extends MapMonitoringSite>(
+  monitoringSites: T[]
+): Array<ColorizedMonitoringSite<T>> =>
+  addColorToMarkersByValue(monitoringSites, (monitoringSite) => monitoringSite.workspaceId)
+
+export const addSiteTypeColorToMarkers = <T extends MapMonitoringSite>(
+  monitoringSites: T[]
+): Array<ColorizedMonitoringSite<T>> =>
+  addColorToMarkersByValue(monitoringSites, (monitoringSite) => monitoringSite.type)
+
+export function isMonitoringSiteMarker(
+  markerData: MapMonitoringSite
+): markerData is MonitoringSiteMarker {
+  return !('description' in markerData)
 }
 
-export function generateMarkerContent(markerData: MapThing): string {
-  const isMarker = isThingMarker(markerData)
+export function generateMarkerContent(markerData: MapMonitoringSite): string {
+  const isMarker = isMonitoringSiteMarker(markerData)
   const subtitle = isMarker
-    ? markerData.siteType || ''
+    ? markerData.type || ''
     : [
-        markerData.location.adminArea2 || '',
-        markerData.location.adminArea2 && markerData.location.adminArea1
+        markerData.adminArea2 || '',
+        markerData.adminArea2 && markerData.adminArea1
           ? ','
           : '',
-        markerData.location.adminArea1 || '',
+        markerData.adminArea1 || '',
       ]
         .join(' ')
         .trim()
@@ -60,12 +95,12 @@ export function generateMarkerContent(markerData: MapThing): string {
 
   return `
       <div class="m-0 max-w-prose">
-        <h6 class="text-lg font-semibold text-slate-900">${markerData.name}</h6>
-        ${subtitle ? `<p class="mb-2 text-sm text-slate-500">${subtitle}</p>` : ''}
-        ${description ? `<p class="mb-3 text-sm text-slate-700">${description}</p>` : ''}
+        <h6 class="hs-text-md font-weight-semibold text-slate-900">${markerData.name}</h6>
+        ${subtitle ? `<p class="mb-2 hs-text-sm text-slate-500">${subtitle}</p>` : ''}
+        ${description ? `<p class="mb-3 hs-text-sm text-slate-700">${description}</p>` : ''}
         <p class="mt-6">
           <a
-            class="font-medium text-[rgb(var(--v-theme-primary))] underline decoration-current underline-offset-2 hover:decoration-2 focus:outline-none focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(var(--v-theme-primary))]"
+            class="font-weight-medium text-[rgb(var(--v-theme-primary))] underline decoration-current underline-offset-2 hover:decoration-2 focus:outline-none focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(var(--v-theme-primary))]"
             href="/sites/${markerData.id}"
           >
             View data for this site

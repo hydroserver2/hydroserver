@@ -7,17 +7,21 @@ vi.mock('@/store/hydroserver', () => ({ useHydroServer: () => ({ hs }) }))
 
 import { fetchObservationsSync } from '@/utils/observations'
 
-const PAGE_SIZE = 50_000
-
-const page = (count: number, from = 0) => ({
+// The client merges every page into one column group per datastream.
+const columns = (count: number) => ({
   ok: true,
   status: 200,
-  data: {
-    phenomenonTime: Array.from({ length: count }, (_, i) =>
-      new Date(from + i).toISOString()
-    ),
-    result: Array.from({ length: count }, (_, i) => from + i),
-  },
+  data: [
+    {
+      datastreamId: 'ds-1',
+      columns: {
+        phenomenonTime: Array.from({ length: count }, (_, i) =>
+          new Date(i).toISOString()
+        ),
+        result: Array.from({ length: count }, (_, i) => i),
+      },
+    },
+  ],
 })
 
 const datastream = (valueCount: number) =>
@@ -39,15 +43,30 @@ describe('fetchObservationsSync', () => {
     await expect(fetchObservationsSync(datastream(10))).rejects.toThrow('Server error')
   })
 
-  it('keeps paging past a stale value count until a short page', async () => {
-    getObservations
-      .mockResolvedValueOnce(page(PAGE_SIZE))
-      .mockResolvedValueOnce(page(2, PAGE_SIZE))
+  it('reads the column group for the datastream window', async () => {
+    getObservations.mockResolvedValue(columns(3))
 
-    const { datetimes } = await fetchObservationsSync(datastream(0))
+    const { datetimes, dataValues } = await fetchObservationsSync(datastream(0))
 
-    expect(getObservations).toHaveBeenCalledTimes(2)
-    expect(datetimes).toHaveLength(PAGE_SIZE + 2)
+    expect(getObservations).toHaveBeenCalledWith(
+      'ds-1',
+      expect.objectContaining({
+        datetime: '1970-01-01T00:00:00Z/2000-01-01T00:00:00Z',
+        sortby: ['phenomenonTime'],
+        properties: ['phenomenonTime', 'result'],
+      })
+    )
+    expect(datetimes).toEqual([0, 1, 2])
+    expect(dataValues).toEqual([0, 1, 2])
+  })
+
+  it('returns no points when the window has no observations', async () => {
+    getObservations.mockResolvedValue({ ok: true, status: 200, data: [] })
+
+    expect(await fetchObservationsSync(datastream(0))).toEqual({
+      datetimes: [],
+      dataValues: [],
+    })
   })
 
   it('makes no request for a datastream with no observations', async () => {

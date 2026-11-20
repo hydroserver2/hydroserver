@@ -12,6 +12,10 @@ import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import { Snackbar } from '@/utils/notifications'
 import { formatTimeWithZone } from '@/utils/time'
 import {
+  ORCHESTRATION_DISABLED_TOOLTIP,
+  isOrchestrationEnabled,
+} from '@/composables/orchestration/orchestrationAvailability'
+import {
   getDisplayedTaskStatus,
   getMonitoringRunViolations,
   getTaskRunMessage,
@@ -45,21 +49,8 @@ export function useSimpleTaskDetails(
 ) {
   const route = useRoute()
   const service = serviceForKind(kind)
-  const isDetailedTask = (candidate: any) => {
-    if (!candidate) return false
-    if (kind === 'etl') {
-      return !!candidate.dataConnection && Array.isArray(candidate.mappings)
-    }
-    if (kind === 'dataProduct') {
-      return (
-        !!candidate.thing && Array.isArray(candidate.ratingCurveTransformations)
-      )
-    }
-    return !!candidate.thing && Array.isArray(candidate.monitoredDatastreams)
-  }
-  const task = ref<any>(
-    isDetailedTask(props.initialTask) ? props.initialTask : null
-  )
+  const includeForKind = kind === 'etl' ? 'dataConnection' : 'monitoringSite'
+  const task = ref<any>(null)
   const runs = ref<TaskRun[]>([])
   const loading = ref(false)
   const loadingRuns = ref(false)
@@ -68,10 +59,17 @@ export function useSimpleTaskDetails(
   const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
   const { hasPermission } = useWorkspacePermissions()
 
+  const permissionResource =
+    kind === 'etl'
+      ? PermissionResource.EtlTask
+      : kind === 'dataProduct'
+        ? PermissionResource.DataProductTask
+        : PermissionResource.MonitoringTask
+
   const taskId = computed(() => {
     if (props.taskId) return props.taskId
     const param = route.params.id
-    return Array.isArray(param) ? param[0] ?? '' : `${param ?? ''}`
+    return Array.isArray(param) ? (param[0] ?? '') : `${param ?? ''}`
   })
 
   const workspaceId = computed(() => selectedWorkspace.value?.id ?? null)
@@ -79,8 +77,17 @@ export function useSimpleTaskDetails(
   const canEdit = computed(() => {
     if (!selectedWorkspace.value) return false
     return hasPermission(
-      PermissionResource.Workspace,
+      permissionResource,
       PermissionAction.Edit,
+      selectedWorkspace.value
+    )
+  })
+
+  const canDelete = computed(() => {
+    if (!selectedWorkspace.value) return false
+    return hasPermission(
+      permissionResource,
+      PermissionAction.Delete,
       selectedWorkspace.value
     )
   })
@@ -89,7 +96,7 @@ export function useSimpleTaskDetails(
     'You have read-only access to this workspace. Ask an editor or owner to make changes.'
 
   const backLabel = computed(
-    () => task.value?.dataConnection?.name ?? task.value?.thing?.name ?? 'Back'
+    () => task.value?.dataConnection?.name ?? task.value?.monitoringSite?.name ?? 'Back'
   )
   const statusName = computed(() =>
     task.value ? getTaskStatusText(task.value) : 'Unknown'
@@ -112,6 +119,7 @@ export function useSimpleTaskDetails(
     return ''
   })
   const runNowDisabledReason = computed(() => {
+    if (!isOrchestrationEnabled()) return ORCHESTRATION_DISABLED_TOOLTIP
     if (!canEdit.value) return readOnlyTooltip
     if (runNowRequested.value) return 'A run has already been requested.'
     return ''
@@ -203,7 +211,7 @@ export function useSimpleTaskDetails(
       try {
         const response = await service.getTaskRun(task.value.id, runId)
         const updatedRun = response.ok
-          ? (response.data as TaskRun) ?? null
+          ? ((response.data as TaskRun) ?? null)
           : null
         if (updatedRun?.id) {
           upsertRun(updatedRun)
@@ -227,7 +235,9 @@ export function useSimpleTaskDetails(
     if (!taskId.value) return
     loading.value = true
     try {
-      const response = await service.get(taskId.value, { expand_related: true })
+      const response = await service.get(taskId.value, {
+        include: [includeForKind],
+      } as any)
       if (!response.ok)
         throw new Error(response.message || 'Unable to load task.')
       task.value = response.data
@@ -249,10 +259,10 @@ export function useSimpleTaskDetails(
     loadingRuns.value = true
     try {
       const response = await service.getTaskRuns(task.value.id, {
-        order_by: ['-startedAt'],
-        page: 1,
-        page_size: 50,
-      } as any)
+        sortby: ['-startedAt'],
+        offset: 0,
+        limit: 50,
+      })
       if (!response.ok)
         throw new Error(response.message || 'Unable to fetch runs.')
       runs.value = response.data ?? []
@@ -289,7 +299,7 @@ export function useSimpleTaskDetails(
   }
 
   async function runNow() {
-    if (!canEdit.value || !task.value?.id || runNowRequested.value) return
+    if (runNowDisabledReason.value || !task.value?.id) return
     runNowRequested.value = true
     try {
       const response = await service.runTask(task.value.id)
@@ -308,7 +318,7 @@ export function useSimpleTaskDetails(
   }
 
   async function deleteTask() {
-    if (!canEdit.value || !task.value?.id) return
+    if (!canDelete.value || !task.value?.id) return
     const response = await service.delete(task.value.id)
     if (!response.ok) {
       Snackbar.error(response.message || 'Unable to delete task.')
@@ -349,6 +359,7 @@ export function useSimpleTaskDetails(
     loadingRuns,
     runRows,
     canEdit,
+    canDelete,
     readOnlyTooltip,
     backLabel,
     statusName,

@@ -10,10 +10,6 @@ import {
 } from '@/bootstrap/appInitialization'
 import { routes } from '@/router/routes'
 import hs from '@hydroserver/client'
-import {
-  getSafePostLoginPath,
-  requiresHardNavigation,
-} from '@/utils/authRedirect'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -36,43 +32,19 @@ function updateDocumentTitle(matched: RouteRecordNormalized[]): void {
   }
 }
 
-router.beforeEach(
-  async (to: RouteLocationNormalized, from: RouteLocationNormalized) => {
-    await waitForHydroServerInitialization()
-    if (!isHydroServerReady.value) return false
+router.beforeEach(async (to: RouteLocationNormalized) => {
+  // The app mounts before the client is ready; the session decides access.
+  await waitForHydroServerInitialization()
+  if (!isHydroServerReady.value) return false
 
-    const { inEmailVerificationFlow, inProviderSignupFlow } = hs.session
-
-    if (inEmailVerificationFlow && to.name !== 'VerifyEmail') {
-      if (to.name === 'ResetPassword') return { name: 'ResetPassword' }
-      return { name: 'VerifyEmail' }
-    }
-    if (!inEmailVerificationFlow && to.name === 'VerifyEmail')
-      return { name: 'Sites' }
-
-    if (inProviderSignupFlow && to.name !== 'CompleteProfile')
-      return { name: 'CompleteProfile' }
-    if (!inProviderSignupFlow && to.name === 'CompleteProfile')
-      return { name: 'Sites' }
-
-    if (hs.session.isAuthenticated && to.meta.requiresLoggedOut) {
-      const nextPath = getSafePostLoginPath(to.query.next)
-      if (nextPath && requiresHardNavigation(nextPath)) {
-        window.location.assign(nextPath)
-        return false
-      }
-      if (nextPath) return nextPath
-      return { name: 'Sites' }
-    }
-    if (!hs.session.isAuthenticated && to.meta.requiresAuth)
-      return { name: 'Login', query: { next: to.fullPath } }
+  if (!hs.session.isAuthenticated && to.meta.requiresAuth) {
+    await hs.session.login(to.fullPath)
+    return false
   }
-)
+})
 
-router.afterEach(
-  (to: RouteLocationNormalized, from: RouteLocationNormalized) => {
-    updateDocumentTitle(to.matched)
-  }
-)
+router.afterEach((to: RouteLocationNormalized) => {
+  updateDocumentTitle(to.matched)
+})
 
 export default router

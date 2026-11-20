@@ -7,7 +7,7 @@ from processing.monitoring.models import (
 
 
 class MonitoringTaskAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "thing__name", "thing__workspace__name")
+    list_display = ("id", "name", "monitoring_site__name", "monitoring_site__workspace__name")
 
 
 class MonitoringNotificationRecipientAdmin(admin.ModelAdmin):

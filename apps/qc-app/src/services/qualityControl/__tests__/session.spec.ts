@@ -1,11 +1,12 @@
 import { describe, it, expect, vi } from 'vitest'
 import type { Datastream } from '@hydroserver/client'
 import type { ObservationRecord } from '@uwrl/qc-utils'
-import { makeQcFake } from './qcServiceFake'
+import { createHistory, createSession, makeQcFake } from './qcServiceFake'
 import {
   getInProgressSession,
   startOrResumeSession,
   loadLatestBase,
+  withOperations,
 } from '../session'
 import { unwrap } from '../unwrap'
 
@@ -15,12 +16,10 @@ const WIN = {
 }
 
 const historyWith = async (qc: ReturnType<typeof makeQcFake>) => {
-  const h = unwrap(
-    await qc.histories.create({
-      managedDatastreamId: 'm-1',
-      sourceDatastreamId: 's-1',
-    })
-  )
+  const h = await createHistory(qc, {
+    managedDatastreamId: 'm-1',
+    sourceDatastreamId: 's-1',
+  })
   return h.id
 }
 
@@ -33,7 +32,7 @@ describe('getInProgressSession', () => {
   it('returns the in-progress session when one exists', async () => {
     const qc = makeQcFake()
     const historyId = await historyWith(qc)
-    const s = unwrap(await qc.sessions.create(historyId, WIN))
+    const s = await createSession(qc, historyId, WIN)
     const found = await getInProgressSession(qc.sessions, historyId)
     expect(found?.id).toBe(s.id)
     expect(found?.status).toBe('in_progress')
@@ -44,7 +43,7 @@ describe('startOrResumeSession', () => {
   it('starts a new session when none is in progress', async () => {
     const qc = makeQcFake()
     const historyId = await historyWith(qc)
-    const { session, resumed } = await startOrResumeSession(qc.sessions, historyId, {
+    const { session, resumed } = await startOrResumeSession(qc.sessions, qc.operations, historyId, {
       ...WIN,
       description: 'Jan QC',
     })
@@ -57,8 +56,8 @@ describe('startOrResumeSession', () => {
   it('resumes the existing session instead of creating another (spec ignored)', async () => {
     const qc = makeQcFake()
     const historyId = await historyWith(qc)
-    const first = unwrap(await qc.sessions.create(historyId, WIN))
-    const { session, resumed } = await startOrResumeSession(qc.sessions, historyId, {
+    const first = await createSession(qc, historyId, WIN)
+    const { session, resumed } = await startOrResumeSession(qc.sessions, qc.operations, historyId, {
       phenomenonTimeStart: '2030-01-01T00:00:00Z',
       phenomenonTimeEnd: '2030-02-01T00:00:00Z',
     })
@@ -66,6 +65,48 @@ describe('startOrResumeSession', () => {
     expect(session.id).toBe(first.id)
     expect(session.phenomenonTimeStart).toBe(WIN.phenomenonTimeStart)
     expect(unwrap(await qc.sessions.list(historyId))).toHaveLength(1)
+  })
+})
+
+describe('withOperations', () => {
+  const op = (order: number) => ({ operationType: 'SELECTION', arguments: {}, order })
+
+  it('attaches each session its operations, in order', async () => {
+    const qc = makeQcFake()
+    const historyId = await historyWith(qc)
+    const s = await createSession(qc, historyId, WIN)
+    await qc.operations.create(historyId, s.id, [op(1), op(0)] as any)
+
+    const [loaded] = await withOperations(qc.operations, historyId, [s])
+
+    expect(loaded!.id).toBe(s.id)
+    expect(loaded!.operations.map((o) => o.order)).toEqual([0, 1])
+  })
+
+  it('throws when a session operations fail to load', async () => {
+    const qc = makeQcFake()
+    const historyId = await historyWith(qc)
+    const s = await createSession(qc, historyId, WIN)
+    vi.spyOn(qc.operations, 'list').mockResolvedValue({
+      ok: false,
+      status: 500,
+      message: 'Server error',
+    } as any)
+
+    await expect(withOperations(qc.operations, historyId, [s])).rejects.toThrow(
+      'Server error'
+    )
+  })
+
+  it('resumes a session with the operations it saved', async () => {
+    const qc = makeQcFake()
+    const historyId = await historyWith(qc)
+    const s = await createSession(qc, historyId, WIN)
+    await qc.operations.create(historyId, s.id, [op(0)] as any)
+
+    const { session } = await startOrResumeSession(qc.sessions, qc.operations, historyId, WIN)
+
+    expect(session.operations).toHaveLength(1)
   })
 })
 

@@ -1,5 +1,4 @@
 import type {
-  DataConnection,
   DataProductTaskContract,
   DataProductTaskExpanded,
   MonitoringTaskContract,
@@ -15,11 +14,10 @@ export type TaskSummary = {
   description?: string | null
   taskVariables: Record<string, unknown>
   dataConnectionId: string
+  mappingCount: number
   workspaceId: string
   latestRun?: TaskRun | null
   schedule?: TaskSchedule | null
-  dataConnection?: DataConnection
-  mappings?: TaskExpanded['mappings']
 }
 
 export type Task = TaskExpanded | TaskSummary

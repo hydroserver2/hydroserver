@@ -1,26 +1,29 @@
 import uuid
+
 from ninja import Router, Path, Query
-from django.http import HttpResponse
 from django.db import transaction
-from interfaces.auth.security import bearer_auth, session_auth, apikey_auth, anonymous_auth
+
+from interfaces.auth.security import session_auth, oidc_iam_read_auth, oidc_iam_write_auth, apikey_auth, basic_auth, anonymous_auth
+from interfaces.api.services.iam import CollaboratorAPIService
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.schemas import (
-    CollaboratorDetailResponse,
+    CollaboratorResponse,
     CollaboratorQueryParameters,
     CollaboratorPostBody,
     CollaboratorDeleteBody,
+    PaginatedResponse,
+    CollaboratorCreatedResponse,
 )
-from core.iam.services import CollaboratorService
 
 collaborator_router = Router(tags=["Collaborators"])
-collaborator_service = CollaboratorService()
+collaborator_service = CollaboratorAPIService()
 
 
 @collaborator_router.get(
     "",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    auth=[session_auth, oidc_iam_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: list[CollaboratorDetailResponse],
+        200: PaginatedResponse[CollaboratorResponse],
         401: str,
         403: str,
     },
@@ -28,32 +31,33 @@ collaborator_service = CollaboratorService()
 )
 def get_collaborators(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     workspace_id: Path[uuid.UUID],
     query: Query[CollaboratorQueryParameters],
 ):
     """
-    Get all collaborators associated with a workspace.
+    Get a workspace's collaborators and their roles.
     """
 
     return 200, collaborator_service.list(
         principal=request.principal,
         workspace_id=workspace_id,
-        response=response,
-        page=query.page,
-        page_size=query.page_size,
+        offset=query.offset,
+        limit=query.limit,
+        sortby=query.sortby,
         filtering=query.dict(exclude_unset=True),
+        include=query.include,
     )
 
 
 @collaborator_router.post(
     "",
-    auth=[session_auth, bearer_auth],
+    auth=[session_auth, oidc_iam_write_auth, basic_auth],
     response={
-        201: CollaboratorDetailResponse,
+        201: CollaboratorCreatedResponse,
         401: str,
         403: str,
-        422: str,
+        400: str,
+        409: str,
     },
     by_alias=True,
 )
@@ -64,7 +68,7 @@ def add_collaborator(
     data: CollaboratorPostBody,
 ):
     """
-    Add a collaborator to a workspace.
+    Give a user or service account a role in a workspace.
     """
 
     return 201, collaborator_service.create(
@@ -76,12 +80,12 @@ def add_collaborator(
 
 @collaborator_router.put(
     "",
-    auth=[session_auth, bearer_auth],
+    auth=[session_auth, oidc_iam_write_auth, basic_auth],
     response={
-        200: CollaboratorDetailResponse,
+        204: None,
         401: str,
         403: str,
-        422: str,
+        400: str,
     },
     by_alias=True,
 )
@@ -92,24 +96,26 @@ def edit_collaborator_role(
     data: CollaboratorPostBody,
 ):
     """
-    Edit a collaborator's role in a workspace.
+    Change a collaborator's role in a workspace.
     """
 
-    return 200, collaborator_service.update(
+    collaborator_service.update(
         principal=request.principal,
         workspace_id=workspace_id,
         data=data,
     )
 
+    return 204, None
+
 
 @collaborator_router.delete(
     "",
-    auth=[session_auth, bearer_auth],
+    auth=[session_auth, oidc_iam_write_auth, basic_auth],
     response={
         204: None,
         401: str,
         403: str,
-        422: str,
+        400: str,
     },
     by_alias=True,
 )

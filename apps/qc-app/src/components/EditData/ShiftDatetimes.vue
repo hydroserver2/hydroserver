@@ -68,6 +68,14 @@
           {{ chip.label }}
         </v-chip>
       </div>
+      <div
+        v-if="takenTime !== null"
+        class="text-body-small text-error mt-2"
+        data-testid="shift-collision"
+      >
+        A point would land on {{ formatDateTime(takenTime) }}, where one
+        already exists. Pick a different amount.
+      </div>
     </v-card-text>
 
     <v-card-actions>
@@ -85,7 +93,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { EnumEditOperations, TimeUnit } from '@uwrl/qc-utils'
@@ -93,6 +101,7 @@ import { usePlotlyStore } from '@/store/plotly'
 import { useUIStore, timeSpacingUnitToTimeUnitKey } from '@/store/userInterface'
 import { useFilterDispatch } from '@/composables/useFilterDispatch'
 import { zoneId, zoneName } from '@/utils/timeZone'
+import { formatDateTime } from '@/utils/time'
 
 const { selectedData, qcDatastream } = storeToRefs(useDataVisStore())
 const { selectedSeries, isUpdating } = storeToRefs(usePlotlyStore())
@@ -147,19 +156,36 @@ const canShift = computed(
 
 const emit = defineEmits(['close'])
 
+// Checked on Shift rather than per keystroke: it walks the whole selection.
+const takenTime = ref<number | null>(null)
+watch([shiftAmount, selectedShiftUnit, selectedData], () => {
+  takenTime.value = null
+})
+
 const onShiftDatetimes = async () => {
-  if (!canShift.value) return
+  if (!canShift.value || !selectedSeries.value) return
+  const record = selectedSeries.value.data
+  const amount = +shiftAmount.value
+  const unit = TimeUnit[selectedShiftUnit.value as keyof typeof TimeUnit]
+  const zone = zoneId()
+
+  takenTime.value = record.findShiftCollision(
+    [...selectedData.value!],
+    amount,
+    unit,
+    zone
+  )
+  if (takenTime.value !== null) return
 
   isUpdating.value = true
 
   setTimeout(async () => {
     const newIndices =
-      ((await selectedSeries.value?.data.dispatchAction(
+      ((await record.dispatchAction(
         EnumEditOperations.SHIFT_DATETIMES,
-        +shiftAmount.value,
-        // @ts-ignore
-        TimeUnit[selectedShiftUnit.value],
-        zoneId()
+        amount,
+        unit,
+        zone
       )) as number[] | undefined) ?? []
 
     isUpdating.value = false

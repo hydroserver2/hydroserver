@@ -1,8 +1,8 @@
 <template>
   <v-card>
-    <v-toolbar :color="workspaceId ? 'brown' : 'deep-orange-darken-4'">
+    <v-toolbar flat color="primary">
       <v-card-title>
-        {{ isEdit ? 'Edit' : 'Add' }} Observed Property
+        {{ isEdit ? 'Edit' : 'Add' }} observed property
       </v-card-title>
     </v-toolbar>
     <v-divider />
@@ -17,35 +17,37 @@
         <v-text-field
           v-model="item.name"
           hide-details
-          label="Name *"
+          label="Name"
           :rules="rules.requiredAndMaxLength255"
           @update:modelValue="handleNameUpdated"
-          class="pb-4"
+          class="pb-4 required-label"
+        />
+
+        <v-text-field
+          v-model="item.definition"
+          label="Definition"
+          :rules="[...rules.maxLength(2000), ...(item.definition ? rules.urlFormat : [])]"
         />
 
         <v-textarea
-          v-model="item.definition"
-          label="Definition *"
-          :rules="rules.requiredDescription"
-        ></v-textarea>
-
-        <v-textarea
           v-model="item.description"
-          label="Description *"
-          :rules="rules.requiredDescription"
+          class="required-label"
+          label="Description"
+          :rules="rules.required"
         ></v-textarea>
 
         <v-combobox
-          :items="vocabularyStore.variableTypes"
+          :items="vocabularyStore.observedPropertyTypes"
           v-model="item.type"
-          label="Variable Type *"
-          :rules="rules.requiredAndMaxLength500"
+          class="required-label"
+          label="Variable type"
+          :rules="rules.requiredAndMaxLength255"
         />
 
         <v-text-field
           v-model="item.code"
-          label="Variable Code *"
-          :rules="rules.requiredAndMaxLength500"
+          label="Code"
+          :rules="rules.maxLength(255)"
         />
       </v-card-text>
 
@@ -54,9 +56,9 @@
       <v-card-actions>
         <v-spacer />
         <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
-        <v-btn-primary type="submit">{{
+        <v-btn-dialog-action type="submit">{{
           isEdit ? 'Update' : 'Save'
-        }}</v-btn-primary>
+        }}</v-btn-dialog-action>
       </v-card-actions>
     </v-form>
   </v-card>
@@ -90,8 +92,8 @@ const vocabularyStore = useVocabularyStore()
 const handleNameUpdated = () => {
   const name = item.value.name
   if (name && OPNames.includes(name)) {
-    item.value.definition = OPNameTypes[name].definition
-    item.value.description = OPNameTypes[name].description
+    item.value.definition = ''
+    item.value.description = `${OPNameTypes[name].definition}. ${OPNameTypes[name].description}`
   }
 }
 
@@ -99,14 +101,12 @@ async function onSubmit() {
   try {
     if (props.workspaceId) item.value.workspaceId = props.workspaceId
     const newItem = await uploadItem()
-    if (!newItem) {
-      if (isEdit.value) emit('close')
-      return
-    }
+    if (!newItem) return
     if (isEdit.value) emit('updated', newItem)
     else emit('created', newItem.id)
   } catch (error) {
-    console.error('Error uploading processing level', error)
+    console.error('Error uploading observed property', error)
+    return
   }
   emit('close')
 }

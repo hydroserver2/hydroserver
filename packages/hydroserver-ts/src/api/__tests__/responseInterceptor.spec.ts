@@ -18,7 +18,7 @@ describe('responseInterceptor', () => {
   }
 
   it('processes a 200 status code response correctly', async () => {
-    const mockJsonResponse = { data: 'Some data' }
+    const mockJsonResponse = { data: 'Some data', meta: { numberMatched: 1 } }
     const mockResponse = new Response(JSON.stringify(mockJsonResponse), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
@@ -27,6 +27,44 @@ describe('responseInterceptor', () => {
     const result = await responseInterceptor(mockResponse)
     expect(result).toEqual({
       data: 'Some data',
+      status: 200,
+      message: 'OK',
+      meta: { numberMatched: 1 },
+      ok: true,
+    })
+  })
+
+  it('unwraps a "data" property accompanied by "included" even without "meta"', async () => {
+    const mockJsonResponse = {
+      data: { id: '1', name: 'Meter' },
+      included: { workspaces: [{ id: 'w1', name: 'Acme' }] },
+    }
+    const mockResponse = new Response(JSON.stringify(mockJsonResponse), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    })
+
+    const result = await responseInterceptor(mockResponse)
+    expect(result).toEqual({
+      data: { id: '1', name: 'Meter' },
+      status: 200,
+      message: 'OK',
+      meta: undefined,
+      included: { workspaces: [{ id: 'w1', name: 'Acme' }] },
+      ok: true,
+    })
+  })
+
+  it('does not unwrap a "data" property without an accompanying "meta"', async () => {
+    const mockJsonResponse = { data: 'Some data' }
+    const mockResponse = new Response(JSON.stringify(mockJsonResponse), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    })
+
+    const result = await responseInterceptor(mockResponse)
+    expect(result).toEqual({
+      data: mockJsonResponse,
       status: 200,
       message: 'OK',
       meta: undefined,
@@ -65,7 +103,7 @@ describe('responseInterceptor', () => {
     expect(textContent).toBe(csvData)
   })
 
-  it('returns errorBody for 401 status code without throwing', async () => {
+  it('returns an error envelope for 401 status codes', async () => {
     const errorJson = { error: 'Unauthorized' }
     const mockResponse = new Response(JSON.stringify(errorJson), {
       status: 401,
@@ -76,9 +114,8 @@ describe('responseInterceptor', () => {
     expect(result).toEqual({
       data: errorJson,
       status: 401,
-      message: 'OK',
-      meta: undefined,
-      ok: true,
+      message: 'Unauthorized',
+      ok: false,
     })
   })
 
@@ -93,6 +130,7 @@ describe('responseInterceptor', () => {
       ok: false,
       status: 500,
       message: 'Bad response',
+      data: mockErrorBody,
     })
   })
 })

@@ -1,36 +1,40 @@
 import uuid
-from typing import Optional
+
 from ninja import Router, Path, Query
 from django.http import HttpResponse
 from django.db import transaction
-from interfaces.auth.security import bearer_auth, session_auth, apikey_auth, anonymous_auth
+
+from interfaces.auth.security import session_auth, oidc_data_read_auth, oidc_data_write_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.http.request import HydroServerHttpRequest
+from interfaces.api.services.sta import ObservationAPIService
 from interfaces.api.schemas import (
-    ObservationSummaryResponse,
-    ObservationDetailResponse,
+    ObservationResponse,
+    ObservationItemQueryParameters,
     ObservationRowResponse,
-    ObservationColumnarResponse,
+    ObservationColumnResponse,
     ObservationQueryParameters,
     ObservationPostBody,
     ObservationBulkPostBody,
     ObservationBulkColumnarPostBody,
     ObservationBulkPostQueryParameters,
     ObservationBulkDeleteBody,
+    PaginatedResponse,
+    ItemResponse,
+    CreatedResponse,
 )
-from core.sta.services import ObservationService
 
 observation_router = Router(tags=["Observations"])
-observation_service = ObservationService()
+observation_service = ObservationAPIService()
 
 
 @observation_router.get(
-    "",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    "/items",
+    auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: list[ObservationSummaryResponse]
-        | list[ObservationDetailResponse]
-        | ObservationRowResponse
-        | ObservationColumnarResponse,
+        200: PaginatedResponse[ObservationResponse]
+        | PaginatedResponse[ObservationRowResponse]
+        | PaginatedResponse[ObservationColumnResponse],
+        400: str,
         403: str,
         404: str,
     },
@@ -39,77 +43,76 @@ observation_service = ObservationService()
 def get_observations(
     request: HydroServerHttpRequest,
     response: HttpResponse,
-    datastream_id: Path[uuid.UUID],
     query: Query[ObservationQueryParameters],
 ):
     """
-    Get Datastream Observations.
+    Get public observations and observations associated with the authenticated user.
     """
+
+    profile = getattr(request, "response_profile", None)
 
     return 200, observation_service.list(
         principal=request.principal,
+        profile=profile.key if profile else None,
         response=response,
-        datastream_id=datastream_id,
-        page=query.page,
-        page_size=query.page_size,
-        order_by=query.order_by,
+        offset=query.offset,
+        limit=query.limit,
+        sortby=query.sortby,
         filtering=query.dict(exclude_unset=True),
-        response_format=query.response_format,
-        expand_related=query.expand_related,
+        properties=query.properties,
+        include=query.include,
+        bbox=query.bbox,
+        datetime_interval=query.datetime,
     )
 
 
 @observation_router.post(
-    "",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    "/items",
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
-        201: ObservationSummaryResponse | ObservationDetailResponse,
+        201: CreatedResponse,
         400: str,
         401: str,
         403: str,
-        422: str,
+        409: str,
     },
     by_alias=True,
 )
 @transaction.atomic
 def create_observation(
     request: HydroServerHttpRequest,
-    datastream_id: Path[uuid.UUID],
     data: ObservationPostBody,
-    expand_related: Optional[bool] = None,
 ):
     """
-    Create a new Observation.
+    Create a new observation.
     """
 
     return 201, observation_service.create(
         principal=request.principal,
-        datastream_id=datastream_id,
+        datastream_id=data.datastream_id,
         data=data,
-        expand_related=expand_related,
     )
 
 
 @observation_router.post(
     "/bulk-create",
-    auth=[session_auth, bearer_auth, apikey_auth],
-    response={201: None, 403: str, 404: str},
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
+    response={201: None, 400: str, 403: str, 404: str, 409: str},
 )
 @transaction.atomic
 def insert_observations(
     request: HydroServerHttpRequest,
-    datastream_id: Path[uuid.UUID],
     query: Query[ObservationBulkPostQueryParameters],
     data: ObservationBulkPostBody | ObservationBulkColumnarPostBody,
 ):
     """
-    Insert Datastream Observations.
+    Create many observations in a datastream at once.
     """
 
     return 201, observation_service.bulk_create(
         principal=request.principal,
         data=data,
-        datastream_id=datastream_id,
+        datastream_id=data.datastream_id,
         mode=query.mode or "append",
         phenomenon_time_start=query.phenomenon_time_start,
         phenomenon_time_end=query.phenomenon_time_end,
@@ -118,76 +121,70 @@ def insert_observations(
 
 @observation_router.post(
     "/bulk-delete",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={204: None, 403: str, 404: str},
 )
 @transaction.atomic
 def delete_observations(
     request: HydroServerHttpRequest,
-    datastream_id: Path[uuid.UUID],
     data: ObservationBulkDeleteBody,
 ):
     """
-    Delete Datastream Observations between the given phenomenon start and end times.
+    Delete a datastream's observations between the given phenomenon start and end times.
     """
 
     return 204, observation_service.bulk_delete(
-        principal=request.principal, datastream_id=datastream_id, data=data
+        principal=request.principal, datastream_id=data.datastream_id, data=data
     )
 
 
 @observation_router.get(
-    "/{observation_id}",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    "/items/{observation_id}",
+    auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: ObservationSummaryResponse | ObservationDetailResponse,
+        200: ItemResponse[ObservationResponse],
         401: str,
         403: str,
     },
     by_alias=True,
-    exclude_unset=True,
 )
 def get_observation(
     request: HydroServerHttpRequest,
-    datastream_id: Path[uuid.UUID],
     observation_id: Path[uuid.UUID],
-    expand_related: Optional[bool] = None,
+    query: Query[ObservationItemQueryParameters],
 ):
     """
-    Get an Observation.
+    Get an observation.
     """
 
-    return 200, observation_service.get(
+    return 200, observation_service.get_item(
         principal=request.principal,
         uid=observation_id,
-        datastream_id=datastream_id,
-        expand_related=expand_related,
+        include=query.include,
     )
 
 
 @observation_router.delete(
-    "/{observation_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    "/items/{observation_id}",
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,
         403: str,
-        409: str,
+        404: str,
     },
     by_alias=True,
 )
 @transaction.atomic
 def delete_observation(
     request: HydroServerHttpRequest,
-    datastream_id: Path[uuid.UUID],
     observation_id: Path[uuid.UUID],
 ):
     """
-    Delete an Observation.
+    Delete an observation.
     """
 
     return 204, observation_service.delete(
         principal=request.principal,
         uid=observation_id,
-        datastream_id=datastream_id,
     )

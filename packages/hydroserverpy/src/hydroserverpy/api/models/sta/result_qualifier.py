@@ -9,11 +9,11 @@ if TYPE_CHECKING:
 
 
 class ResultQualifier(HydroServerBaseModel):
-    code: str = Field(..., max_length=255)
-    description: str
+    name: str = Field(..., max_length=255)
+    description: Optional[str] = None
     workspace_id: Optional[uuid.UUID] = None
 
-    _editable_fields: ClassVar[set[str]] = {"code", "description"}
+    _editable_fields: ClassVar[set[str]] = {"name", "description"}
 
     def __init__(self, client: "HydroServer", **data):
         super().__init__(client=client, service=client.resultqualifiers, **data)
@@ -22,7 +22,7 @@ class ResultQualifier(HydroServerBaseModel):
 
     @classmethod
     def get_route(cls):
-        return "result-qualifiers"
+        return "collections/result-qualifiers/items"
 
     @property
     def workspace(self) -> Optional["Workspace"]:

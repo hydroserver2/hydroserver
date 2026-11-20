@@ -5,6 +5,7 @@
 
 import type {
   Datastream,
+  QualityControlOperationService,
   QualityControlSessionService,
   QualityControlSessionContract,
 } from '@hydroserver/client'
@@ -12,10 +13,33 @@ import type { ObservationRecord } from '@uwrl/qc-utils'
 import { unwrap } from './unwrap'
 import { recordFrom } from './recordFrom'
 import { subtractIntervals, type Interval } from '@/utils/timeIntervals'
+import type { QcSession } from '@/utils/qcHistory'
 
-type QcSessionDetail = QualityControlSessionContract.DetailResponse
 type QcSessionSummary = QualityControlSessionContract.SummaryResponse
 type QcSessionPostBody = QualityControlSessionContract.PostBody
+
+/**
+ * Attach each session's operations, in order. Throws if any fail to load, so
+ * a session never looks like it has no edits because its operations didn't
+ * arrive.
+ */
+export async function withOperations(
+  qcOperations: QualityControlOperationService,
+  historyId: string,
+  sessions: readonly QcSessionSummary[]
+): Promise<QcSession[]> {
+  return Promise.all(
+    sessions.map(async (session) => ({
+      ...session,
+      operations: unwrap(
+        await qcOperations.list(historyId, session.id, {
+          fetch_all: true,
+          sortby: ['order'],
+        })
+      ),
+    }))
+  )
+}
 
 /** The history's single in-progress session, or null. */
 export async function getInProgressSession(
@@ -28,22 +52,25 @@ export async function getInProgressSession(
 
 /**
  * Resume the history's in-progress session if one exists, otherwise start
- * a new one with the given window/description. Returns the session detail
- * (with its operations) and whether it already existed. On resume the spec
- * is ignored and the existing session keeps its own window.
+ * a new one with the given window/description. Returns the session with its
+ * operations and whether it already existed. On resume the spec is ignored
+ * and the existing session keeps its own window.
  */
 export async function startOrResumeSession(
   qcSessions: QualityControlSessionService,
+  qcOperations: QualityControlOperationService,
   historyId: string,
   spec: QcSessionPostBody
-): Promise<{ session: QcSessionDetail; resumed: boolean }> {
+): Promise<{ session: QcSession; resumed: boolean }> {
   const existing = await getInProgressSession(qcSessions, historyId)
   if (existing) {
-    // A single-resource GET returns the detail shape (with operations).
-    const session = unwrap(await qcSessions.get(historyId, existing.id)) as QcSessionDetail
-    return { session, resumed: true }
+    const [session] = await withOperations(qcOperations, historyId, [existing])
+    return { session: session!, resumed: true }
   }
-  return { session: unwrap(await qcSessions.create(historyId, spec)), resumed: false }
+  // The API answers a create with the new id; read the session back for the rest.
+  const { id } = unwrap(await qcSessions.create(historyId, spec))
+  const session = unwrap(await qcSessions.get(historyId, id))
+  return { session: { ...session, operations: [] }, resumed: false }
 }
 
 /** Fetch signature matching `useObservationStore.fetchObservationsInRange`. */

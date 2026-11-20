@@ -1,9 +1,8 @@
 import { describe, it, expect, vi } from 'vitest'
 import type { Datastream } from '@hydroserver/client'
 import type { ObservationRecord, QcHistory } from '@uwrl/qc-utils'
-import { makeQcFake } from './qcServiceFake'
+import { createHistory, createSession, makeQcFake } from './qcServiceFake'
 import { reconstructSession } from '../reconstructSession'
-import { unwrap } from '../unwrap'
 
 const win = (start: string, end: string) => ({
   phenomenonTimeStart: start,
@@ -20,12 +19,10 @@ const rec = (dataX: number[]) =>
   }) as unknown as ObservationRecord
 
 const newHistory = async (qc: ReturnType<typeof makeQcFake>) =>
-  unwrap(
-    await qc.histories.create({
-      managedDatastreamId: 'm-1',
-      sourceDatastreamId: 's-1',
-    })
-  ).id
+  (await createHistory(qc, {
+    managedDatastreamId: 'm-1',
+    sourceDatastreamId: 's-1',
+  })).id
 
 const managed = { id: 'm-1' } as unknown as Datastream
 const source = { id: 's-1' } as unknown as Datastream
@@ -40,9 +37,9 @@ describe('reconstructSession', () => {
   it('bases a window a commit covered on the managed datastream and replays only this session ops', async () => {
     const qc = makeQcFake()
     const historyId = await newHistory(qc)
-    const earlier = unwrap(await qc.sessions.create(historyId, RANGE))
+    const earlier = await createSession(qc, historyId, RANGE)
     await qc.sessions.commit(historyId, earlier.id)
-    const s = unwrap(await qc.sessions.create(historyId, RANGE))
+    const s = await createSession(qc, historyId, RANGE)
     await qc.operations.create(historyId, s.id, [
       { operationType: 'SELECTION' as any, order: 0 },
       { operationType: 'INTERPOLATE' as any, order: 1 },
@@ -82,7 +79,7 @@ describe('reconstructSession', () => {
   it('bases an uncommitted window on the source', async () => {
     const qc = makeQcFake()
     const historyId = await newHistory(qc)
-    const s = unwrap(await qc.sessions.create(historyId, RANGE))
+    const s = await createSession(qc, historyId, RANGE)
     const fetchInRange = vi.fn().mockResolvedValue(rec([Date.UTC(2025, 0, 1)]))
 
     await reconstructSession(
@@ -100,7 +97,7 @@ describe('reconstructSession', () => {
   it('replays onto a copy, not the fetched record', async () => {
     const qc = makeQcFake()
     const historyId = await newHistory(qc)
-    const s = unwrap(await qc.sessions.create(historyId, RANGE))
+    const s = await createSession(qc, historyId, RANGE)
     const fetched = rec([Date.UTC(2025, 0, 1)])
 
     const result = await reconstructSession(
@@ -141,7 +138,7 @@ describe('reconstructCommittedSession', () => {
     const qc = makeQcFake()
     const historyId = await newHistory(qc)
     const commit = async (from: number, to: number, ops = DELETE_FIRST) => {
-      const s = unwrap(await qc.sessions.create(historyId, win(iso(from), iso(to))))
+      const s = await createSession(qc, historyId, win(iso(from), iso(to)))
       await qc.operations.create(historyId, s.id, ops as any)
       await qc.sessions.commit(historyId, s.id)
       return s
@@ -395,7 +392,7 @@ describe('reconstructSession with a real ObservationRecord', () => {
     const qc = makeQcFake()
     const historyId = await newHistory(qc)
     const range = win('2025-01-01T00:00:00Z', '2025-02-01T00:00:00Z')
-    const s = unwrap(await qc.sessions.create(historyId, range))
+    const s = await createSession(qc, historyId, range)
     const persisted = [
       { operationType: 'SELECTION', arguments: [[1, 2, 3]], order: 0 },
       { operationType: 'DELETE_POINTS', arguments: [], order: 1 },

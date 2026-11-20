@@ -1,14 +1,14 @@
 <template>
   <v-footer class="mt-10" color="background" border>
-    <v-container fluid class="py-2 text-body-2">
+    <v-container fluid class="py-2 hs-text-sm">
       <v-row class="justify-space-around" align="center">
         <v-col v-if="hasPolicies" cols="12" md="auto">
           <router-link to="/about"> About </router-link>
-          <span v-if="!!termsOfUseLink" class="text-h6 mx-1">|</span>
+          <span v-if="!!termsOfUseLink" class="hs-text-md mx-1">|</span>
           <a v-if="!!termsOfUseLink" :href="termsOfUseLink" target="_blank">
             Terms of use
           </a>
-          <span v-if="!!privacyPolicyLink" class="text-h6 mx-1">|</span>
+          <span v-if="!!privacyPolicyLink" class="hs-text-md mx-1">|</span>
           <a v-if="!!privacyPolicyLink" :href="privacyPolicyLink" target="_blank">
             Privacy policy
           </a>
@@ -45,7 +45,7 @@
 
       <v-row v-if="!!copyright">
         <v-col cols="12" class="text-center">
-          <p class="d-inline-block text-body-2">{{ copyright }}</p>
+          <p class="d-inline-block"><small>{{ copyright }}</small></p>
         </v-col>
       </v-row>
     </v-container>

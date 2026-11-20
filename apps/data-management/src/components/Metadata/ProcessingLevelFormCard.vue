@@ -1,10 +1,11 @@
 <template>
   <v-card>
-    <v-toolbar :color="workspaceId ? 'brown' : 'deep-orange-darken-4'">
+    <v-toolbar flat color="primary">
       <v-card-title>
-        {{ isEdit ? 'Edit' : 'Add' }} Processing Level
+        {{ isEdit ? 'Edit' : 'Add' }} processing level
       </v-card-title>
     </v-toolbar>
+    <v-divider />
 
     <v-form
       @submit.prevent="onSubmit"
@@ -14,29 +15,37 @@
     >
       <v-card-text>
         <v-text-field
+          v-model="item.name"
+          class="required-label"
+          label="Name"
+          :rules="rules.requiredAndMaxLength255"
+        />
+
+        <v-text-field
           v-model="item.code"
-          label="Code *"
-          :rules="rules.requiredCode"
+          label="Code"
+          :rules="rules.maxLength(255)"
         />
 
         <v-textarea
+          v-model="item.description"
+          class="required-label"
+          label="Description"
+          :rules="rules.required"
+        />
+
+        <v-text-field
           v-model="item.definition"
           label="Definition"
-          :rules="rules.maxLength(2000)"
-        />
-
-        <v-textarea
-          v-model="item.explanation"
-          label="Explanation"
-          :rules="rules.maxLength(2000)"
+          :rules="[...rules.maxLength(2000), ...(item.definition ? rules.urlFormat : [])]"
         />
 
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
-          <v-btn-primary type="submit">{{
+          <v-btn-dialog-action type="submit">{{
             isEdit ? 'Update' : 'Save'
-          }}</v-btn-primary>
+          }}</v-btn-dialog-action>
         </v-card-actions>
       </v-card-text>
     </v-form>
@@ -67,14 +76,12 @@ async function onSubmit() {
   try {
     if (props.workspaceId) item.value.workspaceId = props.workspaceId
     const newItem = await uploadItem()
-    if (!newItem) {
-      if (isEdit.value) emit('close')
-      return
-    }
+    if (!newItem) return
     if (isEdit.value) emit('updated', newItem)
     else emit('created', newItem.id)
   } catch (error) {
     console.error('Error uploading processing level', error)
+    return
   }
   emit('close')
 }

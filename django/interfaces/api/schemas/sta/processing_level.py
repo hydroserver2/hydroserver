@@ -1,60 +1,112 @@
 import uuid
-from typing import Optional, Literal, TYPE_CHECKING
+
+from typing import Optional, Literal, Annotated
+from pydantic import BeforeValidator, WithJsonSchema
+from pydantic.alias_generators import to_camel
 from ninja import Schema, Field, Query
+
 from interfaces.api.schemas import (
     BaseGetResponse,
     BasePostBody,
     BasePatchBody,
+    BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
+    WorkspaceResponse,
+    split_comma_separated,
+    comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
-
-if TYPE_CHECKING:
-    from interfaces.api.schemas import WorkspaceSummaryResponse
+from interfaces.api.schemas.base import ItemId, NewItemId
 
 
 class ProcessingLevelFields(Schema):
-    code: str = Field(..., max_length=255)
-    definition: Optional[str] = None
-    explanation: Optional[str] = None
+    code: Optional[str] = Field(None, max_length=255)
+    name: str = Field(..., max_length=255)
+    description: str
+    definition: Optional[str] = Field(None, max_length=2000)
 
 
-_order_by_fields = ("code",)
+PROCESSING_LEVEL_INCLUDE_RELATIONS = {
+    "workspace": {
+        "path": "workspace",
+        "bucket": "workspaces",
+        "response_schema": WorkspaceResponse,
+    },
+}
+ProcessingLevelIncludeRelation = Literal[*PROCESSING_LEVEL_INCLUDE_RELATIONS.keys()]
 
-ProcessingLevelOrderByFields = Literal[
-    *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
+_sortby_fields = ("code", "name")
+ProcessingLevelSortByFields = Literal[
+    *_sortby_fields, *[f"-{f}" for f in _sortby_fields]
 ]
 
+_property_fields = (
+    "id", "workspaceId", *(to_camel(name) for name in ProcessingLevelFields.model_fields)
+)
+ProcessingLevelPropertyName = Literal[*_property_fields]
 
-class ProcessingLevelQueryParameters(CollectionQueryParameters):
-    expand_related: Optional[bool] = None
-    order_by: Optional[list[ProcessingLevelOrderByFields]] = Query(
-        [], description="Select one or more fields to order the response by."
+
+class ProcessingLevelFilterFields(Schema):
+    properties: Annotated[
+        Optional[list[ProcessingLevelPropertyName]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(ProcessingLevelPropertyName)),
+    ] = Query(
+        None,
+        description="Comma-separated list of properties to include in the response. "
+        "All properties are returned if omitted.",
+    )
+    include: Annotated[
+        Optional[list[ProcessingLevelIncludeRelation]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(ProcessingLevelIncludeRelation)),
+    ] = Query(
+        None,
+        description="Comma-separated list of related resources to include in the response.",
+    )
+
+
+class ProcessingLevelItemQueryParameters(ProcessingLevelFilterFields, BaseQueryParameters):
+    pass
+
+
+class ProcessingLevelQueryParameters(ProcessingLevelFilterFields, CollectionQueryParameters, ExtentQueryParameters):
+    sortby: Annotated[
+        Optional[list[ProcessingLevelSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(ProcessingLevelSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
+    q: Optional[str] = Query(
+        None,
+        description="Full-text search query. Comma-separated terms are combined with OR; "
+        "whitespace-separated words within a term are combined with AND.",
     )
     workspace_id: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter processing levels by workspace ID."
+        [],
+        description="Processing levels that belong to this workspace. Matches `id` in `workspaces`. `null` "
+        "matches processing levels shared by every workspace.",
     )
-    datastreams__thing_id: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter processing levels by thing ID.", alias="thing_id"
+    datastreams__monitoring_site_id: list[uuid.UUID | Literal["null"]] = Query(
+        [],
+        description="Processing levels used by datastreams at this monitoring site. Matches `id` in "
+        "`monitoring-sites`. `null` matches processing levels that no datastream uses.",
+        alias="monitoringSiteId",
     )
     datastreams__id: list[uuid.UUID | Literal["null"]] = Query(
         [],
-        description="Filter processing levels by datastream ID.",
-        alias="datastream_id",
+        description="Processing levels used by this datastream. Matches `id` in `datastreams`. `null` matches "
+        "processing levels that no datastream uses.",
+        alias="datastreamId",
     )
 
 
-class ProcessingLevelSummaryResponse(BaseGetResponse, ProcessingLevelFields):
-    id: uuid.UUID
+class ProcessingLevelResponse(BaseGetResponse, ProcessingLevelFields, ItemId):
     workspace_id: Optional[uuid.UUID]
 
 
-class ProcessingLevelDetailResponse(BaseGetResponse, ProcessingLevelFields):
-    id: uuid.UUID
-    workspace: Optional["WorkspaceSummaryResponse"]
-
-
-class ProcessingLevelPostBody(BasePostBody, ProcessingLevelFields):
-    id: Optional[uuid.UUID] = None
+class ProcessingLevelPostBody(BasePostBody, ProcessingLevelFields, NewItemId):
     workspace_id: Optional[uuid.UUID] = None
 
 

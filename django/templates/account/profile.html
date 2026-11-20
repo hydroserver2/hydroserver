@@ -1,0 +1,96 @@
+{% extends "allauth/layouts/manage.html" %}
+{% load i18n %}
+{% block head_title %}{% trans "Profile" %}{% endblock %}
+{% block card_header %}{% endblock %}
+{% block content %}
+<div class="auth-page-header">
+    <h1 class="hs-heading">{% trans "Profile" %}</h1>
+    <a href="{% url 'account_profile_edit' %}" class="hs-link">{% trans "Edit" %}</a>
+</div>
+
+{% if messages %}
+<div class="hs-alert hs-alert--error">
+    {% for message in messages %}<p>{{ message }}</p>{% endfor %}
+</div>
+{% endif %}
+
+<div>
+    <section class="auth-section">
+        <dl class="auth-definition-list">
+            <div>
+                <dt class="hs-label auth-definition-term">{% trans "Name" %}</dt>
+                <dd class="auth-definition-value">{{ user.first_name }} {% if user.middle_name %}{{ user.middle_name }} {% endif %}{{ user.last_name }}</dd>
+            </div>
+            <div>
+                <dt class="hs-label auth-definition-term">{% trans "Email" %}</dt>
+                <dd class="auth-definition-value">{{ user.email }}</dd>
+            </div>
+            {% if user.phone %}
+            <div>
+                <dt class="hs-label auth-definition-term">{% trans "Phone" %}</dt>
+                <dd class="auth-definition-value">{{ user.phone }}</dd>
+            </div>
+            {% endif %}
+            {% if user.address %}
+            <div>
+                <dt class="hs-label auth-definition-term">{% trans "Address" %}</dt>
+                <dd class="auth-definition-value">{{ user.address }}</dd>
+            </div>
+            {% endif %}
+            {% if user.link %}
+            <div>
+                <dt class="hs-label auth-definition-term">{% trans "Link" %}</dt>
+                <dd class="auth-definition-value"><a href="{{ user.link }}" class="hs-link" target="_blank" rel="noopener">{{ user.link }}</a></dd>
+            </div>
+            {% endif %}
+            <div>
+                <dt class="hs-label auth-definition-term">{% trans "User type" %}</dt>
+                <dd class="auth-definition-value">{{ user.user_type }}</dd>
+            </div>
+        </dl>
+    </section>
+
+    {% if organization %}
+    <section class="auth-section">
+        <h2 class="hs-subheading">{% trans "Organization" %}</h2>
+        <dl class="auth-definition-list">
+            <div>
+                <dt class="hs-label auth-definition-term">{% trans "Name" %}</dt>
+                <dd class="auth-definition-value">{{ organization.name }}</dd>
+            </div>
+            <div>
+                <dt class="hs-label auth-definition-term">{% trans "Code" %}</dt>
+                <dd class="auth-definition-value">{{ organization.code }}</dd>
+            </div>
+            <div>
+                <dt class="hs-label auth-definition-term">{% trans "Type" %}</dt>
+                <dd class="auth-definition-value">{{ organization.organization_type }}</dd>
+            </div>
+            {% if organization.description %}
+            <div>
+                <dt class="hs-label auth-definition-term">{% trans "Description" %}</dt>
+                <dd class="auth-definition-value">{{ organization.description }}</dd>
+            </div>
+            {% endif %}
+            {% if organization.link %}
+            <div>
+                <dt class="hs-label auth-definition-term">{% trans "Website" %}</dt>
+                <dd class="auth-definition-value"><a href="{{ organization.link }}" class="hs-link" target="_blank" rel="noopener">{{ organization.link }}</a></dd>
+            </div>
+            {% endif %}
+        </dl>
+    </section>
+    {% endif %}
+
+    <section class="auth-section">
+        <h2 class="hs-subheading">{% trans "Account management" %}</h2>
+        <div class="hs-inline-actions">
+            {% if not SOCIALACCOUNT_SIGNUP_ONLY or user.has_usable_password or user.is_staff or user.is_superuser %}
+                <a href="{% url 'account_change_password' %}" class="hs-link">{% trans "Change password" %}</a>
+            {% endif %}
+            <a href="{% url 'account_logout' %}" class="hs-link">{% trans "Sign out" %}</a>
+            <a href="{% url 'account_delete' %}" class="hs-link hs-link--danger">{% trans "Delete account" %}</a>
+        </div>
+    </section>
+</div>
+{% endblock %}

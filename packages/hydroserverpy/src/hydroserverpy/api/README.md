@@ -17,12 +17,30 @@ hs_api = HydroServer(
 )
 ```
 
+You can also authenticate with an API key instead of email/password:
+
+```python
+hs_api = HydroServer(
+    host='https://playground.hydroserver.org',
+    apikey='hs_your_api_key'
+)
+```
+
+Or with an OIDC access token issued by HydroServer, either as a string or as a function that returns a current token before each request:
+
+```python
+hs_api = HydroServer(
+    host='https://playground.hydroserver.org',
+    access_token=get_access_token
+)
+```
+
 The hydroserverpy connection instance exposes the following types of core data and metadata you can retrieve or create, either as a collection or by ID using the `list`, `get`, or `create` methods of the associated property:
 
 * workspaces
-* things
+* monitoring_sites
 * datastreams
-* sensors
+* methods
 * units
 * processinglevels
 * observedproperties
@@ -54,8 +72,8 @@ workspace_collaborators = workspace.collaborators
 # Get all roles that can be assigned for this workspace
 workspace_roles = workspace.roles
 
-# Get all things within a workspace
-workspace_things = workspace.things
+# Get all monitoring sites within a workspace
+workspace_monitoring_sites = workspace.monitoring_sites
 
 # Get all observed properties within a workspace
 workspace_observed_properties = workspace.observedproperties
@@ -66,8 +84,8 @@ workspace_units = workspace.units
 # Get all processing levels within a workspace
 workspace_processing_levels = workspace.processinglevels
 
-# Get all sensors within a workspace
-workspace_sensors = workspace.sensors
+# Get all methods within a workspace
+workspace_methods = workspace.methods
 
 ```
 
@@ -123,31 +141,30 @@ workspace.accept_ownership_transfer()
 workspace.cancel_ownership_transfer()
 ```
 
-### Things
+### Monitoring Sites
 
-Things (or sites) are one of the core data elements managed in HydroServer. Things represent a location or site at which one or more datastreams of observations are collected. All datastreams in HydroServer must be associated with a thing/site. The examples below demonstrate how to use hydroserverpy to manage things in HydroServer.
+Monitoring sites are one of the core data elements managed in HydroServer. They represent locations at which one or more datastreams of observations are collected. All datastreams in HydroServer must be associated with a monitoring site. The examples below demonstrate how to use hydroserverpy to manage monitoring sites in HydroServer.
 
-#### Example: Get Things
+#### Example: Get Monitoring Sites
 ```python
-# Get all visible things
-public_things = hs_api.things.list()
+# Get all visible monitoring sites
+public_monitoring_sites = hs_api.monitoring_sites.list()
 
-# Get things belonging to a workspace
-workspace_things = hs_api.things.list(workspace="00000000-0000-0000-0000-000000000000")
+# Get monitoring sites belonging to a workspace
+workspace_monitoring_sites = hs_api.monitoring_sites.list(workspace="00000000-0000-0000-0000-000000000000")
 
-# Get thing with a given ID
-thing = hs_api.things.get(uid="00000000-0000-0000-0000-000000000000")
+# Get a monitoring site with a given ID
+monitoring_site = hs_api.monitoring_sites.get(uid="00000000-0000-0000-0000-000000000000")
 ```
 
-#### Example: Create Thing
+#### Example: Create a Monitoring Site
 ```python
-# Create a new thing in HydroServer
-new_thing = hs_api.things.create(
+# Create a new monitoring site in HydroServer
+new_monitoring_site = hs_api.monitoring_sites.create(
     name="My Site",
     description="This is a site that records environmental observations.",
-    sampling_feature_type="Site",
-    sampling_feature_code="OBSERVATION_SITE",
-    site_type="Atmosphere",
+    code="OBSERVATION_SITE",
+    type="Atmosphere",
     latitude=41.7390,
     longitude=-111.7957,
     elevation_m=1414.0,
@@ -161,87 +178,87 @@ new_thing = hs_api.things.create(
 )
 ```
 
-Each of the methods above will return one or more Thing objects. The examples below show the main properties and methods available to a Thing object.
+Each of the methods above will return one or more MonitoringSite objects. The examples below show the main properties and methods available to a MonitoringSite object.
 
-#### Example: Modify a Thing
+#### Example: Modify a MonitoringSite
 ```python
-# Get a thing
-thing = hs_api.things.get(uid='00000000-0000-0000-0000-000000000000')
+# Get a monitoring_site
+monitoring_site = hs_api.monitoring_sites.get(uid='00000000-0000-0000-0000-000000000000')
 
-# Update one or more properties of the thing.
-thing.name = 'Updated Site Name'
-thing.description = 'This site metadata has been modified.'
-thing.is_private = True
+# Update one or more properties of the monitoring site.
+monitoring_site.name = 'Updated Site Name'
+monitoring_site.description = 'This site metadata has been modified.'
+monitoring_site.is_private = True
 
 # Save the changes back to HydroServer.
-thing.save()
+monitoring_site.save()
 ```
 
-#### Example: Manage Thing Tags
+#### Example: Manage MonitoringSite Tags
 ```python
-# Get a thing
-thing = hs_api.things.get(uid='00000000-0000-0000-0000-000000000000')
+# Get a monitoring_site
+monitoring_site = hs_api.monitoring_sites.get(uid='00000000-0000-0000-0000-000000000000')
 
-# Get thing tags
-tags = thing.tags
+# Get monitoring_site tags
+tags = monitoring_site.tags
 
-# Add a tag to a thing
-thing.add_tag(
+# Add a tag to a monitoring_site
+monitoring_site.set_tag(
     key='Region',
     value='A'
 )
 
-# Modify a thing's tag
-thing.update_tag(
+# Modify a monitoring_site's tag
+monitoring_site.set_tag(
     key='Region',
     value='B'
 )
 
-# Delete a thing's tag
-thing.delete_tag(key='Region')
+# Delete a monitoring_site's tag
+monitoring_site.delete_tag(key='Region')
 ```
 
-#### Example: Manage Thing Photos
+#### Example: Manage MonitoringSite Photos
 ```python
-# Get a thing
-thing = hs_api.things.get(uid='00000000-0000-0000-0000-000000000000')
+# Get a monitoring_site
+monitoring_site = hs_api.monitoring_sites.get(uid='00000000-0000-0000-0000-000000000000')
 
-# Get thing photos
-photos = thing.photos
+# Get monitoring_site photos
+photos = monitoring_site.photos
 
-# Add a photo to a thing
+# Add a photo to a monitoring_site
 with open('/path/to/my/photo.png', 'rb') as photo_file:
-    thing.add_photo(file=photo_file)
+    monitoring_site.add_photo(file=photo_file)
 
-# Delete a thing's photo
-thing.delete_photo(name='photo.png')
+# Delete a monitoring_site's photo
+monitoring_site.delete_photo(name='photo.png')
 ```
 
-#### Example: Get Datastreams of a Thing
+#### Example: Get Datastreams of a MonitoringSite
 ```python
-# Get a thing
-thing = hs_api.things.get(uid='00000000-0000-0000-0000-000000000000')
+# Get a monitoring_site
+monitoring_site = hs_api.monitoring_sites.get(uid='00000000-0000-0000-0000-000000000000')
 
-# Fetch datastreams of the thing
-datastreams = thing.datastreams
+# Fetch datastreams of the monitoring site
+datastreams = monitoring_site.datastreams
 ```
 
-#### Example: Refresh Thing data from HydroServer
+#### Example: Refresh MonitoringSite data from HydroServer
 ```python
-# Get a Thing
-thing = hs_api.things.get(uid='00000000-0000-0000-0000-000000000000')
+# Get a MonitoringSite
+monitoring_site = hs_api.monitoring_sites.get(uid='00000000-0000-0000-0000-000000000000')
 
-# Refresh thing data from HydroServer
-thing.refresh()
+# Refresh monitoring_site data from HydroServer
+monitoring_site.refresh()
 ```
 
-#### Example: Delete Thing from HydroServer
+#### Example: Delete MonitoringSite from HydroServer
 ```python
-# Get a Thing
-thing = hs_api.things.get(uid='00000000-0000-0000-0000-000000000000')
+# Get a MonitoringSite
+monitoring_site = hs_api.monitoring_sites.get(uid='00000000-0000-0000-0000-000000000000')
 
-# Delete the thing from HydroServer
-thing.delete()
+# Delete the monitoring site from HydroServer
+monitoring_site.delete()
 ```
 
 ### Observed Properties
@@ -265,9 +282,9 @@ observed_property = hs_api.observedproperties.get(uid='00000000-0000-0000-0000-0
 # Create a new observed property in HydroServer
 new_observed_property = hs_api.observedproperties.create(
     name='Temperature',
-    definition='Air Temperature',
+    definition='http://vocabulary.odm2.org/variablename/airTemperature/',
     description='Air temperature',
-    observed_property_type='Climate',
+    type='Climate',
     code='AirTemp',
     workspace='00000000-0000-0000-0000-000000000000'
 )
@@ -327,8 +344,8 @@ unit = hs_api.units.get(uid='00000000-0000-0000-0000-000000000000')
 new_unit = hs_api.units.create(
     name='Degree Celsius',
     symbol='C',
-    definition='Degree Celsius',
-    unit_type='Temperature',
+    definition='https://qudt.org/vocab/unit/DEG_C',
+    type='Temperature',
     workspace='00000000-0000-0000-0000-000000000000'
 )
 ```
@@ -365,69 +382,68 @@ unit = hs_api.units.get(uid='00000000-0000-0000-0000-000000000000')
 unit.delete()
 ```
 
-### Sensors
+### Methods
 
-Sensors are used in HydroServer to describe the sensor/method used to make an environmental observation. The examples below demonstrate the actions you can take to manage sensors in HydroServer.
+Methods describe how a datastream's environmental observations are produced. The examples below demonstrate the actions you can take to manage methods in HydroServer.
 
-#### Example: Get Sensors
+#### Example: Get Methods
 ```python
-# Get all sensors
-sensors = hs_api.sensors.list()
+# Get all methods
+methods = hs_api.methods.list()
 
-# Get sensors belonging to a workspace
-workspace_sensors = hs_api.sensors.list(workspace="00000000-0000-0000-0000-000000000000")
+# Get methods belonging to a workspace
+workspace_methods = hs_api.methods.list(workspace="00000000-0000-0000-0000-000000000000")
 
-# Get sensor with a given ID
-sensor = hs_api.sensors.get(uid='00000000-0000-0000-0000-000000000000')
+# Get method with a given ID
+method = hs_api.methods.get(uid='00000000-0000-0000-0000-000000000000')
 ```
 
-#### Example: Create Sensor
+#### Example: Create Method
 ```python
-# Create a new sensor in HydroServer
-new_sensor = hs_api.sensors.create(
-    name='Environmental Sensor',
-    description='An environmental sensor.',
-    encoding_type='application/json',
-    manufacturer='Campbell Scientific',
+# Create a new method in HydroServer
+new_method = hs_api.methods.create(
+    name='Environmental Method',
+    description='An environmental method.',
+    type='Instrument Deployment',
+    code='SENSOR_A',
+    definition='https://link/to/method/info',
     sensor_model='A',
-    sensor_model_link='https://link/to/sensor/model/info',
-    method_type='Sensor',
-    method_link='https://link/to/method/info',
-    method_code='SENSOR_A',
+    sensor_model_manufacturer='Campbell Scientific',
+    sensor_model_definition='https://link/to/method/model/info',
     workspace='00000000-0000-0000-0000-000000000000'
 )
 ```
 
-Each of the methods above will return one or more sensor objects. The examples below show the main properties and methods available to a sensor object.
+Each of the methods above will return one or more method objects. The examples below show the main properties and methods available to a method object.
 
-#### Example: Modify a Sensor
+#### Example: Modify a Method
 ```python
-# Get a sensor
-sensor = hs_api.sensors.get(uid='00000000-0000-0000-0000-000000000000')
+# Get a method
+method = hs_api.methods.get(uid='00000000-0000-0000-0000-000000000000')
 
-# Update one or more properties of the Sensor.
-sensor.name = 'Updated Sensor Name'
+# Update one or more properties of the Method.
+method.name = 'Updated Method Name'
 
 # Save the changes back to HydroServer.
-sensor.save()
+method.save()
 ```
 
-#### Example: Refresh Sensor data from HydroServer
+#### Example: Refresh Method data from HydroServer
 ```python
-# Get a sensor
-sensor = hs_api.sensors.get(uid='00000000-0000-0000-0000-000000000000')
+# Get a method
+method = hs_api.methods.get(uid='00000000-0000-0000-0000-000000000000')
 
-# Refresh sensor data from HydroServer
-sensor.refresh()
+# Refresh method data from HydroServer
+method.refresh()
 ```
 
-#### Example: Delete Sensor from HydroServer
+#### Example: Delete Method from HydroServer
 ```python
-# Get a sensor
-sensor = hs_api.sensors.get(uid='00000000-0000-0000-0000-000000000000')
+# Get a method
+method = hs_api.methods.get(uid='00000000-0000-0000-0000-000000000000')
 
-# Delete the sensor from HydroServer
-sensor.delete()
+# Delete the method from HydroServer
+method.delete()
 ```
 
 ### Processing Levels
@@ -451,8 +467,8 @@ processing_level = hs_api.processinglevels.get(uid='00000000-0000-0000-0000-0000
 # Create a new processing level in HydroServer
 new_processing_level = hs_api.processinglevels.create(
     code='0',
-    definition='Raw',
-    explanation='Data have not been processed or quality controlled.',
+    name='Raw',
+    description='Data have not been processed or quality controlled.',
     workspace='00000000-0000-0000-0000-000000000000'
 )
 ```
@@ -509,7 +525,7 @@ result_qualifier = hs_api.resultqualifiers.get(uid='00000000-0000-0000-0000-0000
 ```python
 # Create a new result qualifier on HydroServer
 new_result_qualifier = hs_api.resultqualifiers.create(
-    code='PF',
+    name='PF',
     description='Power Failure',
     workspace='00000000-0000-0000-0000-000000000000'
 )
@@ -523,7 +539,7 @@ Each of the methods above will return one or more ResultQualifier objects. The e
 result_qualifier = hs_api.resultqualifiers.get(uid='00000000-0000-0000-0000-000000000000')
 
 # Update one or more properties of the result qualifier.
-result_qualifier.code = 'Updated Result Qualifier Code'
+result_qualifier.name = 'Updated Result Qualifier Name'
 
 # Save the changes back to HydroServer.
 result_qualifier.save()
@@ -549,7 +565,7 @@ result_qualifier.delete()
 
 ### Datastreams
 
-Datastreams are used in HydroServer to represent a group of environmental observations of an observed property made by a sensor at a location and having a specific processing level. The examples below demonstrate the actions you can take to manage datastreams in HydroServer.
+Datastreams are used in HydroServer to represent a group of environmental observations of an observed property made by a method at a location and having a specific processing level. The examples below demonstrate the actions you can take to manage datastreams in HydroServer.
 
 #### Example: Get Datastreams
 ```python
@@ -559,8 +575,8 @@ datastreams = hs_api.datastreams.list()
 # Get processing levels belonging to a workspace
 workspace_datastreams = hs_api.datastreams.list(workspace="00000000-0000-0000-0000-000000000000")
 
-# Get processing levels belonging to a thing
-thing_datastreams = hs_api.datastreams.list(thing="00000000-0000-0000-0000-000000000000")
+# Get processing levels belonging to a monitoring_site
+thing_datastreams = hs_api.datastreams.list(monitoring_site="00000000-0000-0000-0000-000000000000")
 
 # Get datastream with a given ID
 datastream = hs_api.datastreams.get(uid='00000000-0000-0000-0000-000000000000')
@@ -568,30 +584,21 @@ datastream = hs_api.datastreams.get(uid='00000000-0000-0000-0000-000000000000')
 
 #### Example: Create Datastream
 ```python
-from datetime import datetime
-
 ...
 
 # Create a new datastream on HydroServer
 new_datastream = hs_api.datastreams.create(
     name='Datastream A',
     description='A datastream containing environmental observations.',
-    observation_type='Field Observation',
     sampled_medium='Air',
     no_data_value=-9999,
     aggregation_statistic='Continuous',
     time_aggregation_interval=1,
     status='Ongoing',
-    result_type='Timeseries',
-    value_count=0,
-    phenomenon_begin_time=datetime(year=2024, month=1, day=1),
-    phenomenon_end_time=None,
-    result_begin_time=datetime(year=2024, month=1, day=1),
-    result_end_time=None,
-    is_visible=True,
+    is_restricted=False,
     is_private=False,
-    thing='00000000-0000-0000-0000-000000000000',
-    sensor='00000000-0000-0000-0000-000000000000',
+    monitoring_site='00000000-0000-0000-0000-000000000000',
+    method='00000000-0000-0000-0000-000000000000',
     observed_property='00000000-0000-0000-0000-000000000000',
     processing_level='00000000-0000-0000-0000-000000000000',
     unit='00000000-0000-0000-0000-000000000000',
@@ -620,11 +627,11 @@ datastream.save()
 # Get a datastream
 datastream = hs_api.datastreams.get(uid='00000000-0000-0000-0000-000000000000')
 
-# Get the datastream's Thing/Site
-thing = datastream.thing
+# Get the datastream's MonitoringSite/Site
+monitoring_site = datastream.monitoring_site
 
-# Get the datastream's Sensor
-sensor = datastream.sensor
+# Get the datastream's Method
+method = datastream.method
 
 # Get the datastream's Observed Property
 observed_property = datastream.observed_property
@@ -638,7 +645,7 @@ processing_level = datastream.processing_level
 
 #### Example: Get Observations of a Datastream
 ```python
-from datetime import datetime
+from datetime import datetime, timezone
 
 ...
 
@@ -647,14 +654,14 @@ datastream = hs_api.datastreams.get(uid='00000000-0000-0000-0000-000000000000')
 
 # Get observations of a datastream between two timestamps
 observations_df = datastream.get_observations(
-    start_time=datetime(year=2023, month=1, day=1),
-    end_time=datetime(year=2023, month=12, day=31)
-)
+    phenomenon_time_min=datetime(year=2023, month=1, day=1, tzinfo=timezone.utc),
+    phenomenon_time_max=datetime(year=2023, month=12, day=31, tzinfo=timezone.utc)
+).dataframe
 
 # Get observations all observations of a datastream
 full_observations_df = datastream.get_observations(
     fetch_all=True
-)
+).dataframe
 ```
 
 #### Example: Upload Observations to a Datastream
@@ -850,7 +857,7 @@ from datetime import datetime, timezone
 task = hs_api.tasks.get(uid='00000000-0000-0000-0000-000000000000')
 
 # List recent runs
-runs = task.list_runs(order_by=['-started_at'], page_size=10)
+runs = task.list_runs(sortby=['-started_at'], limit=10)
 
 # Filter runs by status
 failed_runs = task.list_runs(status='FAILURE')
@@ -884,8 +891,8 @@ Rating curves define a relationship between two measured quantities (e.g., stage
 # Get all rating curves
 rating_curves = hs_api.rating_curves.list()
 
-# Filter by thing
-site_rating_curves = hs_api.rating_curves.list(thing='00000000-0000-0000-0000-000000000000')
+# Filter by monitoring_site
+site_rating_curves = hs_api.rating_curves.list(monitoring_site='00000000-0000-0000-0000-000000000000')
 
 # Filter by workspace
 workspace_rating_curves = hs_api.rating_curves.list(workspace='00000000-0000-0000-0000-000000000000')
@@ -899,7 +906,7 @@ rating_curve = hs_api.rating_curves.get(uid='00000000-0000-0000-0000-00000000000
 # Create a new rating curve with calibration points
 new_rating_curve = hs_api.rating_curves.create(
     name='Stage-Discharge Curve',
-    thing='00000000-0000-0000-0000-000000000000',
+    monitoring_site='00000000-0000-0000-0000-000000000000',
     fitting_method='power_law',
     description='Stage-discharge relationship for the main gauge.',
     points=[
@@ -940,15 +947,15 @@ rating_curve.delete()
 
 ### Data Product Tasks
 
-Data product tasks group one or more transformations together and run them on a schedule or on demand. Each task is associated with a thing/site and produces derived datastreams. The examples below demonstrate how to manage data product tasks in HydroServer.
+Data product tasks group one or more transformations together and run them on a schedule or on demand. Each task is associated with a monitoring site and produces derived datastreams. The examples below demonstrate how to manage data product tasks in HydroServer.
 
 #### Example: Get Data Product Tasks
 ```python
 # Get all data product tasks
 tasks = hs_api.data_product_tasks.list()
 
-# Filter by thing
-site_tasks = hs_api.data_product_tasks.list(thing='00000000-0000-0000-0000-000000000000')
+# Filter by monitoring_site
+site_tasks = hs_api.data_product_tasks.list(monitoring_site='00000000-0000-0000-0000-000000000000')
 
 # Filter by workspace
 workspace_tasks = hs_api.data_product_tasks.list(workspace='00000000-0000-0000-0000-000000000000')
@@ -970,7 +977,7 @@ aggregation_transforms = task.aggregation_transformations
 # Create a data product task with a scheduled interval
 new_task = hs_api.data_product_tasks.create(
     name='Discharge Calculation',
-    thing='00000000-0000-0000-0000-000000000000',
+    monitoring_site='00000000-0000-0000-0000-000000000000',
     description='Derives discharge from stage using a rating curve.',
     interval=1,
     interval_period='hours',
@@ -1005,7 +1012,7 @@ print(task_run.status)  # 'PENDING'
 task = hs_api.data_product_tasks.get(uid='00000000-0000-0000-0000-000000000000')
 
 # List recent runs
-runs = task.list_runs(order_by=['-started_at'], page_size=10)
+runs = task.list_runs(sortby=['-started_at'], limit=10)
 
 # Filter runs by status
 failed_runs = task.list_runs(status='FAILURE')
@@ -1144,15 +1151,15 @@ HydroServer's monitoring system lets you define quality checks on your datastrea
 
 ### Monitoring Tasks
 
-Monitoring tasks define which datastreams to check, when to run the checks, and who to notify. Each task is associated with a thing/site and can contain rules for multiple datastreams. The examples below demonstrate how to manage monitoring tasks in HydroServer.
+Monitoring tasks define which datastreams to check, when to run the checks, and who to notify. Each task is associated with a monitoring site and can contain rules for multiple datastreams. The examples below demonstrate how to manage monitoring tasks in HydroServer.
 
 #### Example: Get Monitoring Tasks
 ```python
 # Get all monitoring tasks
 tasks = hs_api.monitoring_tasks.list()
 
-# Filter by thing
-site_tasks = hs_api.monitoring_tasks.list(thing='00000000-0000-0000-0000-000000000000')
+# Filter by monitoring_site
+site_tasks = hs_api.monitoring_tasks.list(monitoring_site='00000000-0000-0000-0000-000000000000')
 
 # Filter by workspace
 workspace_tasks = hs_api.monitoring_tasks.list(workspace='00000000-0000-0000-0000-000000000000')
@@ -1169,7 +1176,7 @@ task = hs_api.monitoring_tasks.get(uid='00000000-0000-0000-0000-000000000000')
 # Create a monitoring task with a scheduled interval
 new_task = hs_api.monitoring_tasks.create(
     name='Daily Quality Check',
-    thing='00000000-0000-0000-0000-000000000000',
+    monitoring_site='00000000-0000-0000-0000-000000000000',
     description='Checks temperature and discharge datastreams daily.',
     recipients=['user@example.com', 'admin@example.com'],
     interval=1,
@@ -1206,7 +1213,7 @@ print(task_run.status)  # 'PENDING'
 task = hs_api.monitoring_tasks.get(uid='00000000-0000-0000-0000-000000000000')
 
 # List recent runs
-runs = task.list_runs(order_by=['-started_at'], page_size=10)
+runs = task.list_runs(sortby=['-started_at'], limit=10)
 
 # Filter runs by status
 failed_runs = task.list_runs(status='FAILURE')

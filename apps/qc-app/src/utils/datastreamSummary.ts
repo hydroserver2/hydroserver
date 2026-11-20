@@ -17,7 +17,7 @@ export function datastreamSummary(
 ): string {
   const parts: string[] = []
   const level =
-    datastream.processingLevel?.definition || datastream.processingLevel?.code
+    datastream.processingLevel?.name || datastream.processingLevel?.code
   if (level) parts.push(`Level: ${level}`)
   parts.push(`${NUMBER.format(datastream.valueCount ?? 0)} obs`)
   if (sessions) {

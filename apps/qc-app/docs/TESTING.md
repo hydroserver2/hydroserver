@@ -327,7 +327,7 @@ a spec can pass a `qcSessionState` array and assert on what was persisted
 (see `submit.spec.ts`). They refuse what the API refuses, with the same 400:
 a second in-progress session, and commits, operation changes and deletes on a
 committed session. A new session
-depends on the committed sessions its window overlaps, and `ancestor_of`
+depends on the committed sessions its window overlaps, and `ancestorOf`
 lists those dependencies transitively, as the API does.
 
 The committed session's id is `COMMITTED_SESSION_ID` in

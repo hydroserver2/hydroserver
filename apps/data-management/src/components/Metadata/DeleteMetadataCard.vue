@@ -1,7 +1,7 @@
 <template>
   <v-card v-if="loaded">
-    <v-toolbar color="red-darken-4">
-      <v-card-title class="text-h5">
+    <v-toolbar flat color="delete">
+      <v-card-title class="hs-text-md">
         <v-icon :icon="mdiAlert" />
         {{
           hasDatastreams
@@ -10,13 +10,14 @@
         }}
       </v-card-title>
     </v-toolbar>
+    <v-divider />
 
     <v-card-text v-if="hasDatastreams">
       This {{ itemName }} cannot be deleted because it's being referenced by
       some of your datastreams. Before deletion, all of the following
       datastreams need to be deleted or use a different {{ itemName }}:
       <div class="my-4" v-for="ds in datastreams">
-        <router-link :to="`/sites/${ds.thingId}`">
+        <router-link :to="`/sites/${ds.monitoringSiteId}`">
           {{ ds.name }}
         </router-link>
       </div>
@@ -29,8 +30,8 @@
     <v-card-actions>
       <v-spacer></v-spacer>
       <v-btn-cancel @click="emit('close')">Cancel</v-btn-cancel>
-      <v-btn-delete v-if="!hasDatastreams" @click="onDelete"
-        >Delete</v-btn-delete
+      <v-btn-destructive v-if="!hasDatastreams" @click="onDelete"
+        >Delete</v-btn-destructive
       >
     </v-card-actions>
   </v-card>
@@ -42,18 +43,18 @@
 <script setup lang="ts">
 import hs, { Datastream } from '@hydroserver/client'
 import { computed, onMounted, ref } from 'vue'
-import FullScreenLoader from '../base/FullScreenLoader.vue'
+import { HsFullScreenLoader as FullScreenLoader } from '@hydroserver/design-system/vue'
 import { mdiAlert } from '@mdi/js'
 
 const datastreams = ref<Datastream[]>([])
 const loaded = ref(false)
 
 type DatastreamFilterKey =
-  | 'unit_id'
-  | 'sensor_id'
-  | 'observed_property_id'
-  | 'processing_level_id'
-  | 'result_qualifier_id'
+  | 'unitId'
+  | 'methodId'
+  | 'observedPropertyId'
+  | 'processingLevelId'
+  | 'resultQualifier'
 
 const emit = defineEmits(['delete', 'close'])
 const props = defineProps<{
@@ -79,7 +80,7 @@ onMounted(async () => {
     datastreams.value = await hs.datastreams.listAllItems(filter)
     loaded.value = true
   } catch (error) {
-    console.error('Error fetching things', error)
+    console.error('Error fetching monitoringSites', error)
   }
 })
 </script>

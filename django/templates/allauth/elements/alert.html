@@ -1,0 +1,7 @@
+{% load allauth %}
+<div class="hs-alert
+    {% if 'error' in attrs.tags %}hs-alert--error
+    {% elif 'warning' in attrs.tags %}hs-alert--warning
+    {% elif 'success' in attrs.tags %}hs-alert--success{% endif %}">
+    {% slot default %}{% endslot %}
+</div>

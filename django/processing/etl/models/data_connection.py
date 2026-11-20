@@ -1,58 +1,50 @@
-import uuid6
-from typing import Union, Literal, Optional
+import re
+import uuid
+import jmespath as jmespath_lib
+import pytz
 
+from datetime import datetime
+from jmespath.exceptions import JMESPathError
+
+from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Q
+from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.search import SearchVectorField
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
-from django.contrib.auth import get_user_model
 from django_celery_beat.models import PeriodicTask
 
-from core.iam.models import Workspace, APIKey
-from core.iam.models.utils import PermissionChecker
+from core.iam.models import Workspace
+from core.iam.permissions.mixins import ResourcePermissionMixin
+from core.iam.permissions.registry import register_resource_type
 
 
-User = get_user_model()
+_UTC_OFFSET_RE = re.compile(r"^[+-](\d{4}|\d{2}:\d{2})$")
 
 
-class DataConnectionQuerySet(models.QuerySet):
-    def visible(self, principal: Union[User, APIKey]):
-        if not principal:
-            return self.none()
-        elif hasattr(principal, "account_type"):
-            if principal.account_type == "admin":
-                return self
-            else:
-                return self.filter(
-                    Q(workspace__owner=principal)
-                    | Q(
-                        workspace__collaborators__user=principal,
-                        workspace__collaborators__role__permissions__resource_type__in=[
-                            "*",
-                            "ETL",
-                        ],
-                        workspace__collaborators__role__permissions__permission_type__in=[
-                            "*",
-                            "view",
-                        ],
-                    )
-                )
-        elif hasattr(principal, "workspace"):
-            return self.filter(
-                Q(
-                    workspace__apikeys=principal,
-                    workspace__apikeys__role__permissions__resource_type__in=[
-                        "*",
-                        "ETL",
-                    ],
-                    workspace__apikeys__role__permissions__permission_type__in=[
-                        "*",
-                        "view",
-                    ],
-                )
-            )
-        else:
-            return self.none()
+def _validate_utc_offset(value: str) -> None:
+    """
+    Native port of hydroserverpy.etl.models.timestamp.Timezone._validate_utc_offset
+    - kept in sync manually since models must not import hydroserverpy.
+    """
+
+    if not _UTC_OFFSET_RE.match(value):
+        raise ValueError(
+            f"Invalid timestamp UTC offset '{value}'. "
+            "UTC offsets must be specified in ±HHMM or ±HH:MM format (e.g: '-0700' or '-07:00') "
+            "with hours between 00 and 14 and minutes between 00 and 59."
+        )
+
+    clean = value.replace(":", "")
+    hours = int(clean[1:3])
+    minutes = int(clean[3:5])
+
+    if hours > 14 or minutes >= 60 or (hours == 14 and minutes != 0):
+        raise ValueError(
+            f"Invalid timestamp UTC offset '{value}'. "
+            "UTC offsets must be specified in ±HHMM or ±HH:MM format (e.g: '-0700' or '-07:00') "
+            "with hours between 00 and 14 and minutes between 00 and 59."
+        )
 
 
 class TimezoneType(models.TextChoices):
@@ -74,8 +66,9 @@ class DataIngestionWindowAnchorType(models.TextChoices):
     FIXED_TIMESTAMP = "fixed_timestamp"
 
 
-class DataConnection(models.Model, PermissionChecker):
-    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
+@register_resource_type()
+class DataConnection(models.Model, ResourcePermissionMixin):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     name = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
     workspace = models.ForeignKey(
@@ -88,41 +81,46 @@ class DataConnection(models.Model, PermissionChecker):
     auth_header_value = models.TextField(null=True, blank=True)
     timezone_type = models.CharField(max_length=255, choices=TimezoneType, null=True, blank=True)
     timezone = models.CharField(max_length=255, blank=True, null=True)
-
-    objects = DataConnectionQuerySet.as_manager()
+    search_vector = SearchVectorField(null=True, editable=False)
 
     class Meta:
         app_label = "etl"
+        indexes = [
+            GinIndex(fields=["search_vector"], name="etl_dataconn_search_gin"),
+        ]
 
     def __str__(self):
         return f"{self.name} - {self.id}"
 
-    @classmethod
-    def can_principal_create(
-        cls,
-        principal: Optional[Union[User, APIKey]],
-        workspace: Optional[Workspace] = None,
-    ):
-        return cls.check_create_permissions(
-            principal=principal,
-            workspace=workspace,
-            resource_type="ETL"
-        )
+    def clean(self):
+        if (self.auth_header_name is None) != (self.auth_header_value is None):
+            raise ValidationError(
+                "auth_header_name and auth_header_value must both be provided or both be omitted."
+            )
 
-    def get_principal_permissions(
-        self, principal: Optional[Union["User", "APIKey"]]
-    ) -> list[Literal["edit", "delete", "view"]]:
-        permissions = self.check_object_permissions(
-            principal=principal,
-            workspace=self.workspace,
-            resource_type="ETL"
-        )
-
-        return permissions
+        if self.timezone_type in (TimezoneType.OFFSET, TimezoneType.IANA) and not self.timezone:
+            raise ValidationError(
+                "timezone is required when timezone_type is 'offset' or 'iana'."
+            )
+        elif self.timezone_type == TimezoneType.OFFSET:
+            try:
+                _validate_utc_offset(self.timezone)
+            except ValueError as e:
+                raise ValidationError(str(e)) from e
+        elif self.timezone_type == TimezoneType.IANA:
+            if self.timezone not in pytz.all_timezones_set:
+                raise ValidationError(
+                    f"Unknown timezone '{self.timezone}'. "
+                    "Provide a valid IANA timezone name (e.g. 'America/Denver')."
+                )
+        elif not self.timezone_type and self.timezone:
+            raise ValidationError(
+                "timezone must not be set when timezone_type is not provided."
+            )
 
 
 class PlaceholderVariable(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     data_connection = models.ForeignKey(
         DataConnection,
         on_delete=models.CASCADE,
@@ -134,6 +132,33 @@ class PlaceholderVariable(models.Model):
 
     class Meta:
         app_label = "etl"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["data_connection", "name", "variable_type"],
+                name="unique_placeholder_variable_name_and_type_per_data_connection",
+                violation_error_message=(
+                    "A placeholder variable with this name and type already exists on this data connection."
+                ),
+                violation_error_code="unique",
+            )
+        ]
+
+    def clean(self):
+        if self.timestamp_format:
+            if self.variable_type not in (
+                PlaceholderVariableType.RUN_TIME, PlaceholderVariableType.LATEST_OBSERVATION_TIMESTAMP
+            ):
+                raise ValidationError(
+                    "timestamp_format is only allowed on 'run_time' and 'latest_observation_timestamp' "
+                    "placeholder variables."
+                )
+            try:
+                datetime(2000, 1, 1).strftime(self.timestamp_format)
+            except Exception as e:
+                raise ValidationError(
+                    f"Invalid timestamp format string {self.timestamp_format!r}. "
+                    "Ensure the string uses valid strftime directives (e.g., '%Y-%m-%d %H:%M:%S')."
+                ) from e
 
 
 class PayloadType(models.TextChoices):
@@ -150,7 +175,7 @@ class PayloadDelimiter(models.TextChoices):
 
 
 class Payload(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     data_connection = models.OneToOneField(
         DataConnection, on_delete=models.CASCADE, related_name="payload"
     )
@@ -185,6 +210,50 @@ class Payload(models.Model):
     class Meta:
         app_label = "etl"
 
+    def clean(self):
+        if self.payload_type == PayloadType.CSV:
+            missing = [
+                field for field in ("header_row", "data_start_row", "delimiter")
+                if not getattr(self, field)
+            ]
+            if missing:
+                raise ValidationError(f"{', '.join(missing)} required for CSV payloads.")
+
+        elif self.payload_type == PayloadType.JSON:
+            if not self.jmespath:
+                raise ValidationError("jmespath is required for JSON payloads.")
+
+        if self.jmespath:
+            try:
+                jmespath_lib.compile(self.jmespath)
+            except JMESPathError as e:
+                raise ValidationError(f"Invalid JMESPath expression: {e}") from e
+
+        if self.timestamp_format:
+            try:
+                datetime(2000, 1, 1).strftime(self.timestamp_format)
+            except Exception as e:
+                raise ValidationError(
+                    f"Invalid timestamp format string {self.timestamp_format!r}. "
+                    "Ensure the string uses valid strftime directives (e.g., '%Y-%m-%d %H:%M:%S')."
+                ) from e
+
+        for side in ("start", "end"):
+            prefix = f"data_ingestion_window_{side}"
+            anchor = getattr(self, f"{prefix}_anchor")
+            lookback = getattr(self, f"{prefix}_lookback")
+            lookback_unit = getattr(self, f"{prefix}_lookback_unit")
+            timestamp = getattr(self, f"{prefix}_timestamp")
+
+            if anchor is None and any(value is not None for value in (lookback, lookback_unit, timestamp)):
+                raise ValidationError(f"{prefix}_anchor is required when boundary settings are provided.")
+            if anchor == DataIngestionWindowAnchorType.FIXED_TIMESTAMP and timestamp is None:
+                raise ValidationError(f"{prefix}_timestamp is required for a fixed timestamp boundary.")
+            if (lookback is None) != (lookback_unit is None):
+                raise ValidationError(f"{prefix}_lookback and {prefix}_lookback_unit must both be provided.")
+            if lookback_unit is not None and lookback_unit not in ("minutes", "hours", "days"):
+                raise ValidationError(f"Invalid {prefix}_lookback_unit.")
+
 
 class DataConnectionNotification(models.Model):
     data_connection = models.OneToOneField(
@@ -206,9 +275,16 @@ class DataConnectionNotification(models.Model):
     def __str__(self):
         return str(self.data_connection_id)
 
+    def clean(self):
+        if not self.periodic_task_id:
+            raise ValidationError("A schedule is required when recipient emails are provided.")
+
+        if not self.recipients.exists():
+            raise ValidationError("At least one recipient email is required.")
+
 
 class DataConnectionNotificationRecipient(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     notification = models.ForeignKey(
         DataConnectionNotification, on_delete=models.CASCADE, related_name="recipients"
     )

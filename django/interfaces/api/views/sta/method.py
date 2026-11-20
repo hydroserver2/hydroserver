@@ -1,0 +1,154 @@
+import uuid
+
+from ninja import Router, Path, Query
+from django.db import transaction
+
+from interfaces.auth.security import session_auth, oidc_data_read_auth, oidc_data_write_auth, apikey_auth, basic_auth, anonymous_auth
+from interfaces.api.http.request import HydroServerHttpRequest
+from interfaces.api.services.sta import MethodAPIService
+from interfaces.api.schemas import (
+    MethodResponse,
+    MethodQueryParameters,
+    MethodItemQueryParameters,
+    MethodPostBody,
+    MethodPatchBody,
+    PaginatedResponse,
+    ItemResponse,
+    CreatedResponse,
+)
+
+method_router = Router(tags=["Methods"])
+method_service = MethodAPIService()
+
+
+@method_router.get(
+    "/items",
+    auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
+    response={
+        200: PaginatedResponse[MethodResponse],
+        400: str,
+        401: str,
+    },
+    by_alias=True,
+)
+def get_methods(
+    request: HydroServerHttpRequest,
+    query: Query[MethodQueryParameters],
+):
+    """
+    Get public methods and methods associated with the authenticated user.
+    """
+
+    return 200, method_service.list(
+        principal=request.principal,
+        offset=query.offset,
+        limit=query.limit,
+        sortby=query.sortby,
+        filtering=query.dict(exclude_unset=True),
+        include=query.include,
+    )
+
+
+@method_router.post(
+    "/items",
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
+    response={
+        201: CreatedResponse,
+        400: str,
+        401: str,
+        403: str,
+        409: str,
+    },
+    by_alias=True,
+)
+@transaction.atomic
+def create_method(
+    request: HydroServerHttpRequest,
+    data: MethodPostBody,
+):
+    """
+    Create a new method.
+    """
+
+    return 201, method_service.create(
+        principal=request.principal,
+        data=data,
+    )
+
+
+@method_router.get(
+    "/items/{method_id}",
+    auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
+    response={
+        200: ItemResponse[MethodResponse],
+        400: str,
+        401: str,
+        403: str,
+    },
+    by_alias=True,
+    exclude_unset=True,
+)
+def get_method(
+    request: HydroServerHttpRequest,
+    method_id: Path[uuid.UUID],
+    query: Query[MethodItemQueryParameters],
+):
+    """
+    Get a method.
+    """
+
+    return 200, method_service.get(
+        principal=request.principal,
+        uid=method_id,
+        include=query.include,
+    )
+
+
+@method_router.patch(
+    "/items/{method_id}",
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
+    response={
+        204: None,
+        400: str,
+        401: str,
+        403: str,
+    },
+    by_alias=True,
+)
+@transaction.atomic
+def update_method(
+    request: HydroServerHttpRequest,
+    method_id: Path[uuid.UUID],
+    data: MethodPatchBody,
+):
+    """
+    Update a method.
+    """
+
+    method_service.update(
+        principal=request.principal,
+        uid=method_id,
+        data=data,
+    )
+
+    return 204, None
+
+
+@method_router.delete(
+    "/items/{method_id}",
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
+    response={
+        204: None,
+        401: str,
+        403: str,
+        409: str,
+    },
+    by_alias=True,
+)
+@transaction.atomic
+def delete_method(request: HydroServerHttpRequest, method_id: Path[uuid.UUID]):
+    """
+    Delete a method.
+    """
+
+    return 204, method_service.delete(principal=request.principal, uid=method_id)

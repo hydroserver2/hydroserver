@@ -1,5 +1,0 @@
----
-- model: sta.fileattachmenttype
-  pk: 1
-  fields:
-    name: Photo

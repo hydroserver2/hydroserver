@@ -1,0 +1,619 @@
+import json
+import re
+import uuid
+
+from typing import Union, Any, Optional, Type
+from pydantic.alias_generators import to_snake
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.contrib.postgres.search import SearchQuery, SearchRank
+from django.core.exceptions import EmptyResultSet, FieldDoesNotExist
+from django.db import connection
+from django.db.models import QuerySet, Model, JSONField, Q, F, Exists, OuterRef
+
+from core.iam.models import Workspace, ServiceAccount
+from core.iam.permissions.anonymous import AnonymousPrincipal
+from core.sta.models import Datastream
+from interfaces.api.http.errors import BadRequestError, NotFoundError
+from interfaces.api.merge_patch import merge_patch
+from interfaces.api.schemas.base import PaginationMeta, clamp_limit
+from interfaces.api.schemas.extent import BoundingBox, TimeInterval
+
+User = get_user_model()
+
+
+class APIService:
+    SEARCH_CONFIG = "english"
+
+    @staticmethod
+    def apply_merge_patch(instance: Model, changes: dict) -> None:
+        """Apply validated model fields, merging JSON values using RFC 7396.
+
+        Model metadata identifies JSON properties; ordinary scalar fields retain
+        their existing nullable-field clearing behavior. Call inside a transaction
+        with a row lock when modifying an existing JSON value.
+        """
+        for name, value in changes.items():
+            field = instance._meta.get_field(name)
+            if isinstance(field, JSONField):
+                value = merge_patch(getattr(instance, name), value)
+                if value is None and not field.null:
+                    raise BadRequestError(f"{field.name} cannot be removed.")
+            setattr(instance, name, value)
+
+    @staticmethod
+    def get_workspace(
+        principal: Union[User, ServiceAccount, AnonymousPrincipal],
+        workspace_id: uuid.UUID,
+        override_view_permissions=False,
+    ):
+        try:
+            workspace = Workspace.objects.get(pk=workspace_id)
+        except Workspace.DoesNotExist:
+            raise NotFoundError("Workspace does not exist")
+
+        if not principal.can_view(workspace) and not override_view_permissions:
+            raise NotFoundError("Workspace does not exist")
+
+        permissions = [
+            action
+            for action in ("view", "edit", "delete")
+            if getattr(principal, f"can_{action}")(workspace)
+        ]
+
+        return workspace, permissions
+
+    @staticmethod
+    def handle_http_404_error(operation, *args, **kwargs):
+        try:
+            return operation(*args, **kwargs)
+        except NotFoundError as e:
+            raise BadRequestError(e.message)
+
+    @staticmethod
+    def apply_filters(queryset: QuerySet, field_name: str, values: Optional[Any]):
+        if values is None:
+            return queryset
+
+        if isinstance(values, (list, tuple, set)):
+            values = list(values)
+            if len(values) == 1:
+                if values[0] is None:
+                    return queryset.filter(**{f"{field_name}__isnull": True})
+                else:
+                    return queryset.filter(**{field_name: values[0]})
+            elif len(values) > 1:
+                if None in values:
+                    return queryset.filter(
+                        Q(
+                            **{
+                                f"{field_name}__in": [
+                                    value for value in values if value is not None
+                                ]
+                            }
+                        )
+                        | Q(**{f"{field_name}__isnull": True})
+                    )
+                else:
+                    return queryset.filter(**{f"{field_name}__in": values})
+            else:
+                return queryset
+        else:
+            return queryset.filter(**{field_name: values})
+
+    @staticmethod
+    def bbox_q(
+        bbox: BoundingBox,
+        latitude_field: str = "latitude",
+        longitude_field: str = "longitude",
+    ) -> Q:
+        """
+        Builds a Q object matching points inside a bounding box, boundaries included. A box
+        that crosses the antimeridian matches longitudes east of its west edge or west of its
+        east edge.
+        """
+
+        latitude_q = Q(
+            **{f"{latitude_field}__gte": bbox.south, f"{latitude_field}__lte": bbox.north}
+        )
+
+        if bbox.crosses_antimeridian:
+            longitude_q = Q(**{f"{longitude_field}__gte": bbox.west}) | Q(
+                **{f"{longitude_field}__lte": bbox.east}
+            )
+        else:
+            longitude_q = Q(
+                **{f"{longitude_field}__gte": bbox.west, f"{longitude_field}__lte": bbox.east}
+            )
+
+        return latitude_q & longitude_q
+
+    @classmethod
+    def apply_bbox(
+        cls,
+        queryset: QuerySet,
+        bbox: Optional[BoundingBox],
+        latitude_field: str = "latitude",
+        longitude_field: str = "longitude",
+    ) -> QuerySet:
+        """Filters a queryset to points inside a bounding box. A missing box leaves it unfiltered."""
+
+        if bbox is None:
+            return queryset
+
+        return queryset.filter(cls.bbox_q(bbox, latitude_field, longitude_field))
+
+    @staticmethod
+    def datetime_instant_q(interval: TimeInterval, field: str) -> Q:
+        """
+        Builds a Q object matching items whose instant lies inside a datetime interval, bounds
+        included. Items without an instant match any interval (OGC API - Features Core Req 26C).
+        """
+
+        q = Q()
+        if interval.start is not None:
+            q &= Q(**{f"{field}__gte": interval.start})
+        if interval.end is not None:
+            q &= Q(**{f"{field}__lte": interval.end})
+
+        return q | Q(**{f"{field}__isnull": True})
+
+    @staticmethod
+    def datetime_interval_q(interval: TimeInterval, start_field: str, end_field: str) -> Q:
+        """
+        Builds a Q object matching items whose [start, end] interval intersects a datetime
+        interval, bounds included (OGC API - Features Core Req 26). A missing start or end on
+        an item is treated as open, so items without an interval match any datetime (Req 26C).
+        """
+
+        q = Q()
+        if interval.end is not None:
+            q &= Q(**{f"{start_field}__lte": interval.end}) | Q(**{f"{start_field}__isnull": True})
+        if interval.start is not None:
+            q &= Q(**{f"{end_field}__gte": interval.start}) | Q(**{f"{end_field}__isnull": True})
+
+        return q
+
+    @classmethod
+    def apply_datetime_instant(
+        cls, queryset: QuerySet, interval: Optional[TimeInterval], field: str
+    ) -> QuerySet:
+        """Filters a queryset to items whose instant lies inside a datetime interval."""
+
+        if interval is None:
+            return queryset
+
+        return queryset.filter(cls.datetime_instant_q(interval, field))
+
+    @classmethod
+    def apply_datetime_interval(
+        cls,
+        queryset: QuerySet,
+        interval: Optional[TimeInterval],
+        start_field: str,
+        end_field: str,
+    ) -> QuerySet:
+        """Filters a queryset to items whose interval intersects a datetime interval."""
+
+        if interval is None:
+            return queryset
+
+        return queryset.filter(cls.datetime_interval_q(interval, start_field, end_field))
+
+    @classmethod
+    def apply_visible_datastream_datetime(
+        cls,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        queryset,
+        interval: Optional[TimeInterval],
+        datastream_field: str,
+    ):
+        """
+        Filters items by the observed time of the datastreams the principal can view, where
+        datastream_field links a datastream to the item's pk. An item matches when one of those
+        datastreams overlaps the interval, or when none of them has observations, since an item
+        without a time matches any datetime (OGC API - Features Core Req 26C). Datastreams the
+        principal can't view never affect the result.
+        """
+
+        if interval is None:
+            return queryset
+
+        observed_datastreams = principal.filter_by_permission(
+            Datastream.objects.filter(
+                **{datastream_field: OuterRef("pk")}, phenomenon_begin_time__isnull=False
+            ),
+            "can_view",
+        )
+        overlapping_datastreams = cls.apply_datetime_interval(
+            observed_datastreams, interval, "phenomenon_begin_time", "phenomenon_end_time"
+        )
+
+        return queryset.filter(
+            Exists(overlapping_datastreams) | ~Exists(observed_datastreams)
+        )
+
+    @staticmethod
+    def apply_sorting(
+        queryset: QuerySet,
+        sortby: list[str],
+        allowed_fields: list[str],
+        field_aliases: Optional[dict[str, str]] = None,
+        default_sortby: tuple[str, ...] = ("id",),
+        rank: bool = False,
+    ):
+        field_aliases = field_aliases or {}
+
+        if not sortby:
+            sortby_fields = [] if rank else list(default_sortby)
+        else:
+            stripped_fields = [field.lstrip("-") for field in sortby]
+            if len(stripped_fields) != len(set(stripped_fields)):
+                raise BadRequestError("Fields cannot be repeated in sortby arguments")
+
+            sortby_fields = []
+            for field in sortby:
+                if field not in allowed_fields:
+                    raise BadRequestError(f"Response cannot be sorted by field '{field}'")
+                descending = field.startswith("-")
+                stripped_field = field.lstrip("-")
+                resolved_field = field_aliases.get(stripped_field, to_snake(stripped_field))
+                sortby_fields.append(f"-{resolved_field}" if descending else resolved_field)
+
+        if rank:
+            sortby_fields.append("-rank")
+
+        stripped_sortby_fields = [field.lstrip("-") for field in sortby_fields]
+        if "id" not in stripped_sortby_fields:
+            sortby_fields.append("id")
+
+        def order_expression(field: str):
+            name = field.lstrip("-")
+            model, nullable = queryset.model, False
+            for part in name.split("__"):
+                try:
+                    model_field = model._meta.get_field(part)
+                except FieldDoesNotExist:
+                    break
+                if model_field.null or (model_field.is_relation and not model_field.concrete):
+                    nullable = True
+                    break
+                if not model_field.is_relation:
+                    break
+                model = model_field.related_model
+
+            if not nullable:
+                return field
+            if field.startswith("-"):
+                return F(name).desc(nulls_last=True)
+            return F(name).asc(nulls_last=True)
+
+        return queryset.order_by(*(order_expression(field) for field in sortby_fields))
+
+    @classmethod
+    def apply_search(
+        cls, queryset: QuerySet, q: Optional[str], field: str = "search_vector"
+    ) -> tuple[QuerySet, bool]:
+        """
+        Filters a queryset by the `q` full-text search and annotates a `rank` for relevance.
+
+        Commas separate OR terms; words within a term are ANDed. Each word is a
+        case-insensitive prefix, matched both stemmed and unstemmed so stopword prefixes
+        still match (e.g. "a" matches "air"). A query without letters or digits matches
+        nothing.
+
+        Returns the queryset and whether search was applied (for `apply_sorting`'s `rank`).
+        """
+
+        if not q or not q.strip():
+            return queryset, False
+
+        # Keep only letters and digits so no tsquery syntax reaches the raw query.
+        groups = [re.findall(r"[^\W_]+", group) for group in q.split(",")]
+        groups = [words for words in groups if words]
+        if not groups:
+            return queryset.none(), False
+
+        search_query = None
+        for words in groups:
+            group_query = None
+            for word in words:
+                word_query = SearchQuery(
+                    f"{word}:*", config=cls.SEARCH_CONFIG, search_type="raw"
+                ) | SearchQuery(f"{word}:*", config="simple", search_type="raw")
+                group_query = word_query if group_query is None else group_query & word_query
+            search_query = group_query if search_query is None else search_query | group_query
+
+        queryset = queryset.annotate(rank=SearchRank(F(field), search_query)).filter(
+            **{field: search_query}
+        )
+
+        return queryset, True
+
+    @staticmethod
+    def resolve_include_set(include: Optional[list[str]]) -> set[str]:
+        """Resolve a list of include items into a set of unique items."""
+
+        return set(include) if include else set()
+
+    @staticmethod
+    def resolve_includes(objects: list, requested: set[str], registry: dict) -> dict:
+        """
+        Resolves and includes specified related objects based on a given configuration, ensuring that only the
+        requested data is retrieved and transformed through the provided registry definitions.
+        """
+
+        included = {}
+
+        for name in requested:
+            config = registry[name]
+
+            if "vocabulary_model" in config:
+                related_by_pk = APIService.resolve_vocabulary_include(objects, config)
+            elif "scoped_vocabulary_model" in config:
+                related_by_pk = APIService.resolve_scoped_vocabulary_include(objects, config)
+            else:
+                related_by_pk = APIService.resolve_relation_include(objects, config)
+
+            if related_by_pk:
+                included[config["bucket"]] = [
+                    config["response_schema"].model_validate(related)
+                    for related in related_by_pk.values()
+                ]
+
+        return included
+
+    @staticmethod
+    def walk_attribute_path(obj: object, path: str) -> Any:
+        resolved = obj
+        for part in path.split("__"):
+            resolved = getattr(resolved, part, None)
+            if resolved is None:
+                break
+
+        return resolved
+
+    @staticmethod
+    def resolve_relation_include(objects: list, config: dict) -> dict:
+        related_by_pk = {}
+        for obj in objects:
+            related = APIService.walk_attribute_path(obj, config["path"])
+            if related is not None:
+                related_by_pk[related.pk] = related
+
+        return related_by_pk
+
+    @staticmethod
+    def resolve_vocabulary_include(objects: list, config: dict) -> dict:
+        value_field = config["value_field"]
+
+        values = {
+            value
+            for obj in objects
+            if (value := getattr(obj, value_field, None)) is not None
+        }
+        if not values:
+            return {}
+
+        rows = config["vocabulary_model"].objects.filter(name__in=values)
+
+        return {row.pk: row for row in rows}
+
+    @staticmethod
+    def resolve_scoped_vocabulary_include(objects: list, config: dict) -> dict:
+        value_field = config["value_field"]
+        workspace_path = config["workspace_path"]
+
+        contributing_objects = [
+            obj for obj in objects if getattr(obj, value_field, None)
+        ]
+        if not contributing_objects:
+            return {}
+
+        needed_names = set()
+        needed_workspace_ids = set()
+        for obj in contributing_objects:
+            needed_names.update(getattr(obj, value_field))
+            workspace_id = APIService.walk_attribute_path(obj, workspace_path)
+            if workspace_id is not None:
+                needed_workspace_ids.add(workspace_id)
+
+        candidates = config["scoped_vocabulary_model"].objects.filter(
+            Q(workspace_id__in=needed_workspace_ids) | Q(workspace__isnull=True),
+            name__in=needed_names,
+        )
+        by_key = {(row.name, row.workspace_id): row for row in candidates}
+
+        related_by_pk = {}
+        for obj in contributing_objects:
+            workspace_id = APIService.walk_attribute_path(obj, workspace_path)
+            for name in getattr(obj, value_field):
+                row = by_key.get((name, workspace_id)) or by_key.get((name, None))
+                if row is not None:
+                    related_by_pk[row.pk] = row
+
+        return related_by_pk
+
+    @staticmethod
+    def resolve_select_related_paths(requested: set[str], registry: dict) -> list[str]:
+        paths = []
+        for name in requested:
+            config = registry[name]
+            if "path" in config:
+                paths.append(config["path"])
+            elif "workspace_path" in config:
+                prefix = "__".join(config["workspace_path"].split("__")[:-1])
+                if prefix:
+                    paths.append(prefix)
+
+        return paths
+
+    @staticmethod
+    def build_pagination_meta(
+        count: int,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
+    ) -> PaginationMeta:
+        offset = offset or 0
+        limit = limit if limit is not None else 100
+
+        return PaginationMeta(
+            limit=limit,
+            offset=offset,
+            number_matched=count,
+        )
+
+    @classmethod
+    def apply_pagination(
+        cls,
+        queryset: QuerySet,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
+        count: Optional[int] = None,
+    ):
+        offset = offset or 0
+        limit = limit if limit is not None else 100
+
+        if offset < 0:
+            raise BadRequestError("Offset must be >= 0.")
+        if limit < 0:
+            raise BadRequestError("Limit must be >= 0.")
+
+        limit = clamp_limit(limit)
+
+        if count is None:
+            count = queryset.count()
+
+        meta = cls.build_pagination_meta(count, offset, limit)
+
+        return queryset[offset : offset + limit], meta
+
+    @staticmethod
+    def estimate_count(queryset: QuerySet) -> int:
+        """Postgres's EXPLAIN row-estimate for the queryset's filter, without executing it."""
+
+        try:
+            sql, params = queryset.order_by().values("pk").query.sql_with_params()
+        except EmptyResultSet:
+            return 0
+
+        with connection.cursor() as cursor:
+            cursor.execute(f"EXPLAIN (FORMAT JSON) {sql}", params)
+            raw = cursor.fetchone()[0]
+        plan = raw if isinstance(raw, list) else json.loads(raw)
+
+        return plan[0]["Plan"]["Plan Rows"]
+
+    @classmethod
+    def resolve_count(cls, queryset: QuerySet, threshold: int = 10_000) -> int:
+        """
+        Exact count for queries estimated at or under `threshold` rows; the estimate
+        itself otherwise, to avoid an expensive COUNT(*) over a large filtered result.
+        """
+
+        estimated = cls.estimate_count(queryset)
+        if estimated <= threshold:
+            return queryset.count()
+
+        return estimated
+
+    @staticmethod
+    def get_linked_resource_by_id(
+        linked_resource_model: Type[Model],
+        parent_field: str,
+        parent: Model,
+        linked_resource_id: uuid.UUID,
+    ):
+        try:
+            return linked_resource_model.objects.get(
+                **{parent_field: parent}, id=linked_resource_id
+            )
+        except linked_resource_model.DoesNotExist:
+            raise NotFoundError("Linked resource does not exist")
+
+    @staticmethod
+    def create_linked_resource(
+        linked_resource_model: Type[Model],
+        parent_field: str,
+        parent: Model,
+        file,
+        link: Optional[str],
+        data: Any,
+    ):
+        if file and not settings.MEDIA_STORAGE_ENABLED:
+            raise BadRequestError("Internal file uploads are disabled for this instance")
+
+        linked_resource = linked_resource_model(
+            **{parent_field: parent},
+            name=data.name,
+            description=data.description,
+            type=data.type,
+            file=file or "",
+            url=link or "",
+        )
+        linked_resource.full_clean()
+        linked_resource.save()
+
+        return {"id": linked_resource.id}
+
+    @staticmethod
+    def update_linked_resource_fields(
+        linked_resource_model: Type[Model],
+        parent_field: str,
+        parent: Model,
+        linked_resource_id: uuid.UUID,
+        name: Optional[str],
+        description: Optional[str],
+        type: Optional[str],
+        file,
+        link: Optional[str],
+    ):
+        try:
+            linked_resource = linked_resource_model.objects.get(
+                **{parent_field: parent}, id=linked_resource_id
+            )
+        except linked_resource_model.DoesNotExist:
+            raise NotFoundError("Linked resource does not exist")
+
+        if name is not None:
+            linked_resource.name = name
+        if description is not None:
+            linked_resource.description = description or None
+        if type is not None:
+            linked_resource.type = type
+
+        stored_file = None
+        if file:
+            if not settings.MEDIA_STORAGE_ENABLED:
+                raise BadRequestError("Internal file uploads are disabled for this instance")
+            stored_file = linked_resource.file
+            linked_resource.file = file
+        if link is not None:
+            linked_resource.url = link
+
+        linked_resource.full_clean()
+        linked_resource.save()
+
+        if stored_file:
+            stored_file.delete(save=False)
+
+    @staticmethod
+    def delete_linked_resource(
+        linked_resource_model: Type[Model],
+        parent_field: str,
+        parent: Model,
+        linked_resource_id: uuid.UUID,
+    ):
+        try:
+            linked_resource = linked_resource_model.objects.get(
+                **{parent_field: parent}, id=linked_resource_id
+            )
+        except linked_resource_model.DoesNotExist:
+            raise NotFoundError("Linked resource does not exist")
+
+        if linked_resource.file:
+            linked_resource.file.delete(save=False)
+        linked_resource.delete()
+
+
+build_pagination_meta = APIService.build_pagination_meta

@@ -5,9 +5,11 @@ from pydantic import validate_call, ConfigDict
 from croniter import croniter
 
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 from django_celery_beat.models import CrontabSchedule, IntervalSchedule, PeriodicTask
 
 from core.types import Unset
+from interfaces.api.http.errors import BadRequestError
 
 
 class SchedulingService:
@@ -31,9 +33,6 @@ class SchedulingService:
 
         now = timezone.now()
 
-        if crontab not in (None, Unset) and interval not in (None, Unset):
-            raise ValueError("Only one of crontab or interval can be set on a schedule.")
-
         current_crontab = (
             self.get_crontab_string(periodic_task)
             if periodic_task else None
@@ -47,15 +46,27 @@ class SchedulingService:
             if periodic_task and periodic_task.interval else None
         )
 
+        # Crontab and interval are alternatives: supplying one replaces the other
+        # unless the patch also names it.
+        if crontab is Unset and interval not in (None, Unset):
+            crontab = None
+        if interval is Unset and crontab not in (None, Unset):
+            interval = None
+            interval_period = None if interval_period is Unset else interval_period
+
+        # A schedule is a nested resource: omitted members retain their values.
+        crontab = current_crontab if crontab is Unset else crontab
+        interval = current_interval if interval is Unset else interval
+        interval_period = current_interval_period if interval_period is Unset else interval_period
+
+        if crontab is not None and interval is not None:
+            raise ValidationError("A schedule cannot have both a crontab and an interval.")
+
         crontab_schedule = None
         interval_schedule = None
 
         if crontab not in (None, Unset):
-            try:
-                croniter(crontab, datetime.now())
-                minute, hour, day, month, weekday = crontab.strip().split()
-            except (ValueError, AttributeError):
-                raise ValueError(f"Invalid crontab schedule {crontab}.")
+            minute, hour, day, month, weekday = crontab.strip().split()
 
             if current_crontab:
                 if crontab != current_crontab:
@@ -65,6 +76,7 @@ class SchedulingService:
                     pt_crontab.day_of_month = day
                     pt_crontab.month_of_year = month
                     pt_crontab.day_of_week = weekday
+                    pt_crontab.full_clean()
                     pt_crontab.save()
                     crontab_schedule = pt_crontab
                 else:
@@ -76,27 +88,24 @@ class SchedulingService:
                     PeriodicTask.objects.filter(pk=periodic_task.pk).update(interval=None)
                     old_interval_schedule.delete()
 
-                crontab_schedule = CrontabSchedule.objects.create(
+                crontab_schedule = CrontabSchedule(
                     minute=minute,
                     hour=hour,
                     day_of_month=day,
                     month_of_year=month,
                     day_of_week=weekday,
                 )
+                crontab_schedule.full_clean()
+                crontab_schedule.save()
 
         if interval not in (None, Unset):
-            if interval < 1:
-                raise ValueError("Schedule interval must be at least 1.")
-
-            if interval_period is Unset:
-                raise ValueError("interval_period is required when setting an interval schedule.")
-
             if current_interval:
                 if interval != current_interval or current_interval_period != interval_period:
                     pt_interval: IntervalSchedule = periodic_task.interval
                     pt_interval.every = interval
                     if interval_period is not Unset:
                         pt_interval.period = interval_period
+                    pt_interval.full_clean()
                     pt_interval.save()
                     interval_schedule = pt_interval
                 else:
@@ -108,10 +117,12 @@ class SchedulingService:
                     PeriodicTask.objects.filter(pk=periodic_task.pk).update(crontab=None)
                     old_crontab.delete()
 
-                interval_schedule = IntervalSchedule.objects.create(
+                interval_schedule = IntervalSchedule(
                     every=interval,
                     period=interval_period if interval_period is not Unset else None,
                 )
+                interval_schedule.full_clean()
+                interval_schedule.save()
 
         if periodic_task:
             if (crontab is not Unset or interval is not Unset) and not crontab_schedule and not interval_schedule:
@@ -150,7 +161,7 @@ class SchedulingService:
 
             else:
                 if not celery_task_name:
-                    raise ValueError("celery_task_name is required when creating a new schedule.")
+                    raise BadRequestError("celery_task_name is required when creating a new schedule.")
 
                 effective_start = (
                     start_time if start_time not in (None, Unset) else now
@@ -245,5 +256,27 @@ class SchedulingService:
                 if next_run > now:
                     return next_run
             return now + delta
+
+        return None
+
+    @staticmethod
+    def compute_previous_run_at(periodic_task: Optional[PeriodicTask]) -> Optional[datetime]:
+        """
+        Return the scheduled run time preceding the current run of a PeriodicTask, or None if unscheduled.
+        """
+
+        if not periodic_task:
+            return None
+
+        now = timezone.now()
+
+        if periodic_task.crontab:
+            cron_string = SchedulingService.get_crontab_string(periodic_task)
+            cron = croniter(cron_string, timezone.make_naive(now, dt_timezone.utc))
+            cron.get_prev(datetime)  # The run currently executing
+            return timezone.make_aware(cron.get_prev(datetime), dt_timezone.utc)
+
+        if periodic_task.interval:
+            return now - timedelta(**{periodic_task.interval.period: periodic_task.interval.every})
 
         return None

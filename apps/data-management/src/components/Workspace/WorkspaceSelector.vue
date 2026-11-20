@@ -2,7 +2,7 @@
   <v-select
     v-model="selectedWorkspace"
     data-testid="workspace-selector"
-    hint="Selected Workspace"
+    hint="Selected workspace"
     :items="workspaces"
     item-title="name"
     :return-object="true"
@@ -13,15 +13,15 @@
     <template v-slot:item="{ props, item }">
       <v-list-item
         v-bind="props"
-        :title="item.raw.name"
-        :subtitle="`Your role: ${getUserRoleName(item.raw)}`"
+        :title="item.name"
+        :subtitle="`Your role: ${getUserRoleName(item)}`"
       />
     </template>
 
     <template #selection="{ item }">
-      <span v-if="item" class="block whitespace-nowrap" :title="item.raw.name">
+      <span v-if="item" class="block whitespace-nowrap" :title="item.name">
         <span class="opacity-60"> Selected workspace: </span>
-        {{ item.raw.name }}
+        {{ item.name }}
       </span>
       <span v-else class="block whitespace-nowrap">Select a workspace</span>
     </template>

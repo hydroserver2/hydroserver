@@ -10,42 +10,44 @@ All resources in HydroServer (monitoring sites, metadata, datastreams, observati
 
 ## User Roles
 
-Each collaborator on a workspace is assigned a role. A role is a set of permissions configurable at the resource level. By default, HydroServer deploys with owner, editor, and viewer roles, but an administrator can configure additional roles if needed. The following table gives an overview of permissions associated with HydroServer's primary roles:
+Each collaborator on a workspace is assigned a role. A role is a set of permissions configurable at the resource level. The workspace owner has full control of the workspace. By default, HydroServer also deploys with Editor, Viewer, and Data Loader roles that can be assigned to collaborators and service accounts, and an administrator can configure additional roles if needed. The following table gives an overview of permissions associated with the owner and HydroServer's default roles:
 
-| Permission                                              | Owner | Editor | Viewer |
-| ------------------------------------------------------- | ----- | ------ | ------ |
-| Rename, transfer, edit privacy of workspace             | Yes   | No     | No     |
-| Invite new workspace collaborators                      | Yes   | Yes    | No     |
-| Create, update, delete sites, datastreams, and metadata | Yes   | Yes    | No     |
-| Set up SDL to stream observations to datastreams        | Yes   | Yes    | No     |
-| Set up Job Orchestration System tasks                   | Yes   | Yes    | No     |
-| View public and private data within workspace           | Yes   | Yes    | Yes    |
+| Permission                                              | Owner | Editor | Viewer | Data Loader |
+| ------------------------------------------------------- | ----- | ------ | ------ | ----------- |
+| Rename, transfer, edit privacy of workspace             | Yes   | No     | No     | No          |
+| Invite new workspace collaborators                      | Yes   | Yes    | No     | No          |
+| Create, update, delete sites, datastreams, and metadata | Yes   | Yes    | No     | No          |
+| Stream observations into datastreams (e.g., with the SDL) | Yes | Yes    | No     | Yes         |
+| Set up Job Orchestration System tasks                   | Yes   | Yes    | No     | No          |
+| View public and private data within workspace           | Yes   | Yes    | Yes    | Yes         |
 
 ## Adding Collaborators to a Workspace
 
-To add a collaborator to a workspace, you should first navigate to the 'Your Sites' page and expand the workspaces by clicking the 'Manage workspaces' button. Click the blue lock icon in the right column for the workspace. This will launch the 'Workspace access control' window.
+To add a collaborator, open **Manage workspaces**, select the workspace, and open the **Collaborators** tab.
 
-<img src="/data-management-app/workspace-access-control.png" alt="Workspace access control dialog" class="img-white-bg">
+<img src="/data-management-app/workspace-access-control.png" alt="Workspace collaborators tab" class="img-white-bg">
 
-If your workspace is new and you are the owner, you will be the only collaborator in your workspace. To add a new collaborator, click on the 'Add collaborator' link at the top right of the window. Enter the collaborator's email address and choose the role that collaborator will have for the workspace (either 'Editor' or 'Viewer'). Clicking the 'Add collaborator' button will add them as a collaborator to the workspace.
+If your workspace is new and you are the owner, you will be the only member. Click **Add collaborator**, enter the collaborator's email address, choose an available role, and click **Add collaborator** again to save.
 
 **NOTE**: A person must have a HydroServer user account affiliated with their email address before you can add them as a collaborator on a workspace.
 
-To edit a user's role or remove a collaborator from a workspace, you can click the down arrow next to their name in the collaborators list and click the 'Edit role' or 'Remove collaborator' buttons.
+Use the actions in a collaborator's row to edit their role or remove them from the workspace.
 
-## API Keys
+## Service Accounts and API Keys
 
-Sometimes you want to provide access to a workspace without using a username and password. This is especially true when using code for working with a workspace. It is a security risk to embed your username and password in code. For this reason, HydroServer enables you to create API keys for working with HydroServer's APIs.
+Sometimes you want to provide access to a workspace without using a person's username and password. HydroServer uses service accounts for these automated clients. Each service account has its own API key and receives permissions through a workspace role.
 
-API keys are unique codes that let remote systems connect to and interact with HydroServer. You can create API keys and assign them the minimum permissions they need to do the job (e.g., read only, or just for loading data, etc.). 
+API keys are unique secrets that let remote systems connect to HydroServer. Assign the service account the minimum permissions it needs, such as the Data Loader role for uploading observations.
 
-To create an API key, click on the 'API Keys' link in the left column of the Workspace Access control window. Then, click the 'Create API key' button at the top right of the form. Give your API key a name and description and assign it a role.
+To create one, open **Manage workspaces**, select the workspace, open the **Service accounts** tab, and click **Create service account**. Give it a name and description, choose the service account's role, and save.
 
-<img src="/data-management-app/api-keys.png" alt="Create API key" class="img-white-bg">
+<img src="/data-management-app/api-keys.png" alt="Create service account" class="img-white-bg">
 
-When you first create an API key, it will be shown to you in the 'Manage access control' window. Make sure you copy it and keep it in a safe space. This is the only time you will see it. If you lose the value of your API key, you will have to re-generate it or generate a new one.
+The generated API key is shown once. Copy it immediately and store it securely. If it is lost, regenerate the service account's key; the previous key will stop working.
 
-<img src="/data-management-app/api-key-created.png" alt="Created API key" class="img-white-bg">
+<img src="/data-management-app/api-key-created.png" alt="Service account API key" class="img-white-bg">
+
+To use the key, send it in the `X-Api-Key` header of each API request, or paste it into a client such as the Streaming Data Loader. See [Authenticating](/references/hydroserver-apis.md#authenticating).
 
 ## Granular Data Visibility
 
@@ -53,14 +55,18 @@ In addition to HydroServer's workspace level, role-based access control, workspa
 
 By default, workspaces, sites, and datastreams are public. However, each has a visibility setting that can make them private.
 
-1. **Workspace Privacy**: This setting determines whether a workspace is private or public. If your workspace is private, all sites, datastreams, and associated metadata will only be accessible to the workspace owner and collaborators. You can set the privacy of your workspace when it is created or using the 'Workspace access control' window accessed by clicking on the blue lock icon next to the workspace in the manage workspaces table.
+1. **Workspace Privacy**: This setting determines whether a workspace is private or public. If your workspace is private, all sites, datastreams, and associated metadata will only be accessible to the workspace owner and collaborators. You can set the privacy of your workspace when it is created, or later by selecting the workspace on the **Manage workspaces** page and opening the **Privacy** tab.
 
-2. **Site Privacy**: This setting determines whether your monitoring site is private or public. If you set your site to private, it means that only the workspace owners and collaborators can view the site and all associated datastreams through the website or API. This is like having a closed folder that only selected people can open. This allows users to set some sites as public and others as private within a public workspace. Site privacy can be set when creating a site or by clicking the 'Access control' button on the site's landing page.
+2. **Site Privacy**: This setting determines whether your monitoring site is private or public. If you set your site to private, it means that only the workspace owners and collaborators can view the site and all associated datastreams through the website or API. This is like having a closed folder that only selected people can open. This allows users to set some sites as public and others as private within a public workspace. Site privacy can be set by clicking the 'Access control' button on the site's landing page.
 
 3. **Datastream Privacy**: This setting is about who can see a specific datastream at your site. Even if your site is public, you might want to keep certain datastreams of that site private. When this setting is on, it means that only the workspace owners and collaborators can view this particular datastream's details and data. Datastream privacy can be set using the buttons to the right of the datastream on the site's landing page.
 
-4. **Datastream Data Visibility**: This is a convenience setting for controlling visibility of data in the Data Management Web Application. When a datastream is public, its metadata will be visible to the public. However this setting enables datastream observations to be hidden. **Note**: Observations can still be retrieved by anyone through the SensorThings API regardless of this setting.
+4. **Datastream Data Download Restriction**: When this setting is on, the public can't download or query the datastream's data, through the Data Management Web Application or any API, including the SensorThings API and CSV downloads. The datastream and its metadata stay public, including its observation count and the time range its observations cover, so guests can see that the data exists, but can't download or query it. Only the workspace owner and collaborators whose role can view observations can download and query the data. Data download restriction can be set using the buttons to the right of the datastream on the site's landing page.
 
-These privacy settings work in a hierarchical, conditional manner:
+HydroServer checks privacy at all three levels. A datastream and its observations are publicly accessible only when its workspace, monitoring site, and the datastream itself are all public.
 
-If you set the **Site Privacy** to private (thing.is_private), then both **Datastream Visibility** (datastream.is_visible) and **Datastream Data Visibility** (datastream.is_data_visible) will automatically be set to private as well. However, if the site is public, you can still control the visibility of each datastream and its data individually.
+Making a site private blocks public access to its datastreams and observations. Each datastream keeps its own privacy (`datastream.isPrivate`) and data download restriction (`datastream.isRestricted`) settings.
+
+For example, if you make the site public again and its workspace is also public, datastreams that were public before become publicly accessible again. Datastreams marked private stay private, and datastreams with restricted data download stay restricted.
+
+Datastream privacy and data download restriction are independent settings. A private datastream hides its data whether or not its data download is restricted, but its restriction setting is kept. If you make a datastream private and then public again, its data download restriction is unchanged.

@@ -56,7 +56,8 @@ test('opens zoomed to the session window, in the chosen zone', async ({
       /\/sessions$/.test(new URL(r.url()).pathname)
   )
   await setupEditView(page)
-  const { data } = await (await created).json()
+  // The API answers with the new id only; the window is what was posted.
+  const data = (await created).request().postDataJSON()
   const begin = Date.parse(data.phenomenonTimeStart)
   const end = Date.parse(data.phenomenonTimeEnd)
   const tokyo = 9 * 3_600_000

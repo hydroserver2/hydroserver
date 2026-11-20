@@ -1,37 +1,43 @@
 from django.db import models
 
+from .role import Role
 
-PERMISSION_CHOICES = (
-    ("*", "Full"),
-    ("view", "View"),
-    ("create", "Create"),
-    ("edit", "Edit"),
-    ("delete", "Delete"),
-)
-
-RESOURCE_TYPE_CHOICES = (
-    ("*", "All"),
-    ("APIKey", "API Key"),
-    ("Role", "Role"),
-    ("Collaborator", "Collaborator"),
-    ("Thing", "Thing"),
-    ("Datastream", "Datastream"),
-    ("Observation", "Observation"),
-    ("Sensor", "Sensor"),
-    ("ObservedProperty", "Observed Property"),
-    ("ProcessingLevel", "Processing Level"),
-    ("Unit", "Unit"),
-    ("ResultQualifier", "Result Qualifier"),
-    ("ETL", "ETL"),
-    ("DataProduct", "Data Product"),
-    ("DataMonitoring", "Data Monitoring"),
-)
+PERMISSION_CHOICES = [
+    ("view", "view"),
+    ("create", "create"),
+    ("edit", "edit"),
+    ("delete", "delete"),
+]
 
 
 class Permission(models.Model):
     role = models.ForeignKey(
-        "Role", on_delete=models.DO_NOTHING, related_name="permissions"
+        Role, on_delete=models.CASCADE, related_name="permissions"
     )
-    permission_type = models.CharField(max_length=50, choices=PERMISSION_CHOICES)
-    resource_type = models.CharField(max_length=50, choices=RESOURCE_TYPE_CHOICES)
-    # condition = models.JSONField(null=True, blank=True)
+    resource_type = models.CharField(max_length=50)
+
+    can_view = models.BooleanField(default=False)
+    can_create = models.BooleanField(default=False)
+    can_edit = models.BooleanField(default=False)
+    can_delete = models.BooleanField(default=False)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["role", "resource_type"],
+                name="unique_role_resource_type",
+            ),
+        ]
+
+    def __str__(self):
+        perms = [
+            label for flag, label in [
+                (self.can_view, "view"),
+                (self.can_create, "create"),
+                (self.can_edit, "edit"),
+                (self.can_delete, "delete"),
+            ] if flag
+        ]
+        perm_str = "all" if len(perms) == 4 else (", ".join(perms) or "none")
+
+        return f"{self.role.name} / {self.resource_type} — {perm_str}"

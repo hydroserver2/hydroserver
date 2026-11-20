@@ -1,0 +1,1320 @@
+from datetime import timedelta
+from urllib.parse import urlencode
+
+import pytest
+from django.db import connection
+from django.test import override_settings
+from django.test.utils import CaptureQueriesContext
+from django.utils import timezone
+
+from core.sta.models import Observation
+from tests.core.iam.factories import (
+    CollaboratorFactory,
+    PermissionFactory,
+    RoleFactory,
+    UserFactory,
+    WorkspaceFactory,
+)
+from tests.core.sta.factories import (
+    DatastreamFactory,
+    ObservationFactory,
+    MonitoringSiteFactory,
+    ResultQualifierFactory,
+)
+
+pytestmark = pytest.mark.django_db
+
+
+def _observations_url(datastream_id=None, **params):
+    query = dict(params)
+    if datastream_id is not None:
+        query["datastreamId"] = datastream_id
+    if query:
+        return f"/api/ogc/collections/observations/items?{urlencode(query, doseq=True)}"
+    return "/api/ogc/collections/observations/items"
+
+
+def _detail_url(observation_id):
+    return f"/api/ogc/collections/observations/items/{observation_id}"
+
+
+_BULK_CREATE_URL = "/api/ogc/collections/observations/bulk-create"
+_BULK_DELETE_URL = "/api/ogc/collections/observations/bulk-delete"
+
+
+def _with_datastream(datastream_id, body):
+    return {**body, "datastreamId": str(datastream_id)}
+
+
+def _make_datastream(workspace, **kwargs):
+    return DatastreamFactory(monitoring_site=MonitoringSiteFactory(workspace=workspace), **kwargs)
+
+
+def _collaborator_without_observation_permissions(workspace):
+    """A collaborator who can view the datastream but holds no Observation
+    permissions, blocking every write action on its observations."""
+
+    role = RoleFactory(workspace=workspace)
+    PermissionFactory(role=role, resource_type="Datastream", can_view=True)
+    return CollaboratorFactory(workspace=workspace, role=role)
+
+
+def _data_loader_collaborator(workspace, can_create=False, can_delete=False):
+    """A collaborator shaped like the default Data Loader role: can view (but
+    not edit) the datastream, plus specific Observation permissions -- the
+    shape that should be able to push/remove data without datastream edit
+    access."""
+
+    role = RoleFactory(workspace=workspace)
+    PermissionFactory(role=role, resource_type="Datastream", can_view=True)
+    PermissionFactory(
+        role=role,
+        resource_type="Observation",
+        can_view=True,
+        can_create=can_create,
+        can_delete=can_delete,
+    )
+    return CollaboratorFactory(workspace=workspace, role=role)
+
+
+def _iso(dt):
+    return dt.isoformat()
+
+
+# --- get_observations ----------------------------------------------------------------
+
+
+def test_get_observations_includes_public_observation_for_anonymous(client):
+    workspace = WorkspaceFactory()
+    datastream = _make_datastream(workspace)
+    observation = ObservationFactory(datastream=datastream)
+
+    response = client.get(_observations_url(datastream.id))
+
+    assert response.status_code == 200
+    assert str(observation.id) in [o["id"] for o in response.json()["data"]]
+
+
+def test_get_observations_excludes_private_datastream_observation_when_outsider(client):
+    """Filtering by a datastream_id the caller can't view now returns an
+    empty page instead of 404, matching every other flat, filterable
+    resource in this API (e.g. MonitoringSiteAPIService.list)."""
+    workspace = WorkspaceFactory()
+    datastream = _make_datastream(workspace, private=True)
+    ObservationFactory(datastream=datastream)
+    outsider = UserFactory()
+    client.force_login(outsider)
+
+    response = client.get(_observations_url(datastream.id))
+
+    assert response.status_code == 200
+    assert response.json()["data"] == []
+
+
+def test_get_observations_includes_observation_for_workspace_owner(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace, private=True)
+    observation = ObservationFactory(datastream=datastream)
+    client.force_login(owner)
+
+    response = client.get(_observations_url(datastream.id))
+
+    assert response.status_code == 200
+    assert str(observation.id) in [o["id"] for o in response.json()["data"]]
+
+
+def test_get_observations_with_no_datastream_id_spans_viewable_datastreams(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream_a = _make_datastream(workspace)
+    datastream_b = _make_datastream(workspace)
+    observation_a = ObservationFactory(datastream=datastream_a)
+    observation_b = ObservationFactory(datastream=datastream_b)
+    client.force_login(owner)
+
+    response = client.get(_observations_url())
+
+    assert response.status_code == 200
+    ids = [o["id"] for o in response.json()["data"]]
+    assert str(observation_a.id) in ids
+    assert str(observation_b.id) in ids
+
+
+def test_get_observations_with_multiple_datastream_ids_unions_results(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream_a = _make_datastream(workspace)
+    datastream_b = _make_datastream(workspace)
+    other_datastream = _make_datastream(workspace)
+    observation_a = ObservationFactory(datastream=datastream_a)
+    observation_b = ObservationFactory(datastream=datastream_b)
+    ObservationFactory(datastream=other_datastream)
+    client.force_login(owner)
+
+    response = client.get(
+        f"/api/ogc/collections/observations/items?{urlencode({'datastreamId': [str(datastream_a.id), str(datastream_b.id)]}, doseq=True)}"
+    )
+
+    assert response.status_code == 200
+    ids = [o["id"] for o in response.json()["data"]]
+    assert str(observation_a.id) in ids
+    assert str(observation_b.id) in ids
+    assert len(ids) == 2
+
+
+def test_get_observations_row_profile_returns_field_rows(client):
+    workspace = WorkspaceFactory()
+    datastream = _make_datastream(workspace)
+    ObservationFactory(datastream=datastream, result=99.5)
+
+    response = client.get(_observations_url(datastream.id, profile="https://hydroserver.org/profiles/observations/row"))
+
+    assert response.status_code == 200
+    (group,) = response.json()["data"]
+    assert group["datastreamId"] == str(datastream.id)
+    assert "phenomenonTime" in group["fields"]
+    result_index = group["fields"].index("result")
+    assert any(row[result_index] == 99.5 for row in group["rows"])
+
+
+def test_get_observations_column_profile_returns_columnar_data(client):
+    workspace = WorkspaceFactory()
+    datastream = _make_datastream(workspace)
+    ObservationFactory(datastream=datastream, result=99.5)
+
+    response = client.get(_observations_url(datastream.id, profile="https://hydroserver.org/profiles/observations/column"))
+
+    assert response.status_code == 200
+    (group,) = response.json()["data"]
+    assert 99.5 in group["columns"]["result"]
+
+
+def test_get_observations_format_parameter_is_unknown(client):
+    response = client.get(_observations_url(format="row"))
+
+    assert response.status_code == 400
+    assert "format" in response.json()["message"]
+
+
+def test_get_observations_column_format_returns_400_with_multiple_datastream_ids(client):
+    workspace = WorkspaceFactory()
+    datastream_a = _make_datastream(workspace)
+    datastream_b = _make_datastream(workspace)
+
+    response = client.get(
+        f"/api/ogc/collections/observations/items?{urlencode({'datastreamId': [str(datastream_a.id), str(datastream_b.id)], 'format': 'column'}, doseq=True)}"
+    )
+
+
+def test_get_observations_number_matched_exact_for_no_filter(client):
+    """Unfiltered number_matched comes from summing Datastream.value_count, not a
+    COUNT(*) over Observation -- confirm it matches the real row count."""
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream_a = _make_datastream(workspace)
+    datastream_b = _make_datastream(workspace)
+    ObservationFactory.create_batch(2, datastream=datastream_a)
+    ObservationFactory.create_batch(3, datastream=datastream_b)
+    datastream_a.value_count = 2
+    datastream_a.save(update_fields=["value_count"])
+    datastream_b.value_count = 3
+    datastream_b.save(update_fields=["value_count"])
+    client.force_login(owner)
+
+    response = client.get(_observations_url())
+
+    assert response.status_code == 200
+    assert response.json()["meta"]["numberMatched"] == 5
+
+
+def test_get_observations_number_matched_exact_for_datastream_id_filter(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream_a = _make_datastream(workspace)
+    datastream_b = _make_datastream(workspace)
+    ObservationFactory.create_batch(2, datastream=datastream_a)
+    ObservationFactory.create_batch(3, datastream=datastream_b)
+    datastream_a.value_count = 2
+    datastream_a.save(update_fields=["value_count"])
+    datastream_b.value_count = 3
+    datastream_b.save(update_fields=["value_count"])
+    client.force_login(owner)
+
+    response = client.get(_observations_url(datastream_a.id))
+
+    assert response.status_code == 200
+    assert response.json()["meta"]["numberMatched"] == 2
+
+
+def test_get_observations_number_matched_exact_for_phenomenon_time_filter(client):
+    """A phenomenon_time filter isn't reflected in value_count, so this exercises
+    the EXPLAIN-estimate/real-count path (resolve_count) instead -- on this small
+    test dataset it should still resolve to an exact count."""
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    keep_time = timezone.now()
+    excluded_time = keep_time - timedelta(days=1)
+    ObservationFactory(datastream=datastream, phenomenon_time=keep_time)
+    ObservationFactory(datastream=datastream, phenomenon_time=excluded_time)
+    datastream.value_count = 2
+    datastream.save(update_fields=["value_count"])
+    client.force_login(owner)
+
+    response = client.get(
+        _observations_url(
+            datastream.id, datetime=f"{_iso(keep_time - timedelta(minutes=1))}/.."
+        )
+    )
+
+    assert response.status_code == 200
+    assert response.json()["meta"]["numberMatched"] == 1
+
+
+def test_get_observations_default_order_groups_by_datastream_then_time(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream_a = _make_datastream(workspace)
+    datastream_b = _make_datastream(workspace)
+    now = timezone.now()
+
+    # Interleave phenomenon_time across datastreams so a pure time-only sort
+    # would produce a different order than a (datastream_id, time) sort.
+    a1 = ObservationFactory(datastream=datastream_a, phenomenon_time=now)
+    b1 = ObservationFactory(datastream=datastream_b, phenomenon_time=now + timedelta(minutes=1))
+    a2 = ObservationFactory(datastream=datastream_a, phenomenon_time=now + timedelta(minutes=2))
+    b2 = ObservationFactory(datastream=datastream_b, phenomenon_time=now + timedelta(minutes=3))
+    client.force_login(owner)
+
+    response = client.get(
+        f"/api/ogc/collections/observations/items?{urlencode({'datastreamId': [str(datastream_a.id), str(datastream_b.id)]}, doseq=True)}"
+    )
+
+    assert response.status_code == 200
+    ids = [o["id"] for o in response.json()["data"]]
+    expected_order = [str(o.id) for o in sorted(
+        [a1, b1, a2, b2], key=lambda o: (str(o.datastream_id), o.phenomenon_time)
+    )]
+    assert ids == expected_order
+
+
+# --- get_observations / include, properties -------------------------------------------
+
+
+def test_get_observations_include_sideloads_datastream_and_workspace(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    ObservationFactory(datastream=datastream)
+    client.force_login(owner)
+
+    response = client.get(_observations_url(include="datastream,workspace"))
+
+    assert response.status_code == 200
+    included = response.json()["included"]
+    assert {row["id"] for row in included["datastreams"]} == {str(datastream.id)}
+    assert {row["id"] for row in included["workspaces"]} == {str(workspace.id)}
+
+
+def test_get_observations_include_result_qualifiers_resolves_workspace_scoped_match(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    scoped_qualifier = ResultQualifierFactory(workspace=workspace, name="ICE")
+    ResultQualifierFactory(global_=True, name="ICE")  # same name, global — should be shadowed
+    ObservationFactory(datastream=datastream, result_qualifiers=["ICE"])
+    client.force_login(owner)
+
+    response = client.get(_observations_url(include="resultQualifiers"))
+
+    assert response.status_code == 200
+    included = response.json()["included"]["resultQualifiers"]
+    assert {row["id"] for row in included} == {str(scoped_qualifier.id)}
+    assert included[0]["workspaceId"] == str(workspace.id)
+
+
+def test_get_observations_include_result_qualifiers_falls_back_to_global_match(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    global_qualifier = ResultQualifierFactory(global_=True, name="PF")
+    ObservationFactory(datastream=datastream, result_qualifiers=["PF"])
+    client.force_login(owner)
+
+    response = client.get(_observations_url(include="resultQualifiers"))
+
+    assert response.status_code == 200
+    included = response.json()["included"]["resultQualifiers"]
+    assert {row["id"] for row in included} == {str(global_qualifier.id)}
+    assert included[0]["workspaceId"] is None
+
+
+def test_get_observations_include_result_qualifiers_includes_both_when_scope_differs_across_items(
+    client,
+):
+    superuser = UserFactory(is_superuser=True)
+    workspace_a = WorkspaceFactory()
+    workspace_b = WorkspaceFactory()
+    datastream_a = _make_datastream(workspace_a)
+    datastream_b = _make_datastream(workspace_b)
+    scoped_qualifier = ResultQualifierFactory(workspace=workspace_a, name="ICE")
+    global_qualifier = ResultQualifierFactory(global_=True, name="ICE")
+    ObservationFactory(datastream=datastream_a, result_qualifiers=["ICE"])
+    ObservationFactory(datastream=datastream_b, result_qualifiers=["ICE"])
+    client.force_login(superuser)
+
+    response = client.get(_observations_url(include="resultQualifiers"))
+
+    assert response.status_code == 200
+    included = response.json()["included"]["resultQualifiers"]
+    assert {row["id"] for row in included} == {
+        str(scoped_qualifier.id),
+        str(global_qualifier.id),
+    }
+    by_id = {row["id"]: row for row in included}
+    assert by_id[str(scoped_qualifier.id)]["workspaceId"] == str(workspace_a.id)
+    assert by_id[str(global_qualifier.id)]["workspaceId"] is None
+
+
+def test_get_observations_include_result_qualifiers_omits_bucket_when_none_set(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    ObservationFactory(datastream=datastream, result_qualifiers=[])
+    client.force_login(owner)
+
+    response = client.get(_observations_url(include="resultQualifiers"))
+
+    assert response.status_code == 200
+    assert "resultQualifiers" not in response.json().get("included", {})
+
+
+def test_get_observations_without_include_omits_included_bucket(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    ObservationFactory(datastream=datastream)
+    client.force_login(owner)
+
+    response = client.get(_observations_url())
+
+    assert response.status_code == 200
+    assert not response.json().get("included")
+
+
+def test_get_observations_include_rejects_unknown_relation(client):
+    owner = UserFactory()
+    client.force_login(owner)
+
+    response = client.get(_observations_url(include="bogus"))
+
+    assert response.status_code == 400
+
+
+def test_get_observations_include_does_not_scale_queries_with_observation_count(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream_a = _make_datastream(workspace)
+    datastream_b = _make_datastream(workspace)
+    ObservationFactory.create_batch(2, datastream=datastream_a)
+    ObservationFactory.create_batch(2, datastream=datastream_b)
+    client.force_login(owner)
+
+    with CaptureQueriesContext(connection) as small:
+        client.get(_observations_url(include="datastream,workspace"))
+
+    ObservationFactory.create_batch(10, datastream=datastream_a)
+    ObservationFactory.create_batch(10, datastream=datastream_b)
+
+    with CaptureQueriesContext(connection) as large:
+        client.get(_observations_url(include="datastream,workspace"))
+
+    assert len(large.captured_queries) == len(small.captured_queries)
+
+
+def test_get_observations_properties_filters_response_fields(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    ObservationFactory(datastream=datastream)
+    client.force_login(owner)
+
+    response = client.get(_observations_url(properties="id,result"))
+
+    assert response.status_code == 200
+    row = response.json()["data"][0]
+    assert set(row.keys()) == {"id", "result"}
+
+
+# --- create_observation ----------------------------------------------------------------
+
+
+@override_settings(CORS_ALLOW_ALL_ORIGINS=True)
+def test_get_observations_checksum_header_is_readable_cross_origin(client):
+    datastream = _make_datastream(WorkspaceFactory())
+    ObservationFactory(datastream=datastream)
+
+    response = client.get(
+        _observations_url(datastream.id), HTTP_ORIGIN="http://qc.example.org"
+    )
+
+    assert response.status_code == 200
+    assert response["X-Checksum"]
+    exposed = response["Access-Control-Expose-Headers"].lower().split(", ")
+    assert "x-checksum" in exposed
+
+
+def test_create_observation_succeeds_for_workspace_owner(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    client.force_login(owner)
+
+    response = client.post(
+        _observations_url(),
+        data=_with_datastream(
+            datastream.id, {"phenomenonTime": _iso(timezone.now()), "result": 12.3}
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
+    assert "id" in response.json()
+
+
+def test_create_observation_returns_401_when_unauthenticated(client):
+    workspace = WorkspaceFactory()
+    datastream = _make_datastream(workspace)
+
+    response = client.post(
+        _observations_url(),
+        data=_with_datastream(
+            datastream.id, {"phenomenonTime": _iso(timezone.now()), "result": 12.3}
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 401
+
+
+def test_create_observation_returns_403_without_create_permission(client):
+    workspace = WorkspaceFactory()
+    datastream = _make_datastream(workspace)
+    collaborator = _collaborator_without_observation_permissions(workspace)
+    client.force_login(collaborator.user)
+
+    response = client.post(
+        _observations_url(),
+        data=_with_datastream(
+            datastream.id, {"phenomenonTime": _iso(timezone.now()), "result": 12.3}
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 403
+
+
+def test_create_observation_succeeds_with_datastream_view_only_and_observation_create_permission(client):
+    workspace = WorkspaceFactory()
+    datastream = _make_datastream(workspace)
+    collaborator = _data_loader_collaborator(workspace, can_create=True)
+    client.force_login(collaborator.user)
+
+    response = client.post(
+        _observations_url(),
+        data=_with_datastream(
+            datastream.id, {"phenomenonTime": _iso(timezone.now()), "result": 12.3}
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
+
+
+def test_create_observation_returns_409_for_duplicate_phenomenon_time(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    phenomenon_time = timezone.now()
+    ObservationFactory(datastream=datastream, phenomenon_time=phenomenon_time)
+    client.force_login(owner)
+
+    response = client.post(
+        _observations_url(),
+        data=_with_datastream(
+            datastream.id, {"phenomenonTime": _iso(phenomenon_time), "result": 12.3}
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 409
+
+
+def test_create_observation_returns_400_for_invalid_result_qualifier_code(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    client.force_login(owner)
+
+    response = client.post(
+        _observations_url(),
+        data=_with_datastream(
+            datastream.id,
+            {
+                "phenomenonTime": _iso(timezone.now()),
+                "result": 12.3,
+                "resultQualifiers": ["BOGUS"],
+            },
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+
+
+def test_create_observation_returns_400_without_datastream_id(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    _make_datastream(workspace)
+    client.force_login(owner)
+
+    response = client.post(
+        _observations_url(),
+        data={"phenomenonTime": _iso(timezone.now()), "result": 12.3},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+
+
+# --- get_observation -------------------------------------------------------------------
+
+
+def test_get_observation_returns_public_observation_for_anonymous(client):
+    workspace = WorkspaceFactory()
+    datastream = _make_datastream(workspace)
+    observation = ObservationFactory(datastream=datastream)
+
+    response = client.get(_detail_url(observation.id))
+
+    assert response.status_code == 200
+    assert response.json()["data"]["id"] == str(observation.id)
+
+
+def test_get_observation_returns_404_for_private_datastream_observation_when_outsider(client):
+    workspace = WorkspaceFactory()
+    datastream = _make_datastream(workspace, private=True)
+    observation = ObservationFactory(datastream=datastream)
+    outsider = UserFactory()
+    client.force_login(outsider)
+
+    response = client.get(_detail_url(observation.id))
+
+    assert response.status_code == 404
+
+
+def test_get_observation_returns_200_for_workspace_owner(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace, private=True)
+    observation = ObservationFactory(datastream=datastream)
+    client.force_login(owner)
+
+    response = client.get(_detail_url(observation.id))
+
+    assert response.status_code == 200
+
+
+def test_get_observation_returns_404_for_nonexistent_observation(client):
+    response = client.get(
+        _detail_url("00000000-0000-0000-0000-000000000000")
+    )
+
+    assert response.status_code == 404
+
+
+# --- restricted datastreams ------------------------------------------------------------
+
+
+def _restricted_datastream_with_observations(workspace, count=2):
+    """A public datastream with is_restricted=True whose maintained value_count
+    matches its observations, so count shortcuts are exercised realistically."""
+
+    datastream = _make_datastream(workspace, restricted=True)
+    observations = ObservationFactory.create_batch(count, datastream=datastream)
+    datastream.value_count = count
+    datastream.save(update_fields=["value_count"])
+    return datastream, observations
+
+
+def _observation_viewer_collaborator(workspace):
+    role = RoleFactory(workspace=workspace)
+    PermissionFactory(role=role, resource_type="Observation", can_view=True)
+    return CollaboratorFactory(workspace=workspace, role=role)
+
+
+def test_get_observations_excludes_restricted_datastream_observations_for_anonymous(client):
+    workspace = WorkspaceFactory()
+    datastream, _ = _restricted_datastream_with_observations(workspace)
+
+    response = client.get(_observations_url(datastream.id))
+
+    assert response.status_code == 200
+    assert response.json()["data"] == []
+    assert response.json()["meta"]["numberMatched"] == 0
+
+
+def test_get_observations_excludes_restricted_datastream_observations_for_outsider(client):
+    workspace = WorkspaceFactory()
+    datastream, _ = _restricted_datastream_with_observations(workspace)
+    client.force_login(UserFactory())
+
+    response = client.get(_observations_url(datastream.id))
+
+    assert response.status_code == 200
+    assert response.json()["data"] == []
+    assert response.json()["meta"]["numberMatched"] == 0
+
+
+def test_get_observations_unfiltered_count_excludes_restricted_datastreams_for_anonymous(client):
+    workspace = WorkspaceFactory()
+    _restricted_datastream_with_observations(workspace, count=3)
+    open_datastream = _make_datastream(workspace)
+    open_observations = ObservationFactory.create_batch(2, datastream=open_datastream)
+    open_datastream.value_count = 2
+    open_datastream.save(update_fields=["value_count"])
+
+    response = client.get(_observations_url())
+
+    assert response.status_code == 200
+    assert {o["id"] for o in response.json()["data"]} == {str(o.id) for o in open_observations}
+    assert response.json()["meta"]["numberMatched"] == 2
+
+
+def test_get_observations_includes_restricted_datastream_observations_for_owner(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream, observations = _restricted_datastream_with_observations(workspace)
+    client.force_login(owner)
+
+    response = client.get(_observations_url(datastream.id))
+
+    assert response.status_code == 200
+    assert {o["id"] for o in response.json()["data"]} == {str(o.id) for o in observations}
+    assert response.json()["meta"]["numberMatched"] == 2
+
+
+def test_get_observations_includes_restricted_datastream_observations_for_observation_viewer(client):
+    workspace = WorkspaceFactory()
+    datastream, observations = _restricted_datastream_with_observations(workspace)
+    collaborator = _observation_viewer_collaborator(workspace)
+    client.force_login(collaborator.user)
+
+    response = client.get(_observations_url(datastream.id))
+
+    assert response.status_code == 200
+    assert {o["id"] for o in response.json()["data"]} == {str(o.id) for o in observations}
+    assert response.json()["meta"]["numberMatched"] == 2
+
+
+def test_get_observations_excludes_restricted_observations_for_collaborator_without_observation_view(client):
+    workspace = WorkspaceFactory()
+    datastream, _ = _restricted_datastream_with_observations(workspace)
+    collaborator = _collaborator_without_observation_permissions(workspace)
+    client.force_login(collaborator.user)
+
+    response = client.get(_observations_url(datastream.id))
+
+    assert response.status_code == 200
+    assert response.json()["data"] == []
+    assert response.json()["meta"]["numberMatched"] == 0
+
+
+def test_get_observation_returns_404_for_restricted_datastream_observation_when_anonymous(client):
+    workspace = WorkspaceFactory()
+    _, observations = _restricted_datastream_with_observations(workspace, count=1)
+
+    response = client.get(_detail_url(observations[0].id))
+
+    assert response.status_code == 404
+
+
+def test_get_observation_returns_200_for_restricted_datastream_observation_when_owner(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    _, observations = _restricted_datastream_with_observations(workspace, count=1)
+    client.force_login(owner)
+
+    response = client.get(_detail_url(observations[0].id))
+
+    assert response.status_code == 200
+
+
+# --- delete_observation ----------------------------------------------------------------
+
+
+def test_delete_observation_succeeds_for_workspace_owner(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    observation = ObservationFactory(datastream=datastream)
+    client.force_login(owner)
+
+    response = client.delete(_detail_url(observation.id))
+
+    assert response.status_code == 204
+    assert client.get(_detail_url(observation.id)).status_code == 404
+
+
+def test_delete_observation_updates_datastream_statistics(client):
+    """Regression test for the delete() fix: datastream is now derived from
+    the already-resolved Observation instead of a second lookup keyed on a
+    datastream_id that's no longer supplied."""
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    keep_time = timezone.now()
+    remove_time = keep_time - timedelta(days=1)
+    ObservationFactory(datastream=datastream, phenomenon_time=keep_time)
+    observation = ObservationFactory(datastream=datastream, phenomenon_time=remove_time)
+    datastream.phenomenon_begin_time = remove_time
+    datastream.phenomenon_end_time = keep_time
+    datastream.save(update_fields=["phenomenon_begin_time", "phenomenon_end_time"])
+    client.force_login(owner)
+
+    response = client.delete(_detail_url(observation.id))
+
+    assert response.status_code == 204
+    datastream.refresh_from_db()
+    assert datastream.phenomenon_begin_time == keep_time
+
+
+def test_delete_observation_returns_403_for_viewer_collaborator(client):
+    workspace = WorkspaceFactory()
+    datastream = _make_datastream(workspace)
+    observation = ObservationFactory(datastream=datastream)
+    collaborator = _collaborator_without_observation_permissions(workspace)
+    client.force_login(collaborator.user)
+
+    response = client.delete(_detail_url(observation.id))
+
+    assert response.status_code == 403
+
+
+def test_delete_observation_succeeds_with_datastream_view_only_and_observation_delete_permission(client):
+    workspace = WorkspaceFactory()
+    datastream = _make_datastream(workspace)
+    observation = ObservationFactory(datastream=datastream)
+    collaborator = _data_loader_collaborator(workspace, can_delete=True)
+    client.force_login(collaborator.user)
+
+    response = client.delete(_detail_url(observation.id))
+
+    assert response.status_code == 204
+
+
+# --- insert_observations (bulk-create) --------------------------------------------------
+
+
+def test_insert_observations_insert_mode_succeeds(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    now = timezone.now()
+    client.force_login(owner)
+
+    response = client.post(
+        f"{_BULK_CREATE_URL}?mode=insert",
+        data=_with_datastream(
+            datastream.id,
+            {
+                "fields": ["phenomenonTime", "result"],
+                "data": [
+                    [_iso(now), 1.0],
+                    [_iso(now + timedelta(hours=1)), 2.0],
+                ],
+            },
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
+    assert Observation.objects.filter(datastream=datastream).count() == 2
+
+
+def test_insert_observations_append_mode_succeeds(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    end_time = timezone.now() - timedelta(days=1)
+    ObservationFactory(datastream=datastream, phenomenon_time=end_time)
+    datastream.phenomenon_end_time = end_time
+    datastream.save(update_fields=["phenomenon_end_time"])
+    new_time = end_time + timedelta(hours=1)
+    client.force_login(owner)
+
+    response = client.post(
+        f"{_BULK_CREATE_URL}?mode=append",
+        data=_with_datastream(
+            datastream.id,
+            {"fields": ["phenomenonTime", "result"], "data": [[_iso(new_time), 2.0]]},
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
+    assert Observation.objects.filter(
+        datastream=datastream, phenomenon_time=new_time
+    ).exists()
+
+
+def test_insert_observations_append_mode_returns_400_when_not_after_end_time(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    end_time = timezone.now()
+    ObservationFactory(datastream=datastream, phenomenon_time=end_time)
+    datastream.phenomenon_end_time = end_time
+    datastream.save(update_fields=["phenomenon_end_time"])
+    client.force_login(owner)
+
+    response = client.post(
+        f"{_BULK_CREATE_URL}?mode=append",
+        data=_with_datastream(
+            datastream.id,
+            {"fields": ["phenomenonTime", "result"], "data": [[_iso(end_time), 2.0]]},
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+
+
+def test_insert_observations_backfill_mode_succeeds(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    begin_time = timezone.now()
+    ObservationFactory(datastream=datastream, phenomenon_time=begin_time)
+    datastream.phenomenon_begin_time = begin_time
+    datastream.save(update_fields=["phenomenon_begin_time"])
+    earlier_time = begin_time - timedelta(hours=1)
+    client.force_login(owner)
+
+    response = client.post(
+        f"{_BULK_CREATE_URL}?mode=backfill",
+        data=_with_datastream(
+            datastream.id,
+            {
+                "fields": ["phenomenonTime", "result"],
+                "data": [[_iso(earlier_time), 2.0]],
+            },
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
+    assert Observation.objects.filter(
+        datastream=datastream, phenomenon_time=earlier_time
+    ).exists()
+
+
+def test_insert_observations_backfill_mode_returns_400_when_not_before_begin_time(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    begin_time = timezone.now()
+    ObservationFactory(datastream=datastream, phenomenon_time=begin_time)
+    datastream.phenomenon_begin_time = begin_time
+    datastream.save(update_fields=["phenomenon_begin_time"])
+    client.force_login(owner)
+
+    response = client.post(
+        f"{_BULK_CREATE_URL}?mode=backfill",
+        data=_with_datastream(
+            datastream.id,
+            {
+                "fields": ["phenomenonTime", "result"],
+                "data": [[_iso(begin_time), 2.0]],
+            },
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+
+
+def test_insert_observations_replace_mode_succeeds(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    existing_time = timezone.now()
+    ObservationFactory(datastream=datastream, phenomenon_time=existing_time, result=1.0)
+    client.force_login(owner)
+
+    response = client.post(
+        f"{_BULK_CREATE_URL}?mode=replace",
+        data=_with_datastream(
+            datastream.id,
+            {
+                "fields": ["phenomenonTime", "result"],
+                "data": [[_iso(existing_time), 42.0]],
+            },
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
+    observations = Observation.objects.filter(datastream=datastream)
+    assert observations.count() == 1
+    assert observations.get().result == 42.0
+
+
+def _replace_observations(client, rows, **params):
+    """Replace with two existing points (t0, t0 + 2h); returns the response and the remaining results."""
+
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    t0 = timezone.now().replace(microsecond=0) - timedelta(days=1)
+    ObservationFactory(datastream=datastream, phenomenon_time=t0, result=1.0)
+    ObservationFactory(datastream=datastream, phenomenon_time=t0 + timedelta(hours=2), result=3.0)
+    client.force_login(owner)
+
+    query = urlencode({"mode": params.pop("mode", "replace"), **params})
+    response = client.post(
+        f"{_BULK_CREATE_URL}?{query}",
+        data=_with_datastream(
+            datastream.id,
+            {"fields": ["phenomenonTime", "result"], "data": rows(t0)},
+        ),
+        content_type="application/json",
+    )
+    results = sorted(
+        Observation.objects.filter(datastream=datastream).values_list("result", flat=True)
+    )
+    return response, results
+
+
+def test_insert_observations_replace_mode_deletes_the_given_range(client):
+    # Both existing points sit outside the upload's own span, but inside the range.
+    response, results = _replace_observations(
+        client,
+        lambda t0: [[_iso(t0 + timedelta(hours=1)), 5.5]],
+        phenomenonTimeStart=_iso(timezone.now() - timedelta(days=2)),
+        phenomenonTimeEnd=_iso(timezone.now()),
+    )
+
+    assert response.status_code == 201
+    assert results == [5.5]
+
+
+def test_insert_observations_replace_mode_with_an_empty_upload_clears_the_range(client):
+    response, results = _replace_observations(
+        client,
+        lambda t0: [],
+        phenomenonTimeStart=_iso(timezone.now() - timedelta(days=2)),
+        phenomenonTimeEnd=_iso(timezone.now()),
+    )
+
+    assert response.status_code == 201
+    assert results == []
+
+
+def test_insert_observations_replace_mode_without_a_range_uses_the_upload_span(client):
+    response, results = _replace_observations(
+        client, lambda t0: [[_iso(t0 + timedelta(hours=1)), 5.5]]
+    )
+
+    assert response.status_code == 201
+    assert results == [1.0, 3.0, 5.5]
+
+
+def test_insert_observations_replace_mode_returns_400_for_an_empty_upload_without_a_range(client):
+    response, results = _replace_observations(client, lambda t0: [])
+
+    assert response.status_code == 400
+    assert results == [1.0, 3.0]
+
+
+def test_insert_observations_replace_mode_returns_400_for_half_a_range(client):
+    response, results = _replace_observations(
+        client,
+        lambda t0: [[_iso(t0 + timedelta(hours=1)), 5.5]],
+        phenomenonTimeStart=_iso(timezone.now() - timedelta(days=2)),
+    )
+
+    assert response.status_code == 400
+    assert results == [1.0, 3.0]
+
+
+def test_insert_observations_returns_400_for_a_range_outside_replace_mode(client):
+    response, results = _replace_observations(
+        client,
+        lambda t0: [[_iso(t0 + timedelta(hours=1)), 5.5]],
+        mode="insert",
+        phenomenonTimeStart=_iso(timezone.now() - timedelta(days=2)),
+        phenomenonTimeEnd=_iso(timezone.now()),
+    )
+
+    assert response.status_code == 400
+    assert results == [1.0, 3.0]
+
+
+def test_insert_observations_returns_403_without_create_permission(client):
+    workspace = WorkspaceFactory()
+    datastream = _make_datastream(workspace)
+    collaborator = _collaborator_without_observation_permissions(workspace)
+    client.force_login(collaborator.user)
+
+    response = client.post(
+        f"{_BULK_CREATE_URL}?mode=insert",
+        data=_with_datastream(
+            datastream.id,
+            {
+                "fields": ["phenomenonTime", "result"],
+                "data": [[_iso(timezone.now()), 1.0]],
+            },
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 403
+
+
+def test_insert_observations_succeeds_with_datastream_view_only_and_observation_create_permission(client):
+    workspace = WorkspaceFactory()
+    datastream = _make_datastream(workspace)
+    collaborator = _data_loader_collaborator(workspace, can_create=True)
+    client.force_login(collaborator.user)
+
+    response = client.post(
+        f"{_BULK_CREATE_URL}?mode=insert",
+        data=_with_datastream(
+            datastream.id,
+            {
+                "fields": ["phenomenonTime", "result"],
+                "data": [[_iso(timezone.now()), 1.0]],
+            },
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
+
+
+def test_insert_observations_returns_400_without_datastream_id(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    _make_datastream(workspace)
+    client.force_login(owner)
+
+    response = client.post(
+        f"{_BULK_CREATE_URL}?mode=insert",
+        data={
+            "fields": ["phenomenonTime", "result"],
+            "data": [[_iso(timezone.now()), 1.0]],
+        },
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+
+
+# --- delete_observations (bulk-delete) --------------------------------------------------
+
+
+def test_delete_observations_succeeds_for_workspace_owner(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    keep_time = timezone.now()
+    remove_time = keep_time - timedelta(days=1)
+    ObservationFactory(datastream=datastream, phenomenon_time=keep_time)
+    ObservationFactory(datastream=datastream, phenomenon_time=remove_time)
+    client.force_login(owner)
+
+    response = client.post(
+        _BULK_DELETE_URL,
+        data=_with_datastream(
+            datastream.id,
+            {
+                "phenomenonTimeStart": _iso(remove_time),
+                "phenomenonTimeEnd": _iso(remove_time),
+            },
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 204
+    remaining = Observation.objects.filter(datastream=datastream)
+    assert remaining.count() == 1
+    assert remaining.get().phenomenon_time == keep_time
+
+
+def test_delete_observations_returns_403_without_delete_permission(client):
+    workspace = WorkspaceFactory()
+    datastream = _make_datastream(workspace)
+    observation = ObservationFactory(datastream=datastream)
+    collaborator = _collaborator_without_observation_permissions(workspace)
+    client.force_login(collaborator.user)
+
+    response = client.post(
+        _BULK_DELETE_URL,
+        data=_with_datastream(
+            datastream.id, {"phenomenonTimeStart": _iso(observation.phenomenon_time)}
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 403
+
+
+def test_delete_observations_succeeds_with_datastream_view_only_and_observation_delete_permission(client):
+    workspace = WorkspaceFactory()
+    datastream = _make_datastream(workspace)
+    observation = ObservationFactory(datastream=datastream)
+    collaborator = _data_loader_collaborator(workspace, can_delete=True)
+    client.force_login(collaborator.user)
+
+    response = client.post(
+        _BULK_DELETE_URL,
+        data=_with_datastream(
+            datastream.id, {"phenomenonTimeStart": _iso(observation.phenomenon_time)}
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 204
+    assert not Observation.objects.filter(pk=observation.pk).exists()
+
+
+def test_delete_observations_returns_400_without_datastream_id(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    observation = ObservationFactory(datastream=datastream)
+    client.force_login(owner)
+
+    response = client.post(
+        _BULK_DELETE_URL,
+        data={"phenomenonTimeStart": _iso(observation.phenomenon_time)},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+
+
+# --- bbox --------------------------------------------------------------------------------
+
+
+def _datastream_with_observations(longitude, latitude, count=2):
+    datastream = DatastreamFactory(
+        monitoring_site=MonitoringSiteFactory(longitude=longitude, latitude=latitude),
+        value_count=count,
+    )
+    for minutes in range(count):
+        ObservationFactory(datastream=datastream, phenomenon_time=timezone.now() - timedelta(minutes=minutes))
+    return datastream
+
+
+def test_get_observations_filters_by_monitoring_site_location(client):
+    inside = _datastream_with_observations(-111.5, 40.5)
+    _datastream_with_observations(-100, 40.5)
+
+    response = client.get(_observations_url(bbox="-112,40,-111,41"))
+
+    assert response.status_code == 200
+    body = response.json()
+    assert {o["datastreamId"] for o in body["data"]} == {str(inside.id)}
+    assert len(body["data"]) == 2
+    assert body["meta"]["numberMatched"] == 2
+
+
+def test_get_observations_bbox_count_uses_matched_datastreams_with_a_time_filter(client):
+    inside = _datastream_with_observations(-111.5, 40.5)
+    _datastream_with_observations(-100, 40.5)
+
+    response = client.get(
+        _observations_url(
+            bbox="-112,40,-111,41",
+            datetime=f"{(timezone.now() - timedelta(days=1)).isoformat()}/..",
+        )
+    )
+
+    assert response.status_code == 200
+    assert {o["datastreamId"] for o in response.json()["data"]} == {str(inside.id)}
+    assert response.json()["meta"]["numberMatched"] == 2
+
+
+def test_get_observations_bbox_combines_with_datastream_id(client):
+    inside = _datastream_with_observations(-111.5, 40.5)
+    outside = _datastream_with_observations(-100, 40.5)
+
+    response = client.get(
+        _observations_url(datastream_id=[str(inside.id), str(outside.id)], bbox="-112,40,-111,41")
+    )
+
+    assert response.status_code == 200
+    assert {o["datastreamId"] for o in response.json()["data"]} == {str(inside.id)}
+    assert response.json()["meta"]["numberMatched"] == 2
+
+
+def test_get_observations_row_profile_is_empty_when_the_datastream_is_outside_the_bbox(client):
+    outside = _datastream_with_observations(-100, 40.5)
+
+    response = client.get(_observations_url(datastream_id=str(outside.id), profile="https://hydroserver.org/profiles/observations/row", bbox="-112,40,-111,41"))
+
+    assert response.status_code == 200
+    assert response.json()["data"] == []
+    assert response.json()["meta"]["numberMatched"] == 0
+
+
+def test_get_observations_returns_400_for_invalid_bbox(client):
+    response = client.get(_observations_url(bbox="-112,40,-111"))
+
+    assert response.status_code == 400
+
+
+# --- datetime ----------------------------------------------------------------------------
+
+
+def _observations_at(datastream, *times):
+    return [ObservationFactory(datastream=datastream, phenomenon_time=t) for t in times]
+
+
+def test_get_observations_filters_by_datetime_interval_including_bounds(client):
+    datastream = DatastreamFactory(value_count=4)
+    start = timezone.now().replace(microsecond=0) - timedelta(days=10)
+    end = start + timedelta(days=5)
+    before, on_start, on_end, after = _observations_at(
+        datastream, start - timedelta(seconds=1), start, end, end + timedelta(seconds=1)
+    )
+
+    response = client.get(_observations_url(datastream.id, datetime=f"{_iso(start)}/{_iso(end)}"))
+
+    assert response.status_code == 200
+    body = response.json()
+    assert {o["id"] for o in body["data"]} == {str(on_start.id), str(on_end.id)}
+    assert body["meta"]["numberMatched"] == 2
+
+
+def test_get_observations_filters_by_datetime_instant_and_open_ends(client):
+    datastream = DatastreamFactory(value_count=2)
+    early_time = timezone.now().replace(microsecond=0) - timedelta(days=10)
+    late_time = early_time + timedelta(days=5)
+    early, late = _observations_at(datastream, early_time, late_time)
+
+    def ids(value):
+        return {o["id"] for o in client.get(_observations_url(datastream.id, datetime=value)).json()["data"]}
+
+    assert ids(_iso(late_time)) == {str(late.id)}
+    assert ids(f"../{_iso(early_time)}") == {str(early.id)}
+    assert ids(f"{_iso(late_time)}/") == {str(late.id)}
+
+
+def test_get_observations_returns_400_for_invalid_datetime(client):
+    response = client.get(_observations_url(datetime="2024-01-01"))
+
+    assert response.status_code == 400

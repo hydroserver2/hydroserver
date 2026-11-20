@@ -1,4 +1,5 @@
 import { Ref, ref, watch } from 'vue'
+import { Scoped } from './tableScope'
 
 interface WithId {
   id: string
@@ -13,8 +14,9 @@ export function useTableLogic<T extends WithId>(
   const openEdit = ref(false)
   const openDelete = ref(false)
   const openAccessControl = ref(false)
-  const item = ref(new ItemClass()) as Ref<T>
-  const items: Ref<T[]> = ref([])
+  const item = ref(new ItemClass()) as Ref<Scoped<T>>
+  const items: Ref<Scoped<T>[]> = ref([])
+  const isLoading = ref(true)
 
   function openDialog(selectedItem: T, dialog: string) {
     item.value = selectedItem
@@ -30,17 +32,20 @@ export function useTableLogic<T extends WithId>(
   }
 
   const onDelete = async () => {
-    if (!item.value) return
+    if (!item.value) return false
     try {
       await deleteFn(item.value.id)
       items.value = items.value.filter((u: any) => u.id !== item.value.id)
       openDelete.value = false
+      return true
     } catch (error) {
       console.error(`Error deleting table item`, error)
+      return false
     }
   }
 
   async function loadData() {
+    isLoading.value = true
     try {
       if (!idRef.value) {
         items.value = []
@@ -49,6 +54,8 @@ export function useTableLogic<T extends WithId>(
       items.value = await fetchFn(idRef.value)
     } catch (error) {
       console.error(`Error fetching table items`, error)
+    } finally {
+      isLoading.value = false
     }
   }
 
@@ -66,8 +73,10 @@ export function useTableLogic<T extends WithId>(
     openAccessControl,
     item,
     items,
+    isLoading,
     openDialog,
     onUpdate,
     onDelete,
+    loadData,
   }
 }

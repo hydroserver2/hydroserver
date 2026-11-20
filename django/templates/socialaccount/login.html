@@ -1,0 +1,41 @@
+{% extends "socialaccount/base_entrance.html" %}
+{% load i18n allauth static provider_icons %}
+{% block head_title %}
+    {% trans "Continue with a provider" %}
+{% endblock head_title %}
+{% block card_header %}
+    <div class="auth-card__brand">
+        <img src="{% static 'img/icon-color-thick.svg' %}" alt="HydroServer" class="auth-card__logo">
+        {% with icon=provider.app|provider_icon %}
+            {% if icon %}
+                <span class="auth-card__connector" aria-hidden="true">↔</span>
+                <img src="{{ icon }}" alt="{{ provider.name }}" class="auth-card__logo">
+            {% endif %}
+        {% endwith %}
+    </div>
+{% endblock card_header %}
+{% block content %}
+    {% if process == "connect" %}
+        {% element h1 %}
+            {% blocktrans with provider.name as provider %}Connect {{ provider }}{% endblocktrans %}
+        {% endelement %}
+        {% element p %}
+            {% blocktrans with provider.name as provider %}You’ll be redirected to {{ provider }} to connect your account.{% endblocktrans %}
+        {% endelement %}
+    {% else %}
+        {% element h1 %}
+            {% blocktrans with provider.name as provider %}Continue with {{ provider }}{% endblocktrans %}
+        {% endelement %}
+        {% element p %}
+            {% blocktrans with provider.name as provider %}You’ll be redirected to {{ provider }} to sign in securely.{% endblocktrans %}
+        {% endelement %}
+    {% endif %}
+    {% element form method="post" no_visible_fields=True %}
+        {% slot actions %}
+            {% csrf_token %}
+            {% element button type="submit" %}
+                {% trans "Continue" %}
+            {% endelement %}
+        {% endslot %}
+    {% endelement %}
+{% endblock content %}

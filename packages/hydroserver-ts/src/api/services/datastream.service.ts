@@ -1,34 +1,84 @@
 import { apiMethods } from '../apiMethods'
-import { HydroServerBaseService } from './base'
+import { HydroServerBaseService, QueryParamsOf } from './base'
 import {
   DatastreamContract as C,
   ObservationContract,
 } from '../../generated/contracts'
-import type * as Data from '../../generated/data.types'
+import type * as Data from '../../generated/ogc.types'
 import type { ApiResponse } from '../responseInterceptor'
 import {
   Datastream as M,
-  Thing,
+  DatastreamExtended,
+  MonitoringSite,
+  Workspace,
+  Method,
   ObservedProperty,
   ProcessingLevel,
+  Unit,
 } from '../../types'
-import { normalizeAttachmentCollection } from './attachment-link'
+import {
+  normalizeLinkCollection,
+  normalizeLinkRecord,
+} from './link-normalization'
+
+const DATASTREAM_EXPAND_INCLUDE =
+  'workspace,monitoringSite,method,observedProperty,processingLevel,unit' as const
+
+type IncludedBuckets = {
+  workspaces?: Workspace[]
+  monitoringSites?: MonitoringSite[]
+  methods?: Method[]
+  observedProperties?: ObservedProperty[]
+  processingLevels?: ProcessingLevel[]
+  units?: Unit[]
+}
+
+function mergeIncluded(row: M, included?: IncludedBuckets): M & DatastreamExtended {
+  const workspaces = included?.workspaces ?? []
+  const monitoringSites = included?.monitoringSites ?? []
+  const methods = included?.methods ?? []
+  const observedProperties = included?.observedProperties ?? []
+  const processingLevels = included?.processingLevels ?? []
+  const units = included?.units ?? []
+
+  return Object.assign(row, {
+    workspace: workspaces.find((w) => w.id === row.workspaceId) ?? new Workspace(),
+    monitoringSite:
+      monitoringSites.find((ms) => ms.id === row.monitoringSiteId) ??
+      new MonitoringSite(),
+    method: methods.find((m) => m.id === row.methodId) ?? new Method(),
+    observedProperty:
+      observedProperties.find((op) => op.id === row.observedPropertyId) ??
+      new ObservedProperty(),
+    processingLevel:
+      processingLevels.find((pl) => pl.id === row.processingLevelId) ??
+      new ProcessingLevel(),
+    unit: units.find((u) => u.id === row.unitId) ?? new Unit(),
+  })
+}
 
 interface VisualizationBootstrapPayload {
-  things: Array<{
+  monitoringSites: Array<{
     id: string
     workspaceId: string
     name: string
-    samplingFeatureCode: string
+    code: string
   }>
   datastreams: Array<{
     id: string
     name: string
-    thingId: string
+    monitoringSiteId: string
+    methodId: string
+    methodName: string
     observedPropertyId: string
     processingLevelId: string
     unitId: string
+    unitName: string
+    unitSymbol: string
     noDataValue: number
+    aggregationStatistic: string
+    timeAggregationInterval: number
+    timeAggregationIntervalUnit: 'seconds' | 'minutes' | 'hours' | 'days'
     valueCount?: number | null
     phenomenonBeginTime?: string | null
     phenomenonEndTime?: string | null
@@ -36,35 +86,41 @@ interface VisualizationBootstrapPayload {
     intendedTimeSpacingUnit?: 'seconds' | 'minutes' | 'hours' | 'days' | null
   }>
   observedProperties: Array<{ id: string; name: string; code: string }>
-  processingLevels: Array<{ id: string; definition?: string | null }>
+  processingLevels: Array<{ id: string; name: string }>
 }
 
 export interface VisualizationBootstrap {
-  things: Thing[]
-  datastreams: M[]
+  monitoringSites: MonitoringSite[]
+  datastreams: Array<
+    M & { methodName: string; unitName: string; unitSymbol: string }
+  >
   observedProperties: ObservedProperty[]
   processingLevels: ProcessingLevel[]
 }
 
-type TagPostBody = Data.components['schemas']['TagPostBody']
-type TagDeleteBody = Data.components['schemas']['TagDeleteBody']
-type TagResponse = Data.components['schemas']['TagGetResponse']
 type TagKeyResponse = Record<string, string[]>
-type FileAttachmentResponse =
-  Data.components['schemas']['FileAttachmentGetResponse']
+type LinkedResourceResponse = Data.components['schemas']['LinkedResourceGetResponse']
 
+type ObservationResponse = Data.components['schemas']['ObservationResponse']
 type ObservationListResponse =
-  Data.operations['interfaces_api_views_sta_observation_get_observations']['responses'][200]['content']['application/json']
-type ObservationResponse =
-  | Data.components['schemas']['ObservationSummaryResponse']
-  | Data.components['schemas']['ObservationDetailResponse']
+  | ObservationResponse[]
+  | Data.components['schemas']['ObservationRowResponse'][]
+  | Data.components['schemas']['ObservationColumnResponse'][]
+type CreatedResponse = Data.components['schemas']['CreatedResponse']
 type ObservationBulkPostQueryParameters =
   Data.components['schemas']['ObservationBulkPostQueryParameters']
-type ObservationBulkPostBody =
-  Data.components['schemas']['ObservationBulkPostBody']
-type ObservationBulkDeleteBody =
-  Data.components['schemas']['ObservationBulkDeleteBody']
-type ObservationPostBody = Data.components['schemas']['ObservationPostBody']
+type ObservationBulkPostBody = Omit<
+  Data.components['schemas']['ObservationBulkPostBody'],
+  'datastreamId'
+>
+type ObservationBulkDeleteBody = Omit<
+  Data.components['schemas']['ObservationBulkDeleteBody'],
+  'datastreamId'
+>
+type ObservationPostBody = Omit<
+  Data.components['schemas']['ObservationPostBody'],
+  'datastreamId'
+>
 type NoContentResponse = null
 /**
  * Transport layer for /datastreams routes.
@@ -78,67 +134,132 @@ export class DatastreamService extends HydroServerBaseService<typeof C, M> {
   static writableKeys = C.writableKeys
   static Model = M
 
-  /* ----------------------- Sub-resources: Tags ----------------------- */
+  /* ------------------------ List / Get overrides ----------------------- */
 
-  getTags(datastreamId: string) {
-    const url = `${this._route}/${datastreamId}/tags`
-    return apiMethods.fetch<TagResponse[]>(url)
+  list = async (
+    params: Partial<QueryParamsOf<typeof C>> & {
+      fetch_all?: boolean
+      expand_related?: boolean
+    } = {}
+  ): Promise<ApiResponse<M[]>> => {
+    const { fetch_all, expand_related, ...query } = params
+    const url = this.withQuery(this._route, {
+      ...query,
+      ...(expand_related ? { include: DATASTREAM_EXPAND_INCLUDE } : {}),
+    })
+    const res = fetch_all
+      ? await apiMethods.paginatedFetch<M[]>(url)
+      : await apiMethods.fetch<M[]>(url)
+    if (!res.ok) return res
+    if (!expand_related) return res
+
+    const included = res.included as IncludedBuckets | undefined
+    return { ...res, data: res.data.map((row) => mergeIncluded(row, included)) }
   }
 
-  getTagKeys(params: { workspace_id?: string; datastream_id?: string }) {
-    const url = this.withQuery(`${this._route}/tags/keys`, params)
+  get = async (
+    id: string,
+    params?: { expand_related?: boolean }
+  ): Promise<ApiResponse<M>> => {
+    const url = this.withQuery(`${this._route}/${id}`, {
+      ...(params?.expand_related ? { include: DATASTREAM_EXPAND_INCLUDE } : {}),
+    })
+    const res = await apiMethods.fetch<M>(url)
+    if (!res.ok) return res
+    if (!params?.expand_related) return res
+
+    return {
+      ...res,
+      data: mergeIncluded(res.data, res.included as IncludedBuckets | undefined),
+    }
+  }
+
+  listItems = async (
+    params?: Partial<QueryParamsOf<typeof C>> & {
+      fetch_all?: boolean
+      expand_related?: boolean
+    }
+  ) => {
+    const res = await this.list(params ?? {})
+    return res.ok ? res.data : []
+  }
+
+  listAllItems = async (
+    params?: Partial<QueryParamsOf<typeof C>> & { expand_related?: boolean }
+  ) => {
+    return this.listItems({ ...params, fetch_all: true })
+  }
+
+  /* ----------------------- Sub-resources: Tags ----------------------- */
+
+  getTagKeys(params: { workspaceId?: string; datastreamId?: string }) {
+    const url = this.withQuery(`${this._collectionRoute}/tags/keys`, params)
     return apiMethods.fetch<TagKeyResponse>(url)
   }
 
-  createTag(datastreamId: string, tag: TagPostBody) {
-    const url = `${this._route}/${datastreamId}/tags`
-    return apiMethods.post<TagResponse>(url, tag)
+  setTag(datastreamId: string, key: string, value: string) {
+    return this.patchAndRefetch(datastreamId, { tags: { [key]: value } })
   }
 
-  updateTag(datastreamId: string, tag: TagPostBody) {
-    const url = `${this._route}/${datastreamId}/tags`
-    return apiMethods.put<TagResponse>(url, tag)
+  deleteTag(datastreamId: string, key: string) {
+    return this.patchAndRefetch(datastreamId, { tags: { [key]: null } })
   }
 
-  deleteTag(datastreamId: string, tag: TagDeleteBody) {
-    const url = `${this._route}/${datastreamId}/tags`
-    return apiMethods.delete<NoContentResponse>(url, tag)
+  private async patchAndRefetch(
+    datastreamId: string,
+    body: Record<string, unknown>
+  ): Promise<ApiResponse<M>> {
+    const res = await apiMethods.patch<null>(`${this._route}/${datastreamId}`, body)
+    if (!res.ok) return res as ApiResponse<M>
+    return this.get(datastreamId)
   }
 
-  /* ----------------- Sub-resources: File Attachments ----------------- */
+  /* ------------------ Sub-resources: Linked Resources ------------------ */
 
-  getFileAttachmentTypes = () =>
-    apiMethods.fetch<string[]>(`${this._route}/file-attachment-types`)
-
-  async uploadAttachments(datastreamId: string, data: FormData) {
-    const url = `${this._route}/${datastreamId}/file-attachments`
-    const res = await apiMethods.post<FileAttachmentResponse>(url, data)
+  async getLinkedResources(datastreamId: string) {
+    const url = `${this._route}/${datastreamId}/linked-resources`
+    const res = await apiMethods.paginatedFetch<LinkedResourceResponse[]>(url)
     if (!res.ok) return res
     return {
       ...res,
-      data: normalizeAttachmentCollection(
-        res.data,
-        this._client.host
-      ),
-    } as ApiResponse<FileAttachmentResponse>
+      data: normalizeLinkCollection(res.data, this._client.host),
+    } as ApiResponse<LinkedResourceResponse[]>
   }
 
-  async getAttachments(datastreamId: string) {
-    const url = `${this._route}/${datastreamId}/file-attachments`
-    const res = await apiMethods.paginatedFetch<FileAttachmentResponse[]>(url)
+  async createLinkedResource(
+    datastreamId: string,
+    data: FormData
+  ): Promise<ApiResponse<LinkedResourceResponse>> {
+    const url = `${this._route}/${datastreamId}/linked-resources`
+    const res = await apiMethods.post<{ id: string }>(url, data)
     if (!res.ok) return res
-    return {
-      ...res,
-      data: normalizeAttachmentCollection(
-        res.data,
-        this._client.host
-      ),
-    } as ApiResponse<FileAttachmentResponse[]>
+    return this.getLinkedResource(datastreamId, res.data.id)
   }
 
-  deleteAttachment(datastreamId: string, name: string) {
-    const url = `${this._route}/${datastreamId}/file-attachments`
-    return apiMethods.delete<NoContentResponse>(url, { name })
+  async updateLinkedResource(
+    datastreamId: string,
+    linkedResourceId: string,
+    data: FormData
+  ): Promise<ApiResponse<LinkedResourceResponse>> {
+    const url = `${this._route}/${datastreamId}/linked-resources/${linkedResourceId}`
+    const res = await apiMethods.patch<null>(url, data)
+    if (!res.ok) return res
+    return this.getLinkedResource(datastreamId, linkedResourceId)
+  }
+
+  async getLinkedResource(
+    datastreamId: string,
+    linkedResourceId: string
+  ): Promise<ApiResponse<LinkedResourceResponse>> {
+    const url = `${this._route}/${datastreamId}/linked-resources/${linkedResourceId}`
+    const res = await apiMethods.fetch<LinkedResourceResponse>(url)
+    if (!res.ok) return res
+    return { ...res, data: normalizeLinkRecord(res.data, this._client.host) }
+  }
+
+  deleteLinkedResource(datastreamId: string, linkedResourceId: string) {
+    const url = `${this._route}/${datastreamId}/linked-resources/${linkedResourceId}`
+    return apiMethods.delete<NoContentResponse>(url)
   }
 
   /* ============================== CSV =============================== */
@@ -156,26 +277,33 @@ export class DatastreamService extends HydroServerBaseService<typeof C, M> {
     datastreamId: string,
     params: ObservationContract.QueryParameters
   ) {
-    const url = this.withQuery(
-      `${this._route}/${datastreamId}/observations`,
-      params
-    )
+    const url = this.withQuery(`${this._client.baseRoute}/collections/observations/items`, {
+      ...params,
+      datastreamId,
+    })
     return apiMethods.paginatedFetch<ObservationListResponse>(url)
   }
 
   /** The checksum of the datastream's observations in `[start, end]`. */
   getObservationsChecksum(datastreamId: string, start: Date, end: Date) {
-    const url = this.withQuery(`${this._route}/${datastreamId}/observations`, {
-      phenomenon_time_min: start.toISOString(),
-      phenomenon_time_max: end.toISOString(),
-      page_size: 1,
-    })
+    // The checksum covers every matching observation, not just the page.
+    const url = this.withQuery(
+      `${this._client.baseRoute}/collections/observations/items`,
+      {
+        datastreamId,
+        datetime: `${start.toISOString()}/${end.toISOString()}`,
+        limit: 1,
+      }
+    )
     return apiMethods.fetchHeader(url, 'X-Checksum')
   }
 
   createObservation(datastreamId: string, body: ObservationPostBody) {
-    const url = `${this._route}/${datastreamId}/observations`
-    return apiMethods.post<ObservationResponse>(url, body)
+    const url = `${this._client.baseRoute}/collections/observations/items`
+    return apiMethods.post<CreatedResponse>(url, {
+      ...body,
+      datastreamId,
+    })
   }
 
   createObservations(
@@ -184,58 +312,49 @@ export class DatastreamService extends HydroServerBaseService<typeof C, M> {
     params?: ObservationBulkPostQueryParameters
   ) {
     const url = this.withQuery(
-      `${this._route}/${datastreamId}/observations/bulk-create`,
+      `${this._client.baseRoute}/collections/observations/bulk-create`,
       params
     )
-    return apiMethods.post<NoContentResponse>(url, body)
+    return apiMethods.post<NoContentResponse>(url, { ...body, datastreamId })
   }
 
   deleteObservations(datastreamId: string, body?: ObservationBulkDeleteBody) {
-    const url = `${this._route}/${datastreamId}/observations/bulk-delete`
-    return apiMethods.post<NoContentResponse>(
-      url,
-      body || { phenomenonTimeStart: null, phenomenonTimeEnd: null }
-    )
+    const url = `${this._client.baseRoute}/collections/observations/bulk-delete`
+    return apiMethods.post<NoContentResponse>(url, {
+      ...(body || { phenomenonTimeStart: null, phenomenonTimeEnd: null }),
+      datastreamId,
+    })
   }
 
-  getObservation(datastreamId: string, observationId: string) {
-    const url = `${this._route}/${encodeURIComponent(
-      datastreamId
-    )}/observations/${encodeURIComponent(observationId)}`
+  getObservation(_datastreamId: string, observationId: string) {
+    const url = `${this._client.baseRoute}/collections/observations/items/${encodeURIComponent(
+      observationId
+    )}`
     return apiMethods.fetch<ObservationResponse>(url)
   }
 
-  deleteObservation(datastreamId: string, observationId: string) {
-    const url = `${this._route}/${datastreamId}/observations/${observationId}`
+  deleteObservation(_datastreamId: string, observationId: string) {
+    const url = `${this._client.baseRoute}/collections/observations/items/${observationId}`
     return apiMethods.delete<NoContentResponse>(url)
   }
-
-  getStatuses = () =>
-    apiMethods.paginatedFetch<string[]>(`${this._route}/statuses`)
-
-  getAggregationStatistics = () =>
-    apiMethods.paginatedFetch<string[]>(`${this._route}/aggregation-statistics`)
-
-  getSampledMediums = () =>
-    apiMethods.paginatedFetch<string[]>(`${this._route}/sampled-mediums`)
 
   async getVisualizationBootstrap(): Promise<
     ApiResponse<VisualizationBootstrap>
   > {
     const res = await apiMethods.fetch<VisualizationBootstrapPayload>(
-      `${this._route}/visualization-bootstrap`
+      `${this._collectionRoute}/visualization-bootstrap`
     )
     if (!res.ok) return res
 
     const payload = res.data
 
-    const things = payload.things.map((p) => Object.assign(new Thing(), p))
-    const thingById = new Map(things.map((t) => [t.id, t]))
+    const monitoringSites = payload.monitoringSites.map((p) => Object.assign(new MonitoringSite(), p))
+    const monitoringSiteById = new Map(monitoringSites.map((t) => [t.id, t]))
 
     const datastreams = payload.datastreams.map((p) =>
       Object.assign(new M(), {
         ...p,
-        workspaceId: thingById.get(p.thingId)?.workspaceId ?? '',
+        workspaceId: monitoringSiteById.get(p.monitoringSiteId)?.workspaceId ?? '',
       })
     )
     const observedProperties = payload.observedProperties.map((p) =>
@@ -247,7 +366,7 @@ export class DatastreamService extends HydroServerBaseService<typeof C, M> {
 
     return {
       ...res,
-      data: { things, datastreams, observedProperties, processingLevels },
+      data: { monitoringSites, datastreams, observedProperties, processingLevels },
     }
   }
 }

@@ -1,5 +1,5 @@
 import { computed, ref, type Ref } from 'vue'
-import hs, { DataConnection, ThingTaskSummary } from '@hydroserver/client'
+import hs, { DataConnection, MonitoringSiteTaskSummary } from '@hydroserver/client'
 import { storeToRefs } from 'pinia'
 import { useOrchestrationStore } from '@/store/orchestration'
 import { useWorkspaceStore } from '@/store/workspaces'
@@ -26,8 +26,7 @@ export function useOrchestrationData() {
   const loading = ref(false)
   const taskLoading = ref(false)
   const dataConnections = ref<DataConnection[]>([])
-  const things = ref<ThingTaskSummary[]>([])
-  const datastreamThingByDatastreamId = ref<Record<string, string>>({})
+  const monitoringSites = ref<MonitoringSiteTaskSummary[]>([])
   const dataProductTasks = ref<DataProductTask[]>([])
   const monitoringTasks = ref<MonitoringTask[]>([])
   const loadedTaskGroup = ref<LoadedTaskGroup>(null)
@@ -35,11 +34,16 @@ export function useOrchestrationData() {
   let fetchRequestId = 0
   let taskRequestId = 0
 
+  const invalidateTaskRequests = () => {
+    taskRequestId += 1
+    taskLoading.value = false
+  }
+
   const clearTaskLists = () => {
+    invalidateTaskRequests()
     workspaceTasks.value = []
     dataProductTasks.value = []
     monitoringTasks.value = []
-    datastreamThingByDatastreamId.value = {}
     loadedTaskGroup.value = null
   }
 
@@ -55,7 +59,7 @@ export function useOrchestrationData() {
       loading.value = false
       dataConnections.value = []
       clearTaskLists()
-      things.value = []
+      monitoringSites.value = []
       return
     }
 
@@ -63,18 +67,18 @@ export function useOrchestrationData() {
     try {
       const [dcItems, taskSummaryResponse] = await Promise.all([
         hs.dataConnections.listAllItems({
-          workspace_id: requestedWorkspaceId,
-          order_by: 'name',
+          workspaceId: requestedWorkspaceId,
+          sortby: 'name',
         } as any),
-        hs.things.listTaskSummaries({
-          workspace_id: [requestedWorkspaceId],
+        hs.monitoringSites.listTaskSummaries({
+          workspaceId: [requestedWorkspaceId],
         }),
       ])
 
       if (requestId !== fetchRequestId) return
 
       dataConnections.value = dcItems
-      things.value = taskSummaryResponse.ok
+      monitoringSites.value = taskSummaryResponse.ok
         ? taskSummaryResponse.data ?? []
         : []
       clearTaskLists()
@@ -94,8 +98,8 @@ export function useOrchestrationData() {
       return
     }
     dataConnections.value = await hs.dataConnections.listAllItems({
-      workspace_id: requestedWorkspaceId,
-      order_by: 'name',
+      workspaceId: requestedWorkspaceId,
+      sortby: 'name',
     } as any)
   }
 
@@ -106,6 +110,7 @@ export function useOrchestrationData() {
     force = false
   ) => {
     if (!requestedWorkspaceId || !groupId) {
+      invalidateTaskRequests()
       clearTaskListForTab(tab)
       loadedTaskGroup.value = null
       return
@@ -123,30 +128,33 @@ export function useOrchestrationData() {
 
     const requestId = ++taskRequestId
     taskLoading.value = true
+    // The previous group's cache no longer represents the displayed list.
+    // Returning to it during this request must fetch and invalidate this request.
+    loadedTaskGroup.value = null
     clearTaskListForTab(tab)
 
     try {
       if (tab === 'ingestion') {
         const items = await hs.tasks.listAllItems({
-          workspace_id: [requestedWorkspaceId],
-          data_connection_id: [groupId],
-          order_by: ['name'],
-        } as any)
+          workspaceId: [requestedWorkspaceId],
+          dataConnectionId: [groupId],
+          sortby: ['name'],
+        })
         if (requestId !== taskRequestId) return
         workspaceTasks.value = items as any
       } else if (tab === 'aggregation') {
         const items = await hs.dataProductTasks.listAllItems({
-          workspace_id: [requestedWorkspaceId],
-          thing_id: [groupId],
-          order_by: ['name'],
+          workspaceId: [requestedWorkspaceId],
+          monitoringSiteId: [groupId],
+          sortby: ['name'],
         } as any)
         if (requestId !== taskRequestId) return
         dataProductTasks.value = items as any
       } else {
         const items = await hs.monitoringTasks.listAllItems({
-          workspace_id: [requestedWorkspaceId],
-          thing_id: [groupId],
-          order_by: ['name'],
+          workspaceId: [requestedWorkspaceId],
+          monitoringSiteId: [groupId],
+          sortby: ['name'],
         } as any)
         if (requestId !== taskRequestId) return
         monitoringTasks.value = items as any
@@ -170,8 +178,7 @@ export function useOrchestrationData() {
     taskLoading,
     workspaceTasks,
     dataConnections,
-    things,
-    datastreamThingByDatastreamId,
+    monitoringSites,
     dataProductTasks,
     monitoringTasks,
     loadedTaskGroup,

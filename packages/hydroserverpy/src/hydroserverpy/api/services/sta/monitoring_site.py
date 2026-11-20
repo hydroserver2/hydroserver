@@ -1,0 +1,245 @@
+import json
+from typing import TYPE_CHECKING, Union, IO, List, Dict, Optional, Tuple
+from uuid import UUID
+from hydroserverpy.api.models import MonitoringSite
+from hydroserverpy.api.utils import normalize_uuid
+from ..base import HydroServerBaseService
+
+if TYPE_CHECKING:
+    from hydroserverpy import HydroServer
+    from hydroserverpy.api.models import Workspace
+
+
+class MonitoringSiteService(HydroServerBaseService):
+    def __init__(self, client: "HydroServer"):
+        self.model = MonitoringSite
+        super().__init__(client)
+
+    def list(
+        self,
+        offset: int = ...,
+        limit: int = ...,
+        sortby: List[str] = ...,
+        workspace: Union["Workspace", UUID, str] = ...,
+        bbox: Tuple[float, float, float, float] = ...,
+        admin_area_1: str = ...,
+        admin_area_2: str = ...,
+        country: str = ...,
+        type: str = ...,
+        tag: Tuple[str, str] = ...,
+        is_private: bool = ...,
+        fetch_all: bool = False,
+    ) -> List["MonitoringSite"]:
+        """Fetch a collection of monitoring_sites."""
+
+        collection = super().list(
+            offset=offset,
+            limit=limit,
+            sortby=sortby,
+            workspace_id=normalize_uuid(workspace),
+            bbox=",".join([str(i) for i in bbox]) if bbox is not ... else bbox,
+            admin_area_1=admin_area_1,
+            admin_area_2=admin_area_2,
+            country=country,
+            type=type,
+            tag=[f"{tag[0]}:{tag[1]}"] if tag is not ... else tag,
+            is_private=is_private,
+            fetch_all=False,
+        )
+
+        if tag is not ...:
+            collection.filters["tag"] = tag
+
+        if fetch_all is True:
+            collection = collection.fetch_all()
+
+        return collection
+
+    def create(
+        self,
+        workspace: Union["Workspace", UUID, str],
+        name: str,
+        description: str,
+        code: str,
+        type: str,
+        is_private: bool,
+        latitude: float,
+        longitude: float,
+        elevation_m: Optional[float] = None,
+        elevation_datum: Optional[str] = None,
+        admin_area_1: Optional[str] = None,
+        admin_area_2: Optional[str] = None,
+        country: Optional[str] = None,
+        data_disclaimer: Optional[str] = None,
+        tags: Optional[Dict[str, str]] = None,
+        uid: Optional[UUID] = None,
+    ) -> "MonitoringSite":
+        """Create a new monitoring_site."""
+
+        body = {
+            "id": normalize_uuid(uid),
+            "name": name,
+            "description": description,
+            "code": code,
+            "type": type,
+            "isPrivate": is_private,
+            "dataDisclaimer": data_disclaimer,
+            "workspaceId": normalize_uuid(workspace),
+            "latitude": latitude,
+            "longitude": longitude,
+            "elevationM": elevation_m,
+            "elevationDatum": elevation_datum,
+            "adminArea1": admin_area_1,
+            "adminArea2": admin_area_2,
+            "country": country,
+            "tags": tags or {},
+        }
+
+        return super().create(**body)
+
+    def update(
+        self,
+        uid: Union[UUID, str],
+        name: str = ...,
+        description: str = ...,
+        code: str = ...,
+        type: str = ...,
+        is_private: bool = ...,
+        latitude: float = ...,
+        longitude: float = ...,
+        elevation_m: Optional[float] = ...,
+        elevation_datum: Optional[str] = ...,
+        admin_area_1: Optional[str] = ...,
+        admin_area_2: Optional[str] = ...,
+        country: Optional[str] = ...,
+        data_disclaimer: Optional[str] = ...,
+        tags: Dict[str, Optional[str]] = ...,
+    ) -> "MonitoringSite":
+        """Update a monitoring_site."""
+
+        body = {
+            "name": name,
+            "description": description,
+            "code": code,
+            "type": type,
+            "isPrivate": is_private,
+            "dataDisclaimer": data_disclaimer,
+            "latitude": latitude,
+            "longitude": longitude,
+            "elevationM": elevation_m,
+            "elevationDatum": elevation_datum,
+            "adminArea1": admin_area_1,
+            "adminArea2": admin_area_2,
+            "country": country,
+            "tags": tags,
+        }
+
+        return super().update(uid=str(uid), **body)
+
+    def set_tag(self, uid: Union[UUID, str], key: str, value: str) -> "MonitoringSite":
+        """Create or update a tag on a HydroServer monitoring_site."""
+
+        return self.update(uid=uid, tags={key: value})
+
+    def delete_tag(self, uid: Union[UUID, str], key: str) -> "MonitoringSite":
+        """Remove a tag from a HydroServer monitoring_site."""
+
+        return self.update(uid=uid, tags={key: None})
+
+    def add_linked_resource(
+        self,
+        uid: Union[UUID, str],
+        name: str,
+        type: str,
+        file: Optional[IO[bytes]] = None,
+        url: Optional[str] = None,
+        description: Optional[str] = None,
+    ) -> Dict[str, str]:
+        """
+        Add a linked resource to a HydroServer monitoring_site. Exactly one of `file`/`url`
+        must be given; whichever one is provided determines whether the resource is hosted by
+        HydroServer or an external link.
+        """
+
+        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/linked-resources"
+        data = {
+            "name": name,
+            "type": type,
+        }
+        if description is not None:
+            data["description"] = description
+        if url is not None:
+            data["link"] = url
+
+        response = self.client.request(
+            "post", path, data=data, files={"file": file} if file is not None else None
+        ).json()
+
+        return self.get_linked_resource(uid=uid, linked_resource_id=response["id"])
+
+    def get_linked_resources(
+        self,
+        uid: Union[UUID, str],
+        offset: int = ...,
+        limit: int = ...,
+        type: List[str] = ...,
+    ) -> List[Dict[str, str]]:
+        """Get a page of linked resources associated with a HydroServer monitoring_site."""
+
+        params = {
+            "offset": offset,
+            "limit": limit,
+            "type": type,
+        }
+        params = {k: v for k, v in params.items() if v is not ...}
+
+        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/linked-resources"
+
+        return self.client.request("get", path, params=params).json()["data"]
+
+    def get_linked_resource(
+        self, uid: Union[UUID, str], linked_resource_id: Union[UUID, str]
+    ) -> Dict[str, str]:
+        """Get a linked resource associated with a HydroServer monitoring_site."""
+
+        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/linked-resources/{str(linked_resource_id)}"
+
+        return self.client.request("get", path).json()["data"]
+
+    def update_linked_resource(
+        self,
+        uid: Union[UUID, str],
+        linked_resource_id: Union[UUID, str],
+        name: Optional[str] = None,
+        type: Optional[str] = None,
+        file: Optional[IO[bytes]] = None,
+        url: Optional[str] = None,
+        description: Optional[str] = None,
+    ) -> Dict[str, str]:
+        """
+        Update a linked resource for a HydroServer monitoring_site. A linked resource's mode
+        (hosted file vs. external URL) cannot be changed in place.
+        """
+
+        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/linked-resources/{str(linked_resource_id)}"
+        data = {}
+        if name is not None:
+            data["name"] = name
+        if type is not None:
+            data["type"] = type
+        if description is not None:
+            data["description"] = description
+        if url is not None:
+            data["link"] = url
+
+        self.client.request(
+            "patch", path, data=data, files={"file": file} if file is not None else None
+        )
+
+        return self.get_linked_resource(uid=uid, linked_resource_id=linked_resource_id)
+
+    def delete_linked_resource(self, uid: Union[UUID, str], linked_resource_id: Union[UUID, str]) -> None:
+        """Delete a linked resource from a HydroServer monitoring_site."""
+
+        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/linked-resources/{str(linked_resource_id)}"
+        self.client.request("delete", path)

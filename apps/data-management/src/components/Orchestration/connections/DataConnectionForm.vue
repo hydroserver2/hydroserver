@@ -32,7 +32,7 @@
         <TimezoneForm ref="timezoneRef" />
 
         <div class="ma-2">
-          <v-switch
+          <v-checkbox
             v-model="advancedFeaturesEnabled"
             color="primary"
             density="compact"
@@ -116,7 +116,9 @@
                   class="mr-1 mb-1 max-w-full"
                   @click:close="removeNotificationRecipient(index)"
                 >
-                  <span class="truncate">{{ item.title }}</span>
+                  <span class="truncate">{{
+                    notificationRecipientEmails[index]
+                  }}</span>
                 </v-chip>
               </template>
             </v-combobox>
@@ -128,7 +130,7 @@
     <template #actions>
       <v-spacer />
       <v-btn-cancel @click="emit('close')"> Cancel </v-btn-cancel>
-      <v-btn-primary type="button" @click="onSubmit"> Save </v-btn-primary>
+      <v-btn-dialog-action type="button" @click="onSubmit"> Save </v-btn-dialog-action>
     </template>
   </StickyForm>
 </template>

@@ -1,20 +1,26 @@
 import uuid
-from typing import Optional, Literal, TYPE_CHECKING
+
+from typing import Optional, Literal, Annotated, cast
+from pydantic import EmailStr, BeforeValidator, WithJsonSchema
+from pydantic.alias_generators import to_camel
 from ninja import Schema, Field, Query
-from pydantic import EmailStr
-from django.contrib.auth import get_user_model
+
 from interfaces.api.schemas import (
     BaseGetResponse,
     BasePostBody,
     BasePatchBody,
+    BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
+    UserContactResponse,
+    RoleResponse,
+    split_comma_separated,
+    comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
+    QueryBool,
 )
-
-if TYPE_CHECKING:
-    from interfaces.api.schemas import RoleDetailResponse
-
-
-User = get_user_model()
+from interfaces.api.schemas.base import ItemId, NewItemId
 
 
 class WorkspaceFields(Schema):
@@ -22,56 +28,125 @@ class WorkspaceFields(Schema):
     is_private: bool
 
 
-_order_by_fields = (
+WORKSPACE_INCLUDE_RELATIONS = {
+    "owner": {
+        "path": "owner",
+        "bucket": "owners",
+        "response_schema": UserContactResponse,
+    },
+    "pendingTransferTo": {
+        "path": "pending_transfer_to",
+        "bucket": "pendingTransferRecipients",
+        "response_schema": UserContactResponse,
+    },
+    "collaboratorRole": {
+        "path": "collaborator_role",
+        "bucket": "collaboratorRoles",
+        "response_schema": RoleResponse,
+    },
+}
+WorkspaceIncludeRelation = Literal[*WORKSPACE_INCLUDE_RELATIONS.keys()]
+
+_sortby_fields = (
     "name",
     "isPrivate",
 )
-
-WorkspaceOrderByFields = Literal[
-    *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
+WorkspaceSortByFields = Literal[
+    *_sortby_fields, *[f"-{f}" for f in _sortby_fields]
 ]
 
+_property_fields = (
+    "id",
+    "ownerEmail",
+    "pendingTransferToEmail",
+    "collaboratorRoleId",
+    *(to_camel(name) for name in cast(dict, WorkspaceFields.model_fields)),  # noqa
+)
+WorkspacePropertyName = Literal[*_property_fields]
 
-class WorkspaceQueryParameters(CollectionQueryParameters):
-    expand_related: Optional[bool] = None
-    order_by: Optional[list[WorkspaceOrderByFields]] = Query(
-        [], description="Select one or more fields to order the response by."
-    )
-    is_associated: Optional[bool] = Query(
+
+class WorkspaceFilterFields(Schema):
+    properties: Annotated[
+        Optional[list[WorkspacePropertyName]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(WorkspacePropertyName)),
+    ] = Query(
         None,
-        description="Whether the workspace is associated with the authenticated user",
+        description="Comma-separated list of properties to include in the response. "
+        "All properties are returned if omitted.",
     )
-    is_private: Optional[bool] = Query(
-        None, description="Whether the returned workspaces should be private or public."
+    include: Annotated[
+        Optional[list[WorkspaceIncludeRelation]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(WorkspaceIncludeRelation)),
+    ] = Query(
+        None,
+        description="Comma-separated list of related resources to include in the response.",
     )
 
 
-class UserContactFields(Schema):
-    phone: Optional[str] = Field(None, max_length=15)
-    address: Optional[str] = Field(None, max_length=255)
-    link: Optional[str] = Field(None, max_length=2000)
-    user_type: str = Field(..., max_length=255, alias="type")
+class WorkspaceItemQueryParameters(WorkspaceFilterFields, BaseQueryParameters):
+    pass
 
 
-class AccountContactDetailResponse(BaseGetResponse, UserContactFields):
-    name: str = Field(..., max_length=255)
-    email: EmailStr
-    organization_name: Optional[str] = None
+class WorkspaceQueryParameters(WorkspaceFilterFields, CollectionQueryParameters, ExtentQueryParameters):
+    sortby: Annotated[
+        Optional[list[WorkspaceSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(WorkspaceSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
+    q: Optional[str] = Query(
+        None,
+        description="Full-text search query. Comma-separated terms are combined with OR; "
+        "whitespace-separated words within a term are combined with AND.",
+    )
+    is_associated: Optional[QueryBool] = Query(
+        None,
+        description="`true` returns only the workspaces you own, collaborate on, or have a pending transfer "
+        "to. For a service account, that's its own workspace. `false` doesn't filter.",
+    )
+    is_private: Optional[QueryBool] = Query(
+        None, description="`true` returns only private workspaces, and `false` only public ones."
+    )
 
 
-class WorkspaceSummaryResponse(BaseGetResponse, WorkspaceFields):
-    id: uuid.UUID
+class WorkspaceProperties(BaseGetResponse, WorkspaceFields):
+    owner_email: str
+    pending_transfer_to_email: Optional[str] = None
+    collaborator_role_id: Optional[uuid.UUID] = None
+
+    @staticmethod
+    def resolve_owner_email(obj):
+        if hasattr(obj, "owner_email"):
+            return obj.owner_email
+
+        return obj.owner.email
+
+    @staticmethod
+    def resolve_pending_transfer_to_email(obj):
+        if hasattr(obj, "pending_transfer_to_email"):
+            return obj.pending_transfer_to_email
+
+        recipient = getattr(obj, "pending_transfer_to", None)
+
+        return recipient.email if recipient else None
+
+    @staticmethod
+    def resolve_collaborator_role_id(obj):
+        if hasattr(obj, "collaborator_role_id"):
+            return obj.collaborator_role_id
+
+        role = getattr(obj, "collaborator_role", None)
+
+        return role.id if role else None
 
 
-class WorkspaceDetailResponse(BaseGetResponse, WorkspaceFields):
-    id: uuid.UUID
-    owner: AccountContactDetailResponse
-    collaborator_role: Optional["RoleDetailResponse"] = None
-    pending_transfer_to: Optional[AccountContactDetailResponse] = None
+class WorkspaceResponse(WorkspaceProperties, ItemId):
+    pass
 
 
-class WorkspacePostBody(BasePostBody, WorkspaceFields):
-    id: Optional[uuid.UUID] = None
+class WorkspacePostBody(BasePostBody, WorkspaceFields, NewItemId):
+    pass
 
 
 class WorkspacePatchBody(BasePatchBody, WorkspaceFields):

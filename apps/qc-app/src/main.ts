@@ -15,29 +15,42 @@ import { ensureCalibration } from '@uwrl/qc-utils'
 
 const app = createApp(App)
 
+// Django embeds its settings in the page it serves. Vite's dev page doesn't
+// have them, so the client falls back to its default cookie name.
+function readCsrfCookieName(): string | undefined {
+  const raw = document.getElementById('app-settings')?.textContent
+  if (!raw) return undefined
+  try {
+    return JSON.parse(raw).authenticationConfiguration?.csrfCookieName
+  } catch {
+    return undefined
+  }
+}
+
 async function initializeApp() {
   app.use(store)
   // Restores the chosen time zone before anything is formatted.
   useQcPreferencesStore()
 
-  const hydroServerHost =
-    import.meta.env.VITE_APP_PROXY_BASE_URL
-      ? ''
-      : import.meta.env.DEV
-      ? 'http://127.0.0.1:8000'
-      : ''
+  const hydroServerHost = import.meta.env.VITE_APP_PROXY_BASE_URL || ''
 
   // The session must be initialized before the router so auth guards
   // can read `hs.session.isAuthenticated` on the first navigation, and
   // so the user/workspace rehydration below has a live client to talk
   // to. Mirrors data-management-app/src/main.ts.
   //
-  await createHydroServer({ host: hydroServerHost })
+  await createHydroServer({
+    host: hydroServerHost,
+    csrfCookieName: readCsrfCookieName(),
+  })
 
   // Wire the singleton into the app's pre-existing pinia ref so every
   // `useHydroServer().hs` call site keeps working without churn.
-  const { hs: hsRef } = storeToRefs(useHydroServer())
+  const { hs: hsRef, sessionExpired } = storeToRefs(useHydroServer())
   hsRef.value = hs
+  hs.on('session:expired', () => {
+    sessionExpired.value = true
+  })
 
   // Rehydrate the authenticated user. Suppress the expected 401 before
   // the user logs in by gating the request on the session snapshot.

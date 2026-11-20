@@ -238,7 +238,7 @@ matters here is **how the QC App weathers them**:
   update that client, run `npx vue-tsc --noEmit` to see the breakage, and
   patch the call sites.
 - The observation upload path uses `mode: 'replace'` on the bulk POST, with
-  `phenomenon_time_start`/`phenomenon_time_end` set to the session window.
+  `phenomenonTimeStart`/`phenomenonTimeEnd` set to the session window.
   Backends without those params replace only the span of the posted
   observations, which leaves points deleted at the window's edges in place. If you ever
   need to change to append-only or upsert semantics, that's a coordinated

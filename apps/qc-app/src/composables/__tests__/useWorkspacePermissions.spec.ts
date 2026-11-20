@@ -59,12 +59,13 @@ const globalWs = ws({
   id: 'gl',
   owner: { email: 'other@x.org' } as any,
   collaboratorRole: role('Super', [
-    { action: PermissionAction.Global, resource: PermissionResource.Global },
+    { action: PermissionAction.Edit, resource: PermissionResource.Global },
+    { action: PermissionAction.Create, resource: PermissionResource.Global },
   ]),
 })
 
-function setUser(email: string, accountType = 'standard') {
-  useUserStore().user = { email, accountType } as unknown as User
+function setUser(email: string, isSuperuser = false) {
+  useUserStore().user = { email, isSuperuser } as unknown as User
 }
 
 describe('useWorkspacePermissions', () => {
@@ -120,7 +121,7 @@ describe('useWorkspacePermissions', () => {
   })
 
   it('admin overrides a read-only role', () => {
-    setUser('me@x.org', 'admin')
+    setUser('me@x.org', true)
     const { canEdit, canCreateDatastream } = useWorkspacePermissions()
     expect(canEdit(viewerWs)).toBe(true)
     expect(canCreateDatastream(viewerWs)).toBe(true)

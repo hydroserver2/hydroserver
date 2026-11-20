@@ -1,69 +1,65 @@
 import uuid
-from typing import Optional
+
 from ninja import Router, Path, Query
-from django.http import HttpResponse
-from interfaces.auth.security import bearer_auth, session_auth, apikey_auth, anonymous_auth
+
+from interfaces.auth.security import session_auth, oidc_iam_read_auth, apikey_auth, basic_auth, anonymous_auth
+from interfaces.api.services.iam import RoleAPIService
 from interfaces.api.http.request import HydroServerHttpRequest
 from interfaces.api.schemas import (
-    RoleSummaryResponse,
-    RoleDetailResponse,
+    RoleResponse,
     RoleQueryParameters,
+    RoleItemQueryParameters,
+    PaginatedResponse,
+    ItemResponse,
 )
-from core.iam.services import RoleService
 
 role_router = Router(tags=["Roles"])
-role_service = RoleService()
+role_service = RoleAPIService()
 
 
 @role_router.get(
-    "",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    "/items",
+    auth=[session_auth, oidc_iam_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: list[RoleSummaryResponse] | list[RoleDetailResponse],
+        200: PaginatedResponse[RoleResponse],
         401: str,
     },
     by_alias=True,
 )
 def get_roles(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     query: Query[RoleQueryParameters],
 ):
     """
-    Get public Roles and Roles associated with the authenticated user.
+    Get public roles and roles associated with the authenticated user.
     """
 
     return 200, role_service.list(
         principal=request.principal,
-        response=response,
-        page=query.page,
-        page_size=query.page_size,
-        order_by=query.order_by,
+        offset=query.offset,
+        limit=query.limit,
+        sortby=query.sortby,
         filtering=query.dict(exclude_unset=True),
-        expand_related=query.expand_related,
     )
 
 
 @role_router.get(
-    "/{role_id}",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    "/items/{role_id}",
+    auth=[session_auth, oidc_iam_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: RoleSummaryResponse | RoleDetailResponse,
+        200: ItemResponse[RoleResponse],
         401: str,
         403: str,
     },
     by_alias=True,
-    exclude_unset=True,
 )
 def get_role(
     request: HydroServerHttpRequest,
     role_id: Path[uuid.UUID],
-    expand_related: Optional[bool] = None,
+    query: Query[RoleItemQueryParameters],
 ):
     """
-    Get a Role.
+    Get a role.
     """
 
-    return 200, role_service.get(
-        principal=request.principal, uid=role_id, expand_related=expand_related
-    )
+    return 200, role_service.get(principal=request.principal, uid=role_id)

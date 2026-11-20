@@ -59,12 +59,12 @@ describe('site type icons', () => {
     ['Site', 'map-marker', mdiMapMarker],
     ['Hydropower', 'hydro-power', mdiHydroPower],
     ['House', 'home-outline', mdiHomeOutline],
-  ])('maps the short-list site type %s', (siteType, icon, expected) => {
+  ])('maps the short-list site type %s', (type, icon, expected) => {
     const shortListRules = buildSiteTypeIconRules([
-      { icon, siteTypes: [siteType] },
+      { icon, siteTypes: [type] },
     ])
 
-    expect(getSiteTypeIcon(siteType, shortListRules)).toBe(expected)
+    expect(getSiteTypeIcon(type, shortListRules)).toBe(expected)
   })
 
   it('uses the default marker for an unmatched site type', () => {

@@ -1,16 +1,39 @@
 <template>
   <div class="edit-history-step-details px-3 py-2">
-    <div class="text-body-small text-medium-emphasis mb-1">Arguments</div>
-    <ul class="edit-history-step-details__args pa-0 ma-0 overflow-y-auto">
-      <li
-        v-for="(arg, argIdx) of entry.args"
-        :key="argIdx"
-        class="text-body-small px-1 py-1"
-        style="word-break: break-all"
+    <template v-if="showArgs">
+      <div class="text-body-small text-medium-emphasis mb-1">Arguments</div>
+      <ul class="edit-history-step-details__args pa-0 ma-0 overflow-y-auto">
+        <li
+          v-for="(arg, argIdx) of entry.args"
+          :key="argIdx"
+          class="text-body-small px-1 py-1"
+          style="word-break: break-all"
+        >
+          <code class="text-body-small">{{ formatArg(arg) }}</code>
+        </li>
+      </ul>
+    </template>
+
+    <div v-if="times.length" :data-testid="`history-points-${index}`">
+      <div
+        class="text-body-small text-medium-emphasis mb-1"
+        :class="{ 'mt-3': showArgs }"
       >
-        <code class="text-body-small">{{ formatArg(arg) }}</code>
-      </li>
-    </ul>
+        Points ({{ times.length.toLocaleString() }})
+      </div>
+      <v-virtual-scroll
+        :items="times"
+        :item-height="POINT_ROW_HEIGHT"
+        max-height="12rem"
+        class="edit-history-step-details__points"
+      >
+        <template #default="{ item }">
+          <div class="text-body-small px-1" :style="{ height: `${POINT_ROW_HEIGHT}px` }">
+            {{ formatDateTime(item) }}
+          </div>
+        </template>
+      </v-virtual-scroll>
+    </div>
 
     <!-- Dev-only: whether the dispatch ran on a worker or inline. -->
     <div
@@ -67,12 +90,14 @@
 </template>
 
 <script setup lang="ts">
-/** The expanded part of an edit history step: its arguments, who applied
- *  it, and its comment. */
+/** The expanded part of an edit history step: its arguments, the points it
+ *  changed, who applied it, and its comment. */
 
-import type { HistoryItem } from '@uwrl/qc-utils'
+import { computed } from 'vue'
+import { EnumFilterOperations, type HistoryItem } from '@uwrl/qc-utils'
+import { formatDateTime } from '@/utils/time'
 
-defineProps<{
+const props = defineProps<{
   entry: HistoryItem
   index: number
   /** False for a step past the one on screen, whose run no longer holds. */
@@ -83,6 +108,17 @@ defineProps<{
 const emit = defineEmits<{ (e: 'update:comment', value: string): void }>()
 
 const isDev = import.meta.env.DEV
+
+const POINT_ROW_HEIGHT = 24
+
+// Read at run time, so they name points that later edits move or renumber.
+const times = computed(() => Array.from(props.entry.execution?.times ?? []))
+
+// A selection's only argument is the positions its points list replaces.
+const showArgs = computed(
+  () =>
+    !(props.entry.method === EnumFilterOperations.SELECTION && times.value.length)
+)
 
 function formatArg(arg: unknown): string {
   if (Array.isArray(arg)) {

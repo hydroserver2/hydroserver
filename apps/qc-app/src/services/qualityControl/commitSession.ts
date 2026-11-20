@@ -5,12 +5,10 @@
  */
 
 import type {
+  QualityControlSession,
   QualityControlSessionService,
-  QualityControlSessionContract,
 } from '@hydroserver/client'
 import { unwrap } from './unwrap'
-
-type QcSessionDetail = QualityControlSessionContract.DetailResponse
 
 export interface CommitQcSessionInput {
   qcSessions: QualityControlSessionService
@@ -24,13 +22,11 @@ export interface CommitQcSessionInput {
 
 export async function commitQcSession(
   input: CommitQcSessionInput
-): Promise<QcSessionDetail> {
+): Promise<QualityControlSession> {
   const { qcSessions, historyId, sessionId, currentSourceChecksum, pushObservations } =
     input
 
-  const session = unwrap(
-    await qcSessions.get(historyId, sessionId)
-  ) as QcSessionDetail
+  const session = unwrap(await qcSessions.get(historyId, sessionId))
   if (session.status !== 'in_progress') {
     throw new Error('Only an in-progress session can be committed.')
   }

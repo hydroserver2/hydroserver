@@ -1,0 +1,48 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+<p>Load default {{ opts.verbose_name_plural }}? Existing rows with matching IDs will be overwritten.</p>
+
+{% if to_create %}
+<h3>Will be created</h3>
+<ul>
+  {% for obj, children in to_create %}
+  <li>{{ obj }} ({{ obj.pk }})
+    {% if children %}
+    <ul>
+      {% for child in children %}<li>{{ child }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+{% if to_overwrite %}
+<h3>Will be overwritten</h3>
+<ul>
+  {% for obj, children in to_overwrite %}
+  <li>{{ obj }} ({{ obj.pk }})
+    {% if children %}
+    <ul>
+      {% for child in children %}<li>{{ child }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+{% if not to_create and not to_overwrite %}
+<p>No objects found in fixture.</p>
+{% endif %}
+
+<form method="post">
+  {% csrf_token %}
+  <div>
+    <input type="submit" value="Yes, load defaults">
+    <a href="..">Cancel</a>
+  </div>
+</form>
+{% endblock %}

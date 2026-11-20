@@ -1,94 +1,184 @@
 import uuid
-from pydantic import AliasPath, AliasChoices, model_validator
+
+from typing import Optional, Literal, Annotated
+from pydantic import AliasPath, AliasChoices, BeforeValidator, WithJsonSchema, model_validator, model_serializer
+from pydantic.alias_generators import to_camel
 from ninja import Schema, Query, Field
-from typing import Optional, Literal, TYPE_CHECKING
+
 from core.types.iso_datetime import ISODatetime, validate_iso_datetime
+from core.sta.models import ResultQualifier
 from interfaces.api.schemas import (
     BaseGetResponse,
     BasePostBody,
+    BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
+    WorkspaceResponse,
+    DatastreamResponse,
+    split_comma_separated,
+    comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
-
-if TYPE_CHECKING:
-    from interfaces.api.schemas import WorkspaceSummaryResponse
-    from interfaces.api.schemas import DatastreamSummaryResponse
+from interfaces.api.schemas.sta.result_qualifier import ResultQualifierResponse
+from interfaces.api.schemas.base import ItemId, NewItemId
 
 
 class ObservationFields(Schema):
     phenomenon_time: ISODatetime
     result: float
-    result_qualifier_codes: list[str] = []
+    result_qualifiers: list[str] = []
 
 
-_order_by_fields = ("phenomenonTime",)
+OBSERVATION_INCLUDE_RELATIONS = {
+    "datastream": {
+        "path": "datastream",
+        "bucket": "datastreams",
+        "response_schema": DatastreamResponse,
+    },
+    "workspace": {
+        "path": "datastream__monitoring_site__workspace",
+        "bucket": "workspaces",
+        "response_schema": WorkspaceResponse,
+    },
+    "resultQualifiers": {
+        "bucket": "resultQualifiers",
+        "response_schema": ResultQualifierResponse,
+        "scoped_vocabulary_model": ResultQualifier,
+        "value_field": "result_qualifiers",
+        "workspace_path": "datastream__monitoring_site__workspace_id",
+    },
+}
+ObservationIncludeRelation = Literal[*OBSERVATION_INCLUDE_RELATIONS.keys()]
 
-ObservationOrderByFields = Literal[
-    *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
+_sortby_fields = ("phenomenonTime", "datastreamId")
+ObservationSortByFields = Literal[
+    *_sortby_fields, *[f"-{f}" for f in _sortby_fields]
 ]
 
-
-class ObservationQueryParameters(CollectionQueryParameters):
-    expand_related: Optional[bool] = None
-    order_by: Optional[list[ObservationOrderByFields]] = Query(
-        [], description="Select one or more fields to order the response by."
-    )
-    response_format: Optional[Literal["record", "row", "column"]] = Query(
-        None,
-        description="Controls the format of the observations response.",
-        alias="format",
-    )
-    phenomenon_time__lte: Optional[ISODatetime] = Query(
-        None,
-        description="Sets the maximum phenomenon time of filtered observations.",
-        alias="phenomenon_time_max",
-    )
-    phenomenon_time__gte: Optional[ISODatetime] = Query(
-        None,
-        description="Sets the minimum phenomenon time of filtered observations.",
-        alias="phenomenon_time_min",
-    )
-    result_qualifier_codes: list[str] = Query(
-        [],
-        description="Filter observations by result qualifier code.",
-        alias="result_qualifier_code",
-    )
+_property_fields = (
+    "id",
+    "workspaceId",
+    "datastreamId",
+    *(to_camel(name) for name in ObservationFields.model_fields),
+)
+ObservationPropertyName = Literal[*_property_fields]
 
 
-class ObservationSummaryResponse(BaseGetResponse, ObservationFields):
-    id: uuid.UUID
+class ObservationFilterFields(Schema):
+    properties: Annotated[
+        Optional[list[ObservationPropertyName]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(ObservationPropertyName)),
+    ] = Query(
+        None,
+        description="Comma-separated list of properties to include in the response. "
+        "All properties are returned if omitted.",
+    )
+    include: Annotated[
+        Optional[list[ObservationIncludeRelation]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(ObservationIncludeRelation)),
+    ] = Query(
+        None,
+        description="Comma-separated list of related resources to include in the response.",
+    )
+
+
+class ObservationItemQueryParameters(ObservationFilterFields, BaseQueryParameters):
+    pass
+
+
+class ObservationQueryParameters(ObservationFilterFields, CollectionQueryParameters, ExtentQueryParameters):
+    datastream_id: list[uuid.UUID] = Query(
+        [], description="Observations in this datastream. Matches `id` in `datastreams`."
+    )
+    sortby: Annotated[
+        Optional[list[ObservationSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(ObservationSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
+    result_qualifiers: list[str] = Query(
+        [], description="Observations with this result qualifier. Matches `name` in `result-qualifiers`."
+    )
+
+
+class ObservationProperties(BaseGetResponse, ObservationFields):
     workspace_id: uuid.UUID = Field(
         ...,
         validation_alias=AliasChoices(
-            "workspaceId", AliasPath("datastream", "thing", "workspace_id")
+            "workspaceId", AliasPath("datastream", "monitoring_site", "workspace_id")
         ),
     )
     datastream_id: uuid.UUID
 
 
-class ObservationDetailResponse(BaseGetResponse, ObservationFields):
-    id: uuid.UUID
-    workspace: "WorkspaceSummaryResponse" = Field(
-        ..., validation_alias=AliasPath("datastream", "thing", "workspace")
-    )
-    datastream: "DatastreamSummaryResponse"
+class ObservationResponse(ObservationProperties, ItemId):
+    pass
 
 
-class ObservationRowResponse(BaseGetResponse):
-    fields: list[Literal["phenomenonTime", "result", "resultQualifierCodes"]]
-    data: list[list]
+OBSERVATION_GROUP_FIELDS = {
+    "id": "id",
+    "phenomenonTime": "phenomenon_time",
+    "result": "result",
+    "resultQualifiers": "result_qualifiers",
+}
+OBSERVATION_GROUP_WORKSPACE_FIELD = "datastream__monitoring_site__workspace_id"
+
+ObservationGroupField = Literal[*OBSERVATION_GROUP_FIELDS]
 
 
-class ObservationColumnarResponse(BaseGetResponse):
-    phenomenon_time: list
-    result: list
-    result_qualifier_codes: list
+def without_unselected(data: dict, keys: tuple[str, ...]) -> dict:
+    """Leaves out the given members when they're absent (None) because the properties parameter didn't select them."""
+
+    return {key: value for key, value in data.items() if key not in keys or value is not None}
 
 
-class ObservationPostBody(BasePostBody, ObservationFields):
-    id: Optional[uuid.UUID] = None
+class ObservationGroup(BaseGetResponse):
+    """A datastream's observations on a page of the row or column profile."""
+
+    datastream_id: uuid.UUID
+    workspace_id: Optional[uuid.UUID] = None
+
+    @model_serializer(mode="wrap")
+    def _omit_unselected(self, handler):
+        return without_unselected(handler(self), ("workspaceId",))
+
+    @staticmethod
+    def filter_properties(group: dict, requested: set[str]) -> dict:
+        """
+        Leaves groups as they are: the observation service reads only the selected properties into them, keeping
+        datastreamId, which identifies a group.
+        """
+
+        return group
 
 
-class ObservationBulkPostQueryParameters(Schema):
+class ObservationRowResponse(ObservationGroup):
+    fields: list[ObservationGroupField]
+    rows: list[list]
+
+
+class ObservationColumns(BaseGetResponse):
+    id: Optional[list[uuid.UUID]] = None
+    phenomenon_time: Optional[list] = None
+    result: Optional[list] = None
+    result_qualifiers: Optional[list] = None
+
+    @model_serializer(mode="wrap")
+    def _omit_unselected(self, handler):
+        return without_unselected(handler(self), tuple(OBSERVATION_GROUP_FIELDS))
+
+
+class ObservationColumnResponse(ObservationGroup):
+    columns: ObservationColumns
+
+
+class ObservationPostBody(BasePostBody, ObservationFields, NewItemId):
+    datastream_id: uuid.UUID
+
+
+class ObservationBulkPostQueryParameters(BaseQueryParameters):
     mode: Optional[Literal["insert", "append", "backfill", "replace"]] = Query(
         None,
         description=(
@@ -97,21 +187,22 @@ class ObservationBulkPostQueryParameters(Schema):
             "`append` adds only future observations (after the latest existing timestamp). "
             "`backfill` adds only historical observations (before the earliest existing timestamp). "
             "`replace` deletes all observations in the range of provided observations before inserting new ones, "
-            "or in `phenomenon_time_start` to `phenomenon_time_end` when given."
+            "or in `phenomenonTimeStart` to `phenomenonTimeEnd` when given."
         ),
     )
     phenomenon_time_start: Optional[ISODatetime] = Query(
         None,
-        description="Start of the range `replace` deletes. Requires `phenomenon_time_end`.",
+        description="Start of the range `replace` deletes. Requires `phenomenonTimeEnd`.",
     )
     phenomenon_time_end: Optional[ISODatetime] = Query(
         None,
-        description="End of the range `replace` deletes. Requires `phenomenon_time_start`.",
+        description="End of the range `replace` deletes. Requires `phenomenonTimeStart`.",
     )
 
 
 class ObservationBulkPostBody(BasePostBody):
-    fields: list[Literal["phenomenonTime", "result", "resultQualifierCodes"]]
+    datastream_id: uuid.UUID
+    fields: list[Literal["phenomenonTime", "result", "resultQualifiers"]]
     data: list[list]
 
     @model_validator(mode="after")
@@ -136,32 +227,34 @@ class ObservationBulkPostBody(BasePostBody):
 
 
 class ObservationBulkColumnarPostBody(BasePostBody):
+    datastream_id: uuid.UUID
     phenomenon_time: list[ISODatetime]
     result: list[Optional[float]]
-    result_qualifier_codes: list[list[str]] = []
+    result_qualifiers: list[list[str]] = []
 
     @model_validator(mode="after")
     def validate_lengths(self):
         n = len(self.phenomenon_time)
         if len(self.result) != n:
             raise ValueError("result must have the same length as phenomenonTime")
-        if self.result_qualifier_codes and len(self.result_qualifier_codes) != n:
+        if self.result_qualifiers and len(self.result_qualifiers) != n:
             raise ValueError(
-                "resultQualifierCodes must have the same length as phenomenonTime"
+                "resultQualifiers must have the same length as phenomenonTime"
             )
-        if not self.result_qualifier_codes:
-            self.result_qualifier_codes = [[] for _ in range(n)]
+        if not self.result_qualifiers:
+            self.result_qualifiers = [[] for _ in range(n)]
         return self
 
     @property
     def fields(self) -> list[str]:
-        return ["phenomenonTime", "result", "resultQualifierCodes"]
+        return ["phenomenonTime", "result", "resultQualifiers"]
 
     @property
     def data(self) -> list[tuple]:
-        return list(zip(self.phenomenon_time, self.result, self.result_qualifier_codes))
+        return list(zip(self.phenomenon_time, self.result, self.result_qualifiers))
 
 
 class ObservationBulkDeleteBody(BasePostBody):
+    datastream_id: uuid.UUID
     phenomenon_time_start: Optional[ISODatetime] = None
     phenomenon_time_end: Optional[ISODatetime] = None

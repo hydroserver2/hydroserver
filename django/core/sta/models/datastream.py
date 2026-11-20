@@ -1,91 +1,62 @@
-import uuid6
-import typing
-from typing import Literal, Optional, Union
+import uuid
+
 from django.db import models
-from django.db.models import Q, OuterRef, Exists
+from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.search import SearchVectorField
 from django.conf import settings
-from core.iam.models import Workspace, Collaborator, APIKey as _APIKey
-from core.iam.models.utils import PermissionChecker
-from .thing import Thing
-from .sensor import Sensor
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
+
+from core.iam.permissions.registry import register_resource_type
+
+from .mixins import LinkedResourceMixin
+from .monitoring_site import MonitoringSite
+from .validators import validate_tags
+from .method import Method
 from .unit import Unit
 from .processing_level import ProcessingLevel
 from .observed_property import ObservedProperty
 
-if typing.TYPE_CHECKING:
-    from django.contrib.auth import get_user_model
-    from core.iam.models import Workspace, APIKey
 
-    User = get_user_model()
+DATASTREAM_TYPE_CHOICES = (
+    ("timeSeriesCoverage", "Time Series Coverage"),
+)
 
 
 class DatastreamQuerySet(models.QuerySet):
-    def visible(self, principal: Optional[Union["User", "APIKey"]]):
-        if hasattr(principal, "account_type"):
-            if principal.account_type == "admin":
-                return self
-            else:
-                collaborator_subquery = Collaborator.objects.filter(
-                    workspace=OuterRef("thing__workspace"),
-                    user=principal,
-                    role__permissions__resource_type__in=["*", "Datastream"],
-                    role__permissions__permission_type__in=["*", "view"],
-                )
-                return self.filter(
-                    Q(
-                        thing__workspace__is_private=False,
-                        thing__is_private=False,
-                        is_private=False,
-                    )
-                    | Q(thing__workspace__owner=principal)
-                    | Exists(collaborator_subquery)
-                )
-        elif hasattr(principal, "workspace"):
-            apikey_subquery = _APIKey.objects.filter(
-                workspace=OuterRef("thing__workspace"),
-                id=principal.id,
-                role__permissions__resource_type__in=["*", "Datastream"],
-                role__permissions__permission_type__in=["*", "view"],
-            )
-            return self.filter(
-                Q(
-                    thing__workspace__is_private=False,
-                    thing__is_private=False,
-                    is_private=False,
-                )
-                | Exists(apikey_subquery)
-            )
-        else:
-            return self.filter(
-                Q(
-                    thing__workspace__is_private=False,
-                    thing__is_private=False,
-                    is_private=False,
-                )
-            )
+    def delete(self):
+        from .observation import Observation
+
+        Observation.objects.filter(datastream__in=self).delete()
+
+        return super().delete()
 
 
-class Datastream(models.Model, PermissionChecker):
-    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
+@register_resource_type(workspace_field="monitoring_site__workspace", privacy_chain=[
+    "is_private", "monitoring_site__is_private",
+    "monitoring_site__workspace__is_private"
+])
+class Datastream(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     name = models.CharField(max_length=200)
     description = models.TextField()
-    thing = models.ForeignKey(
-        Thing, on_delete=models.DO_NOTHING, related_name="datastreams"
+    monitoring_site = models.ForeignKey(
+        MonitoringSite, on_delete=models.CASCADE, related_name="datastreams"
     )
-    sensor = models.ForeignKey(
-        Sensor, on_delete=models.DO_NOTHING, related_name="datastreams"
+    method = models.ForeignKey(
+        Method, on_delete=models.PROTECT, related_name="datastreams"
     )
     observed_property = models.ForeignKey(
-        ObservedProperty, on_delete=models.DO_NOTHING, related_name="datastreams"
+        ObservedProperty, on_delete=models.PROTECT, related_name="datastreams"
     )
     processing_level = models.ForeignKey(
-        ProcessingLevel, on_delete=models.DO_NOTHING, related_name="datastreams"
+        ProcessingLevel, on_delete=models.PROTECT, related_name="datastreams"
     )
     unit = models.ForeignKey(
-        Unit, on_delete=models.DO_NOTHING, related_name="datastreams"
+        Unit, on_delete=models.PROTECT, related_name="datastreams"
     )
-    observation_type = models.CharField(max_length=255)
-    result_type = models.CharField(max_length=255)
+    type = models.CharField(
+        max_length=255, choices=DATASTREAM_TYPE_CHOICES, default="timeSeriesCoverage"
+    )
     status = models.CharField(max_length=255, null=True, blank=True)
     observed_area = models.CharField(max_length=255, null=True, blank=True)  # Unused
     sampled_medium = models.CharField(max_length=255)
@@ -101,182 +72,110 @@ class Datastream(models.Model, PermissionChecker):
     result_end_time = models.DateTimeField(null=True, blank=True)  # Unused
     result_begin_time = models.DateTimeField(null=True, blank=True)  # Unused
     is_private = models.BooleanField(default=True)
-    is_visible = models.BooleanField(default=True)
+    is_restricted = models.BooleanField(default=False)
+    tags = models.JSONField(default=dict, blank=True, validators=[validate_tags])
+    search_vector = SearchVectorField(null=True, editable=False)
 
     objects = DatastreamQuerySet.as_manager()
 
+    class Meta:
+        indexes = [
+            GinIndex(
+                fields=["tags"],
+                name="sta_datastream_tags_gin",
+                opclasses=["jsonb_path_ops"],
+            ),
+            GinIndex(fields=["search_vector"], name="sta_datastream_search_gin"),
+        ]
+
     def __str__(self):
-        return f"{self.name} - {self.id}"
+        return f"{self.name} — {self.id}"
 
-    @classmethod
-    def can_principal_create(
-        cls, principal: Optional[Union["User", "APIKey"]], workspace: "Workspace"
-    ):
-        return cls.check_create_permissions(
-            principal=principal, workspace=workspace, resource_type="Datastream"
-        )
+    def clean(self):
+        try:
+            workspace_id = self.monitoring_site.workspace_id
+        except ObjectDoesNotExist:
+            return
 
-    def get_principal_permissions(
-        self, principal: Optional[Union["User", "APIKey"]]
-    ) -> list[Literal["edit", "delete", "view"]]:
-        permissions = self.check_object_permissions(
-            principal=principal,
-            workspace=self.thing.workspace,
-            resource_type="Datastream",
-        )
+        if not self._state.adding:
+            original = Datastream.objects.filter(pk=self.pk).first()
+            if (
+                original
+                and original.monitoring_site_id != self.monitoring_site_id
+                and original.monitoring_site.workspace_id != workspace_id
+            ):
+                raise ValidationError(
+                    "Cannot associate this datastream with a monitoring site in another workspace"
+                )
 
-        if (
-            not self.thing.workspace.is_private
-            and not self.thing.is_private
-            and not self.is_private
-            and "view" not in list(permissions)
+        for field_name, label in (
+            ("observed_property", "observed property"),
+            ("processing_level", "processing level"),
+            ("method", "method"),
+            ("unit", "unit"),
         ):
-            permissions = list(permissions) + ["view"]
+            if not getattr(self, f"{field_name}_id"):
+                continue
 
-        return permissions
+            try:
+                related = getattr(self, field_name)
+            except ObjectDoesNotExist:
+                continue
+
+            if related.workspace_id not in (workspace_id, None):
+                raise ValidationError(
+                    f"The provided {label} cannot be associated with this datastream"
+                )
 
     def delete(self, *args, **kwargs):
-        self.delete_contents(filter_arg=self, filter_suffix="")
-        super().delete(*args, **kwargs)
-
-    @staticmethod
-    def delete_contents(filter_arg: models.Model, filter_suffix: Optional[str]):
-        from core.sta.models import (
-            Observation,
-            DatastreamTag,
-            DatastreamFileAttachment,
-        )
-
-        datastream_relation_filter = (
-            f"datastream__{filter_suffix}" if filter_suffix else "datastream"
-        )
-
-        obs_qs = Observation.objects.filter(**{datastream_relation_filter: filter_arg})
-        obs_qs._raw_delete(using=obs_qs.db)  # noqa
-
-        DatastreamTag.objects.filter(
-            **{datastream_relation_filter: filter_arg}
-        ).delete()
-        DatastreamFileAttachment.objects.filter(
-            **{datastream_relation_filter: filter_arg}
-        ).delete()
-
-
-class DatastreamTagQuerySet(models.QuerySet):
-    def visible(self, principal: Optional[Union["User", "APIKey"]]):
-        if hasattr(principal, "account_type"):
-            if principal.account_type == "admin":
-                return self
-            else:
-                return self.filter(
-                    Q(
-                        datastream__thing__workspace__is_private=False,
-                        datastream__thing__is_private=False,
-                        datastream__is_private=False,
-                    )
-                    | Q(datastream__thing__workspace__owner=principal)
-                    | Q(
-                        datastream__thing__workspace__collaborators__user=principal,
-                        datastream__thing__workspace__collaborators__role__permissions__resource_type__in=[
-                            "*",
-                            "Datastream",
-                        ],
-                        datastream__thing__workspace__collaborators__role__permissions__permission_type__in=[
-                            "*",
-                            "view",
-                        ],
-                    )
-                )
-        elif hasattr(principal, "workspace"):
-            return self.filter(
-                Q(
-                    datastream__thing__workspace__is_private=False,
-                    datastream__thing__is_private=False,
-                    datastream__is_private=False,
-                )
-                | Q(
-                    datastream__thing__workspace__apikeys=principal,
-                    datastream__thing__workspace__apikeys__role__permissions__resource_type__in=[
-                        "*",
-                        "Datastream",
-                    ],
-                    datastream__thing__workspace__apikeys__role__permissions__permission_type__in=[
-                        "*",
-                        "view",
-                    ],
-                )
-            )
-        else:
-            return self.filter(
-                Q(
-                    datastream__thing__workspace__is_private=False,
-                    datastream__thing__is_private=False,
-                    datastream__is_private=False,
-                )
-            )
-
-
-class DatastreamTag(models.Model, PermissionChecker):
-    datastream = models.ForeignKey(
-        Datastream, related_name="datastream_tags", on_delete=models.DO_NOTHING
-    )
-    key = models.CharField(max_length=255)
-    value = models.CharField(max_length=255)
-
-    def __str__(self):
-        return f"{self.key}: {self.value} - {self.id}"
-
-    objects = DatastreamTagQuerySet.as_manager()
+        return type(self).objects.filter(pk=self.pk).delete()
 
 
 def datastream_file_attachment_storage_path(instance, filename):
     return f"datastreams/{instance.datastream.id}/{filename}"
 
 
-class DatastreamFileAttachment(models.Model, PermissionChecker):
+class DatastreamLinkedResource(LinkedResourceMixin, models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     datastream = models.ForeignKey(
         Datastream,
-        related_name="datastream_file_attachments",
-        on_delete=models.DO_NOTHING,
+        related_name="datastream_linked_resources",
+        on_delete=models.CASCADE,
     )
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
-    file_attachment = models.FileField(
-        upload_to=datastream_file_attachment_storage_path
-    )
-    file_attachment_type = models.CharField(max_length=200)
+    type = models.CharField(max_length=200)
+    file = models.FileField(upload_to=datastream_file_attachment_storage_path, blank=True, default="")
+    url = models.URLField(blank=True, default="", max_length=2000)
 
     def __str__(self):
         return f"{self.name} - {self.id}"
 
     @property
     def link(self):
-        storage = self.file_attachment.storage
+        if self.url:
+            return self.url
+
+        storage = self.file.storage
 
         try:
-            file_attachment_link = storage.url(self.file_attachment.name, expire=3600)
+            file_link = storage.url(self.file.name, expire=3600)
         except TypeError:
-            file_attachment_link = storage.url(self.file_attachment.name)
+            file_link = storage.url(self.file.name)
 
-        if settings.DEPLOYMENT_BACKEND == "local":
-            file_attachment_link = settings.PROXY_BASE_URL + file_attachment_link
+        if settings.MEDIA_STORAGE_IS_LOCAL:
+            file_link = settings.PROXY_BASE_URL + file_link
 
-        return file_attachment_link
+        return file_link
 
     class Meta:
         unique_together = ("datastream", "name")
-
-
-class DatastreamAggregation(models.Model):
-    name = models.CharField(max_length=255, unique=True)
-
-
-class DatastreamStatus(models.Model):
-    name = models.CharField(max_length=255, unique=True)
-
-    class Meta:
-        verbose_name_plural = "Datastream statuses"
-
-
-class SampledMedium(models.Model):
-    name = models.CharField(max_length=255, unique=True)
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    (models.Q(file="") & ~models.Q(url="")) |
+                    (~models.Q(file="") & models.Q(url=""))
+                ),
+                name="datastream_linked_resource_file_xor_url",
+            )
+        ]

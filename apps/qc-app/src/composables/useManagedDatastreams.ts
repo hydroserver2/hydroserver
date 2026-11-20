@@ -37,16 +37,8 @@ export function useManagedDatastreams() {
         // table); fall back to a name-only stub if it isn't loaded.
         const managed =
           datastreams.find((d) => d.id === managedId) ??
-          ({
-            id: managedId,
-            name:
-              'managedDatastream' in h ? h.managedDatastream.name : managedId,
-          } as Datastream)
-        // expand_related so each session carries `dependencyIds`.
-        const sessions = await hs.qualityControlSessions.listAllItems(
-          historyId,
-          { expand_related: true }
-        )
+          ({ id: managedId, name: managedId } as Datastream)
+        const sessions = await hs.qualityControlSessions.listAllItems(historyId)
         return { historyId, managed, sessions }
       })
     )

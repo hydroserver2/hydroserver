@@ -1,24 +1,34 @@
 import uuid
 from typing import ClassVar, List, Literal, Optional, Tuple, TYPE_CHECKING
-from pydantic import Field, AliasPath
 from ..base import HydroServerBaseModel
 
 if TYPE_CHECKING:
     from hydroserverpy import HydroServer
+    from hydroserverpy.api.models import MonitoringSite
 
 
 class RatingCurve(HydroServerBaseModel):
     name: str
     description: Optional[str] = None
     fitting_method: Literal["linear", "power_law"]
-    thing_id: uuid.UUID = Field(..., validation_alias=AliasPath("thing", "id"))
-    thing_name: str = Field(..., validation_alias=AliasPath("thing", "name"))
+    monitoring_site_id: uuid.UUID
     points: List[Tuple[float, float]] = []
 
     _editable_fields: ClassVar[set[str]] = set()
 
     def __init__(self, client: "HydroServer", **data):
         super().__init__(client=client, service=client.ratingcurves, **data)
+
+        self._monitoring_site = None
+
+    @property
+    def monitoring_site(self) -> "MonitoringSite":
+        """The monitoring site this rating curve belongs to."""
+
+        if self._monitoring_site is None:
+            self._monitoring_site = self.client.monitoring_sites.get(uid=self.monitoring_site_id)
+
+        return self._monitoring_site
 
     def save(self):
         """Saves changes to this resource to HydroServer."""
@@ -41,4 +51,4 @@ class RatingCurve(HydroServerBaseModel):
 
     @classmethod
     def get_route(cls):
-        return "products/rating-curves"
+        return "collections/data-product-rating-curves/items"

@@ -2,18 +2,18 @@
   <div class="rating-curve-preview-panel">
     <div class="rating-curve-preview-header mb-3">
       <div class="rating-curve-preview-title">
-        <div class="text-subtitle-2 text-truncate">
+        <div class="hs-text-sm text-truncate">
           {{ ratingCurve.name }}
         </div>
         <div
           v-if="ratingCurve.description"
-          class="text-caption text-medium-emphasis"
+          class="hs-text-2xs text-medium-emphasis"
         >
           {{ ratingCurve.description }}
         </div>
       </div>
       <div class="rating-curve-preview-chips">
-        <v-chip size="small" variant="tonal" color="teal-darken-1">
+        <v-chip size="small" variant="tonal" color="primary">
           {{ fittingMethodLabel }}
         </v-chip>
         <v-chip size="small" variant="tonal">
@@ -41,13 +41,13 @@
       </svg>
     </div>
 
-    <div v-if="previewRanges" class="text-caption text-medium-emphasis mt-2">
+    <div v-if="previewRanges" class="hs-text-2xs text-medium-emphasis mt-2">
       x: {{ formatPreviewNumber(previewRanges.xMin) }} to
       {{ formatPreviewNumber(previewRanges.xMax) }}. y:
       {{ formatPreviewNumber(previewRanges.yMin) }} to
       {{ formatPreviewNumber(previewRanges.yMax) }}.
     </div>
-    <div v-else class="text-caption text-medium-emphasis">
+    <div v-else class="hs-text-2xs text-medium-emphasis">
       No numeric points available for preview.
     </div>
 
@@ -77,14 +77,14 @@
       v-if="visiblePreviewRows.length"
       class="rating-curve-preview-footer mt-1"
     >
-      <span class="text-caption text-medium-emphasis">
+      <span class="hs-text-2xs text-medium-emphasis">
         {{ tableSummary }}
       </span>
       <v-btn
         v-if="hasMoreRows"
         variant="text"
         size="small"
-        color="teal-darken-1"
+        color="primary"
         class="text-none"
         @click="showMoreRows"
       >
@@ -267,7 +267,7 @@ watch(
 
 <style scoped>
 .rating-curve-preview-panel {
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--hs-border);
   border-radius: 8px;
   padding: 0.75rem;
 }
@@ -291,7 +291,7 @@ watch(
 }
 
 .rating-curve-preview {
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--hs-border);
   border-radius: 8px;
   height: 120px;
   width: 100%;
@@ -303,7 +303,7 @@ watch(
 }
 
 .rating-curve-line {
-  stroke: #00796b;
+  stroke: var(--hs-primary);
   stroke-width: 2;
 }
 

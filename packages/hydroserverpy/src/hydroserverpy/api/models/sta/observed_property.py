@@ -10,13 +10,13 @@ if TYPE_CHECKING:
 
 class ObservedProperty(HydroServerBaseModel):
     name: str = Field(..., max_length=255)
-    definition: str
+    definition: Optional[str] = Field(None, max_length=2000)
     description: str
-    observed_property_type: str = Field(..., max_length=255, alias="type")
-    code: str = Field(..., max_length=255)
+    type: str = Field(..., max_length=255)
+    code: Optional[str] = Field(None, max_length=255)
     workspace_id: Optional[uuid.UUID] = None
 
-    _editable_fields: ClassVar[set[str]] = {"name", "definition", "description", "observed_property_type", "code"}
+    _editable_fields: ClassVar[set[str]] = {"name", "definition", "description", "type", "code"}
 
     def __init__(self, client: "HydroServer", **data):
         super().__init__(client=client, service=client.observedproperties, **data)
@@ -25,7 +25,7 @@ class ObservedProperty(HydroServerBaseModel):
 
     @classmethod
     def get_route(cls):
-        return "observed-properties"
+        return "collections/observed-properties/items"
 
     @property
     def workspace(self) -> Optional["Workspace"]:

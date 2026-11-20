@@ -1,0 +1,74 @@
+type LinkLike = {
+  link?: unknown
+}
+
+function pathShouldUseApiOrigin(pathname: string) {
+  return pathname.startsWith('/media/') || pathname.startsWith('/api/ogc/')
+}
+
+export function preferredApiOrigin(host?: string | null) {
+  try {
+    if (host) {
+      return new URL(host, globalThis.location?.origin).origin
+    }
+  } catch {
+    // no-op
+  }
+
+  try {
+    return globalThis.location?.origin ?? null
+  } catch {
+    return null
+  }
+}
+
+export function normalizeLinkUrl(
+  link: string,
+  host?: string | null
+): string {
+  const preferredOrigin = preferredApiOrigin(host)
+  if (!preferredOrigin) return link
+
+  try {
+    const parsed = new URL(link, preferredOrigin)
+    if (
+      parsed.origin !== preferredOrigin &&
+      pathShouldUseApiOrigin(parsed.pathname)
+    ) {
+      return new URL(
+        `${parsed.pathname}${parsed.search}${parsed.hash}`,
+        preferredOrigin
+      ).toString()
+    }
+    return parsed.toString()
+  } catch {
+    return link
+  }
+}
+
+export function normalizeLinkRecord<T extends LinkLike>(
+  value: T,
+  host?: string | null
+): T {
+  if (!value || typeof value !== 'object' || typeof value.link !== 'string') {
+    return value
+  }
+
+  return {
+    ...value,
+    link: normalizeLinkUrl(value.link, host),
+  }
+}
+
+export function normalizeLinkCollection<T extends LinkLike>(
+  data: T[] | T | null | undefined,
+  host?: string | null
+): T[] | T | null | undefined {
+  if (Array.isArray(data)) {
+    return data.map((item) => normalizeLinkRecord(item, host))
+  }
+  if (data && typeof data === 'object') {
+    return normalizeLinkRecord(data, host)
+  }
+  return data
+}

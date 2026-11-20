@@ -109,13 +109,15 @@ function nextSessionWindow(page: Page): Promise<SessionWindow> {
     .waitForResponse(
       (r) =>
         r.request().method() === 'POST' &&
-        /\/quality-control\/histories\/[^/]+\/sessions$/.test(
+        /\/quality-control-histories\/items\/[^/]+\/sessions$/.test(
           new URL(r.url()).pathname
         )
     )
-    .then(async (r) => {
-      const { data: s } = (await r.json()) as {
-        data: { phenomenonTimeStart: string; phenomenonTimeEnd: string }
+    .then((r) => {
+      // The API answers with the new id only; the window is what was posted.
+      const s = r.request().postDataJSON() as {
+        phenomenonTimeStart: string
+        phenomenonTimeEnd: string
       }
       return {
         begin: Date.parse(s.phenomenonTimeStart),

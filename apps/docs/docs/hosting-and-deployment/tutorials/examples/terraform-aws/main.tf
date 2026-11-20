@@ -126,11 +126,9 @@ resource "aws_apprunner_service" "hydroserver" {
         start_command = "python manage.py run_demo"
         port          = "8000"
         runtime_environment_secrets = {
-          PROXY_BASE_URL             = aws_ssm_parameter.proxy_base_url.arn
-          DATABASE_URL               = aws_ssm_parameter.database_url.arn
-          SECRET_KEY                 = aws_ssm_parameter.secret_key.arn
-          DEFAULT_SUPERUSER_EMAIL    = aws_ssm_parameter.admin_email.arn
-          DEFAULT_SUPERUSER_PASSWORD = aws_ssm_parameter.admin_password.arn
+          PROXY_BASE_URL = aws_ssm_parameter.proxy_base_url.arn
+          DATABASE_URL   = aws_ssm_parameter.database_url.arn
+          SECRET_KEY     = aws_ssm_parameter.secret_key.arn
         }
       }
     }
@@ -271,19 +269,6 @@ resource "aws_iam_role_policy" "apprunner_ssm_access" {
 # Environment Variables and Secrets
 # ---------------------------------
 
-resource "random_password" "admin_password" {
-  length      = 20
-  lower       = true
-  min_lower   = 1
-  upper       = true
-  min_upper   = 1
-  numeric     = true
-  min_numeric = 1
-  special     = true
-  min_special = 1
-  override_special = "!@#$%^&*()_+-=:;.,?/"
-}
-
 resource "random_password" "rds_password" {
   length           = 15
   upper            = true
@@ -342,27 +327,6 @@ resource "aws_ssm_parameter" "secret_key" {
   }
 }
 
-resource "aws_ssm_parameter" "admin_email" {
-  name        = "/hydroserver-demo/admin-email"
-  type        = "SecureString"
-  value       = "admin@hydroserver.org"
-
-  lifecycle {
-    ignore_changes = [value]
-  }
-}
-
-resource "aws_ssm_parameter" "admin_password" {
-  name        = "/hydroserver-demo/admin-password"
-  type        = "SecureString"
-  value       = random_password.admin_password.result
-
-  lifecycle {
-    ignore_changes = [value]
-  }
-}
-
-
 # ---------------------------------
 # Instance Outputs
 # ---------------------------------
@@ -370,17 +334,6 @@ resource "aws_ssm_parameter" "admin_password" {
 output "database_url" {
   description = "The PostgreSQL connection string for the RDS instance"
   value       = local.database_url
-  sensitive   = true
-}
-
-output "admin_username" {
-  description = "The default HydroServer admin username"
-  value       = "admin@hydroserver.org"
-}
-
-output "admin_password" {
-  description = "The default HydroServer admin password"
-  value       = random_password.admin_password.result
   sensitive   = true
 }
 

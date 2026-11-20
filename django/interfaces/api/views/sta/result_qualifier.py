@@ -1,59 +1,64 @@
 import uuid
-from typing import Optional
+
 from ninja import Router, Path, Query
-from django.http import HttpResponse
 from django.db import transaction
-from interfaces.auth.security import bearer_auth, session_auth, apikey_auth, anonymous_auth
+
+from interfaces.auth.security import session_auth, oidc_data_read_auth, oidc_data_write_auth, apikey_auth, basic_auth, anonymous_auth
 from interfaces.api.http.request import HydroServerHttpRequest
+from interfaces.api.services.sta import ResultQualifierAPIService
 from interfaces.api.schemas import (
-    ResultQualifierSummaryResponse,
-    ResultQualifierDetailResponse,
-    ResultQualifierQueryParameters,
+    ResultQualifierResponse,
     ResultQualifierPostBody,
     ResultQualifierPatchBody,
+    PaginatedResponse,
+    ItemResponse,
+    CreatedResponse,
 )
-from core.sta.services import ResultQualifierService
+from interfaces.api.schemas.sta.result_qualifier import (
+    ResultQualifierQueryParameters,
+    ResultQualifierItemQueryParameters,
+)
 
 result_qualifier_router = Router(tags=["Result Qualifiers"])
-result_qualifier_service = ResultQualifierService()
+result_qualifier_service = ResultQualifierAPIService()
 
 
 @result_qualifier_router.get(
-    "",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    "/items",
+    auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: list[ResultQualifierSummaryResponse] | list[ResultQualifierDetailResponse],
+        200: PaginatedResponse[ResultQualifierResponse],
+        400: str,
         401: str,
     },
     by_alias=True,
 )
 def get_result_qualifiers(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     query: Query[ResultQualifierQueryParameters],
 ):
     """
-    Get public Result Qualifiers and Result Qualifiers associated with the authenticated user.
+    Get public result qualifiers and result qualifiers associated with the authenticated user.
     """
 
     return 200, result_qualifier_service.list(
         principal=request.principal,
-        response=response,
-        page=query.page,
-        page_size=query.page_size,
-        order_by=query.order_by,
+        offset=query.offset,
+        limit=query.limit,
+        sortby=query.sortby,
         filtering=query.dict(exclude_unset=True),
-        expand_related=query.expand_related,
+        include=query.include,
     )
 
 
 @result_qualifier_router.post(
-    "",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    "/items",
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
-        201: ResultQualifierSummaryResponse | ResultQualifierDetailResponse,
+        201: CreatedResponse,
         401: str,
-        422: str,
+        403: str,
+        409: str,
     },
     by_alias=True,
 )
@@ -61,24 +66,23 @@ def get_result_qualifiers(
 def create_result_qualifier(
     request: HydroServerHttpRequest,
     data: ResultQualifierPostBody,
-    expand_related: Optional[bool] = None,
 ):
     """
-    Create a new Result Qualifier.
+    Create a new result qualifier.
     """
 
     return 201, result_qualifier_service.create(
         principal=request.principal,
         data=data,
-        expand_related=expand_related,
     )
 
 
 @result_qualifier_router.get(
-    "/{result_qualifier_id}",
-    auth=[session_auth, bearer_auth, apikey_auth, anonymous_auth],
+    "/items/{result_qualifier_id}",
+    auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
     response={
-        200: ResultQualifierSummaryResponse | ResultQualifierDetailResponse,
+        200: ItemResponse[ResultQualifierResponse],
+        400: str,
         401: str,
         403: str,
     },
@@ -88,52 +92,22 @@ def create_result_qualifier(
 def get_result_qualifier(
     request: HydroServerHttpRequest,
     result_qualifier_id: Path[uuid.UUID],
-    expand_related: Optional[bool] = None,
+    query: Query[ResultQualifierItemQueryParameters],
 ):
     """
-    Get a Result Qualifier.
+    Get a result qualifier.
     """
 
     return 200, result_qualifier_service.get(
         principal=request.principal,
         uid=result_qualifier_id,
-        expand_related=expand_related,
+        include=query.include,
     )
 
 
 @result_qualifier_router.patch(
-    "/{result_qualifier_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
-    response={
-        200: ResultQualifierSummaryResponse | ResultQualifierDetailResponse,
-        401: str,
-        403: str,
-        422: str,
-    },
-    by_alias=True,
-)
-@transaction.atomic
-def update_result_qualifier(
-    request: HydroServerHttpRequest,
-    result_qualifier_id: Path[uuid.UUID],
-    data: ResultQualifierPatchBody,
-    expand_related: Optional[bool] = None,
-):
-    """
-    Update a Result Qualifier.
-    """
-
-    return 200, result_qualifier_service.update(
-        principal=request.principal,
-        uid=result_qualifier_id,
-        data=data,
-        expand_related=expand_related,
-    )
-
-
-@result_qualifier_router.delete(
-    "/{result_qualifier_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    "/items/{result_qualifier_id}",
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,
@@ -143,11 +117,40 @@ def update_result_qualifier(
     by_alias=True,
 )
 @transaction.atomic
+def update_result_qualifier(
+    request: HydroServerHttpRequest,
+    result_qualifier_id: Path[uuid.UUID],
+    data: ResultQualifierPatchBody,
+):
+    """
+    Update a result qualifier.
+    """
+
+    result_qualifier_service.update(
+        principal=request.principal,
+        uid=result_qualifier_id,
+        data=data,
+    )
+
+    return 204, None
+
+
+@result_qualifier_router.delete(
+    "/items/{result_qualifier_id}",
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
+    response={
+        204: None,
+        401: str,
+        403: str,
+    },
+    by_alias=True,
+)
+@transaction.atomic
 def delete_result_qualifier(
     request: HydroServerHttpRequest, result_qualifier_id: Path[uuid.UUID]
 ):
     """
-    Delete a Result Qualifier.
+    Delete a result qualifier.
     """
 
     return 204, result_qualifier_service.delete(

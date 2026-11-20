@@ -264,11 +264,7 @@
                     prepend-icon="mdi-cloud-check-outline"
                     :disabled="commitDisabled"
                     :loading="isCommitting"
-                    :title="
-                      canCommitWorkspace
-                        ? undefined
-                        : `Your role on this workspace (${workspaceRole}) can't write observations, so it can't commit.`
-                    "
+                    :title="commitTitle"
                     @click="openCommit"
                   >
                     Commit
@@ -496,6 +492,7 @@ import PlottedDatastreams from './VisualizeData/PlottedDatastreams.vue'
 import { usePlotlyStore } from '@/store/plotly'
 import { useEditSession } from '@/composables/useEditSession'
 import { useEditEntry } from '@/composables/useEditEntry'
+import { useEditLock } from '@/composables/useEditLock'
 import { useUnsavedChangesWarning } from '@/composables/useUnsavedChangesWarning'
 import { useResumeEditSession } from '@/composables/useResumeEditSession'
 import { useQcSessionStore } from '@/store/qcSession'
@@ -520,13 +517,13 @@ const {
   qcDatastreamId,
   isEditorReady,
   datastreams,
-  things,
+  monitoringSites,
   beginDate,
   endDate,
   selectedDateBtnId,
   contextPresetId,
   activePresetId,
-  selectedThings,
+  selectedMonitoringSites,
   selectedObservedPropertyNames,
   selectedProcessingLevelNames,
 } = storeToRefs(useDataVisStore())
@@ -547,6 +544,7 @@ const {
 } = storeToRefs(usePlotlyStore())
 const { redraw } = usePlotlyStore()
 const { setPlottedDatastreams } = useDataVisStore()
+const { editLock } = useEditLock()
 
 const {
   saveDraft,
@@ -660,10 +658,20 @@ const commitDisabled = computed(
     !canCommitWorkspace.value ||
     isReadOnly.value ||
     !inProgressSession.value ||
+    editLock.value === 'preview' ||
     isUpdating.value ||
     isSavingDraft.value ||
     isCommitting.value
 )
+const commitTitle = computed(() => {
+  if (!canCommitWorkspace.value) {
+    return `Your role on this workspace (${workspaceRole.value}) can't write observations, so it can't commit.`
+  }
+  if (editLock.value === 'preview') {
+    return 'Return to the latest step before committing.'
+  }
+  return undefined
+})
 
 // Editor layout, kept across reloads under `qc:editorLayout`.
 const {
@@ -811,11 +819,11 @@ const hydrateFromUrl = () => {
   else activeTab.value = 'plot'
 
   // Filters first; the store's filteredDatastreams watcher prunes
-  // plottedDatastreams whose thing/op/pl is filtered out, so we
+  // plottedDatastreams whose monitoringSite/op/pl is filtered out, so we
   // need these set before we assign plottedDatastreams below.
-  const thingIds = state.thingIds ?? []
-  selectedThings.value = thingIds
-    .map((id) => things.value.find((t) => t.id === id))
+  const monitoringSiteIds = state.monitoringSiteIds ?? []
+  selectedMonitoringSites.value = monitoringSiteIds
+    .map((id) => monitoringSites.value.find((t) => t.id === id))
     .filter((t): t is NonNullable<typeof t> => !!t)
   selectedObservedPropertyNames.value = state.observedPropertyNames ?? []
   selectedProcessingLevelNames.value = state.processingLevelNames ?? []
@@ -945,7 +953,7 @@ watch(
     beginDate,
     endDate,
     activePresetId,
-    selectedThings,
+    selectedMonitoringSites,
     selectedObservedPropertyNames,
     selectedProcessingLevelNames,
     selectedWorkspaceId,
@@ -987,7 +995,7 @@ watch(
       // Sidebar filters only matter on the Select view (they drive
       // the datastreams table, not the plot). Skip them in Edit
       // links to keep URLs short.
-      thingIds: isEdit ? [] : selectedThings.value.map((t) => t.id),
+      monitoringSiteIds: isEdit ? [] : selectedMonitoringSites.value.map((t) => t.id),
       observedPropertyNames: isEdit
         ? []
         : selectedObservedPropertyNames.value,

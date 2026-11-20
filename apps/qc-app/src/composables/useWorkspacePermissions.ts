@@ -9,7 +9,6 @@ import { storeToRefs } from 'pinia'
 import {
   PermissionAction,
   PermissionResource,
-  type Permission,
   type Workspace,
 } from '@hydroserver/client'
 import { useWorkspaceStore } from '@/store/workspaces'
@@ -19,9 +18,7 @@ export function useWorkspacePermissions() {
   const { selectedWorkspace } = storeToRefs(useWorkspaceStore())
   const { user } = storeToRefs(useUserStore())
 
-  const isAdmin = computed(
-    () => (user.value?.accountType as string) === 'admin'
-  )
+  const isAdmin = computed(() => user.value?.isSuperuser === true)
 
   function isOwner(ws?: Workspace | null): boolean {
     if (!ws) return false
@@ -32,14 +29,6 @@ export function useWorkspacePermissions() {
     return ws.collaboratorRole == null
   }
 
-  function hasGlobal(perms: Permission[]): boolean {
-    return perms.some(
-      (p) =>
-        p.resource === PermissionResource.Global &&
-        p.action === PermissionAction.Global
-    )
-  }
-
   function can(
     action: PermissionAction,
     resource: PermissionResource,
@@ -48,10 +37,11 @@ export function useWorkspacePermissions() {
     const w = ws ?? selectedWorkspace.value
     if (!w) return false
     if (isOwner(w) || isAdmin.value) return true
-    const perms = w.collaboratorRole?.permissions ?? []
-    return (
-      hasGlobal(perms) ||
-      perms.some((p) => p.action === action && p.resource === resource)
+    // A permission on every resource ('*') still names its action.
+    return (w.collaboratorRole?.permissions ?? []).some(
+      (p) =>
+        p.action === action &&
+        (p.resource === resource || p.resource === PermissionResource.Global)
     )
   }
 

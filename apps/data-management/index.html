@@ -17,12 +17,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="referrer" content="strict-origin-when-cross-origin">
 
+    <!-- Keep CSS precedence stable when Vite splits Vuetify styles across chunks. -->
+    <style>
+      @layer properties, theme, base, vuetify-core, vuetify-components, vuetify-overrides, components, vuetify-utilities, utilities, vuetify-final;
+    </style>
+
     <title>HydroServer</title>
   </head>
 
   <body>
     <div id="app"></div>
     <script id="app-settings" type="application/json"></script>
+    <script id="current-user" type="application/json"></script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

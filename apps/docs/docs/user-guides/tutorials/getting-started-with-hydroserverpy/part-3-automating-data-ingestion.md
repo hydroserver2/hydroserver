@@ -10,17 +10,16 @@ The real station we're mirroring is [USGS 10109000 — Logan River Above State D
 
 This should feel familiar from Part 1. We're creating a new site and stage datastream — this time for the USGS Logan River Above State Dam monitoring location.
 
-Note that USGS reports gage height in feet, so we'll use feet as the unit here rather than meters.
+Note that USGS reports gage height in feet, so we'll use feet as the unit for this datastream.
 
 ```python
 # Site
-logan_river_site = hs_api.things.create(
+logan_river_site = hs_api.monitoring_sites.create(
     workspace=workspace,
-    name='Logan River Above First Dam',
-    description='USGS gauging station 101090000 on the Logan River near Logan, Utah.',
-    sampling_feature_type='Site',
-    sampling_feature_code='USGS-10109000',
-    site_type='Stream',
+    name='Logan River Above State Dam',
+    description='USGS gauging station 10109000 on the Logan River near Logan, Utah.',
+    code='USGS-10109000',
+    type='Stream',
     is_private=False,
     latitude=41.7444,
     longitude=-111.8358,
@@ -31,16 +30,15 @@ logan_river_site = hs_api.things.create(
     country='US',
 )
 
-# Sensor
-usgs_sensor = hs_api.sensors.create(
+# Method
+usgs_method = hs_api.methods.create(
     workspace=workspace,
     name='USGS Pressure Transducer',
     description='Continuous water level sensor deployed by USGS.',
-    encoding_type='application/json',
-    manufacturer='USGS',
+    type='Instrument Deployment',
+    code='USGS_PRESSURE_TRANSDUCER',
     sensor_model='Pressure Transducer',
-    method_type='Instrument deployment',
-    method_code='USGS_PRESSURE_TRANSDUCER',
+    sensor_model_manufacturer='USGS',
 )
 
 # Observed property
@@ -49,7 +47,7 @@ gage_height_property = hs_api.observedproperties.create(
     name='Gage Height',
     definition='http://vocabulary.odm2.org/variablename/gageHeight/',
     description='Height of the water surface above a local datum.',
-    observed_property_type='Hydrology',
+    type='Hydrology',
     code='GAGE_HEIGHT',
 )
 
@@ -59,36 +57,33 @@ feet_unit = hs_api.units.create(
     name='Foot',
     symbol='ft',
     definition='https://qudt.org/vocab/unit/FT',
-    unit_type='Length',
+    type='Length',
 )
 
 # Processing level (reuse the one we created in Part 1, or recreate it)
 raw_processing_level = hs_api.processinglevels.create(
     workspace=workspace,
     code='0',
-    definition='Raw',
-    explanation='Data have not been processed or quality controlled.',
+    name='Raw',
+    description='Data have not been processed or quality controlled.',
 )
 
 # Datastream
 stage_datastream = hs_api.datastreams.create(
     name=f'{gage_height_property.name} at {logan_river_site.name}',
-    description=f'{gage_height_property.name} from USGS station {logan_river_site.sampling_feature_code}.',
-    thing=logan_river_site,
-    sensor=usgs_sensor,
+    description=f'{gage_height_property.name} from USGS station {logan_river_site.code}.',
+    monitoring_site=logan_river_site,
+    method=usgs_method,
     observed_property=gage_height_property,
     processing_level=raw_processing_level,
     unit=feet_unit,
-    observation_type='Field Observation',
-    result_type='Timeseries',
-    sampled_medium='Surface Water',
+    sampled_medium='Surface water',
     no_data_value=-9999.0,
     aggregation_statistic='Instantaneous',
     time_aggregation_interval=1,
     time_aggregation_interval_unit='minutes',
     intended_time_spacing=15,
     intended_time_spacing_unit='minutes',
-    phenomenon_end_time='2025-01-01T00:00:00Z',
     status='Ongoing',
     is_private=False,
 )
@@ -98,7 +93,7 @@ print(f"{stage_datastream.name}: {stage_datastream.uid}")
 
 ## Create a data connection
 
-A data connection describes where your data comes from and how to read it. Our source is the USGS Instantaneous Values API, which returns JSON. We'll define two run-time placeholder variables — `start_date` and `end_date` — that get substituted into the URL each time the task runs. HydroServer automatically sets `start_date` to the timestamp of the most recent observation already in the datastream, so you never re-fetch data you already have.
+A data connection describes where your data comes from and how to read it. Our source is the USGS Instantaneous Values API, which returns JSON. Each run asks USGS for the last seven days of readings (`period=P7D`). That window overlaps with data we've already loaded, but HydroServer only loads observations newer than the most recent one already in the datastream, so each run adds just the new readings. The `{site_code}` and `{param_code}` placeholders in the URL are filled in by each task that uses this connection.
 
 ```python
 usgs_data_connection = hs_api.dataconnections.create(
@@ -109,8 +104,7 @@ usgs_data_connection = hs_api.dataconnections.create(
         '?format=json'
         '&sites={site_code}'
         '&parameterCd={param_code}'
-        '&startDT={start_date}'
-        '&endDT={end_date}'
+        '&period=P7D'
     ),
     payload_type='JSON',
     timestamp_key='dateTime',
@@ -118,8 +112,6 @@ usgs_data_connection = hs_api.dataconnections.create(
     placeholder_variables=[
         {'name': 'site_code', 'variable_type': 'per_task'},
         {'name': 'param_code', 'variable_type': 'per_task'},
-        {'name': 'start_date', 'variable_type': 'latest_observation_timestamp', 'timestamp_format': '%Y-%m-%dT%H:%M:%SZ'},
-        {'name': 'end_date', 'variable_type': 'run_time', 'timestamp_format': '%Y-%m-%dT%H:%M:%SZ'},
     ],
 )
 
@@ -130,7 +122,7 @@ The `site_code` and `param_code` variables are marked `per_task`, which means ea
 
 ## Create an ETL task
 
-Now we tie everything together. The task supplies values for the `per_task` placeholder variables and defines the mapping from the source data to the target datastream.
+Now we tie everything together. The task supplies values for the `per_task` placeholder variables and the schedule it runs on. A mapping, created right after the task, tells it which field in the source data goes to which datastream.
 
 ```python
 usgs_etl_task = hs_api.etltasks.create(
@@ -140,19 +132,21 @@ usgs_etl_task = hs_api.etltasks.create(
         'site_code': '10109000',
         'param_code': '00065',
     },
-    mappings=[{
-        'source_identifier': 'value',
-        'target_datastream_id': str(stage_datastream.uid),
-    }],
     interval=15,
     interval_period='minutes',
     enabled=True,
 )
 
+hs_api.etlmappings.create(
+    task_id=usgs_etl_task.uid,
+    source_identifier='value',
+    target_datastream=stage_datastream,
+)
+
 print(f"{usgs_etl_task.name}: {usgs_etl_task.uid}")
 ```
 
-The `source_identifier` tells the pipeline which series in the USGS response maps to this datastream. USGS identifies each time series by its parameter code, so `'00065'` corresponds to the gage height series we requested.
+The mapping's `source_identifier` names the field in each extracted record that holds the value. The JMESPath expression on the data connection turns the USGS response into records like `{"value": "2.57", "qualifiers": ["P"], "dateTime": "..."}`, so the identifier is `'value'`. Which USGS parameter you get — here gage height, `00065` — is chosen by the task's `param_code` variable.
 
 ## Trigger the task manually
 
@@ -173,11 +167,9 @@ print(f"Status:  {latest.status}")
 print(f"Message: {latest.message}")
 ```
 
-If the status comes back as `SUCCESS`, your stage datastream should now have real observations in it from USGS. You can verify by fetching them the same way we did in Part 2:
+If the status comes back as `SUCCESS`, your stage datastream should now have real observations in it from USGS. If it stays `PENDING`, no orchestration worker has picked up the run yet — check that your instance's workers are running. You can verify the data by fetching it the same way we did in Part 2:
 
 ```python
-from datetime import datetime, timezone
-
 result = stage_datastream.get_observations(fetch_all=True)
 print(f"Observations in datastream: {len(result.dataframe)}")
 print(result.dataframe.tail())
@@ -187,6 +179,6 @@ If the status is `FAILURE`, the message field will tell you what went wrong — 
 
 ## Scheduling
 
-With `interval=15` and `interval_period='minutes'`, the orchestration system will keep re-running this task every 15 minutes automatically, each time picking up exactly from where the last successful run left off. You don't need to do anything else to keep the data flowing.
+With `interval=15` and `interval_period='minutes'`, the orchestration system will keep re-running this task every 15 minutes automatically. Each run fetches the last seven days from USGS and loads only the readings newer than what's already in the datastream, so you don't need to do anything else to keep the data flowing.
 
 In Part 4, we'll take these raw stage readings and use a data product task to automatically convert them into discharge values using a rating curve.

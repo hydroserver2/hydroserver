@@ -3,7 +3,7 @@ import hs, {
   ProcessingLevel,
   Unit,
   ObservedProperty,
-  Sensor,
+  Method,
   ResultQualifier,
   Workspace,
 } from '@hydroserver/client'
@@ -20,7 +20,7 @@ export function useMetadata(localWorkspace?: Ref<Workspace | undefined>) {
 
   const workspaceId = computed(() => effectiveWorkspace.value?.id ?? null)
 
-  const sensors = ref<Sensor[]>([])
+  const methods = ref<Method[]>([])
   const units = ref<Unit[]>([])
   const resultQualifiers = ref<ResultQualifier[]>([])
   const processingLevels = ref<ProcessingLevel[]>([])
@@ -30,7 +30,7 @@ export function useMetadata(localWorkspace?: Ref<Workspace | undefined>) {
     observedProperties.value
       .map((op) => ({
         ...op,
-        title: `${op.code}: ${op.name}, ${op.type}`,
+        title: `${op.name}, ${op.type}`,
       }))
       .sort((a, b) => a.title.localeCompare(b.title))
   )
@@ -38,34 +38,34 @@ export function useMetadata(localWorkspace?: Ref<Workspace | undefined>) {
   const formattedProcessingLevels = computed(() =>
     processingLevels.value.map((pl) => ({
       ...pl,
-      title: `${pl.code}: ${pl.definition}`,
+      title: pl.name,
     }))
   )
 
   const fetchMetadata = async (id: string | null) => {
     const workspaceFilter = id
-      ? { workspace_id: [id, 'null'] as (string | 'null')[] }
+      ? { workspaceId: [id, 'null'] as (string | 'null')[] }
       : {}
     try {
       const [
         unitsResponse,
         observedPropertiesResponse,
         processingLevelsResponse,
-        sensorsResponse,
+        methodsResponse,
         resultQualifiersResponse,
       ] = await Promise.all([
-        hs.units.listAllItems({ order_by: ['name'], ...workspaceFilter }),
+        hs.units.listAllItems({ sortby: ['name'], ...workspaceFilter }),
         hs.observedProperties.listAllItems({
-          order_by: ['name'],
+          sortby: ['name'],
           ...workspaceFilter,
         }),
         hs.processingLevels.listAllItems({
-          order_by: ['code'],
+          sortby: ['name'],
           ...workspaceFilter,
         }),
-        hs.sensors.listAllItems({ order_by: ['name'], ...workspaceFilter }),
+        hs.methods.listAllItems({ sortby: ['name'], ...workspaceFilter }),
         hs.resultQualifiers.listAllItems({
-          order_by: ['code'],
+          sortby: ['name'],
           ...workspaceFilter,
         }),
       ])
@@ -74,7 +74,7 @@ export function useMetadata(localWorkspace?: Ref<Workspace | undefined>) {
         (u) => u.workspaceId === id || u.type !== 'Time'
       )
 
-      sensors.value = sensorsResponse
+      methods.value = methodsResponse
       observedProperties.value = observedPropertiesResponse
       processingLevels.value = processingLevelsResponse
       resultQualifiers.value = resultQualifiersResponse
@@ -96,7 +96,7 @@ export function useMetadata(localWorkspace?: Ref<Workspace | undefined>) {
   )
 
   return {
-    sensors,
+    methods,
     units,
     observedProperties,
     formattedObservedProperties,

@@ -6,9 +6,12 @@ export const useHydroServer = defineStore(
   'hydroserver',
   () => {
     const hs: Ref<null | HydroServer> = ref(null)
+    // Set when the server rejects a request because the login ended.
+    const sessionExpired = ref(false)
 
     return {
-      hs: hs as Ref<HydroServer>
+      hs: hs as Ref<HydroServer>,
+      sessionExpired,
     }
   },
   { persist: false }

@@ -19,8 +19,8 @@ export interface CreateManagedDatastreamSpec {
   description: string
   /** Left out to create the datastream without a status. */
   status?: string
-  /** A datastream's method is its sensor. */
-  sensorId: string
+  /** The method the new datastream records with. */
+  methodId: string
 }
 
 export function useCreateManagedDatastream() {
@@ -37,7 +37,7 @@ export function useCreateManagedDatastream() {
         description: spec.description,
         // Explicit, so clearing the status drops the source's one.
         status: spec.status,
-        sensorId: spec.sensorId,
+        methodId: spec.methodId,
       },
     })
   }

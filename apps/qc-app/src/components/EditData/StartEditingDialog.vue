@@ -86,6 +86,18 @@
                 </v-btn>
               </div>
             </SessionTimelineItem>
+            <!-- Only one session can be open at a time; say so rather than
+                 leaving the start node out. -->
+            <SessionTimelineItem
+              v-else
+              kind="new"
+              :data-testid="`session-blocked-${opt.managed.id}`"
+            >
+              <div class="text-body-small text-medium-emphasis">
+                A session is in progress. Continue it, or delete it to start a
+                new one.
+              </div>
+            </SessionTimelineItem>
 
             <SessionTimelineItem
               v-for="s in orderedSessions(opt.sessions)"
@@ -151,9 +163,11 @@
           </v-timeline>
         </v-card>
 
+        <!-- Secondary once there is a managed datastream to start a
+             session on. -->
         <v-btn
           block
-          variant="tonal"
+          :variant="options.length ? 'text' : 'tonal'"
           color="primary"
           prepend-icon="mdi-plus"
           data-testid="chooser-create-managed"

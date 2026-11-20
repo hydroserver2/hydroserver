@@ -2,8 +2,7 @@
 
 import django.db.models.deletion
 import django.utils.timezone
-import core.iam.models.utils
-import uuid6
+import uuid
 from django.db import migrations, models
 
 
@@ -54,7 +53,7 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.UUIDField(
-                        default=uuid6.uuid7,
+                        default=uuid.uuid7,
                         editable=False,
                         primary_key=True,
                         serialize=False,
@@ -88,6 +87,6 @@ class Migration(migrations.Migration):
                 "verbose_name": "API Key",
                 "verbose_name_plural": "API Keys",
             },
-            bases=(models.Model, core.iam.models.utils.PermissionChecker),
+
         ),
     ]

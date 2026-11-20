@@ -5,12 +5,12 @@ import { useRatingCurveStore } from '../ratingCurves'
 const {
   createMock,
   deleteMock,
-  listItemsForThingMock,
+  listItemsForMonitoringSiteMock,
   updateMock,
 } = vi.hoisted(() => ({
   createMock: vi.fn(),
   deleteMock: vi.fn(),
-  listItemsForThingMock: vi.fn(),
+  listItemsForMonitoringSiteMock: vi.fn(),
   updateMock: vi.fn(),
 }))
 
@@ -19,7 +19,7 @@ vi.mock('@hydroserver/client', () => ({
     ratingCurves: {
       create: createMock,
       delete: deleteMock,
-      listItemsForThing: listItemsForThingMock,
+      listItemsForMonitoringSite: listItemsForMonitoringSiteMock,
       update: updateMock,
     },
   },
@@ -30,9 +30,9 @@ describe('rating curve store', () => {
     setActivePinia(createPinia())
     createMock.mockReset()
     deleteMock.mockReset()
-    listItemsForThingMock.mockReset()
+    listItemsForMonitoringSiteMock.mockReset()
     updateMock.mockReset()
-    listItemsForThingMock.mockResolvedValue([])
+    listItemsForMonitoringSiteMock.mockResolvedValue([])
     createMock.mockResolvedValue({ ok: true, data: { id: 'created-1' } })
     updateMock.mockResolvedValue({ ok: true, data: { id: 'curve-1' } })
     deleteMock.mockResolvedValue({ ok: true, data: null })
@@ -54,7 +54,7 @@ describe('rating curve store', () => {
       ]
     )
 
-    const result = await store.updateRatingCurves('thing-1')
+    const result = await store.updateRatingCurves('monitoringSite-1')
 
     expect(result.ok).toBe(true)
     expect(createMock).toHaveBeenCalledWith({
@@ -62,7 +62,7 @@ describe('rating curve store', () => {
       name: 'Stage discharge',
       description: 'Imported from CSV',
       fittingMethod: 'power_law',
-      thingId: 'thing-1',
+      monitoringSiteId: 'monitoringSite-1',
       points: [
         [1, 2],
         [2, 4],
@@ -72,7 +72,7 @@ describe('rating curve store', () => {
   })
 
   it('updates rating curve metadata and points through the rating curve API', async () => {
-    listItemsForThingMock.mockResolvedValueOnce([
+    listItemsForMonitoringSiteMock.mockResolvedValueOnce([
       {
         id: 'curve-1',
         name: 'Old curve',
@@ -82,7 +82,7 @@ describe('rating curve store', () => {
       },
     ])
     const store = useRatingCurveStore()
-    await store.loadExistingRatingCurves('thing-1')
+    await store.loadExistingRatingCurves('monitoringSite-1')
 
     store.queueExistingRatingCurveMetadataUpdate(
       'curve-1',
@@ -96,7 +96,7 @@ describe('rating curve store', () => {
       [{ inputValue: '1', outputValue: '3' }]
     )
 
-    const result = await store.updateRatingCurves('thing-1')
+    const result = await store.updateRatingCurves('monitoringSite-1')
 
     expect(result.ok).toBe(true)
     expect(updateMock).toHaveBeenCalledWith({
@@ -130,7 +130,7 @@ describe('rating curve store', () => {
       ]
     )
 
-    const result = await store.updateRatingCurves('thing-1')
+    const result = await store.updateRatingCurves('monitoringSite-1')
 
     expect(result.ok).toBe(false)
     expect(result.failedCreates).toEqual([
@@ -147,7 +147,7 @@ describe('rating curve store', () => {
     const store = useRatingCurveStore()
     store.queueExistingRatingCurveDelete('curve-1')
 
-    const result = await store.updateRatingCurves('thing-1')
+    const result = await store.updateRatingCurves('monitoringSite-1')
 
     expect(result.ok).toBe(true)
     expect(deleteMock).toHaveBeenCalledWith('curve-1')

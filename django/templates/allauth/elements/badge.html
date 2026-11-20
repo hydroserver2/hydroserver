@@ -1,0 +1,7 @@
+{% load allauth %}
+<span class="hs-badge
+    {% if 'success' in attrs.tags %}hs-badge--success
+    {% elif 'danger' in attrs.tags %}hs-badge--danger
+    {% elif 'warning' in attrs.tags %}hs-badge--warning{% endif %}">
+    {% slot default %}{% endslot %}
+</span>

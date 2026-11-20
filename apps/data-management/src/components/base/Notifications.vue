@@ -18,7 +18,7 @@
       </v-col>
       <v-col>
         <div class="text-white">
-          <h6 class="text-h6">{{ snack.title }}</h6>
+          <h6 class="hs-text-md">{{ snack.title }}</h6>
           <div>{{ snack.message }}</div>
         </div>
       </v-col>

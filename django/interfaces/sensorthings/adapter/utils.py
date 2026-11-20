@@ -1,10 +1,24 @@
-from django.core.exceptions import FieldError
+from django.core.exceptions import EmptyResultSet, FieldError
 from django.db.models import F, Window
 from django.db.models.functions import RowNumber
 from ninja.errors import HttpError
 from odata_query.django.django_q import AstToDjangoQVisitor
+from odata_query.django.django_q_ext import NotEqual
 from sensorthings.types import Absent, OrderByDirection
 from core.sta import models as sta_models
+
+OM_MEASUREMENT = "http://www.opengis.net/def/observationType/OGC-OM/2.0/OM_Measurement"
+
+
+def _not_equal_as_sql(self, compiler, connection):
+    lhs, lhs_params = self.process_lhs(compiler, connection)
+    rhs, rhs_params = self.process_rhs(compiler, connection)
+    return "%s <> %s" % (lhs, rhs), (*lhs_params, *rhs_params)
+
+
+# TODO: Remove once odata-query supports Django 6.0.
+# odata-query's `ne` lookup concatenates params that Django 6.0 can return as a tuple and a list.
+NotEqual.as_sql = _not_equal_as_sql
 
 
 class SensorThingsUtils:
@@ -21,43 +35,44 @@ class SensorThingsUtils:
             return None
         return f"{begin.isoformat()}/{end.isoformat()}"
 
-    def transform_model_field(self, component, prop):
-        if component.__name__ == "Thing":
+    def transform_model_field(self, component, prop, entity_name=None):
+        component_name = entity_name or component.__name__
+
+        if component_name == "Thing":
             return {
-                "properties__samplingFeatureType": "sampling_feature_type",
-                "properties__samplingFeatureCode": "sampling_feature_code",
-                "properties__siteType": "site_type",
+                "properties__code": "code",
+                "properties__type": "type",
                 "properties__dataDisclaimer": "data_disclaimer",
                 "properties__isPrivate": "is_private",
                 "properties__workspace__id": "workspace_id",
                 "properties__workspace__name": "workspace__name",
                 "properties__workspace__isPrivate": "workspace__is_private",
-                "Location__id": "locations__id",
+                "Location__id": "id",
             }.get(prop, prop)
 
-        elif component.__name__ == "Location":
+        elif component_name == "Location":
             return {
-                "properties__workspace__id": "thing__workspace_id",
-                "properties__workspace__name": "thing__workspace__name",
-                "properties__workspace__isPrivate": "thing__workspace__is_private",
-                "Thing__id": "thing_id",
-            }.get(prop, f"location__{prop}")
+                "properties__workspace__id": "workspace_id",
+                "properties__workspace__name": "workspace__name",
+                "properties__workspace__isPrivate": "workspace__is_private",
+                "Thing__id": "id",
+                "location__coordinates": "id",
+            }.get(prop, prop)
 
         elif component.__name__ == "HistoricalLocation":
             return prop
 
-        elif component.__name__ == "Sensor":
+        elif component_name == "Sensor":
             return {
-                "encodingType": "encoding_type",
                 "properties__workspace__id": "workspace_id",
                 "properties__workspace__name": "workspace__name",
                 "properties__workspace__isPrivate": "workspace__is_private",
-                "metadata__methodCode": "method_code",
-                "metadata__methodType": "method_type",
-                "metadata__methodLink": "method_link",
-                "metadata__sensorModel__sensorModelName": "model",
-                "metadata__sensorModel__sensorModelUrl": "model_link",
-                "metadata__sensorModel__sensorManufacturer": "manufacturer",
+                "metadata__methodCode": "code",
+                "metadata__methodType": "type",
+                "metadata__methodLink": "definition",
+                "metadata__sensorModel__sensorModelName": "sensor_model",
+                "metadata__sensorModel__sensorModelUrl": "sensor_model_definition",
+                "metadata__sensorModel__sensorManufacturer": "sensor_model_manufacturer",
             }.get(prop, prop)
 
         elif component.__name__ == "ObservedProperty":
@@ -71,8 +86,8 @@ class SensorThingsUtils:
 
         elif component.__name__ == "Datastream":
             related = {
-                "Thing": "thing",
-                "Sensor": "sensor",
+                "Thing": "monitoring_site",
+                "Sensor": "method",
                 "ObservedProperty": "observed_property",
             }
             parent = prop.split("__")[0]
@@ -81,8 +96,15 @@ class SensorThingsUtils:
                     related[parent]
                     + "__"
                     + self.transform_model_field(
-                        component=getattr(sta_models, parent),
+                        component=(
+                            sta_models.MonitoringSite
+                            if parent == "Thing"
+                            else sta_models.Method
+                            if parent == "Sensor"
+                            else getattr(sta_models, parent)
+                        ),
                         prop="__".join(prop.split("__")[1:]),
+                        entity_name=parent,
                     )
                 )
             return {
@@ -91,10 +113,12 @@ class SensorThingsUtils:
                 "unitOfMeasurement__definition": "unit__definition",
                 "observationType": "observation_type",
                 "observedArea": "observed_area",
-                "properties__workspace__id": "thing__workspace_id",
-                "properties__workspace__name": "thing__workspace__name",
-                "properties__workspace__isPrivate": "thing__workspace__is_private",
-                "properties__resultType": "result_type",
+                "phenomenonTime": "phenomenon_begin_time",
+                "resultTime": "result_begin_time",
+                "properties__workspace__id": "monitoring_site__workspace_id",
+                "properties__workspace__name": "monitoring_site__workspace__name",
+                "properties__workspace__isPrivate": "monitoring_site__workspace__is_private",
+                "properties__type": "type",
                 "properties__status": "status",
                 "properties__sampledMedium": "sampled_medium",
                 "properties__valueCount": "value_count",
@@ -106,9 +130,6 @@ class SensorThingsUtils:
                 "properties__timeAggregationInterval": "time_aggregation_interval",
                 "properties__timeAggregationIntervalUnitOfMeasurement": "time_aggregation_interval_unit",
             }.get(prop, prop)
-
-        elif component.__name__ == "FeatureOfInterest":
-            return prop
 
         elif component.__name__ == "Observation":
             related = {
@@ -130,34 +151,47 @@ class SensorThingsUtils:
                 "resultTime": "result_time",
             }.get(prop, prop)
 
-    def apply_filters(self, queryset, component, filters):
+    def apply_filters(self, queryset, component, filters, entity_name=None):
         visitor = AstToDjangoQVisitor(component)
         query_filter = visitor.visit(filters)
 
         for prop in list(query_filter.flatten()):
             if isinstance(prop, F):
-                model_field = self.transform_model_field(component, prop.name)
+                model_field = self.transform_model_field(
+                    component, prop.name, entity_name=entity_name
+                )
                 prop.__dict__ = {
                     "_constructor_args": ((model_field,), {}),
                     "name": model_field,
                 }
         try:
-            return queryset.filter(query_filter)
+            queryset = queryset.filter(query_filter)
+            queryset.query.get_compiler(queryset.db).as_sql()  # Surfaces errors Django raises at compile time.
+            return queryset
+        except EmptyResultSet:
+            return queryset
         except FieldError:
             raise HttpError(422, "Failed to parse filter parameter.")
+        except (ValueError, TypeError):
+            raise HttpError(400, "Invalid $filter expression.")
 
-    def apply_order(self, queryset, component, orderby):
+    def apply_order(self, queryset, component, orderby, entity_name=None):
         if not orderby:
             return queryset
 
         order_exprs = []
         for field in orderby:
             prop = "__".join(field.path)
-            model_field = self.transform_model_field(component, prop)
+            model_field = self.transform_model_field(
+                component, prop, entity_name=entity_name
+            )
             prefix = "-" if field.direction == OrderByDirection.DESC else ""
             order_exprs.append(f"{prefix}{model_field}")
 
-        return queryset.order_by(*order_exprs)
+        try:
+            return queryset.order_by(*order_exprs)
+        except FieldError:
+            raise HttpError(400, "Invalid $orderby expression.")
 
     @staticmethod
     def apply_pagination(queryset, top=100, skip=0):

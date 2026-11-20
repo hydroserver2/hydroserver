@@ -1,6 +1,6 @@
 <template>
-  <h6 class="text-h6 my-5">
-    Add Additional Metadata
+  <h6 class="hs-text-md my-5">
+    Add additional metadata
     <v-tooltip>
       <template v-slot:activator="{ props }">
         <v-icon
@@ -17,14 +17,14 @@
           key and value for each metadata property.
         </p>
         <p>
-          On the 'Your Sites' page, you'll be able to filter and color your
-          sites by these metadata tags. For example, you can filter by only the
-          sites that have a specific key and color code the markers on the map
-          by the values of that key.
+          On the 'Browse monitoring sites' page, you'll be able to filter and
+          color your sites by these metadata tags. For example, you can filter
+          by only the sites that have a specific key and color code the markers
+          on the map by the values of that key.
         </p>
         <p>
           Additionally, if a URL is added as a value, it will be clickable from
-          the Site Details page, allowing direct access to relevant links.
+          the site details page, allowing direct access to relevant links.
         </p>
       </template>
     </v-tooltip>
@@ -67,15 +67,15 @@
     <v-col>
       <div class="chips-wrap">
         <v-chip
-          v-for="(tag, i) in previewTags"
-          :key="`${tag.key}:${i}`"
+          v-for="[key, value] in Object.entries(previewTags)"
+          :key="key"
           class="multiline-chip"
-          :color="materialColors[i % materialColors.length]"
+          :color="materialColors[tagColorIndex(key) % materialColors.length]"
           closable
           rounded
-          @click:close="previewTags.splice(i, 1)"
+          @click:close="deleteTag(key)"
         >
-          <span class="chip-text">{{ tag.key }}: {{ tag.value }}</span>
+          <span class="chip-text">{{ key }}: {{ value }}</span>
         </v-chip>
       </div>
     </v-col>
@@ -90,28 +90,33 @@ import { useTagStore } from '@/store/tags'
 import { useWorkspaceTags } from '@/composables/useWorkspaceTags'
 import { mdiHelpCircleOutline } from '@mdi/js'
 
-const props = defineProps({ thingId: String })
+const props = defineProps({ monitoringSiteId: String })
 const { tags, previewTags } = storeToRefs(useTagStore())
 const { tags: workspaceTags } = useWorkspaceTags()
 
 const selectedKey = ref('')
 const selectedValue = ref('')
 
-const isKeyUsed = computed(() =>
-  previewTags.value.some((tag) => tag.key === selectedKey.value)
-)
+const isKeyUsed = computed(() => selectedKey.value in previewTags.value)
+
+const tagColorIndex = (key: string) => Object.keys(previewTags.value).indexOf(key)
 
 const addTag = () => {
   if (selectedKey.value === '' || selectedValue.value === '') {
     return
   }
-  previewTags.value.push({ key: selectedKey.value, value: selectedValue.value })
+  previewTags.value = { ...previewTags.value, [selectedKey.value]: selectedValue.value }
   selectedKey.value = ''
   selectedValue.value = ''
 }
 
+const deleteTag = (key: string) => {
+  const { [key]: _removed, ...rest } = previewTags.value
+  previewTags.value = rest
+}
+
 onMounted(async () => {
-  previewTags.value = props.thingId ? [...tags.value] : []
+  previewTags.value = props.monitoringSiteId ? { ...tags.value } : {}
 })
 </script>
 

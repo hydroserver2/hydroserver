@@ -1,19 +1,19 @@
 import type { Datastream } from '@hydroserver/client'
 
-export function datastreamThingId(datastream: Datastream): string {
+export function datastreamMonitoringSiteId(datastream: Datastream): string {
   const ds = datastream as Datastream & {
-    thing?: { id?: string }
-    thing_id?: string
+    monitoringSite?: { id?: string }
+    monitoring_site_id?: string
   }
-  return datastream.thingId || ds.thing_id || ds.thing?.id || ''
+  return datastream.monitoringSiteId || ds.monitoring_site_id || ds.monitoringSite?.id || ''
 }
 
-export function datastreamsForThing(
+export function datastreamsForMonitoringSite(
   datastreams: Datastream[],
-  thingId: string | null | undefined
+  monitoringSiteId: string | null | undefined
 ) {
-  if (!thingId) return []
+  if (!monitoringSiteId) return []
   return datastreams.filter(
-    (datastream) => datastreamThingId(datastream) === thingId
+    (datastream) => datastreamMonitoringSiteId(datastream) === monitoringSiteId
   )
 }

@@ -2,7 +2,6 @@ import { flushPromises, shallowMount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useOrchestrationStore } from '@/store/orchestration'
-import { useWorkspaceStore } from '@/store/workspaces'
 import { routes } from '@/router/routes'
 
 const { routeMock, replaceMock } = vi.hoisted(() => ({
@@ -58,14 +57,14 @@ vi.mock('@hydroserver/client', () => ({
       runTask: vi.fn(),
       update: vi.fn(),
     },
-    things: {
+    monitoringSites: {
       listAllItems: vi.fn(),
       listTaskSummaries: vi.fn(),
     },
   },
   DataConnection: class {},
   User: class {
-    accountType = 'standard'
+    isSuperuser = false
     email = 'user@example.com'
   },
   PermissionAction: {
@@ -91,7 +90,10 @@ vi.mock('@/components/Workspace/WorkspaceToolbar.vue', () => ({
 vi.mock(
   '@/components/Orchestration/workbench/OrchestrationNavRail.vue',
   () => ({
-    default: { template: '<nav data-testid="nav-rail" />' },
+    default: {
+      template:
+        '<nav data-testid="nav-rail"><button data-testid="aggregation-tab" @click="$emit(\'select-tab\', \'aggregation\')" /></nav>',
+    },
   })
 )
 
@@ -104,10 +106,6 @@ vi.mock(
 
 vi.mock('@/components/Orchestration/workbench/TaskListPanel.vue', () => ({
   default: { template: '<section />' },
-}))
-
-vi.mock('@/components/Workspace/OrchestrationWorkspaceManager.vue', () => ({
-  default: { template: '<div data-testid="workspace-manager" />' },
 }))
 
 vi.mock(
@@ -148,20 +146,26 @@ vi.mock(
 )
 
 const stubs = {
+  HsMasterDetailLayout: {
+    template: '<div><slot name="rail" /><slot name="sidebar" /><slot /></div>',
+  },
+  HsEmptyState: {
+    props: ['title'],
+    template:
+      '<section><h2>{{ title }}</h2><slot /><slot name="actions" /></section>',
+  },
   WorkspaceToolbar: {
     template: '<div />',
   },
   OrchestrationNavRail: {
-    template: '<nav data-testid="nav-rail" />',
+    template:
+      '<nav data-testid="nav-rail"><button data-testid="aggregation-tab" @click="$emit(\'select-tab\', \'aggregation\')" /></nav>',
   },
   OrchestrationContextSidebar: {
     template: '<aside />',
   },
   TaskListPanel: {
     template: '<section />',
-  },
-  OrchestrationWorkspaceManager: {
-    template: '<div data-testid="workspace-manager" />',
   },
   DataConnectionForm: {
     template: '<div />',
@@ -190,6 +194,9 @@ const stubs = {
   'v-btn': {
     template: '<button><slot /></button>',
   },
+  'v-btn-primary': {
+    template: '<button><slot /></button>',
+  },
 }
 
 describe('Orchestration page', () => {
@@ -213,49 +220,37 @@ describe('Orchestration page', () => {
 
     await flushPromises()
 
-    expect(useOrchestrationStore().activeView).toBe('tasks')
+    expect(useOrchestrationStore().activeTab).toBe('ingestion')
     expect(wrapper.find('[data-testid="nav-rail"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="no-selected-workspace"]').exists()).toBe(
       true
     )
     expect(wrapper.text()).toContain('Create a new workspace')
     expect(wrapper.text()).toContain('edit permissions')
-    expect(wrapper.find('[data-testid="workspace-manager"]').exists()).toBe(
-      false
-    )
     expect(replaceMock).not.toHaveBeenCalled()
   })
 
-  it('renders workspace management when the workspaces view is selected', async () => {
-    routeMock.params = { view: 'workspaces' }
-    const { default: Orchestration } = await import('@/pages/Orchestration.vue')
+  it('redirects the base orchestration route to the ingestion view', () => {
+    const route = routes.find((item) => item.name === 'Orchestration')
 
-    const wrapper = shallowMount(Orchestration, {
-      global: {
-        stubs,
-      },
-    })
-
-    await flushPromises()
-
-    expect(useOrchestrationStore().activeView).toBe('workspaces')
-    expect(wrapper.find('[data-testid="nav-rail"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="workspace-manager"]').exists()).toBe(
-      true
-    )
-    expect(wrapper.find('[data-testid="no-selected-workspace"]').exists()).toBe(
-      false
-    )
+    expect(route?.redirect).toBe('/orchestration/ingestion')
   })
 
-  it('opens workspaces from the base orchestration route when no workspace is selected', () => {
-    const route = routes.find((item) => item.name === 'Orchestration')
-    const redirect = route?.redirect as () => string
+  it('routes nav-rail selections immediately', async () => {
+    const { default: Orchestration } = await import('@/pages/Orchestration.vue')
+    const wrapper = shallowMount(Orchestration, {
+      global: { stubs },
+    })
+    await flushPromises()
+    replaceMock.mockClear()
 
-    expect(redirect()).toBe('/orchestration/workspaces')
+    await wrapper.get('[data-testid="aggregation-tab"]').trigger('click')
 
-    useWorkspaceStore().selectedWorkspace = { id: 'workspace-1' } as any
-
-    expect(redirect()).toBe('/orchestration/ingestion')
+    expect(replaceMock).toHaveBeenCalledTimes(1)
+    expect(replaceMock).toHaveBeenCalledWith({
+      name: 'OrchestrationView',
+      params: { view: 'aggregation' },
+      query: {},
+    })
   })
 })

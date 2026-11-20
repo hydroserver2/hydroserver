@@ -1,0 +1,9 @@
+{% load allauth %}
+<details class="hs-panel">
+    <summary class="hs-link">
+        {% slot summary %}{% endslot %}
+    </summary>
+    <div class="hs-help">
+        {% slot default %}{% endslot %}
+    </div>
+</details>

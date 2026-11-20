@@ -8,6 +8,7 @@ export interface Provider {
 
 interface AuthenticationConfiguration {
   hydroserverSignupEnabled: boolean
+  csrfCookieName: string
   providers: Provider[]
 }
 
@@ -36,11 +37,12 @@ export enum GeoService {
   Google = 'google',
 }
 
-interface MapLayer {
+export interface MapLayer {
   name: string
   source: string
   attribution: string
   priority?: number | null
+  visibleByDefault?: boolean
 }
 
 interface MapConfiguration {
@@ -62,6 +64,11 @@ interface AnalyticsConfiguration {
   googleAnalyticsMeasurementId?: string | null
 }
 
+interface ExtensionsConfiguration {
+  fileUploadEnabled: boolean
+  orchestrationEnabled: boolean
+}
+
 interface LegalInformation {
   termsOfUseLink?: string | null
   privacyPolicyLink?: string | null
@@ -73,5 +80,6 @@ export interface AppSettings {
   aboutInformation: AboutInformation
   mapConfiguration: MapConfiguration
   analyticsConfiguration: AnalyticsConfiguration
+  extensionsConfiguration: ExtensionsConfiguration
   legalInformation: LegalInformation
 }

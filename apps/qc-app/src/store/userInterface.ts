@@ -1,6 +1,6 @@
 import { LogicalOperation, Operator, TimeUnit } from '@uwrl/qc-utils'
 import { defineStore } from 'pinia'
-import { computed, ref, watch } from 'vue'
+import { computed, ref, shallowRef, watch } from 'vue'
 import { useDataVisStore } from '@/store/dataVisualization'
 import { useOperationParamsStore } from '@/store/operationParams'
 
@@ -194,6 +194,11 @@ export const useUIStore = defineStore('userInterface', () => {
   const filterRangeFromTs = ref<number | null>(null)
   const filterRangeToTs = ref<number | null>(null)
 
+  // FILTER WITHIN SELECTION (`useFilterWithinSelection`)
+  const filterWithinSelection = ref(false)
+  const filterWithinBase = shallowRef<number[] | null>(null)
+  const filterWithinApplying = ref(false)
+
   return {
     selectedDrawer,
     isDrawerOpen,
@@ -229,6 +234,9 @@ export const useUIStore = defineStore('userInterface', () => {
     filterRangeActive,
     filterRangeFromTs,
     filterRangeToTs,
+    filterWithinSelection,
+    filterWithinBase,
+    filterWithinApplying,
   }
 }, {
   // Persist only the user-toggleable preference. The from/to of the

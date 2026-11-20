@@ -1,62 +1,121 @@
 import uuid
+
+from typing import Optional, Literal, Annotated
+from pydantic import BeforeValidator, WithJsonSchema
+from pydantic.alias_generators import to_camel
 from ninja import Schema, Field, Query
-from typing import Optional, Literal, TYPE_CHECKING
+
+from core.sta.models import UnitType
 from interfaces.api.schemas import (
     BaseGetResponse,
     BasePostBody,
     BasePatchBody,
+    BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
+    WorkspaceResponse,
+    split_comma_separated,
+    comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
-
-if TYPE_CHECKING:
-    from interfaces.api.schemas import WorkspaceSummaryResponse
+from interfaces.api.schemas.sta.vocabulary import VocabularyResponse
+from interfaces.api.schemas.base import ItemId, NewItemId
 
 
 class UnitFields(Schema):
     name: str = Field(..., max_length=255)
     symbol: str = Field(..., max_length=255)
-    definition: str
-    unit_type: str = Field(..., max_length=255, alias="type")
+    definition: Optional[str] = Field(None, max_length=2000)
+    type: str = Field(..., max_length=255)
 
 
-_order_by_fields = (
+UNIT_INCLUDE_RELATIONS = {
+    "workspace": {
+        "path": "workspace",
+        "bucket": "workspaces",
+        "response_schema": WorkspaceResponse,
+    },
+    "type": {
+        "bucket": "unitTypes",
+        "response_schema": VocabularyResponse,
+        "vocabulary_model": UnitType,
+        "value_field": "type",
+    },
+}
+UnitIncludeRelation = Literal[*UNIT_INCLUDE_RELATIONS.keys()]
+
+_sortby_fields = (
     "name",
     "symbol",
     "type",
 )
+UnitSortByFields = Literal[*_sortby_fields, *[f"-{f}" for f in _sortby_fields]]
 
-UnitOrderByFields = Literal[*_order_by_fields, *[f"-{f}" for f in _order_by_fields]]
+_property_fields = ("id", "workspaceId", *(to_camel(name) for name in UnitFields.model_fields))
+UnitPropertyName = Literal[*_property_fields]
 
 
-class UnitQueryParameters(CollectionQueryParameters):
-    expand_related: Optional[bool] = None
-    order_by: Optional[list[UnitOrderByFields]] = Query(
-        [], description="Select one or more fields to order the response by."
+class UnitFilterFields(Schema):
+    properties: Annotated[
+        Optional[list[UnitPropertyName]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(UnitPropertyName)),
+    ] = Query(
+        None,
+        description="Comma-separated list of properties to include in the response. "
+        "All properties are returned if omitted.",
+    )
+    include: Annotated[
+        Optional[list[UnitIncludeRelation]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(UnitIncludeRelation)),
+    ] = Query(
+        None,
+        description="Comma-separated list of related resources to include in the response.",
+    )
+
+
+class UnitItemQueryParameters(UnitFilterFields, BaseQueryParameters):
+    pass
+
+
+class UnitQueryParameters(UnitFilterFields, CollectionQueryParameters, ExtentQueryParameters):
+    sortby: Annotated[
+        Optional[list[UnitSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(UnitSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
+    q: Optional[str] = Query(
+        None,
+        description="Full-text search query. Comma-separated terms are combined with OR; "
+        "whitespace-separated words within a term are combined with AND.",
     )
     workspace_id: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter units by workspace ID."
+        [],
+        description="Units that belong to this workspace. Matches `id` in `workspaces`. `null` matches units "
+        "shared by every workspace.",
     )
-    datastreams__thing_id: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter units by thing ID.", alias="thing_id"
+    datastreams__monitoring_site_id: list[uuid.UUID | Literal["null"]] = Query(
+        [],
+        description="Units used by datastreams at this monitoring site. Matches `id` in `monitoring-sites`. "
+        "`null` matches units that no datastream uses.",
+        alias="monitoringSiteId",
     )
     datastreams__id: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter units by datastream ID.", alias="datastream_id"
+        [],
+        description="Units used by this datastream. Matches `id` in `datastreams`. `null` matches units that "
+        "no datastream uses.",
+        alias="datastreamId",
     )
-    unit_type: list[str] = Query([], description="Filter units by type", alias="type")
+    type: list[str] = Query([], description="Units of this type. Matches `name` in `unit-types`.")
 
 
-class UnitSummaryResponse(BaseGetResponse, UnitFields):
-    id: uuid.UUID
+class UnitResponse(BaseGetResponse, UnitFields, ItemId):
     workspace_id: Optional[uuid.UUID]
 
 
-class UnitDetailResponse(BaseGetResponse, UnitFields):
-    id: uuid.UUID
-    workspace: Optional["WorkspaceSummaryResponse"]
-
-
-class UnitPostBody(BasePostBody, UnitFields):
-    id: Optional[uuid.UUID] = None
+class UnitPostBody(BasePostBody, UnitFields, NewItemId):
     workspace_id: Optional[uuid.UUID] = None
 
 

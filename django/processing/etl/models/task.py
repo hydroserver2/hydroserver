@@ -1,62 +1,18 @@
-import uuid6
-from typing import Union, Literal
+import uuid
 
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import models
-from django.db.models import Q
-from django.contrib.auth import get_user_model
 
-from core.iam.models import Workspace, APIKey
-from core.iam.models.utils import PermissionChecker
+from core.iam.permissions.mixins import ResourcePermissionMixin
+from core.iam.permissions.registry import register_resource_type
 from core.sta.models import Datastream
 from processing.orchestration.models.task import Task
 
 from .data_connection import DataConnection
 
 
-User = get_user_model()
-
-
-class EtlTaskQuerySet(models.QuerySet):
-    def visible(self, principal: Union[User, APIKey]):
-        if not principal:
-            return self.none()
-        elif hasattr(principal, "account_type"):
-            if principal.account_type == "admin":
-                return self
-            else:
-                return self.filter(
-                    Q(data_connection__workspace__owner=principal)
-                    | Q(
-                        data_connection__workspace__collaborators__user=principal,
-                        data_connection__workspace__collaborators__role__permissions__resource_type__in=[
-                            "*",
-                            "ETL",
-                        ],
-                        data_connection__workspace__collaborators__role__permissions__permission_type__in=[
-                            "*",
-                            "view",
-                        ],
-                    )
-                )
-        elif hasattr(principal, "workspace"):
-            return self.filter(
-                Q(
-                    data_connection__workspace__apikeys=principal,
-                    data_connection__workspace__apikeys__role__permissions__resource_type__in=[
-                        "*",
-                        "ETL",
-                    ],
-                    data_connection__workspace__apikeys__role__permissions__permission_type__in=[
-                        "*",
-                        "view",
-                    ],
-                )
-            )
-        else:
-            return self.none()
-
-
-class EtlTask(Task, PermissionChecker):
+@register_resource_type(workspace_field="data_connection__workspace")
+class EtlTask(Task, ResourcePermissionMixin):
     data_connection = models.ForeignKey(
         DataConnection,
         on_delete=models.CASCADE,
@@ -64,39 +20,56 @@ class EtlTask(Task, PermissionChecker):
     )
     task_variables = models.JSONField(default=dict)
 
-    objects = EtlTaskQuerySet.as_manager()
-
     def __str__(self):
         return f"{self.name} - {self.id}"
 
     class Meta:
         app_label = "etl"
 
-    @classmethod
-    def can_principal_create(
-        cls, principal: Union[User, APIKey, None], workspace: Workspace
-    ):
-        return cls.check_create_permissions(
-            principal=principal, workspace=workspace, resource_type="ETL"
-        )
-
-    def get_principal_permissions(
-        self, principal: Union[User, APIKey, None]
-    ) -> list[Literal["edit", "delete", "view"]]:
-        return self.check_object_permissions(
-            principal=principal, workspace=self.data_connection.workspace, resource_type="ETL"
-        )
-
     @property
     def workspace(self):
         return self.data_connection.workspace
 
 
-class EtlMapping(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
+@register_resource_type(workspace_field="etl_task__data_connection__workspace")
+class EtlMapping(models.Model, ResourcePermissionMixin):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     etl_task = models.ForeignKey(EtlTask, on_delete=models.CASCADE, related_name="etl_mappings")
     source_identifier = models.CharField(max_length=255)
     target_datastream = models.ForeignKey(Datastream, on_delete=models.CASCADE, related_name="etl_mappings")
 
     class Meta:
         app_label = "etl"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["target_datastream"],
+                name="unique_etl_mapping_target_datastream",
+                violation_error_message="This datastream is already mapped to by another task.",
+                violation_error_code="unique",
+            )
+        ]
+
+    def clean(self):
+        if not self.target_datastream_id or not self.etl_task_id:
+            return
+
+        try:
+            datastream_workspace_id = self.target_datastream.monitoring_site.workspace_id
+        except ObjectDoesNotExist:
+            return
+
+        try:
+            task_workspace_id = self.etl_task.data_connection.workspace_id
+        except ObjectDoesNotExist:
+            return
+
+        if datastream_workspace_id != task_workspace_id:
+            raise ValidationError(
+                "The target datastream must belong to the same workspace as this task."
+            )
+
+        if hasattr(self.target_datastream, "data_product_transformation"):
+            raise ValidationError(
+                "This datastream is already the output of a data product task.",
+                code="unique",
+            )

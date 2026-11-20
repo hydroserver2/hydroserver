@@ -1,5 +1,5 @@
 <template>
-  <v-card class="elevation-2 plot-card" :loading="updating">
+  <v-card flat class="hs-table-card plot-card" :loading="updating">
     <template v-slot:loader="{ isActive }">
       <v-progress-linear color="primary" :active="isActive" indeterminate />
     </template>
@@ -18,7 +18,7 @@
         class="plot-shell"
       >
         <div class="plot-body">
-          <div class="plot-rail">
+          <div ref="plotRail" class="plot-rail">
             <v-tooltip bottom :openDelay="0">
               <template v-slot:activator="{ props }">
                 <v-btn
@@ -59,7 +59,7 @@
           <div class="plot-panel">
             <v-window v-model="viewMode" class="plot-window" :touch="false">
               <v-window-item value="plot" class="plot-window-item">
-                <div class="plot-plot-area">
+                <div ref="plotArea" class="plot-plot-area">
                   <div v-if="showLargeSeriesDisclaimer" class="plot-disclaimer">
                     <v-tooltip
                       location="bottom"
@@ -67,20 +67,23 @@
                       content-class="pa-0 ma-0 bg-transparent"
                     >
                       <template v-slot:activator="{ props }">
-                        <div class="plot-disclaimer-text" v-bind="props">
+                        <small
+                          class="plot-disclaimer-text font-weight-medium"
+                          v-bind="props"
+                        >
                           *Large data mode
-                        </div>
+                        </small>
                       </template>
                       <v-card
                         elevation="2"
                         rounded="lg"
                         class="plot-disclaimer-card"
                       >
-                        <v-card-title class="px-4 py-2 text-subtitle-1">
+                        <v-card-title class="px-4 py-2 hs-text-md">
                           Large data mode
                         </v-card-title>
                         <v-divider />
-                        <v-card-text class="px-4 py-2 text-body-2">
+                        <v-card-text class="px-4 py-2 hs-text-sm">
                           Tooltips are disabled when total points exceed
                           {{ largeSeriesTotalThreshold }}. Markers are hidden
                           when visible points exceed
@@ -90,10 +93,29 @@
                       </v-card>
                     </v-tooltip>
                   </div>
-                  <div ref="plotContainer" class="plotly-chart" />
+                  <div
+                    ref="plotContainer"
+                    class="plotly-chart"
+                    :style="{ minHeight: `${labeledPlot?.minHeight ?? 0}px` }"
+                  />
                 </div>
-                <div class="plot-toolbar">
-                  <DataVisTimeFilters @copy-state="handleCopyState" />
+                <div ref="plotToolbar" class="plot-toolbar">
+                  <DataVisTimeFilters>
+                    <template #actions>
+                      <div class="plot-label-tools">
+                        <v-btn
+                          variant="text"
+                          size="small"
+                          :aria-pressed="showSiteName"
+                          @click="showSiteName = !showSiteName"
+                        >
+                          {{
+                            showSiteName ? 'Hide site name' : 'Show site name'
+                          }}
+                        </v-btn>
+                      </div>
+                    </template>
+                  </DataVisTimeFilters>
                 </div>
               </v-window-item>
               <v-window-item value="summary" class="plot-window-item">
@@ -105,17 +127,19 @@
       </v-card-text>
     </keep-alive>
 
+    <DataVisFigurePreview ref="figurePreview" :get-plot="getLivePlot" />
+
     <div v-if="showInstructions && viewMode === 'plot'" class="plot-empty">
       <v-card-text>
-        <div class="plot-empty__title">Visualize data</div>
+        <div class="plot-empty__title hs-subheading">Visualize data</div>
         <v-timeline align="start" density="compact">
           <v-timeline-item size="x-small" dot-color="primary">
             <div>
               <strong> Filter: </strong>
             </div>
             <div>
-              Filter the datastream table items with the filter drawer on the
-              left and the search bar on the top of the datastreams table.
+              Use the filters and search bar above the datastreams table to find
+              data to plot.
             </div>
           </v-timeline-item>
           <v-timeline-item size="x-small" dot-color="secondary">
@@ -146,18 +170,27 @@
 <script setup lang="ts">
 import SummaryStatisticsTable from './SummaryStatisticsTable.vue'
 import DataVisTimeFilters from './DataVisTimeFilters.vue'
+import DataVisFigurePreview from './DataVisFigurePreview.vue'
 import { useDataVisStore } from '@/store/dataVisualization'
-import { ref, watch, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import {
+  ref,
+  watch,
+  computed,
+  nextTick,
+  onMounted,
+  onBeforeUnmount,
+  triggerRef,
+} from 'vue'
 import { storeToRefs } from 'pinia'
 import { debounce } from 'lodash-es'
 import { getXRangeBounds, supportsWebgl } from '@/utils/plotting/plotly'
+import { applyPlotLabels } from '@/utils/plotting/plotLabels'
 import { mdiChartLine, mdiSigma } from '@mdi/js'
-
-const emit = defineEmits(['copy-state'])
 
 const props = defineProps({
   cardHeight: { type: Number, required: true },
 })
+const emit = defineEmits<{ minimumHeight: [height: number] }>()
 
 const {
   showSummaryStatistics,
@@ -171,10 +204,71 @@ const {
   endDate,
   xAxisRange,
   yAxisRanges,
+  plotLabelItems,
 } = storeToRefs(useDataVisStore())
 
+const plotArea = ref<HTMLDivElement | null>(null)
+const showSiteName = ref(false)
+const plotToolbar = ref<HTMLDivElement | null>(null)
+const figurePreview = ref<InstanceType<typeof DataVisFigurePreview> | null>(
+  null
+)
+const plotRail = ref<HTMLDivElement | null>(null)
 const plotContainer = ref<HTMLDivElement | null>(null)
+const plotWidth = ref(800)
+const plotFont = ref('Arial, sans-serif')
+const labelContext = document.createElement('canvas').getContext('2d')
+const labeledPlot = computed(() => {
+  if (!plotlyOptions.value) return null
+  if (labelContext) labelContext.font = `12px ${plotFont.value}`
+  return applyPlotLabels(
+    plotlyOptions.value,
+    plotLabelItems.value.map((item) => ({
+      id: item.id,
+      label: showSiteName.value ? item.label : item.name,
+    })),
+    plotWidth.value,
+    plotFont.value,
+    (text) =>
+      labelContext?.measureText(text).width ?? Array.from(text).length * 8
+  )
+})
+let plotResizeObserver: ResizeObserver | undefined
+const updatePlotSize = () => {
+  if (!plotArea.value || showSummaryStatistics.value) {
+    emit('minimumHeight', 0)
+    return
+  }
+  plotWidth.value = plotArea.value.clientWidth || 800
+  const railHeight = window.matchMedia('(max-width: 600px)').matches
+    ? (plotRail.value?.offsetHeight ?? 0)
+    : 0
+  emit(
+    'minimumHeight',
+    (labeledPlot.value?.minHeight ?? 0) +
+      (plotToolbar.value?.offsetHeight ?? 0) +
+      railHeight
+  )
+}
+watch([plotArea, plotToolbar, plotRail], ([area, toolbar, rail]) => {
+  plotResizeObserver?.disconnect()
+  if (!area) {
+    emit('minimumHeight', 0)
+    return
+  }
+  updatePlotSize()
+  plotResizeObserver = new ResizeObserver(updatePlotSize)
+  for (const element of [area, toolbar, rail]) {
+    if (element) plotResizeObserver.observe(element)
+  }
+})
+watch(
+  () => labeledPlot.value?.minHeight,
+  () => nextTick(updatePlotSize)
+)
+watch(showSummaryStatistics, () => nextTick(updatePlotSize))
 const plotlyRef = ref<(HTMLDivElement & { [key: string]: any }) | null>(null)
+const getLivePlot = () => plotlyRef.value
 const handlersAttached = ref(false)
 let plotlyApi: any | null = null
 
@@ -293,7 +387,7 @@ const syncDefaultTraceStyles = () => {
   defaultHoverMode.value = hoverMode === false ? false : 'x'
 }
 
-const normalizeTraceArray = <T>(values: T[], length: number, fallback: T) => {
+const normalizeTraceArray = <T,>(values: T[], length: number, fallback: T) => {
   if (values.length === length) return values
   const next = new Array(length).fill(fallback) as T[]
   for (let i = 0; i < Math.min(values.length, length); i += 1) {
@@ -448,11 +542,6 @@ const captureAxisRangesFromPlotly = () => {
   } else if (yAxisRanges.value && Object.keys(yAxisRanges.value).length) {
     yAxisRanges.value = {}
   }
-}
-
-const handleCopyState = () => {
-  captureAxisRangesFromPlotly()
-  emit('copy-state')
 }
 
 const updating = computed(() =>
@@ -684,26 +773,55 @@ const attachHandlers = () => {
   handlersAttached.value = true
 }
 
+let rendering = false
+let renderAgain = false
 const renderPlot = async () => {
-  if (!plotlyOptions.value || !plotContainer.value) return
-
-  const Plotly = await ensurePlotly()
-  const { traces, layout, config } = plotlyOptions.value
-  preserveLiveAxisRanges()
-  if (!plotlyRef.value) {
-    plotlyRef.value = await Plotly.newPlot(
-      plotContainer.value,
-      traces,
-      layout,
-      config
-    )
-    attachHandlers()
-  } else {
-    await Plotly.react(plotlyRef.value, traces, layout, config)
+  if (!labeledPlot.value || !plotContainer.value) return
+  if (rendering) {
+    renderAgain = true
+    return
   }
+  rendering = true
 
-  applyLargeSeriesModeForCurrentRange()
-  queueResize()
+  try {
+    const Plotly = await ensurePlotly()
+    if (!labeledPlot.value || !plotContainer.value) return
+    // Keep the user's current zoom while editing presentation labels.
+    preserveLiveAxisRanges()
+    const { traces, layout, config } = labeledPlot.value.options
+    const previewConfig = {
+      ...config,
+      modeBarButtonsToAdd: config.modeBarButtonsToAdd?.map((button: any) =>
+        button.name === 'Download plot'
+          ? {
+              ...button,
+              name: 'Download plot image',
+              click: () => figurePreview.value?.openPreview(),
+            }
+          : button
+      ),
+    }
+    if (!plotlyRef.value) {
+      plotlyRef.value = await Plotly.newPlot(
+        plotContainer.value,
+        traces,
+        layout,
+        previewConfig
+      )
+      attachHandlers()
+    } else {
+      await Plotly.react(plotlyRef.value, traces, layout, previewConfig)
+    }
+
+    applyLargeSeriesModeForCurrentRange()
+    queueResize()
+  } finally {
+    rendering = false
+    if (renderAgain) {
+      renderAgain = false
+      void renderPlot()
+    }
+  }
 }
 
 const cleanupPlot = () => {
@@ -754,7 +872,7 @@ watch(
 )
 
 watch(
-  () => plotlyOptions.value,
+  () => labeledPlot.value,
   () => {
     syncDefaultTraceStyles()
     if (showPlot.value) {
@@ -778,12 +896,24 @@ watch(
 )
 
 onBeforeUnmount(() => {
+  plotResizeObserver?.disconnect()
   window.removeEventListener('datavis-layout', handleLayoutResize)
   window.removeEventListener('resize', handleLayoutResize)
   cleanupPlot()
 })
 
 onMounted(() => {
+  const syncPlotFont = () => {
+    plotFont.value =
+      getComputedStyle(document.documentElement)
+        .getPropertyValue('--hs-font-body')
+        .trim() || 'Arial, sans-serif'
+  }
+  syncPlotFont()
+  void document.fonts?.ready.then(() => {
+    syncPlotFont()
+    triggerRef(plotFont)
+  })
   window.addEventListener('datavis-layout', handleLayoutResize)
   window.addEventListener('resize', handleLayoutResize)
   setTimeout(() => {
@@ -820,14 +950,13 @@ onMounted(() => {
 }
 
 .plot-empty :deep(.v-card-text) {
-  margin-top: 12px;
-  margin-left: 12px;
+  margin-top: var(--hs-space-12);
+  margin-left: var(--hs-space-12);
 }
 
 .plot-empty__title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin: 8px 8px 12px;
+  margin: var(--hs-space-8) var(--hs-space-8) var(--hs-space-12);
+  color: var(--hs-text-primary);
 }
 
 .plotly-chart {
@@ -845,8 +974,8 @@ onMounted(() => {
 
 .plot-disclaimer {
   position: absolute;
-  top: 10px;
-  left: 10px;
+  top: var(--hs-space-10);
+  left: var(--hs-space-10);
   z-index: 5;
   pointer-events: auto;
 }
@@ -854,15 +983,13 @@ onMounted(() => {
 .plot-disclaimer-text {
   display: inline-flex;
   align-items: center;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #6b7280;
-  background: rgba(255, 255, 255, 0.85);
-  border-radius: 4px;
-  padding: 2px 6px;
+  padding: var(--hs-space-2) var(--hs-space-6);
+  color: var(--hs-text-secondary);
   text-decoration: underline dotted;
   text-underline-offset: 3px;
   cursor: default;
+  background: var(--hs-surface-floating);
+  border-radius: var(--hs-radius-sm);
 }
 
 .plot-disclaimer-card {
@@ -872,6 +999,15 @@ onMounted(() => {
 
 .plot-toolbar {
   padding: 0;
+}
+
+.plot-label-tools {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-inline-start: auto;
+  flex-shrink: 0;
+  padding: var(--hs-space-4) var(--hs-space-8);
 }
 
 .plot-shell {
@@ -890,8 +1026,8 @@ onMounted(() => {
   .drag.cursor-w-resize,
   .drag.cursor-ew-resize,
   .drag.cursor-e-resize {
-    fill: #f8f8f8 !important;
-    stroke: #f8f8f8 !important;
+    fill: var(--hs-surface-subtle) !important;
+    stroke: var(--hs-surface-subtle) !important;
     stroke-width: 1px !important;
   }
 
@@ -899,8 +1035,8 @@ onMounted(() => {
   .drag.cursor-nw-resize,
   .drag.cursor-ne-resize,
   .drag.cursor-se-resize {
-    fill: #f2f2f2 !important;
-    stroke: #f2f2f2 !important;
+    fill: var(--hs-surface-muted) !important;
+    stroke: var(--hs-surface-muted) !important;
     stroke-width: 1px !important;
   }
 }
@@ -915,8 +1051,8 @@ onMounted(() => {
 
 .plot-rail {
   width: 44px;
-  background-color: #f2f2f2;
-  border-right: 1px solid #e0e0e0;
+  background-color: var(--hs-surface-muted);
+  border-right: 1px solid var(--hs-border);
   border-radius: 0;
   display: flex;
   flex-direction: column;
@@ -933,8 +1069,8 @@ onMounted(() => {
 }
 
 .plot-rail-btn--active {
-  background-color: rgba(33, 150, 243, 0.12);
-  color: #1e88e5;
+  color: rgb(var(--v-theme-primary));
+  background-color: rgba(var(--v-theme-primary), 0.12);
   position: relative;
 }
 
@@ -945,7 +1081,7 @@ onMounted(() => {
   top: 0;
   bottom: 0;
   width: 3px;
-  background-color: #1e88e5;
+  background-color: rgb(var(--v-theme-primary));
 }
 
 .plot-panel {
@@ -985,7 +1121,7 @@ onMounted(() => {
     flex: 0 0 36px;
     flex-direction: row;
     border-right: 0;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid var(--hs-border);
   }
 
   .plot-rail-btn {

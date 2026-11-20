@@ -1,12 +1,14 @@
 <template>
-  <v-card>
-    <v-toolbar flat color="blue-darken-2">
-      <v-card-title> Datastream information </v-card-title>
+  <v-card class="datastream-information-card">
+    <v-toolbar flat color="primary" density="comfortable">
+      <v-card-title class="hs-text-md"> Datastream information </v-card-title>
       <v-spacer />
       <v-btn
+        class="datastream-download-button"
         :loading="downloading"
         :prepend-icon="mdiDownload"
-        color="blue-lighten-5"
+        color="on-primary"
+        variant="tonal"
         data-testid="download-datastream-csv"
         @click="downloadDatastream(datastream.id)"
         >Download</v-btn
@@ -16,20 +18,19 @@
     <DatastreamInformationPanels :datastream-id="datastream.id" />
 
     <v-card-actions>
-      <v-btn-primary
-        color="blue"
+      <v-btn-dialog-action
         variant="text"
         data-testid="add-datastream-to-plot"
         @click="addToPlot(datastream)"
-        >Add to Current Plot</v-btn-primary
+        >Add to current plot</v-btn-dialog-action
       >
       <v-spacer />
       <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
-      <v-btn-primary
+      <v-btn-dialog-action
         type="submit"
         data-testid="clear-and-plot-datastream"
         @click="clearAndPlot(datastream)"
-        >Clear and Plot</v-btn-primary
+        >Clear and plot</v-btn-dialog-action
       >
     </v-card-actions>
   </v-card>
@@ -37,7 +38,7 @@
 
 <script setup lang="ts">
 import { useDataVisStore } from '@/store/dataVisualization'
-import { Datastream, Thing } from '@hydroserver/client'
+import { Datastream, MonitoringSite } from '@hydroserver/client'
 import { downloadDatastreamCsv } from '@/utils/csvExport'
 import { storeToRefs } from 'pinia'
 import { ref } from 'vue'
@@ -46,7 +47,7 @@ import { mdiDownload } from '@mdi/js'
 
 defineProps({
   datastream: { type: Object as () => Datastream, required: true },
-  thing: { type: Object as () => Thing, required: true },
+  monitoringSite: { type: Object as () => MonitoringSite, required: true },
 })
 
 const { plottedDatastreams } = storeToRefs(useDataVisStore())
@@ -79,3 +80,9 @@ const clearAndPlot = (datastream: Datastream) => {
   plottedDatastreams.value.push(datastream)
 }
 </script>
+
+<style scoped>
+.datastream-download-button {
+  margin-inline-end: var(--hs-space-8);
+}
+</style>

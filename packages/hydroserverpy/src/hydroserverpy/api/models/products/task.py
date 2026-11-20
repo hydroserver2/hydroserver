@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
-from typing import ClassVar, List, Optional, Union, TYPE_CHECKING
+from functools import cached_property
+from typing import ClassVar, List, Literal, Optional, Union, TYPE_CHECKING
 from pydantic import Field, AliasPath
 from ..base import HydroServerBaseModel
 from ..orchestration.run import TaskRun
@@ -8,7 +9,6 @@ from .transformation import (
     RatingCurveTransformation,
     DerivationTransformation,
     AggregationTransformation,
-    Period,
 )
 
 if TYPE_CHECKING:
@@ -18,28 +18,53 @@ if TYPE_CHECKING:
 class DataProductTask(HydroServerBaseModel):
     name: str
     description: Optional[str] = None
-    thing_id: uuid.UUID
+    workspace_id: uuid.UUID
+    monitoring_site_id: uuid.UUID
     enabled: Optional[bool] = Field(None, validation_alias=AliasPath("schedule", "enabled"))
     start_time: Optional[datetime] = Field(None, validation_alias=AliasPath("schedule", "startTime"))
     crontab: Optional[str] = Field(None, validation_alias=AliasPath("schedule", "crontab"))
     interval: Optional[int] = Field(None, validation_alias=AliasPath("schedule", "interval"))
-    interval_period: Optional[Period] = Field(
+    interval_period: Optional[Literal["minutes", "hours", "days"]] = Field(
         None, validation_alias=AliasPath("schedule", "intervalPeriod")
     )
     next_run_at: Optional[datetime] = Field(None, validation_alias=AliasPath("schedule", "nextRunAt"))
     latest_run: Optional[TaskRun] = None
-    rating_curve_transformations: List[RatingCurveTransformation] = []
-    derivation_transformations: List[DerivationTransformation] = []
-    aggregation_transformations: List[AggregationTransformation] = []
+    transformation_types: List[str] = []
 
-    _editable_fields: ClassVar[set[str]] = {"name", "description"}
+    _editable_fields: ClassVar[set[str]] = {
+        "name",
+        "description",
+        "enabled",
+        "crontab",
+        "interval",
+        "interval_period",
+        "start_time",
+    }
 
     def __init__(self, client: "HydroServer", **data):
         super().__init__(client=client, service=client.dataproducttasks, **data)
 
     @classmethod
     def get_route(cls):
-        return "products/tasks"
+        return "collections/data-product-tasks/items"
+
+    @cached_property
+    def rating_curve_transformations(self) -> List["RatingCurveTransformation"]:
+        """All rating curve transformations for this data product task."""
+
+        return self.client.dataproducttransformations.list_rating_curve(task_id=self.uid)
+
+    @cached_property
+    def derivation_transformations(self) -> List["DerivationTransformation"]:
+        """All derivation transformations for this data product task."""
+
+        return self.client.dataproducttransformations.list_derivation(task_id=self.uid)
+
+    @cached_property
+    def aggregation_transformations(self) -> List["AggregationTransformation"]:
+        """All aggregation transformations for this data product task."""
+
+        return self.client.dataproducttransformations.list_aggregation(task_id=self.uid)
 
     def trigger(self) -> TaskRun:
         """Trigger an immediate run of this data product task."""
@@ -48,27 +73,27 @@ class DataProductTask(HydroServerBaseModel):
 
     def list_runs(
         self,
-        page: int = ...,
-        page_size: int = ...,
-        order_by: List[str] = ...,
+        offset: int = ...,
+        limit: int = ...,
+        sortby: List[str] = ...,
         status: str = ...,
-        started_at_min: datetime = ...,
-        started_at_max: datetime = ...,
-        finished_at_min: datetime = ...,
-        finished_at_max: datetime = ...,
+        min_started_at: datetime = ...,
+        max_started_at: datetime = ...,
+        min_finished_at: datetime = ...,
+        max_finished_at: datetime = ...,
     ) -> List[TaskRun]:
         """Get a collection of task runs for this data product task."""
 
         return self.client.dataproducttasks.list_runs(
             uid=self.uid,
-            page=page,
-            page_size=page_size,
-            order_by=order_by,
+            offset=offset,
+            limit=limit,
+            sortby=sortby,
             status=status,
-            started_at_min=started_at_min,
-            started_at_max=started_at_max,
-            finished_at_min=finished_at_min,
-            finished_at_max=finished_at_max,
+            min_started_at=min_started_at,
+            max_started_at=max_started_at,
+            min_finished_at=min_finished_at,
+            max_finished_at=max_finished_at,
         )
 
     def get_run(self, run_id: Union[uuid.UUID, str]) -> TaskRun:

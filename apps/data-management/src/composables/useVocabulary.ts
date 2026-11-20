@@ -4,122 +4,86 @@ import hs from '@hydroserver/client'
 import type { SiteTypeIcon } from '@hydroserver/client'
 
 export const useVocabularyStore = defineStore('vocabulary', () => {
-  const userTypes = ref<string[]>([])
-  const organizationTypes = ref<string[]>([])
-  const siteTypes = ref<string[]>([])
+  const monitoringSiteTypes = ref<string[]>([])
   const siteTypeIcons = ref<SiteTypeIcon[]>([])
-  const samplingFeatureTypes = ref<string[]>([])
-  const sensorEncodingTypes = ref<string[]>([])
   const methodTypes = ref<string[]>([])
-  const variableTypes = ref<string[]>([])
+  const observedPropertyTypes = ref<string[]>([])
   const unitTypes = ref<string[]>([])
   const datastreamStatuses = ref<string[]>([])
-  const datastreamAggregations = ref<string[]>([])
+  const aggregationStatistics = ref<string[]>([])
   const sampledMediums = ref<string[]>([])
 
-  async function fetchUserTypes() {
-    const res = await hs.user.getUserTypes()
-    if (res.ok) userTypes.value = res.data
-  }
-
-  async function fetchOrganizationTypes() {
-    const res = await hs.user.getOrganizationTypes()
-    if (res.ok) organizationTypes.value = res.data
-  }
-
-  async function fetchSiteTypes() {
-    const res = await hs.things.getSiteTypes()
-    if (res.ok) siteTypes.value = res.data
+  async function fetchMonitoringSiteTypes() {
+    const items = await hs.monitoringSiteTypes.listAllItems()
+    monitoringSiteTypes.value = items.map((item) => item.name)
   }
 
   async function fetchSiteTypeIcons() {
-    const res = await hs.things.getSiteTypeIcons()
+    const res = await hs.monitoringSites.getSiteTypeIcons()
     if (res.ok) siteTypeIcons.value = res.data
   }
 
-  async function fetchSamplingFeatureTypes() {
-    const res = await hs.things.getSamplingFeatureTypes()
-    if (res.ok) samplingFeatureTypes.value = res.data
-  }
-
-  async function fetchSensorEncodingTypes() {
-    const res = await hs.sensors.getEncodingTypes()
-    if (res.ok) sensorEncodingTypes.value = res.data
-  }
-
   async function fetchMethodTypes() {
-    const res = await hs.sensors.getMethodTypes()
-    if (res.ok) methodTypes.value = res.data
+    const items = await hs.methodTypes.listAllItems()
+    methodTypes.value = items.map((item) => item.name)
   }
 
-  async function fetchVariableTypes() {
-    const res = await hs.observedProperties.getVariableTypes()
-    if (res.ok) variableTypes.value = res.data
+  async function fetchObservedPropertyTypes() {
+    const items = await hs.observedPropertyTypes.listAllItems()
+    observedPropertyTypes.value = items.map((item) => item.name)
   }
 
   async function fetchUnitTypes() {
-    const res = await hs.units.getTypes()
-    if (res.ok) unitTypes.value = res.data
+    const items = await hs.unitTypes.listAllItems()
+    unitTypes.value = items.map((item) => item.name)
   }
 
   async function fetchDatastreamStatuses() {
-    const res = await hs.datastreams.getStatuses()
-    if (res.ok) datastreamStatuses.value = res.data
+    const items = await hs.datastreamStatuses.listAllItems()
+    datastreamStatuses.value = items.map((item) => item.name)
   }
 
-  async function fetchDatastreamAggregations() {
-    const res = await hs.datastreams.getAggregationStatistics()
-    if (res.ok) datastreamAggregations.value = res.data
+  async function fetchAggregationStatistics() {
+    const items = await hs.aggregationStatistics.listAllItems()
+    aggregationStatistics.value = items.map((item) => item.name)
   }
 
   async function fetchSampledMediums() {
-    const res = await hs.datastreams.getSampledMediums()
-    if (res.ok) sampledMediums.value = res.data
+    const items = await hs.sampledMediums.listAllItems()
+    sampledMediums.value = items.map((item) => item.name)
   }
 
   // Fetch all vocabularies in parallel
   async function fetchAllVocabularies() {
     await Promise.all([
-      fetchUserTypes(),
-      fetchOrganizationTypes(),
-      fetchSiteTypes(),
+      fetchMonitoringSiteTypes(),
       fetchSiteTypeIcons(),
-      fetchSamplingFeatureTypes(),
-      fetchSensorEncodingTypes(),
       fetchMethodTypes(),
-      fetchVariableTypes(),
+      fetchObservedPropertyTypes(),
       fetchUnitTypes(),
       fetchDatastreamStatuses(),
-      fetchDatastreamAggregations(),
+      fetchAggregationStatistics(),
       fetchSampledMediums(),
     ])
   }
 
   return {
-    userTypes,
-    organizationTypes,
-    siteTypes,
+    monitoringSiteTypes,
     siteTypeIcons,
-    samplingFeatureTypes,
-    sensorEncodingTypes,
     methodTypes,
-    variableTypes,
+    observedPropertyTypes,
     unitTypes,
     datastreamStatuses,
-    datastreamAggregations,
+    aggregationStatistics,
     sampledMediums,
 
-    fetchUserTypes,
-    fetchOrganizationTypes,
-    fetchSiteTypes,
+    fetchMonitoringSiteTypes,
     fetchSiteTypeIcons,
-    fetchSamplingFeatureTypes,
-    fetchSensorEncodingTypes,
     fetchMethodTypes,
-    fetchVariableTypes,
+    fetchObservedPropertyTypes,
     fetchUnitTypes,
     fetchDatastreamStatuses,
-    fetchDatastreamAggregations,
+    fetchAggregationStatistics,
     fetchSampledMediums,
 
     fetchAllVocabularies,

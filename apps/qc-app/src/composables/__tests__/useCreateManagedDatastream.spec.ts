@@ -15,10 +15,10 @@ const makeSource = (overrides: Record<string, unknown> = {}) =>
     id: 'source-1',
     name: 'Raw',
     processingLevelId: 'pl-raw',
-    thingId: 't-1',
+    monitoringSiteId: 't-1',
     unitId: 'u-1',
     observedPropertyId: 'op-1',
-    sensorId: 'sn-1',
+    methodId: 'sn-1',
     ...overrides,
   }) as any
 
@@ -54,7 +54,7 @@ describe('useCreateManagedDatastream', () => {
       name: 'My QC',
       description: 'Cleaned series',
       status: 'complete',
-      sensorId: 'sn-2',
+      methodId: 'sn-2',
     })
 
     const body = hsCreate.mock.calls[0][0]
@@ -62,10 +62,10 @@ describe('useCreateManagedDatastream', () => {
     expect(body.name).toBe('My QC')
     expect(body.description).toBe('Cleaned series')
     expect(body.status).toBe('complete')
-    expect(body.sensorId).toBe('sn-2')
+    expect(body.methodId).toBe('sn-2')
     expect(body.valueCount).toBe(0)
 
-    expect(result.history.managedDatastream.id).toBe('managed-1')
+    expect(result.history.managedDatastreamId).toBe('managed-1')
     expect(unwrap(await qc.histories.list())).toHaveLength(1)
   })
 
@@ -78,7 +78,7 @@ describe('useCreateManagedDatastream', () => {
       source: makeSource({ status: 'ongoing' }),
       processingLevelId: 'pl-qc',
       description: 'Cleaned series',
-      sensorId: 'sn-1',
+      methodId: 'sn-1',
     })
 
     expect(hsCreate.mock.calls[0][0].status).toBeUndefined()

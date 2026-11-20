@@ -45,24 +45,31 @@
           </v-card-title>
           <v-card-text
             v-if="showLinkedMetadataHelp"
-            class="text-subtitle-2 text-medium-emphasis"
+            class="text-medium-emphasis"
           >
-            Select the appropriate metadata to describe the the datastream you
-            are adding to the monitoring site. If you want to modify the values
-            available in the drop down menus below, click the "+" button or
-            visit the
-            <router-link to="/Metadata"> Manage metadata page. </router-link>
-            Options in the drop down menus come from both metadata associated
-            with the workspace as well as system level metadata managed by the
-            system admin.
+            <small>
+              Select the appropriate metadata to describe the datastream you are
+              adding to the monitoring site. If you want to modify the values
+              available in the drop down menus below, click the "+" button or
+              visit the
+              <router-link
+                :to="{ path: '/workspaces', query: { section: 'metadata' } }"
+              >
+                Metadata tab of the Workspaces page.
+              </router-link>
+              Options in the drop down menus come from both metadata associated
+              with the workspace as well as system level metadata managed by the
+              system admin.
+            </small>
           </v-card-text>
 
           <v-card-text>
             <v-autocomplete
-              :key="datastream.sensorId"
-              v-model="datastream.sensorId"
-              label="Select method *"
-              :items="sensors"
+              :key="datastream.methodId"
+              v-model="datastream.methodId"
+              class="required-label"
+              label="Select method"
+              :items="methods"
               item-title="name"
               item-value="id"
               :rules="rules.required"
@@ -81,32 +88,37 @@
                     <v-list-item
                       v-bind="{ ...props, ...tooltipProps }"
                       :subtitle="
-                        item.raw.workspaceId == null
+                        item.workspaceId == null
                           ? 'System variable'
                           : 'Workspace variable'
                       "
                       :class="
-                        item.raw.workspaceId == null ? 'bg-grey-lighten-5' : ''
+                        item.workspaceId == null ? 'bg-grey-lighten-5' : ''
                       "
                     />
                   </template>
 
                   <InfoCard
-                    :title="item.raw.name"
+                    :title="item.name"
                     :subtitle="{
                       label: 'Method type',
-                      value: item.raw.methodType,
+                      value: item.type,
                     }"
                     :items="[
-                      { label: 'Description', value: item.raw.description },
-                      { label: 'Make', value: item.raw.manufacturer },
-                      { label: 'Model', value: item.raw.model },
-                      { label: 'Method Code', value: item.raw.methodCode },
-                      { label: 'Method Link', value: item.raw.methodLink },
-                      { label: 'Encoding Type', value: item.raw.encodingType },
-                      { label: 'Model Link', value: item.raw.modelLink },
+                      { label: 'Description', value: item.description },
+                      { label: 'Code', value: item.code },
+                      { label: 'Definition', value: item.definition },
+                      {
+                        label: 'Sensor model manufacturer',
+                        value: item.sensorModelManufacturer,
+                      },
+                      { label: 'Sensor model', value: item.sensorModel },
+                      {
+                        label: 'Sensor model definition',
+                        value: item.sensorModelDefinition,
+                      },
                     ]"
-                    :isWorkspace="!!item.raw.workspaceId"
+                    :isWorkspace="!!item.workspaceId"
                   />
                 </v-tooltip>
               </template>
@@ -115,7 +127,7 @@
                 v-slot:append
                 v-if="
                   hasPermission(
-                    PermissionResource.Sensor,
+                    PermissionResource.Method,
                     PermissionAction.Create,
                     workspace
                   )
@@ -124,14 +136,14 @@
                 <v-icon
                   :icon="mdiPlus"
                   color="secondary-darken-2"
-                  @click="showSensorModal = true"
+                  @click="showMethodModal = true"
                 />
-                <v-dialog v-model="showSensorModal" width="30rem">
-                  <SensorFormCard
+                <v-dialog v-model="showMethodModal" width="30rem">
+                  <MethodFormCard
                     v-if="workspace"
                     :workspace-id="workspace.id"
-                    @created="handleMetadataUploaded('sensorId', $event)"
-                    @close="showSensorModal = false"
+                    @created="handleMetadataUploaded('methodId', $event)"
+                    @close="showMethodModal = false"
                   />
                 </v-dialog>
               </template>
@@ -139,7 +151,7 @@
 
             <v-autocomplete
               v-model="datastream.observedPropertyId"
-              label="Select observed property *"
+              label="Select observed property"
               :items="formattedObservedProperties"
               item-title="title"
               item-value="id"
@@ -148,7 +160,7 @@
               :prepend-inner-icon="mdiWaterThermometer"
               density="compact"
               rounded="lg"
-              class="mt-2"
+              class="required-label mt-2"
             >
               <template v-slot:item="{ props, item }">
                 <v-tooltip
@@ -159,32 +171,32 @@
                   <template v-slot:activator="{ props: tooltipProps }">
                     <v-list-item
                       :subtitle="
-                        item.raw.workspaceId === null
+                        item.workspaceId === null
                           ? 'System variable'
                           : 'Workspace variable'
                       "
                       :class="
-                        item.raw.workspaceId === null ? 'bg-grey-lighten-5' : ''
+                        item.workspaceId === null ? 'bg-grey-lighten-5' : ''
                       "
                       v-bind="{ ...props, ...tooltipProps }"
                     >
                     </v-list-item>
                   </template>
                   <InfoCard
-                    :title="item.raw.name"
-                    :subtitle="{ label: 'Code', value: item.raw.code }"
+                    :title="item.name"
+                    :subtitle="{ label: 'Code', value: item.code }"
                     :items="[
                       {
                         label: 'Definition',
-                        value: item.raw.definition,
+                        value: item.definition,
                       },
                       {
                         label: 'Description',
-                        value: item.raw.description,
+                        value: item.description,
                       },
-                      { label: 'Type', value: item.raw.type },
+                      { label: 'Type', value: item.type },
                     ]"
-                    :isWorkspace="!!item.raw.workspaceId"
+                    :isWorkspace="!!item.workspaceId"
                   />
                 </v-tooltip>
               </template>
@@ -218,7 +230,7 @@
 
             <v-autocomplete
               v-model="datastream.unitId"
-              label="Select unit *"
+              label="Select unit"
               :items="units"
               item-title="name"
               item-value="id"
@@ -227,7 +239,7 @@
               :prepend-inner-icon="mdiTapeMeasure"
               density="compact"
               rounded="lg"
-              class="mt-2"
+              class="required-label mt-2"
             >
               <template #item="{ props, item }">
                 <v-tooltip
@@ -239,24 +251,24 @@
                     <v-list-item
                       v-bind="{ ...props, ...tooltipProps }"
                       :subtitle="
-                        item.raw.workspaceId == null
+                        item.workspaceId == null
                           ? 'System unit'
                           : 'Workspace unit'
                       "
                       :class="
-                        item.raw.workspaceId == null ? 'bg-grey-lighten-5' : ''
+                        item.workspaceId == null ? 'bg-grey-lighten-5' : ''
                       "
                     />
                   </template>
 
                   <InfoCard
-                    :title="item.raw.name"
-                    :subtitle="{ label: 'Symbol', value: item.raw.symbol }"
+                    :title="item.name"
+                    :subtitle="{ label: 'Symbol', value: item.symbol }"
                     :items="[
-                      { label: 'Definition', value: item.raw.definition },
-                      { label: 'Type', value: item.raw.type },
+                      { label: 'Definition', value: item.definition },
+                      { label: 'Type', value: item.type },
                     ]"
-                    :isWorkspace="!!item.raw.workspaceId"
+                    :isWorkspace="!!item.workspaceId"
                   />
                 </v-tooltip>
               </template>
@@ -289,7 +301,7 @@
 
             <v-autocomplete
               v-model="datastream.processingLevelId"
-              label="Select processing level *"
+              label="Select processing level"
               :items="formattedProcessingLevels"
               item-title="title"
               item-value="id"
@@ -298,7 +310,7 @@
               :prepend-inner-icon="mdiCheckCircle"
               density="compact"
               rounded="lg"
-              class="mt-2"
+              class="required-label mt-2"
             >
               <template #item="{ props, item }">
                 <v-tooltip
@@ -310,26 +322,27 @@
                     <v-list-item
                       v-bind="{ ...props, ...tooltipProps }"
                       :subtitle="
-                        item.raw.workspaceId == null
+                        item.workspaceId == null
                           ? 'System level'
                           : 'Workspace level'
                       "
                       :class="
-                        item.raw.workspaceId == null ? 'bg-grey-lighten-5' : ''
+                        item.workspaceId == null ? 'bg-grey-lighten-5' : ''
                       "
                     />
                   </template>
 
                   <InfoCard
-                    :title="item.raw.definition"
+                    :title="item.name"
                     :subtitle="{
                       label: 'Code',
-                      value: item.raw.code,
+                      value: item.code,
                     }"
                     :items="[
-                      { label: 'Explanation', value: item.raw.explanation },
+                      { label: 'Description', value: item.description },
+                      { label: 'Definition', value: item.definition },
                     ]"
-                    :isWorkspace="!!item.raw.workspaceId"
+                    :isWorkspace="!!item.workspaceId"
                   />
                 </v-tooltip>
               </template>
@@ -369,7 +382,8 @@
           <v-card-text>
             <v-text-field
               v-model="datastream.timeAggregationInterval"
-              label="Time aggregation interval *"
+              class="required-label"
+              label="Time aggregation interval"
               :rules="[
                 ...rules.requiredNumber,
                 () =>
@@ -390,7 +404,7 @@
             >
               <v-btn-toggle
                 v-model="datastream.timeAggregationIntervalUnit"
-                label="Time aggregation unit *"
+                aria-label="Time aggregation unit"
                 :items="timeUnits"
                 variant="outlined"
                 color="primary"
@@ -450,16 +464,19 @@
       <v-row>
         <v-col cols="12" md="6">
           <v-card-title>Datastream attributes</v-card-title>
-          <v-card-text class="text-subtitle-2 text-medium-emphasis">
-            For the following items, select an option or type your own. Note:
-            the default selections won't be available if there is custom text in
-            the field.
+          <v-card-text class="text-medium-emphasis">
+            <small>
+              For the following items, select an option or type your own. Note:
+              the default selections won't be available if there is custom text
+              in the field.
+            </small>
           </v-card-text>
           <v-card-text class="pb-0">
             <v-combobox
               :items="vocabularyStore.sampledMediums"
               v-model="datastream.sampledMedium"
-              label="Medium *"
+              class="required-label"
+              label="Medium"
               :rules="rules.required"
               density="compact"
               rounded="xl"
@@ -476,9 +493,10 @@
             />
 
             <v-combobox
-              :items="vocabularyStore.datastreamAggregations"
+              :items="vocabularyStore.aggregationStatistics"
               v-model="datastream.aggregationStatistic"
-              label="Aggregation statistic *"
+              class="required-label"
+              label="Aggregation statistic"
               :rules="rules.requiredAndMaxLength255"
               density="compact"
               rounded="xl"
@@ -486,14 +504,17 @@
             />
           </v-card-text>
 
-          <v-card-text class="text-subtitle-2 text-medium-emphasis pt-2">
-            When observation data is missing a value, what should the default
-            be?
+          <v-card-text class="text-medium-emphasis pt-2">
+            <small>
+              When observation data is missing a value, what should the default
+              be?
+            </small>
           </v-card-text>
           <v-card-text>
             <v-text-field
               v-model="datastream.noDataValue"
-              label="No data value *"
+              class="required-label"
+              label="No data value"
               :rules="rules.required"
               type="number"
               density="compact"
@@ -504,50 +525,53 @@
         </v-col>
 
         <v-col cols="12" md="6">
-          <v-card-title>Name and description</v-card-title>
-          <v-card-text class="text-subtitle-2 text-medium-emphasis">
-            Enter a name and description for this datastream, or opt to
-            auto-fill with default text. If you choose the defaults, make sure
-            you've first filled out the rest of the form correctly as the
-            website will generate text based on the current form fields.
+          <v-card-title class="d-flex align-center">
+            Name and description
+            <v-btn-icon
+              :icon="mdiHelpCircleOutline"
+              size="small"
+              class="ml-2"
+              title="How to name a datastream"
+              aria-label="How to name a datastream"
+              :aria-expanded="showNamingHelp"
+              @click="showNamingHelp = !showNamingHelp"
+            />
+          </v-card-title>
+          <v-card-text class="text-medium-emphasis">
+            <small>
+              Enter a name and description for this datastream. You can
+              auto-fill the description after completing the rest of the form,
+              then edit the generated text.
+            </small>
           </v-card-text>
 
           <v-card-text>
             <v-text-field
               v-model="datastream.name"
-              label="Datastream name *"
+              label="Datastream name"
+              class="required-label"
+              placeholder="Water Temp - 15 min, RAW"
+              persistent-placeholder
               :rules="rules.requiredAndMaxLength255"
               density="compact"
               rounded="lg"
             />
+            <p v-if="showNamingHelp" class="text-medium-emphasis">
+              The name is displayed throughout HydroServer wherever a list of
+              datastreams is presented. A good name is short and unique within
+              the site. The recommended format is &lt;observed property&gt; -
+              &lt;variant information if any&gt;, where the variant information
+              provides details that distinguish this datastream from others at
+              the same site, such as units, processing level, or time spacing.
+              Examples include "Water Temp - 15 min, RAW" and "Discharge - Daily
+              Mean". If you only have one Water Temp datastream or one Discharge
+              datastream at this site, then no variant information is needed.
+            </p>
 
-            <v-row justify="end">
-              <v-col cols="auto">
-                <v-spacer />
-                <v-btn
-                  variant="text"
-                  color="grey-darken-4"
-                  :disabled="datastream.name === originalName"
-                  @click="datastream.name = originalName"
-                >
-                  Revert
-                </v-btn>
-                <v-btn
-                  color="primary-darken-2"
-                  variant="outlined"
-                  rounded="xl"
-                  class="ml-2"
-                  @click="datastream.name = generateDefaultName()"
-                  >Auto-Fill from Form</v-btn
-                >
-              </v-col>
-            </v-row>
-          </v-card-text>
-
-          <v-card-text>
             <v-textarea
               v-model="datastream.description"
-              label="Datastream description *"
+              class="required-label mt-2"
+              label="Datastream description"
               :rules="rules.requiredDescription"
               rounded="lg"
             />
@@ -569,7 +593,7 @@
                   rounded="xl"
                   class="ml-2"
                   @click="datastream.description = generateDefaultDescription()"
-                  >Auto-Fill from Form</v-btn
+                  >Auto-fill from form</v-btn
                 >
               </v-col>
             </v-row>
@@ -582,8 +606,8 @@
       <v-card-actions>
         <v-spacer />
         <v-btn-cancel @click="emit('close')"> Cancel </v-btn-cancel>
-        <v-btn-primary type="submit" class="my-4"
-          >{{ isEdit ? 'Update' : 'Create' }} datastream</v-btn-primary
+        <v-btn-dialog-action type="submit" class="my-4"
+          >{{ isEdit ? 'Update' : 'Create' }} datastream</v-btn-dialog-action
         >
       </v-card-actions>
     </v-form>
@@ -593,7 +617,7 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, toRef } from 'vue'
 import DatastreamSelectorCard from '@/components/Datastream/DatastreamSelectorCard.vue'
-import SensorFormCard from '@/components/Metadata/SensorFormCard.vue'
+import MethodFormCard from '@/components/Metadata/MethodFormCard.vue'
 import ObservedPropertyFormCard from '@/components/Metadata/ObservedPropertyFormCard.vue'
 import UnitFormCard from '@/components/Metadata/UnitFormCard.vue'
 import ProcessingLevelFormCard from '@/components/Metadata/ProcessingLevelFormCard.vue'
@@ -607,7 +631,7 @@ import InfoCard from '../Metadata/InfoCard.vue'
 import hs, {
   PermissionAction,
   PermissionResource,
-  Thing,
+  MonitoringSite,
   Datastream,
   Workspace,
 } from '@hydroserver/client'
@@ -618,6 +642,7 @@ import {
   mdiClockTimeThree,
   mdiHelpCircleOutline,
   mdiImport,
+  mdiOpenInNew,
   mdiListStatus,
   mdiPlus,
   mdiSignalVariant,
@@ -630,25 +655,26 @@ import {
 const emit = defineEmits(['close', 'updated', 'created'])
 
 const props = defineProps({
-  thing: { type: Object as () => Thing, required: true },
+  monitoringSite: { type: Object as () => MonitoringSite, required: true },
   workspace: { type: Object as () => Workspace, required: true },
   datastream: { type: Object as () => Datastream, required: false },
 })
 
 const vocabularyStore = useVocabularyStore()
 
-const thing = ref<Thing>()
-const datastream = ref<Datastream>(new Datastream(props.thing.id))
+const monitoringSite = ref<MonitoringSite>()
+const datastream = ref<Datastream>(new Datastream(props.monitoringSite.id))
 
 const timeUnits = ['seconds', 'minutes', 'hours', 'days']
 
 const openUnitForm = ref(false)
 const isEdit = ref(!!props.datastream?.id)
 const showTemplateModal = ref(false)
-const showSensorModal = ref(false)
+const showMethodModal = ref(false)
 const showPLModal = ref(false)
 const showOPModal = ref(false)
 const showLinkedMetadataHelp = ref(false)
+const showNamingHelp = ref(false)
 
 const valid = ref(false)
 const myForm = ref<VForm>()
@@ -658,7 +684,7 @@ const intendedTimeSpacingRef = ref<VForm>()
 const { hasPermission } = useWorkspacePermissions()
 
 const {
-  sensors,
+  methods,
   units,
   observedProperties,
   processingLevels,
@@ -672,18 +698,7 @@ const handleMetadataUploaded = async (dsKey: string, newId: string) => {
   ;(datastream.value as any)[dsKey] = newId
 }
 
-const originalName = ref('')
 const originalDescription = ref('')
-
-const generateDefaultName = () => {
-  const OP = observedProperties.value.find(
-    (pl) => pl.id === datastream.value.observedPropertyId
-  )?.name
-  const PL = processingLevels.value.find(
-    (pl) => pl.id === datastream.value.processingLevelId
-  )?.code
-  return `${OP} at ${thing.value?.samplingFeatureCode} with processing level ${PL}`
-}
 
 const generateDefaultDescription = () => {
   const OP = observedProperties.value.find(
@@ -691,14 +706,14 @@ const generateDefaultDescription = () => {
   )?.name
   const PL = processingLevels.value.find(
     (pl) => pl.id === datastream.value.processingLevelId
-  )?.code
-  const sensorName = sensors.value.find(
-    (pl) => pl.id === datastream.value.sensorId
+  )?.name
+  const methodName = methods.value.find(
+    (pl) => pl.id === datastream.value.methodId
   )?.name
   const unitName = units.value.find(
     (pl) => pl.id === datastream.value.unitId
   )?.name
-  return `A datastream of ${OP} at ${thing.value?.name} with processing level ${PL} and sampled medium ${datastream.value.sampledMedium} created using a method with name ${sensorName} having units of ${unitName}`
+  return `A datastream of ${OP} at ${monitoringSite.value?.name} with processing level ${PL} and sampled medium ${datastream.value.sampledMedium} created using a method with name ${methodName} having units of ${unitName}`
 }
 
 watch(selectedDatastreamID, async () => {
@@ -707,7 +722,7 @@ watch(selectedDatastreamID, async () => {
     if (!fetchedDS) return
     Object.assign(datastream.value, {
       ...datastream.value,
-      sensorId: fetchedDS.sensorId,
+      methodId: fetchedDS.methodId,
       observedPropertyId: fetchedDS.observedPropertyId,
       processingLevelId: fetchedDS.processingLevelId,
       unitId: fetchedDS.unitId,
@@ -735,7 +750,7 @@ function onSpacingUnitChange() {
 async function onSubmit() {
   await myForm.value?.validate()
   if (!valid.value) return
-  datastream.value.thingId = props.thing.id
+  datastream.value.monitoringSiteId = props.monitoringSite.id
   if (isEdit.value) {
     try {
       await hs.datastreams.update(datastream.value)
@@ -758,10 +773,9 @@ onMounted(async () => {
   try {
     if (isEdit.value) {
       datastream.value = props.datastream!
-      originalName.value = datastream.value.name
       originalDescription.value = datastream.value.description
     }
-    thing.value = props.thing
+    monitoringSite.value = props.monitoringSite
   } catch (error) {
     Snackbar.error('Unable to fetch data from the API.')
     console.error('Error fetching datastream data from DB.', error)

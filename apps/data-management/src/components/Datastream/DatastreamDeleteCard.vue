@@ -1,7 +1,7 @@
 <template>
   <v-card>
     <v-toolbar flat color="red-darken-4">
-      <v-card-title class="text-h5">
+      <v-card-title class="hs-text-md">
         <v-icon :icon="mdiAlert" /> Confirm datastream deletion
       </v-card-title>
     </v-toolbar>
@@ -11,10 +11,12 @@
       <strong> ({{ datastream.name }}) </strong>
     </v-card-text>
     <v-card-text>
-      Please type <strong> Delete </strong> to confirm deletion:
+      Please type <strong>Delete</strong> to confirm deletion:
       <v-form>
         <v-text-field
           v-model="confirmationInput"
+          :error-messages="confirmationError"
+          @update:model-value="confirmationError = ''"
           @keydown.enter.prevent="onDelete"
         />
       </v-form>
@@ -23,13 +25,12 @@
     <v-card-actions>
       <v-spacer />
       <v-btn-cancel @click="emit('close')">Cancel</v-btn-cancel>
-      <v-btn-delete @click="onDelete">Confirm</v-btn-delete>
+      <v-btn-destructive @click="onDelete">Confirm</v-btn-destructive>
     </v-card-actions>
   </v-card>
 </template>
 
 <script setup lang="ts">
-import { Snackbar } from '@/utils/notifications'
 import { mdiAlert } from '@mdi/js'
 import { ref } from 'vue'
 
@@ -43,10 +44,11 @@ const props = defineProps({
 })
 
 const confirmationInput = ref('')
+const confirmationError = ref('')
 
 const onDelete = () => {
-  if (confirmationInput.value.toLocaleLowerCase() !== 'delete') {
-    Snackbar.error('inputs do not match')
+  if (confirmationInput.value.trim().toLowerCase() !== 'delete') {
+    confirmationError.value = 'Type Delete to confirm deletion.'
     return
   }
   emit('delete')

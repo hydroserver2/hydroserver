@@ -1,7 +1,7 @@
 <template>
   <v-card>
     <v-toolbar flat color="red-darken-4">
-      <v-card-title class="text-h5">
+      <v-card-title class="hs-text-md">
         <v-icon :icon="mdiAlert" />
         Confirm unlinking HydroShare archival
       </v-card-title>
@@ -28,7 +28,7 @@
     <v-card-actions>
       <v-spacer />
       <v-btn-cancel @click="cancelDeletion">Cancel</v-btn-cancel>
-      <v-btn-delete @click="deleteLink">Delete</v-btn-delete>
+      <v-btn-destructive @click="deleteLink">Delete</v-btn-destructive>
     </v-card-actions>
   </v-card>
 </template>
@@ -41,7 +41,7 @@ import { mdiAlert } from '@mdi/js'
 
 const emit = defineEmits(['delete', 'close'])
 const props = defineProps({
-  thingId: { type: String, required: true },
+  monitoringSiteId: { type: String, required: true },
 })
 const deleteInput = ref('')
 
@@ -51,7 +51,7 @@ async function deleteLink() {
     return
   }
   try {
-    await hs.things.deleteHydroShareArchive(props.thingId)
+    await hs.monitoringSites.deleteHydroShareArchive(props.monitoringSiteId)
     Snackbar.info('Your site has been unlinked')
     emit('delete')
     emit('close')

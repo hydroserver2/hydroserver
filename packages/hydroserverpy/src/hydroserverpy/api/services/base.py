@@ -3,7 +3,8 @@ import uuid
 from typing import TYPE_CHECKING, Type, List, Union
 from datetime import datetime
 from hydroserverpy.api.models.base import HydroServerBaseModel, HydroServerCollection
-from hydroserverpy.api.utils import order_by_to_camel
+from pydantic.alias_generators import to_camel
+from hydroserverpy.api.utils import sortby_to_camel
 
 if TYPE_CHECKING:
     from hydroserverpy import HydroServer
@@ -17,20 +18,20 @@ class HydroServerBaseService:
 
     def list(
         self,
-        page: int = ...,
-        page_size: int = ...,
-        order_by: List[str] = ...,
+        offset: int = ...,
+        limit: int = ...,
+        sortby: List[str] = ...,
         fetch_all: bool = False,
         **kwargs
     ):
         kwargs = {
             k: v for k, v in kwargs.items() if v is not ...
         }
-        params = kwargs.copy()
+        params = {to_camel(k): v for k, v in kwargs.items()}
         params.update({
-            "page": page,
-            "page_size": page_size,
-            "order_by": [order_by_to_camel(order) for order in order_by] if order_by is not ... else order_by
+            "offset": offset,
+            "limit": limit,
+            "sortby": [sortby_to_camel(order) for order in sortby] if sortby is not ... else sortby
         })
         params = {
             k: ("null" if v is None else v)
@@ -45,7 +46,7 @@ class HydroServerBaseService:
             client=self.client,
             service=self,
             response=response,
-            order_by=params.get("order_by"),
+            sortby=params.get("sortby"),
             filters={
                 (k[:-3] if k.endswith("_id") else k): v
                 for k, v in kwargs.items()
@@ -61,10 +62,11 @@ class HydroServerBaseService:
         uid: Union[uuid.UUID, str]
     ):
         path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}"
-        response = self.client.request("get", path).json()
+        payload = self.client.request("get", path).json()
+        data = payload.get("data", payload)
 
         return self.model(
-            client=self.client, uid=uuid.UUID(str(response.pop("id"))), **response
+            client=self.client, uid=uuid.UUID(str(data.pop("id"))), **data
         )
 
     def create(self, **kwargs):
@@ -74,9 +76,7 @@ class HydroServerBaseService:
             "post", path, headers=headers, data=json.dumps(kwargs, default=self.default_serializer)
         ).json()
 
-        return self.model(
-            client=self.client, uid=uuid.UUID(str(response.pop("id"))), **response
-        )
+        return self.get(response["id"])
 
     def update(
         self,
@@ -84,15 +84,13 @@ class HydroServerBaseService:
         **kwargs
     ):
         path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}"
-        headers = {"Content-type": "application/json"}
+        headers = {"Content-type": "application/merge-patch+json"}
         body = self.prune_unset(kwargs) or {}
-        response = self.client.request(
+        self.client.request(
             "patch", path, headers=headers, data=json.dumps(body, default=self.default_serializer)
-        ).json()
-
-        return self.model(
-            client=self.client, uid=uuid.UUID(str(response.pop("id"))), **response
         )
+
+        return self.get(uid)
 
     def delete(
         self,
@@ -109,10 +107,9 @@ class HydroServerBaseService:
 
     def prune_unset(self, obj):
         if isinstance(obj, dict):
-            cleaned = {
+            return {
                 k: self.prune_unset(v)
                 for k, v in obj.items()
-                if v is not ... and self.prune_unset(v) is not None
+                if v is not ...
             }
-            return cleaned if cleaned else None
         return obj

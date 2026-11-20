@@ -20,13 +20,13 @@
       max-width="32rem"
       content-class="date-picker-dialog"
     >
-      <v-card class="date-picker-card" color="blue">
+      <v-card class="date-picker-card" color="primary">
         <v-card-title class="d-flex pt-4">
           Select {{ placeholder }}
           <v-spacer />
           <v-icon
             :icon="mdiClose"
-            color="white"
+            color="on-primary"
             @click="showDatePicker = false"
           />
         </v-card-title>
@@ -100,14 +100,14 @@ const resolvedColor = computed(() =>
   props.active ? props.color || 'primary' : undefined
 )
 const resolvedBgColor = computed(() =>
-  props.active ? 'blue-lighten-5' : undefined
+  props.active ? 'surface-muted' : undefined
 )
 </script>
 
 <style scoped>
 .date-picker-card {
   overflow: hidden;
-  border-radius: 0;
+  border-radius: var(--hs-radius-md);
   width: 100%;
 }
 

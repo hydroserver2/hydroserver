@@ -14,6 +14,7 @@ import {
   type TimeWindow,
 } from '@/utils/timeRangePresets'
 import { isSnapshotId } from '@/utils/snapshotId'
+import { PLOT_CAP, SNAPSHOT_CAP, plotCapMessage } from '@/utils/plotCap'
 import { contextTargetId, makeContextId } from '@/utils/contextSeriesId'
 import { useWorkingCopiesStore } from '@/store/workingCopies'
 import { useQcSessionStore } from '@/store/qcSession'
@@ -25,8 +26,8 @@ import {
   type DatastreamExtended,
   ObservedProperty,
   ProcessingLevel,
+  MonitoringSite,
   type QualityControlHistory,
-  Thing,
 } from '@hydroserver/client'
 import { historyManagedId, historySourceId } from '@/utils/qcHistory'
 
@@ -44,7 +45,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   const { graphSeriesArray } = storeToRefs(usePlotlyStore())
 
   // To only fetch these once per page
-  const things = ref<Thing[]>([])
+  const monitoringSites = ref<MonitoringSite[]>([])
   const datastreams = ref<(Datastream & DatastreamExtended)[]>([])
   // QC histories for the workspace (each links a managed datastream to its
   // source). Drives hiding managed datastreams from the catalog and the
@@ -140,7 +141,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   const processingLevels = ref<ProcessingLevel[]>([])
 
   // Filters
-  const selectedThings = ref<Thing[]>([])
+  const selectedMonitoringSites = ref<MonitoringSite[]>([])
   const selectedObservedPropertyNames = ref<string[]>([])
   const selectedProcessingLevelNames = ref<string[]>([])
 
@@ -277,7 +278,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   }
 
   function resetState() {
-    selectedThings.value = []
+    selectedMonitoringSites.value = []
     plottedDatastreams.value = []
     qcDatastreamId.value = null
     selectedObservedPropertyNames.value = []
@@ -298,10 +299,32 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     else await plotDatastream(datastream)
   }
 
+  /**
+   * `items` trimmed to `PLOT_CAP` datastreams, in order, with a warning
+   * naming any left off. Every way onto the plot goes through here, so a
+   * share link can't load more than the table allows.
+   */
+  function withinPlotCap(items: Datastream[]): Datastream[] {
+    const kept: Datastream[] = []
+    const leftOff: string[] = []
+    let count = 0
+    for (const d of items) {
+      if (isSnapshotId(d.id)) kept.push(d)
+      else if (count < PLOT_CAP) {
+        kept.push(d)
+        count++
+      } else leftOff.push(d.name)
+    }
+    if (leftOff.length) Snackbar.warn(plotCapMessage(leftOff))
+    return kept
+  }
+
   /** Add a datastream to the plot. Triggers an explicit plot rebuild, no watcher. */
   async function plotDatastream(ds: Datastream) {
     if (plottedDatastreams.value.some((d) => d.id === ds.id)) return
-    plottedDatastreams.value.push(ds)
+    const next = withinPlotCap([...plottedDatastreams.value, ds])
+    if (next.length === plottedDatastreams.value.length) return
+    plottedDatastreams.value = next
     await rebuildPlot()
   }
 
@@ -324,6 +347,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     meta: SnapshotMeta
   ) {
     if (plottedDatastreams.value.some((d) => d.id === id)) return
+    if (refuseSnapshot(meta.sessionLabel)) return
 
     const qcSeries = graphSeriesArray.value.find(
       (s) => s.id === qcDatastreamId.value
@@ -336,6 +360,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
       yAxisLabel: qcSeries?.yAxisLabel ?? '',
       color: '',
       intendedSpacingMs: qcSeries?.intendedSpacingMs ?? null,
+      variable: qcSeries?.variable,
       snapshot: meta,
     })
 
@@ -343,6 +368,19 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     updateOptions()
     const { plotlyRef } = storeToRefs(usePlotlyStore())
     if (plotlyRef.value) await handleNewPlot(undefined, { preserveZoom: true })
+  }
+
+  /**
+   * True, with a warning, when `SNAPSHOT_CAP` snapshots are already shown.
+   * Checked before a snapshot is built, since building one is the costly part.
+   */
+  function refuseSnapshot(label: string): boolean {
+    const shown = plottedDatastreams.value.filter((d) => isSnapshotId(d.id))
+    if (shown.length < SNAPSHOT_CAP) return false
+    Snackbar.warn(
+      `Up to ${SNAPSHOT_CAP} snapshots can be shown at once. Hide one to show ${label}.`
+    )
+    return true
   }
 
   /** Drop every snapshot line, without redrawing. Callers redraw themselves. */
@@ -396,7 +434,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
       .map((id) => datastreams.value.find((d) => d.id === id))
       .filter((d): d is Datastream & DatastreamExtended => !!d)
 
-    const next = [...kept, ...added]
+    const next = withinPlotCap([...kept, ...added])
     const unchanged =
       next.length === plottedDatastreams.value.length &&
       next.every((d, i) => d.id === plottedDatastreams.value[i]?.id)
@@ -415,7 +453,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
 
   /** Replace the plotted set wholesale (used by URL hydration). */
   async function setPlottedDatastreams(items: Datastream[]) {
-    plottedDatastreams.value = items.slice()
+    plottedDatastreams.value = withinPlotCap(items)
     await rebuildPlot()
   }
 
@@ -598,7 +636,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   }
 
   // Note: datastreams are loaded with `expand_related: true`, so these carry
-  // nested `thing`/`observedProperty`/`processingLevel` objects rather than
+  // nested `monitoringSite`/`observedProperty`/`processingLevel` objects rather than
   // the flat `*Id` fields on the bare Datastream type.
   function matchesSelectedObservedProperty(
     datastream: Datastream & DatastreamExtended
@@ -612,15 +650,15 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     datastream: Datastream & DatastreamExtended
   ) {
     if (selectedProcessingLevelNames.value.length === 0) return true
-    const def = datastream.processingLevel?.definition
-    return !!def && selectedProcessingLevelNames.value.includes(def)
+    const name = datastream.processingLevel?.name
+    return !!name && selectedProcessingLevelNames.value.includes(name)
   }
 
-  function matchesSelectedThing(datastream: Datastream & DatastreamExtended) {
-    if (selectedThings.value.length === 0) return true
-    const thingId = datastream.thing?.id
+  function matchesSelectedMonitoringSite(datastream: Datastream & DatastreamExtended) {
+    if (selectedMonitoringSites.value.length === 0) return true
+    const monitoringSiteId = datastream.monitoringSite?.id
     return (
-      !!thingId && selectedThings.value.some((thing) => thing.id === thingId)
+      !!monitoringSiteId && selectedMonitoringSites.value.some((monitoringSite) => monitoringSite.id === monitoringSiteId)
     )
   }
 
@@ -636,7 +674,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
           // Managed (QC) datastreams are reached through the "Start editing"
           // chooser on their source, not picked directly from the catalog.
           !managedDatastreamIds.value.has(datastream.id) &&
-          matchesSelectedThing(datastream) &&
+          matchesSelectedMonitoringSite(datastream) &&
           matchesSelectedObservedProperty(datastream) &&
           matchesSelectedProcessingLevel(datastream)
       ) ?? []
@@ -903,7 +941,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   )
 
   return {
-    things,
+    monitoringSites,
     datastreams,
     qcHistories,
     managedDatastreamIds,
@@ -913,7 +951,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     replaceDatastream,
     processingLevels,
     observedProperties,
-    selectedThings,
+    selectedMonitoringSites,
     selectedObservedPropertyNames,
     selectedProcessingLevelNames,
     filteredDatastreams,
@@ -940,7 +978,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     hasSelectionShape,
     matchesSelectedObservedProperty,
     matchesSelectedProcessingLevel,
-    matchesSelectedThing,
+    matchesSelectedMonitoringSite,
     setDateRange,
     onDateBtnClick,
     refreshGraphSeriesArray,
@@ -952,6 +990,7 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     plotSourceSelection,
     clearPlottedDatastreams,
     addSnapshotSeries,
+    refuseSnapshot,
     removeSnapshotSeries,
     setPlottedDatastreams,
     setEditTarget,

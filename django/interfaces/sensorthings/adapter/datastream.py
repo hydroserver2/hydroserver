@@ -1,17 +1,18 @@
 from ninja.errors import HttpError
 from django.db.utils import DataError, DatabaseError
-from django.db.models import Count
+from django.db.models import Count, Value
 from sensorthings.types import Absent
+from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.sta.models import Datastream
 from sensorthings.versions.v1_1.dto import EntityResultSetDTO, CollectionDTO, DatastreamDTO
-from core.sta.services.datastream import DatastreamService
-from .utils import SensorThingsUtils
+from interfaces.api.services.sta.datastream import DatastreamAPIService
+from .utils import SensorThingsUtils, OM_MEASUREMENT
 
-datastream_service = DatastreamService()
+datastream_service = DatastreamAPIService()
 
 _GROUP_BY_PARTITION = {
-    "thing": "thing_id",
-    "sensor": "sensor_id",
+    "thing": "monitoring_site_id",
+    "sensor": "method_id",
     "observed_property": "observed_property_id",
 }
 
@@ -22,21 +23,22 @@ class DatastreamMixin(SensorThingsUtils):
                         top=100, skip=0, count=False, context=None):
         needs_unit = select is None or "unit_of_measurement" in select
         needs_properties = select is None or "properties" in select
+        principal = context.principal if context else AnonymousPrincipal()
 
         datastreams = Datastream.objects
         related = []
         if needs_unit or needs_properties:
             related.append("unit")
         if needs_properties:
-            related += ["processing_level", "thing__workspace"]
+            related += ["processing_level", "monitoring_site__workspace"]
         if related:
             datastreams = datastreams.select_related(*related)
         if needs_properties:
-            datastreams = datastreams.prefetch_related(
-                "datastream_file_attachments", "datastream_tags"
-            )
-        datastreams = datastreams.visible(principal=context.principal if context else None)
+            datastreams = datastreams.prefetch_related("datastream_linked_resources")
+        datastreams = principal.filter_by_permission(datastreams, "can_view")
 
+        if filters or orderby:
+            datastreams = datastreams.annotate(observation_type=Value(OM_MEASUREMENT))
         if filters:
             datastreams = self.apply_filters(datastreams, Datastream, filters)
         if orderby:
@@ -50,12 +52,19 @@ class DatastreamMixin(SensorThingsUtils):
                 "__UNGROUPED__": CollectionDTO(entity_ids=[datastream.id for datastream in ds_list])
             }
         elif group_by and (partition_field := _GROUP_BY_PARTITION.get(group_by[0])):
-            datastreams = datastreams.filter(**{f"{group_by[0]}_id__in": group_by[1]})
+            group_field = (
+                "monitoring_site"
+                if group_by[0] == "thing"
+                else "method" if group_by[0] == "sensor" else group_by[0]
+            )
+            datastreams = datastreams.filter(**{f"{group_field}_id__in": group_by[1]})
+            # Clear the ordering first: Django adds order_by fields to the GROUP BY of values().annotate().
             ds_counts = dict(
                 datastreams
-                .values(group_by[0])
+                .order_by()
+                .values(group_field)
                 .annotate(total=Count("id"))
-                .values_list(group_by[0], "total")
+                .values_list(group_field, "total")
             ) if count else None
             ds_list = list(self.apply_window(datastreams, partition_field, top, skip))
             groups = {}
@@ -83,7 +92,7 @@ class DatastreamMixin(SensorThingsUtils):
                     id=self.select_field(select, "id", datastream.id),
                     name=self.select_field(select, "name", str(datastream.name)),
                     description=self.select_field(select, "description", datastream.description),
-                    observation_type="http://www.opengis.net/def/observationType/OGC-OM/2.0/OM_Measurement",
+                    observation_type=OM_MEASUREMENT,
                     observed_area=self.select_field(select, "observed_area", datastream.observed_area),
                     phenomenon_time=self.select_field(
                         select, "phenomenon_time",
@@ -97,13 +106,13 @@ class DatastreamMixin(SensorThingsUtils):
                         {
                             "name": datastream.unit.name,
                             "symbol": datastream.unit.symbol,
-                            "definition": datastream.unit.definition.split(";")[0],
+                            "definition": (datastream.unit.definition or "").split(";")[0],
                         }
                         if needs_unit else Absent
                     ),
                     properties=(
                         {
-                            "result_type": datastream.result_type,
+                            "type": datastream.type,
                             "status": datastream.status,
                             "sampled_medium": datastream.sampled_medium,
                             "value_count": datastream.value_count,
@@ -117,23 +126,22 @@ class DatastreamMixin(SensorThingsUtils):
                             "time_aggregation_interval": datastream.time_aggregation_interval,
                             "time_aggregation_interval_unit_of_measurement": datastream.time_aggregation_interval_unit,
                             "is_private": datastream.is_private,
-                            "is_visible": datastream.is_visible,
+                            "is_restricted": datastream.is_restricted,
                             "workspace": {
-                                "id": datastream.thing.workspace.id,
-                                "name": datastream.thing.workspace.name,
-                                "link": datastream.thing.workspace.link,
-                                "is_private": datastream.thing.workspace.is_private,
+                                "id": datastream.monitoring_site.workspace.id,
+                                "name": datastream.monitoring_site.workspace.name,
+                                "is_private": datastream.monitoring_site.workspace.is_private,
                             },
-                            "tags": {tag.key: tag.value for tag in datastream.datastream_tags.all()},
-                            "file_attachments": {
-                                fa.name: fa.link
-                                for fa in datastream.datastream_file_attachments.all()
-                            },
+                            "tags": datastream.tags or {},
+                            "linked_resources": {
+                                link.name: link.link
+                                for link in datastream.datastream_linked_resources.all()
+                            }
                         }
                         if needs_properties else Absent
                     ),
-                    thing_id=datastream.thing_id,
-                    sensor_id=datastream.sensor_id,
+                    thing_id=datastream.monitoring_site_id,
+                    sensor_id=datastream.method_id,
                     observed_property_id=datastream.observed_property_id,
                 )
                 for datastream in ds_list
@@ -147,30 +155,12 @@ class DatastreamMixin(SensorThingsUtils):
         raise HttpError(403, "This operation is not permitted.")
 
     def update_datastreams(self, payload, context=None):
-        for datastream_id, dto in payload.items():
-            datastream = datastream_service.get_datastream_for_action(
+        for datastream_id in payload:
+            datastream_service.get_datastream_for_action(
                 principal=context.principal if context else None,
                 uid=datastream_id,
                 action="edit",
             )
-
-            if dto.phenomenon_time is not None:
-                parts = str(dto.phenomenon_time).split("/")
-                datastream.phenomenon_begin_time = parts[0]
-                datastream.phenomenon_end_time = parts[-1]
-            else:
-                datastream.phenomenon_begin_time = None
-                datastream.phenomenon_end_time = None
-
-            if dto.result_time is not None:
-                parts = str(dto.result_time).split("/")
-                datastream.result_begin_time = parts[0]
-                datastream.result_end_time = parts[-1]
-            else:
-                datastream.result_begin_time = None
-                datastream.result_end_time = None
-
-            datastream.save()
 
     def delete_datastreams(self, entity_ids, context=None):
         raise HttpError(403, "This operation is not permitted.")

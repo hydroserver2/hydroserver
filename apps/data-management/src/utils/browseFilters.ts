@@ -1,12 +1,20 @@
+import { getTagValue } from '@hydroserver/client'
 import type { Workspace } from '@hydroserver/client'
-import type { ThingMarker } from '@/types'
+import type { MonitoringSiteMapSummary } from '@/types'
 import type { LocationQuery } from 'vue-router'
+
+export type MarkerColorMode = 'none' | 'workspace' | 'type' | 'metadata'
 
 export interface BrowseFilterRouteState {
   siteIds: string[]
   searchText: string
   workspaceIds: string[]
   siteTypes: string[]
+  tagKey: string
+  tagValues: string[]
+  mySites: boolean | null
+  colorBy: MarkerColorMode | null
+  colorTagKey: string
   drawer: boolean | null
 }
 
@@ -15,6 +23,11 @@ export interface BrowseFilterSelectionState {
   searchText?: string | null
   workspaceIds: string[]
   siteTypes: string[]
+  tagKey?: string | null
+  tagValues?: string[]
+  mySites?: boolean
+  colorBy?: MarkerColorMode
+  colorTagKey?: string | null
   drawer?: boolean
 }
 
@@ -23,6 +36,12 @@ const BROWSE_FILTER_QUERY_KEYS = [
   'search',
   'workspaces',
   'siteTypes',
+  'tagKey',
+  'tagValues',
+  'mySites',
+  'colorBy',
+  'colorTagKey',
+  'colorByTag',
   'drawer',
 ]
 
@@ -69,6 +88,16 @@ const parseBooleanQuery = (value: unknown): boolean | null => {
   return null
 }
 
+const parseMarkerColorMode = (value: unknown): MarkerColorMode | null => {
+  const mode = querySingleValue(value)
+  return mode === 'none' ||
+    mode === 'workspace' ||
+    mode === 'type' ||
+    mode === 'metadata'
+    ? mode
+    : null
+}
+
 const queryArray = (values: string[]): string | string[] | undefined => {
   const normalized = uniqueValues(values)
   if (!normalized.length) return undefined
@@ -78,11 +107,22 @@ const queryArray = (values: string[]): string | string[] | undefined => {
 export function parseBrowseFilterQuery(
   query: LocationQuery
 ): BrowseFilterRouteState {
+  const tagKey = querySingleValue(query.tagKey)
+  const colorBy =
+    parseMarkerColorMode(query.colorBy) ?? (tagKey ? 'metadata' : null)
+
   return {
     siteIds: readQueryValues(query, ['selectedSite']),
     searchText: querySingleValue(query.search),
     workspaceIds: readQueryValues(query, ['workspaces']),
     siteTypes: readExactQueryValues(query, ['siteTypes']),
+    tagKey,
+    tagValues: readExactQueryValues(query, ['tagValues']),
+    mySites: parseBooleanQuery(query.mySites),
+    colorBy,
+    colorTagKey:
+      querySingleValue(query.colorTagKey) ||
+      (colorBy === 'metadata' ? tagKey : ''),
     drawer: parseBooleanQuery(query.drawer),
   }
 }
@@ -100,35 +140,57 @@ export function buildBrowseFilterQuery(
   const sites = queryArray(siteIds)
   const workspaces = queryArray(state.workspaceIds)
   const siteTypes = queryArray(state.siteTypes)
+  const tagKey = state.tagKey?.trim()
+  const tagValues = queryArray(state.tagValues ?? [])
+  const colorTagKey = state.colorTagKey?.trim()
 
   if (sites !== undefined) nextQuery.selectedSite = sites
   if (searchText) nextQuery.search = searchText
   if (workspaces !== undefined) nextQuery.workspaces = workspaces
   if (siteTypes !== undefined) nextQuery.siteTypes = siteTypes
+  if (tagKey) nextQuery.tagKey = tagKey
+  if (tagValues !== undefined) nextQuery.tagValues = tagValues
+  if (state.mySites) nextQuery.mySites = '1'
+  if (state.colorBy && (state.colorBy !== 'none' || tagKey))
+    nextQuery.colorBy = state.colorBy
+  if (state.colorBy === 'metadata' && colorTagKey)
+    nextQuery.colorTagKey = colorTagKey
   if (state.drawer === false) nextQuery.drawer = '0'
 
   return nextQuery
 }
 
-export function filterThingMarkers(
-  things: ThingMarker[],
+export function filterMonitoringSiteMarkers(
+  monitoringSites: MonitoringSiteMapSummary[],
   selectedWorkspaces: Workspace[],
   selectedSiteTypes: string[],
-  selectedSite?: ThingMarker | null
+  selectedSite?: MonitoringSiteMapSummary | null,
+  tagKey = '',
+  selectedTagValues: string[] = []
 ) {
   const selectedWorkspaceIds = new Set(
     selectedWorkspaces.map((workspace) => workspace.id)
   )
 
-  return things.filter((thing) => {
-    const isSelectedSite = !selectedSite || thing.id === selectedSite.id
+  return monitoringSites.filter((monitoringSite) => {
+    const isSelectedSite = !selectedSite || monitoringSite.id === selectedSite.id
     const inSelectedWorkspace =
       selectedWorkspaceIds.size === 0 ||
-      selectedWorkspaceIds.has(thing.workspaceId)
+      selectedWorkspaceIds.has(monitoringSite.workspaceId)
     const inSelectedSiteType =
       selectedSiteTypes.length === 0 ||
-      selectedSiteTypes.includes(thing.siteType)
+      selectedSiteTypes.includes(monitoringSite.type)
+    const tagValue = tagKey ? getTagValue(monitoringSite.tags, tagKey) : undefined
+    const hasSelectedTag =
+      !tagKey ||
+      selectedTagValues.length === 0 ||
+      (tagValue !== undefined && selectedTagValues.includes(tagValue))
 
-    return isSelectedSite && inSelectedWorkspace && inSelectedSiteType
+    return (
+      isSelectedSite &&
+      inSelectedWorkspace &&
+      inSelectedSiteType &&
+      hasSelectedTag
+    )
   })
 }

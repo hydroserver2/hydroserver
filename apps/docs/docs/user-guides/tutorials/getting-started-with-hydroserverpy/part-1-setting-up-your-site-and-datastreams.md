@@ -1,8 +1,8 @@
 # Part 1: Setting Up Your Site and Datastreams
 
-In this first part, we'll connect to HydroServer and create everything needed to represent a monitoring site: a workspace, a site, linked metadata (sensor, observed property, unit, and processing level), and a datastream. By the end you'll have a fully described datastream ready to receive observations in the next part.
+In this first part, we'll connect to HydroServer and create everything needed to represent a monitoring site: a workspace, a site, linked metadata (method, observed property, unit, and processing level), and a datastream. By the end you'll have a fully described datastream ready to receive observations in the next part.
 
-The site we'll be building throughout this tutorial is a fictional stream gauge station on the Cache River in northern Utah. We'll use it to measure water surface elevation (stage) — a common measurement at stream monitoring stations.
+The site we'll be building in this part is a stream gauge station on the Blacksmith Fork River in northern Utah, modeled on a Logan River Observatory site. We'll use it to record discharge — the volume of water flowing past the station per unit time.
 
 ## Connect to HydroServer
 
@@ -20,7 +20,7 @@ hs_api = HydroServer(
 
 ## Create a workspace
 
-All resources in HydroServer — sites, datastreams, sensors, and so on — belong to a workspace. Let's create one for this tutorial.
+All resources in HydroServer — sites, datastreams, methods, and so on — belong to a workspace. Let's create one for this tutorial.
 
 ```python
 workspace = hs_api.workspaces.create(
@@ -43,13 +43,12 @@ for ws in hs_api.workspaces.list(is_associated=True).items:
 Now let's create the site itself. We need a few pieces of information: basic metadata about what kind of site this is, and its location.
 
 ```python
-blacksmith_fork_site = hs_api.things.create(
+blacksmith_fork_site = hs_api.monitoring_sites.create(
     workspace=workspace,
     name='Blacksmith Fork River above confluence with Logan River',
     description='Logan River Observatory monitoring site for Blacksmith Fork River above the confluence with Logan River',
-    sampling_feature_type='Site',
-    sampling_feature_code='BSF_CONF_BA',
-    site_type='Stream',
+    code='BSF_CONF_BA',
+    type='Stream',
     latitude=41.704431,
     longitude=-111.850800,
     elevation_m=1366.0,
@@ -64,28 +63,27 @@ blacksmith_fork_site = hs_api.things.create(
 print(f"{blacksmith_fork_site.name}: {blacksmith_fork_site.uid}")
 ```
 
-The `sampling_feature_code` is a short identifier for your site — something you'd use to reference it in a dataset or filename. Make it unique within your workspace.
+The `code` is a short identifier for your site — something you'd use to reference it in a dataset or filename. Make it unique within your workspace.
 
 ## Create linked metadata
 
-Before we can create a datastream, we need to define what's being measured and how. In HydroServer, that means creating four linked metadata records: a **sensor**, an **observed property**, a **unit**, and a **processing level**. These can be reused across multiple datastreams, so you only have to create them once.
+Before we can create a datastream, we need to define what's being measured and how. In HydroServer, that means creating four linked metadata records: a **method**, an **observed property**, a **unit**, and a **processing level**. These can be reused across multiple datastreams, so you only have to create them once.
 
-### Sensor
+### Method
 
-The sensor describes the instrument or method used to make the measurement.
+The method describes how observations are produced. Instrument-specific fields are optional.
 
 ```python
-discharge_sensor = hs_api.sensors.create(
+discharge_method = hs_api.methods.create(
     workspace=workspace,
     name='In-Situ Rugged TROLL 200',
     description='Submersible pressure transducer for water level measurement.',
-    encoding_type='application/json',
-    manufacturer='In-Situ',
+    type='Instrument Deployment',
+    code='PRESSURE_TRANSDUCER',
+    definition='https://in-situ.com/us/rugged-troll-200',
     sensor_model='Rugged TROLL 200',
-    sensor_model_link='https://in-situ.com/us/rugged-troll-200',
-    method_type='Instrument deployment',
-    method_code='PRESSURE_TRANSDUCER',
-    method_link='https://in-situ.com/us/rugged-troll-200',
+    sensor_model_manufacturer='In-Situ',
+    sensor_model_definition='https://in-situ.com/us/rugged-troll-200',
 )
 ```
 
@@ -99,7 +97,7 @@ discharge_observed_property = hs_api.observedproperties.create(
     name='Discharge',
     definition='http://vocabulary.odm2.org/variablename/discharge/',
     description='Discharge is the flow rate of water per unit time.',
-    observed_property_type='Hydrology',
+    type='Hydrology',
     code='discharge'
 )
 ```
@@ -110,9 +108,9 @@ discharge_observed_property = hs_api.observedproperties.create(
 discharge_unit = hs_api.units.create(
     workspace=workspace,
     name='Cubic meters per second',
-    symbol='m3^s',
+    symbol='m^3/s',
     definition='https://qudt.org/vocab/unit/M3-PER-SEC',
-    unit_type='Flow rate'
+    type='Flow rate'
 )
 ```
 
@@ -124,28 +122,26 @@ Processing levels describe how much quality control or processing the data has b
 raw_processing_level = hs_api.processinglevels.create(
     workspace=workspace,
     code='0',
-    definition='Raw',
-    explanation='Data have not been processed or quality controlled.',
+    name='Raw',
+    description='Data have not been processed or quality controlled.',
 )
 ```
 
 ## Create a datastream
 
-Now we have everything we need to define our datastream. A datastream ties together a site, sensor, observed property, unit, and processing level, and also describes how observations are structured — their type, medium, aggregation, and time spacing.
+Now we have everything we need to define our datastream. A datastream ties together a site, method, observed property, unit, and processing level, and also describes how observations are structured — their type, medium, aggregation, and time spacing.
 
 Our gauge records instantaneous discharge measurements every 15 minutes.
 
 ```python
 discharge_datastream = hs_api.datastreams.create(
     name=f"{discharge_observed_property.name} measured in the {blacksmith_fork_site.name}",
-    description=f'{discharge_observed_property.name} created using a {discharge_sensor.name}',
-    thing=blacksmith_fork_site,
-    sensor=discharge_sensor,
+    description=f'{discharge_observed_property.name} created using {discharge_method.name}',
+    monitoring_site=blacksmith_fork_site,
+    method=discharge_method,
     observed_property=discharge_observed_property,
     processing_level=raw_processing_level,
     unit=discharge_unit,
-    observation_type='Field Observation',
-    result_type='Timeseries',
     sampled_medium='Surface water',
     no_data_value=-9999,
     aggregation_statistic='Instantaneous',
@@ -155,7 +151,7 @@ discharge_datastream = hs_api.datastreams.create(
     intended_time_spacing_unit='minutes',
     status='Ongoing',
     is_private=False,
-    is_visible=True
+    is_restricted=False
 )
 
 print(f"{discharge_datastream.name}: {discharge_datastream.uid}")
@@ -167,4 +163,4 @@ We'll use `discharge_datastream` directly in the next part to load observations.
 
 In a few dozen lines of Python, we've created a fully described monitoring site in HydroServer with a datastream ready to receive data. If you open the web interface and navigate to your workspace, you should see the Blacksmith Fork River above confluence with Logan River on the map and the discharge datastream listed in its detail page.
 
-In Part 2, we'll load some sample stage observations into that datastream and visualize them.
+In Part 2, we'll load some sample discharge observations into that datastream and visualize them.

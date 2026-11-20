@@ -1,93 +1,67 @@
 import uuid
-from typing import Optional
 
-from ninja import Router, Path, Query
 from django.http import HttpResponse
+from ninja import Router, Path, Query
 
-from core.types import Unset
-from interfaces.api.http.errors import raise_http_errors
-from interfaces.api.http.response import apply_response_pagination_headers
+from interfaces.api.http.links import build_self_link
 from interfaces.api.http.request import HydroServerHttpRequest
-from interfaces.auth.security import bearer_auth, session_auth, apikey_auth
+from interfaces.api.services.orchestration import require_orchestration_enabled
+from interfaces.auth.security import session_auth, oidc_task_read_auth, oidc_task_write_auth, oidc_task_run_auth, apikey_auth, basic_auth
 from processing.orchestration.models import TaskRun
-from processing.etl.services.task import EtlTaskService
+from interfaces.api.services.etl.task import EtlTaskAPIService
 from processing.etl.tasks import run_etl_task
+from interfaces.api.schemas import PaginatedResponse, ItemResponse, CreatedResponse
 from interfaces.api.schemas.etl.task import (
     EtlTaskQueryParameters,
-    EtlTaskSummaryResponse,
-    EtlTaskDetailResponse,
+    EtlTaskItemQueryParameters,
+    EtlTaskResponse,
     EtlTaskPostBody,
     EtlTaskPatchBody,
 )
 from interfaces.api.schemas.orchestration.run import TaskRunQueryParameters, TaskRunResponse
 
 etl_task_router = Router(tags=["ETL Tasks"])
-etl_task_service = EtlTaskService()
+etl_task_service = EtlTaskAPIService()
 
 
 @etl_task_router.get(
-    "",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    "/items",
+    auth=[session_auth, oidc_task_read_auth, apikey_auth, basic_auth],
     response={
-        200: list[EtlTaskSummaryResponse] | list[EtlTaskDetailResponse],
+        200: PaginatedResponse[EtlTaskResponse],
         401: str,
     },
     by_alias=True,
 )
 def get_etl_tasks(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     query: Query[EtlTaskQueryParameters],
 ):
     """
-    Get ETL Tasks accessible to the authenticated user.
+    Get ETL tasks accessible to the authenticated user.
     """
 
-    with raise_http_errors():
-        count, etl_tasks = etl_task_service.get_collection(
-            principal=request.principal,
-            order_by=[f.orm_field for f in query.order_by],
-            **query.model_dump(exclude_unset=True, exclude={
-                "order_by", "thing_id", "workspace_id", "data_connection_id",
-                "latest_run_started_at_min", "latest_run_started_at_max",
-                "latest_run_finished_at_min", "latest_run_finished_at_max",
-            }),
-            **({"thing": query.thing_id} if "thing_id" in query.model_fields_set else {}),
-            **({"workspace": query.workspace_id} if "workspace_id" in query.model_fields_set else {}),
-            **({"data_connection": query.data_connection_id}
-               if "data_connection_id" in query.model_fields_set else {}),
-            **({"latest_run_started_at_min": query.latest_run_started_at_min}
-               if query.latest_run_started_at_min is not None else {}),
-            **({"latest_run_started_at_max": query.latest_run_started_at_max}
-               if query.latest_run_started_at_max is not None else {}),
-            **({"latest_run_finished_at_min": query.latest_run_finished_at_min}
-               if query.latest_run_finished_at_min is not None else {}),
-            **({"latest_run_finished_at_max": query.latest_run_finished_at_max}
-               if query.latest_run_finished_at_max is not None else {}),
-        )
-
-    schema = EtlTaskDetailResponse if query.expand_related else EtlTaskSummaryResponse
-
-    apply_response_pagination_headers(
-        response=response,
-        count=count,
-        page=query.page,
-        page_size=query.page_size,
+    return 200, etl_task_service.list(
+        principal=request.principal,
+        offset=query.offset,
+        limit=query.limit,
+        sortby=query.sortby,
+        filtering=query.dict(exclude_unset=True),
+        include=query.include,
+        properties=query.properties,
     )
-
-    return 200, [schema.model_validate(task) for task in etl_tasks]
 
 
 @etl_task_router.post(
-    "",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    "/items",
+    auth=[session_auth, oidc_task_write_auth, apikey_auth, basic_auth],
     response={
-        201: EtlTaskSummaryResponse,
+        201: CreatedResponse,
         400: str,
         401: str,
         403: str,
         409: str,
-        422: str,
+        501: str,
     },
     by_alias=True,
 )
@@ -96,29 +70,17 @@ def create_etl_task(
     data: EtlTaskPostBody,
 ):
     """
-    Create a new ETL Task.
+    Create a new ETL task.
     """
 
-    with raise_http_errors():
-        etl_task = etl_task_service.create(
-            principal=request.principal,
-            data_connection=data.data_connection_id,
-            mappings=[
-                {"source_identifier": m.source_identifier, "target_datastream": m.target_datastream_id}
-                for m in data.mappings
-            ],
-            **data.model_dump(exclude_unset=True, exclude={"data_connection_id", "schedule", "mappings"}),
-            **(data.schedule.model_dump(exclude_unset=True) if data.schedule else {}),
-        )
-
-    return 201, etl_task
+    return 201, etl_task_service.create(principal=request.principal, data=data)
 
 
 @etl_task_router.get(
-    "/{task_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    "/items/{task_id}",
+    auth=[session_auth, oidc_task_read_auth, apikey_auth, basic_auth],
     response={
-        200: EtlTaskSummaryResponse | EtlTaskDetailResponse,
+        200: ItemResponse[EtlTaskResponse],
         401: str,
         403: str,
         404: str,
@@ -128,34 +90,26 @@ def create_etl_task(
 def get_etl_task(
     request: HydroServerHttpRequest,
     task_id: Path[uuid.UUID],
-    expand_related: Optional[bool] = None,
+    query: Query[EtlTaskItemQueryParameters],
 ):
     """
-    Get an ETL Task.
+    Get an ETL task.
     """
 
-    with raise_http_errors():
-        etl_task = etl_task_service.get(
-            task=task_id,
-            principal=request.principal,
-            expand_related=expand_related,
-        )
-
-    schema = EtlTaskDetailResponse if expand_related else EtlTaskSummaryResponse
-    
-    return 200, schema.model_validate(etl_task)
+    return 200, etl_task_service.get_item(
+        principal=request.principal, uid=task_id, include=query.include
+    )
 
 
 @etl_task_router.patch(
-    "/{task_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    "/items/{task_id}",
+    auth=[session_auth, oidc_task_write_auth, apikey_auth, basic_auth],
     response={
-        200: EtlTaskSummaryResponse,
+        204: None,
         400: str,
         401: str,
         403: str,
         404: str,
-        422: str,
     },
     by_alias=True,
 )
@@ -165,34 +119,17 @@ def update_etl_task(
     data: EtlTaskPatchBody,
 ):
     """
-    Update an ETL Task.
+    Update an ETL task.
     """
 
-    with raise_http_errors():
-        etl_task = etl_task_service.update(
-            task=task_id,
-            principal=request.principal,
-            mappings=(
-                [{"source_identifier": m.source_identifier, "target_datastream": m.target_datastream_id}
-                 for m in data.mappings]
-                if "mappings" in data.model_fields_set else Unset
-            ),
-            **data.model_dump(exclude_unset=True, exclude={"schedule", "mappings"}),
-            **(
-                data.schedule.model_dump(exclude_unset=True)
-                if "schedule" in data.model_fields_set and data.schedule
-                else {"crontab": None, "interval": None}
-                if "schedule" in data.model_fields_set
-                else {}
-            )
-        )
+    etl_task_service.update(principal=request.principal, uid=task_id, data=data)
 
-    return 200, etl_task
+    return 204, None
 
 
 @etl_task_router.delete(
-    "/{task_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    "/items/{task_id}",
+    auth=[session_auth, oidc_task_write_auth, apikey_auth, basic_auth],
     response={
         204: None,
         401: str,
@@ -206,55 +143,58 @@ def delete_etl_task(
     task_id: Path[uuid.UUID],
 ):
     """
-    Delete an ETL Task.
+    Delete an ETL task.
     """
 
-    with raise_http_errors():
-        etl_task_service.delete(
-            task=task_id,
-            principal=request.principal,
-        )
+    etl_task_service.delete(
+        task=task_id,
+        principal=request.principal,
+    )
 
     return 204, None
 
 
 @etl_task_router.post(
-    "/{task_id}/trigger",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    "/items/{task_id}/trigger",
+    auth=[session_auth, oidc_task_run_auth, apikey_auth, basic_auth],
     response={
-        202: TaskRunResponse,
+        202: ItemResponse[TaskRunResponse],
         401: str,
         403: str,
         404: str,
+        501: str,
     },
     by_alias=True,
 )
 def trigger_etl_task(
     request: HydroServerHttpRequest,
+    response: HttpResponse,
     task_id: Path[uuid.UUID],
 ):
     """
-    Trigger an immediate run of an ETL Task on a Celery worker.
+    Run an ETL task now and return the new task run.
     """
 
-    with raise_http_errors():
-        etl_task = etl_task_service.get(
-            task=task_id,
-            principal=request.principal,
-            action="edit"
-        )
+    require_orchestration_enabled()
 
-        run = TaskRun.objects.create(task=etl_task, status="PENDING")
-        run_etl_task.apply_async(kwargs={"task_id": str(etl_task.id), "run_id": str(run.id)})
+    etl_task = etl_task_service.get_task_for_action(
+        principal=request.principal, uid=task_id, action="edit"
+    )
 
-    return 202, run
+    run = TaskRun.objects.create(task=etl_task, status="PENDING")
+    run_etl_task.apply_async(kwargs={"task_id": str(etl_task.id), "run_id": str(run.id)})
+
+    run_link = build_self_link(request, request.path_info.removesuffix("/trigger") + f"/runs/{run.id}")
+    response["Location"] = run_link.href
+
+    return 202, {"data": run, "links": [run_link]}
 
 
 @etl_task_router.get(
-    "/{task_id}/runs",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    "/items/{task_id}/runs",
+    auth=[session_auth, oidc_task_read_auth, apikey_auth, basic_auth],
     response={
-        200: list[TaskRunResponse],
+        200: PaginatedResponse[TaskRunResponse],
         401: str,
         403: str,
         404: str,
@@ -263,37 +203,41 @@ def trigger_etl_task(
 )
 def get_etl_task_runs(
     request: HydroServerHttpRequest,
-    response: HttpResponse,
     task_id: Path[uuid.UUID],
     query: Query[TaskRunQueryParameters],
 ):
     """
-    Get runs for an ETL Task.
+    Get the runs of an ETL task, each with its status, start and finish times, and outcome
+    message.
     """
 
-    with raise_http_errors():
-        count, runs = etl_task_service.get_run_collection(
-            task=task_id,
-            principal=request.principal,
-            order_by=[f.orm_field for f in query.order_by],
-            **query.model_dump(exclude_unset=True, exclude={"order_by"}),
-        )
-
-    apply_response_pagination_headers(
-        response=response,
-        count=count,
-        page=query.page,
-        page_size=query.page_size,
+    run_kwargs = query.model_dump(
+        exclude_unset=True,
+        include={
+            "offset", "limit", "sortby", "status",
+            "started_at__gte", "started_at__lte", "finished_at__gte", "finished_at__lte",
+        },
+    )
+    count, runs = etl_task_service.get_run_collection(
+        task=task_id,
+        principal=request.principal,
+        **run_kwargs,
     )
 
-    return 200, runs
+    meta = etl_task_service.build_pagination_meta(
+        count=count,
+        offset=query.offset,
+        limit=query.limit,
+    )
+
+    return 200, {"data": runs, "meta": meta}
 
 
 @etl_task_router.get(
-    "/{task_id}/runs/{run_id}",
-    auth=[session_auth, bearer_auth, apikey_auth],
+    "/items/{task_id}/runs/{run_id}",
+    auth=[session_auth, oidc_task_read_auth, apikey_auth, basic_auth],
     response={
-        200: TaskRunResponse,
+        200: ItemResponse[TaskRunResponse],
         401: str,
         403: str,
         404: str,
@@ -306,14 +250,14 @@ def get_etl_task_run(
     run_id: Path[uuid.UUID],
 ):
     """
-    Get a single run for an ETL Task.
+    Get one run of an ETL task, with its status, start and finish times, outcome message, and
+    `result` details.
     """
 
-    with raise_http_errors():
-        run = etl_task_service.get_run(
-            task=task_id,
-            run=run_id,
-            principal=request.principal,
-        )
+    run = etl_task_service.get_run(
+        task=task_id,
+        run=run_id,
+        principal=request.principal,
+    )
 
-    return 200, run
+    return 200, {"data": run}

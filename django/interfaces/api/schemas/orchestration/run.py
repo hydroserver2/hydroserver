@@ -1,49 +1,85 @@
-import uuid
-from typing import Literal
 from datetime import datetime
-
+from typing import Literal, Optional, Annotated
 from ninja import Query
+from pydantic import BeforeValidator, WithJsonSchema
 
 from core.types import ISODatetime
-from interfaces.api.schemas import OrderByField, BaseGetResponse, CollectionQueryParameters
+from interfaces.api.schemas import (
+    BaseGetResponse,
+    CollectionQueryParameters,
+    split_comma_separated,
+    comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
+)
+from interfaces.api.schemas.base import ItemId
 
 
-class TaskRunOrderBy(OrderByField):
-    id = ("id", "id")
-    status = ("status", "status")
-    started_at = ("startedAt", "started_at")
-    finished_at = ("finishedAt", "finished_at")
+_sortby_fields = ("id", "status", "startedAt", "finishedAt")
+TaskRunSortByFields = Literal[
+    *_sortby_fields, *[f"-{f}" for f in _sortby_fields]
+]
+
+TaskRunPropertyName = Literal[
+    "id", "status", "message", "result", "startedAt", "finishedAt"
+]
 
 
 class TaskRunQueryParameters(CollectionQueryParameters):
-    order_by: list[TaskRunOrderBy] = Query(
-        [], description="Select one or more fields to order the response by."
+    properties: Annotated[
+        Optional[list[TaskRunPropertyName]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(TaskRunPropertyName)),
+    ] = Query(
+        None,
+        description="Comma-separated list of properties to include in the response. "
+        "All properties are returned if omitted.",
     )
+    sortby: Annotated[
+        list[TaskRunSortByFields],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(TaskRunSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
     status: list[Literal["PENDING", "STARTED", "SUCCESS", "FAILURE"]] = Query(
-        [], description="Filters task runs by their status."
+        [], description="Task runs with this status. `PENDING` and `STARTED` runs haven't finished yet."
     )
     started_at__lte: ISODatetime | None = Query(
-        None, description="Filters for task runs started on or before this date and time.",
-        alias="started_at_max"
+        None, description="Task runs that started at or before this RFC 3339 date-time.",
+        alias="maxStartedAt"
     )
     started_at__gte: ISODatetime | None = Query(
-        None, description="Filters for task runs started on or after this date and time.",
-        alias="started_at_min"
+        None, description="Task runs that started at or after this RFC 3339 date-time.",
+        alias="minStartedAt"
     )
     finished_at__lte: ISODatetime | None = Query(
-        None, description="Filters for task runs finished on or before this date and time.",
-        alias="finished_at_max"
+        None, description="Task runs that finished at or before this RFC 3339 date-time.",
+        alias="maxFinishedAt"
     )
     finished_at__gte: ISODatetime | None = Query(
-        None, description="Filters for task runs finished on or after this date and time.",
-        alias="finished_at_min"
+        None, description="Task runs that finished at or after this RFC 3339 date-time.",
+        alias="minFinishedAt"
     )
 
 
-class TaskRunResponse(BaseGetResponse):
-    id: uuid.UUID
+class TaskRunResponse(BaseGetResponse, ItemId):
     status: Literal["PENDING", "STARTED", "SUCCESS", "FAILURE"]
     message: str | None = None
     result: dict | None = None
     started_at: datetime
     finished_at: datetime | None = None
+
+
+def resolve_latest_run(obj):
+    if not hasattr(obj, "latest_run_id"):
+        return getattr(obj, "latest_run", None)
+    if not getattr(obj, "latest_run_id", None):
+        return None
+
+    return {
+        "id": obj.latest_run_id,
+        "status": obj.latest_run_status,
+        "started_at": obj.latest_run_started_at,
+        "finished_at": obj.latest_run_finished_at,
+        "message": obj.latest_run_message,
+        "result": obj.latest_run_result,
+    }

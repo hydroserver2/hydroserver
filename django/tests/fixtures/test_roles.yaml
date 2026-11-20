@@ -11,5 +11,8 @@
   pk: 1000000012
   fields:
     role: 60b9d8b1-28d1-4d0d-9bee-4e47219d0118
-    permission_type: "*"
     resource_type: "*"
+    can_view: true
+    can_create: true
+    can_edit: true
+    can_delete: true

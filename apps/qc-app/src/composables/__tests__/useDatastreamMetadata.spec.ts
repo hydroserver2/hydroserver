@@ -4,12 +4,16 @@ import { useDatastreamMetadata } from '../useDatastreamMetadata'
 import { useHydroServer } from '@/store/hydroserver'
 import { useWorkspaceStore } from '@/store/workspaces'
 
-const sensorList = [{ id: 'sn-1', name: 'Thermistor' }]
+const methodList = [{ id: 'method-1', name: 'Thermistor' }]
+const statusList = [
+  { id: 'st-1', name: 'ongoing', description: '' },
+  { id: 'st-2', name: 'complete', description: '' },
+]
 
-function setHs(listAllItems: any, getStatuses: any) {
+function setHs(listMethods: any, listStatuses: any) {
   useHydroServer().hs = {
-    sensors: { listAllItems },
-    datastreams: { getStatuses },
+    methods: { list: listMethods },
+    datastreamStatuses: { list: listStatuses },
   } as any
 }
 
@@ -20,22 +24,21 @@ describe('useDatastreamMetadata', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {})
   })
 
-  it('loads the workspace sensors and the status vocabulary', async () => {
-    const listAllItems = vi.fn().mockResolvedValue(sensorList)
-    const getStatuses = vi
-      .fn()
-      .mockResolvedValue({ ok: true, data: ['ongoing', 'complete'] })
-    setHs(listAllItems, getStatuses)
+  it('loads the workspace methods and the status vocabulary', async () => {
+    const listMethods = vi.fn().mockResolvedValue({ ok: true, data: methodList })
+    const listStatuses = vi.fn().mockResolvedValue({ ok: true, data: statusList })
+    setHs(listMethods, listStatuses)
 
-    const { sensors, statuses, load } = useDatastreamMetadata()
+    const { methods, statuses, load } = useDatastreamMetadata()
     await load()
 
-    // System-level sensors (workspace null) are selectable too, and every
+    // System-level methods (workspace null) are selectable too, and every
     // page is fetched so a long list is not truncated.
-    expect(listAllItems.mock.calls[0][0]).toMatchObject({
-      workspace_id: ['ws-1', 'null'],
+    expect(listMethods.mock.calls[0][0]).toMatchObject({
+      workspaceId: ['ws-1', 'null'],
+      fetch_all: true,
     })
-    expect(sensors.value).toEqual(sensorList)
+    expect(methods.value).toEqual(methodList)
     expect(statuses.value).toEqual(['ongoing', 'complete'])
   })
 
@@ -45,34 +48,34 @@ describe('useDatastreamMetadata', () => {
       vi.fn().mockResolvedValue({ ok: false, data: null })
     )
 
-    const { sensors, statuses, load } = useDatastreamMetadata()
+    const { methods, statuses, load } = useDatastreamMetadata()
     await expect(load()).resolves.toBeUndefined()
-    expect(sensors.value).toEqual([])
+    expect(methods.value).toEqual([])
     expect(statuses.value).toEqual([])
     expect(console.warn).toHaveBeenCalledTimes(2)
   })
 
   it('keeps the list that loaded when the other one fails', async () => {
     setHs(
-      vi.fn().mockRejectedValue(new Error('offline')),
-      vi.fn().mockResolvedValue({ ok: true, data: ['ongoing'] })
+      vi.fn().mockResolvedValue({ ok: false, data: null }),
+      vi.fn().mockResolvedValue({ ok: true, data: [statusList[0]] })
     )
 
-    const { sensors, statuses, load } = useDatastreamMetadata()
+    const { methods, statuses, load } = useDatastreamMetadata()
     await load()
-    expect(sensors.value).toEqual([])
+    expect(methods.value).toEqual([])
     expect(statuses.value).toEqual(['ongoing'])
   })
 
   it('loads nothing when no workspace is selected', async () => {
-    const listAllItems = vi.fn()
-    const getStatuses = vi.fn()
-    setHs(listAllItems, getStatuses)
+    const listMethods = vi.fn()
+    const listStatuses = vi.fn()
+    setHs(listMethods, listStatuses)
     useWorkspaceStore().selectedWorkspace = undefined as any
 
     const { load } = useDatastreamMetadata()
     await load()
-    expect(listAllItems).not.toHaveBeenCalled()
-    expect(getStatuses).not.toHaveBeenCalled()
+    expect(listMethods).not.toHaveBeenCalled()
+    expect(listStatuses).not.toHaveBeenCalled()
   })
 })

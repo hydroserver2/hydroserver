@@ -1,0 +1,39 @@
+{% extends "account/base_entrance.html" %}
+{% load i18n allauth account %}
+{% block head_title %}
+    {% translate "Sign in" %}
+{% endblock head_title %}
+{% block content %}
+    {% element h1 %}
+        {% translate "Check your inbox" %}
+    {% endelement %}
+    {% setvar email_link %}
+        <a href="mailto:{{ email }}">{{ email }}</a>
+    {% endsetvar %}
+    {% element p %}
+        {% blocktranslate %}We sent a sign-in code to {{ email_link }}. Enter it below to continue. It expires soon.{% endblocktranslate %}
+    {% endelement %}
+    {% url 'account_confirm_login_code' as login_url %}
+    {% element form form=form method="post" action=login_url tags="entrance,login" %}
+        {% slot body %}
+            {% csrf_token %}
+            {% element fields form=form unlabeled=True %}
+            {% endelement %}
+            {{ redirect_field }}
+        {% endslot %}
+        {% slot actions %}
+            {% element button type="submit" tags="prominent,login" %}
+                {% translate "Continue" %}
+            {% endelement %}
+        {% endslot %}
+    {% endelement %}
+    {% element button type="submit" form="logout-from-stage" tags="link" %}
+        {% translate "Use another sign-in method" %}
+    {% endelement %}
+    <form id="logout-from-stage"
+          method="post"
+          action="{% url 'account_logout' %}">
+        <input type="hidden" name="next" value="{% url 'account_login' %}">
+        {% csrf_token %}
+    </form>
+{% endblock content %}

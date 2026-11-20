@@ -1,5 +1,29 @@
 import { getCSRFToken } from './getCSRFToken'
 
+export type AccessTokenProvider = () => Promise<string | null>
+
+let accessTokenProvider: AccessTokenProvider | null = null
+/** Called with whether the rejected request carried an access token. */
+export type UnauthorizedHandler = (sentToken: boolean) => void
+
+let unauthorizedHandler: UnauthorizedHandler | null = null
+
+export function registerAccessTokenProvider(
+  provider: AccessTokenProvider | null
+) {
+  accessTokenProvider = provider
+}
+
+export function registerUnauthorizedHandler(
+  handler: UnauthorizedHandler | null
+) {
+  unauthorizedHandler = handler
+}
+
+export function notifyUnauthorized(sentToken: boolean) {
+  unauthorizedHandler?.(sentToken)
+}
+
 export interface RequestOptions extends Omit<RequestInit, 'body'> {
   body?: unknown
 }
@@ -24,10 +48,16 @@ function isBodyInit(value: unknown): value is BodyInit {
 /**
  * Intercepts and enhances a request options object.
  *
- * - Adds CSRF Token header when available
+ * - With an access token provider (OIDC or token auth), adds a bearer token
+ *   when the provider returns one and never sends cookies, so a failed token
+ *   refresh can't fall back to a browser session
+ * - Without one (session auth), sends cookies and adds a CSRF header when a
+ *   CSRF cookie is present
  * - If a body is present and it's an object, the body is stringified.
  */
-export function requestInterceptor(options: RequestOptions): RequestInit {
+export async function requestInterceptor(
+  options: RequestOptions
+): Promise<RequestInit> {
   const headers = new Headers(options.headers)
 
   let body: BodyInit | undefined = undefined
@@ -37,12 +67,23 @@ export function requestInterceptor(options: RequestOptions): RequestInit {
       : JSON.stringify(options.body)
   }
 
-  headers.set('X-CSRFToken', getCSRFToken() || '')
+  const accessToken = accessTokenProvider
+    ? await accessTokenProvider().catch(() => null)
+    : null
+
+  if (accessToken) {
+    headers.set('Authorization', `Bearer ${accessToken}`)
+  } else if (!accessTokenProvider) {
+    const csrfToken = getCSRFToken()
+    if (csrfToken) {
+      headers.set('X-CSRFToken', csrfToken)
+    }
+  }
 
   return {
     ...options,
     headers,
     body,
-    credentials: 'include',
+    credentials: accessTokenProvider ? 'omit' : 'include',
   }
 }

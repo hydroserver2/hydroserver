@@ -18,8 +18,8 @@ Each transformation needs an output datastream to write its results into. We'll 
 derived_processing_level = hs_api.processinglevels.create(
     workspace=workspace,
     code='1',
-    definition='Derived',
-    explanation='Data have been computed or derived from raw measurements.',
+    name='Derived',
+    description='Data have been computed or derived from raw measurements.',
 )
 
 # Meters unit for the unit conversion output
@@ -28,21 +28,19 @@ meters_unit = hs_api.units.create(
     name='Meter',
     symbol='m',
     definition='https://qudt.org/vocab/unit/M',
-    unit_type='Length',
+    type='Length',
 )
 
 # Output datastream for the daily aggregation
 daily_stage_datastream = hs_api.datastreams.create(
     name=f'Daily Mean Gage Height at {logan_river_site.name}',
     description='Daily mean gage height computed from 15-minute USGS readings.',
-    thing=logan_river_site,
-    sensor=usgs_sensor,
+    monitoring_site=logan_river_site,
+    method=usgs_method,
     observed_property=gage_height_property,
     processing_level=derived_processing_level,
     unit=feet_unit,
-    observation_type='Field Observation',
-    result_type='Timeseries',
-    sampled_medium='Surface Water',
+    sampled_medium='Surface water',
     no_data_value=-9999.0,
     aggregation_statistic='Mean',
     time_aggregation_interval=1,
@@ -55,14 +53,12 @@ daily_stage_datastream = hs_api.datastreams.create(
 stage_meters_datastream = hs_api.datastreams.create(
     name=f'Gage Height (meters) at {logan_river_site.name}',
     description='Gage height converted from feet to meters.',
-    thing=logan_river_site,
-    sensor=usgs_sensor,
+    monitoring_site=logan_river_site,
+    method=usgs_method,
     observed_property=gage_height_property,
     processing_level=derived_processing_level,
     unit=meters_unit,
-    observation_type='Field Observation',
-    result_type='Timeseries',
-    sampled_medium='Surface Water',
+    sampled_medium='Surface water',
     no_data_value=-9999.0,
     aggregation_statistic='Instantaneous',
     time_aggregation_interval=1,
@@ -81,7 +77,7 @@ A data product task defines the schedule on which computations run. The actual c
 ```python
 daily_aggregation_task = hs_api.dataproducttasks.create(
     name='Logan River Daily Mean Stage',
-    thing=logan_river_site,
+    monitoring_site=logan_river_site,
     description='Computes a daily mean gage height from 15-minute USGS readings.',
     interval=1,
     interval_period='days',
@@ -121,7 +117,7 @@ print(f"Status:  {latest.status}")
 print(f"Message: {latest.message}")
 ```
 
-If it succeeds, the `daily_stage_datastream` will have one observation per calendar day.
+If it succeeds, the `daily_stage_datastream` will have one observation per calendar day. As in Part 3, a status that stays `PENDING` means no orchestration worker has picked up the run yet.
 
 ## Derivation transformation task
 
@@ -130,7 +126,7 @@ For the feet-to-meters conversion, we want the output to stay in sync with the i
 ```python
 meters_conversion_task = hs_api.dataproducttasks.create(
     name='Logan River Stage in Meters',
-    thing=logan_river_site,
+    monitoring_site=logan_river_site,
     description='Converts gage height from feet to meters.',
     interval=15,
     interval_period='minutes',
@@ -138,15 +134,14 @@ meters_conversion_task = hs_api.dataproducttasks.create(
 )
 ```
 
-Attach a derivation transformation. The formula is evaluated for each input observation, where `x` is the raw value. One foot equals 0.3048 meters.
+Attach a derivation transformation. Each input datastream is given a variable name to use in the formula — here `x` — and the formula is evaluated for each input observation. One foot equals 0.3048 meters.
 
 ```python
 hs_api.dataproducttransformations.create_derivation(
     task_id=meters_conversion_task.uid,
     output_datastream=stage_meters_datastream,
-    input_datastream=stage_datastream,
+    input_datastreams=[{'datastream_id': stage_datastream.uid, 'variable_name': 'x'}],
     formula='x * 0.3048',
-    variable_name='x',
 )
 ```
 

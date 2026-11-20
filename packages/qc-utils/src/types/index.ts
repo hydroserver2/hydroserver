@@ -54,6 +54,20 @@ export enum FilterOperation {
   GT = "Greater than",
   GTE = "Greater than or equal to",
   E = "Equal",
+  NE = "Not equal to",
+}
+
+export interface ValueFilter {
+  operator: FilterOperation;
+  value: number;
+}
+
+/** `any` selects points matching at least one filter; `all` requires every filter. */
+export type FilterMatch = "any" | "all";
+
+export interface ValueThresholdArgs {
+  filters: ValueFilter[];
+  match: FilterMatch;
 }
 
 export enum Operator {
@@ -149,6 +163,13 @@ export interface HistoryExecution {
    * Runtime-only like `selected`: recomputed on replay, never serialized.
    */
   extent?: { begin: number; end: number };
+  /**
+   * Epoch-ms datetimes of every point the op acted on, ascending, under the
+   * same rules as `extent`, so a consumer can list exactly which points a
+   * scattered selection touched. Runtime-only: recomputed on replay, never
+   * serialized.
+   */
+  times?: Float64Array;
 }
 
 export type HistoryItem = {
@@ -256,6 +277,8 @@ export interface GraphSeries {
 
 export type TimeSpacingUnit = "seconds" | "minutes" | "hours" | "days";
 
+export type DatastreamType = "timeSeriesCoverage";
+
 export interface Tag {
   key: string;
   value: string;
@@ -265,7 +288,7 @@ export type Frequency = "daily" | "weekly" | "monthly" | null;
 
 export class HydroShareArchive {
   id: string;
-  thingId: string;
+  monitoringSiteId: string;
   link: string;
   frequency: Frequency;
   path: string;
@@ -274,7 +297,7 @@ export class HydroShareArchive {
 
   constructor() {
     this.id = "";
-    this.thingId = "";
+    this.monitoringSiteId = "";
     this.link = "";
     this.frequency = null;
     this.path = "HydroShare";
@@ -296,35 +319,23 @@ export class PostHydroShareArchive extends HydroShareArchive {
   }
 }
 
-export class Location {
+export class MonitoringSite {
+  id: string;
+  workspaceId: string;
+  name: string;
   latitude?: number | "";
   longitude?: number | "";
-  elevation_m?: number | "";
+  elevationM?: number | "";
   elevationDatum: string;
   state: string;
   county: string;
   country: string;
-
-  constructor() {
-    this.elevationDatum = "WGS84";
-    this.state = "";
-    this.county = "";
-    this.country = "";
-  }
-}
-
-export class Thing {
-  id: string;
-  workspaceId: string;
-  name: string;
-  location: Location = new Location();
   tags: Tag[];
   hydroShareArchive?: HydroShareArchive | null;
-  siteType: string;
-  samplingFeatureCode: string;
+  type: string;
+  code: string;
   isPrivate: boolean;
   description: string;
-  samplingFeatureType: string;
   dataDisclaimer: string;
 
   constructor() {
@@ -332,16 +343,19 @@ export class Thing {
     this.workspaceId = "";
     this.name = "";
     this.tags = [];
-    this.siteType = "";
-    this.samplingFeatureCode = "";
+    this.type = "";
+    this.code = "";
+    this.elevationDatum = "WGS84";
+    this.state = "";
+    this.county = "";
+    this.country = "";
     this.isPrivate = false;
     this.description = "";
-    this.samplingFeatureType = "Site";
     this.dataDisclaimer = "";
   }
 }
 
-export interface ThingWithColor extends Thing {
+export interface MonitoringSiteWithColor extends MonitoringSite {
   color?: {
     borderColor: string;
     background: string;
@@ -355,19 +369,18 @@ export class Datastream {
   workspaceId: string;
   name: string;
   description: string;
-  thingId: string;
-  observationType: string;
-  resultType?: string;
+  monitoringSiteId: string;
+  type: DatastreamType;
   status?: string;
   sampledMedium: string;
   noDataValue: number;
   aggregationStatistic: string;
   unitId: string;
   observedPropertyId: string;
-  sensorId: string;
+  methodId: string;
   processingLevelId: string;
   isPrivate: boolean;
-  isVisible: boolean;
+  isRestricted: boolean;
   phenomenonBeginTime?: string | null;
   phenomenonEndTime?: string | null;
   intendedTimeSpacing?: number;
@@ -377,25 +390,24 @@ export class Datastream {
   dataSourceId?: string | null;
   valueCount: number;
 
-  constructor(thingId?: string) {
+  constructor(monitoringSiteId?: string) {
     this.id = "";
     this.workspaceId = "";
     this.name = "";
     this.description = "";
-    this.thingId = thingId || "";
-    this.observationType = "OM_Measurement";
-    this.resultType = "Time Series Coverage";
+    this.monitoringSiteId = monitoringSiteId || "";
+    this.type = "timeSeriesCoverage";
     this.sampledMedium = "";
     this.noDataValue = -9999;
     this.aggregationStatistic = "";
     this.unitId = "";
     this.observedPropertyId = "";
-    this.sensorId = "";
+    this.methodId = "";
     this.processingLevelId = "";
     this.timeAggregationInterval = null;
     this.timeAggregationIntervalUnit = "seconds";
     this.isPrivate = true;
-    this.isVisible = true;
+    this.isRestricted = false;
     this.valueCount = 0;
   }
 }
@@ -404,14 +416,13 @@ export interface DatastreamExtended {
   id: string;
   name: string;
   description: string;
-  observationType: string;
-  resultType?: string;
+  type: DatastreamType;
   status?: string;
   sampledMedium: string;
   noDataValue: number;
   aggregationStatistic: string;
   isPrivate: boolean;
-  isVisible: boolean;
+  isRestricted: boolean;
   phenomenonBeginTime?: string | null;
   phenomenonEndTime?: string | null;
   intendedTimeSpacing?: number;
@@ -421,11 +432,11 @@ export interface DatastreamExtended {
   dataSourceId?: string | null;
   valueCount: number;
 
-  thing: Thing;
+  monitoringSite: MonitoringSite;
   workspace: Workspace;
   unit: Unit;
   observedProperty: ObservedProperty;
-  sensor: Sensor;
+  method: Method;
   processingLevel: ProcessingLevel;
   dataSource: DataSource;
 }
@@ -448,31 +459,29 @@ export class Unit {
   }
 }
 
-export class Sensor {
+export class Method {
   id: string;
   workspaceId: string;
   name: string;
   description: string;
-  manufacturer: string;
-  model: string;
-  methodType: string;
-  methodCode: string;
-  methodLink: string;
-  encodingType: string;
-  modelLink: string;
+  code: string;
+  type: string;
+  definition: string;
+  sensorModel: string;
+  sensorModelManufacturer: string;
+  sensorModelDefinition: string;
 
   constructor() {
     this.id = "";
     this.workspaceId = "";
     this.name = "";
     this.description = "";
-    this.manufacturer = "";
-    this.model = "";
-    this.methodType = "Instrument Deployment";
-    this.methodCode = "";
-    this.methodLink = "";
-    this.encodingType = "application/json";
-    this.modelLink = "";
+    this.code = "";
+    this.type = "Instrument Deployment";
+    this.definition = "";
+    this.sensorModel = "";
+    this.sensorModelManufacturer = "";
+    this.sensorModelDefinition = "";
   }
 }
 
@@ -500,15 +509,17 @@ export class ProcessingLevel {
   id: string;
   workspaceId: string;
   code: string;
+  name: string;
+  description: string;
   definition: string;
-  explanation: string;
 
   constructor() {
     this.id = "";
     this.workspaceId = "";
     this.code = "";
+    this.name = "";
+    this.description = "";
     this.definition = "";
-    this.explanation = "";
   }
 }
 
@@ -548,7 +559,10 @@ export class User {
   organization?: Organization | null;
   type: string;
   link: string;
-  accountType: "admin" | "standard" | "limited";
+  isStaff: boolean;
+  isSuperuser: boolean;
+  /** `null` means unlimited; `0` means the user can't own workspaces. */
+  ownedWorkspaceLimit: number | null;
   hydroShareConnected: boolean;
 
   constructor() {
@@ -562,7 +576,9 @@ export class User {
     this.address = "";
     this.type = "";
     this.link = "";
-    this.accountType = "standard";
+    this.isStaff = false;
+    this.isSuperuser = false;
+    this.ownedWorkspaceLimit = 1;
     this.hydroShareConnected = false;
   }
 }
@@ -575,14 +591,14 @@ export interface Photo {
 export class OAuthProvider {
   id: string;
   name: string;
-  iconLink: string;
+  iconLink: string | null;
   signupEnabled: boolean;
   connectEnabled: boolean;
 
   constructor() {
     this.id = "";
     this.name = "";
-    this.iconLink = "";
+    this.iconLink = null;
     this.signupEnabled = true;
     this.connectEnabled = true;
   }
@@ -600,9 +616,9 @@ export enum PermissionResource {
   Global = "*",
   Workspace = "Workspace",
   Collaborator = "Collaborator",
-  Thing = "Thing",
+  MonitoringSite = "MonitoringSite",
   Datastream = "Datastream",
-  Sensor = "Sensor",
+  Method = "Method",
   Unit = "Unit",
   ObservedProperty = "ObservedProperty",
   ProcessingLevel = "ProcessingLevel",

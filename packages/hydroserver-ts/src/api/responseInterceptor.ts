@@ -2,22 +2,24 @@
 export type FieldErrors = Record<string, string[]>
 
 /**
- * Envelope metadata returned alongside `data`. Today this carries Django
- * AllAuth auth-flow state; unknown keys are passed through untyped so the
+ * Envelope metadata optionally returned alongside `data`. Untyped so the
  * shape can evolve without breaking the client.
  */
 export interface Meta {
-  is_authenticated?: boolean
-  expires?: string | null
-  oAuthProviders?: unknown[]
-  signupEnabled?: boolean
   [key: string]: unknown
 }
 
 // TODO: Return FieldErrors in the error case so the backend can be the one source of truth for the error message
 export type ApiResponse<T> =
-  | { ok: true; status: number; data: T; message?: string; meta?: Meta }
-  | { ok: false; status: number; message: string }
+  | {
+      ok: true
+      status: number
+      data: T
+      message?: string
+      meta?: Meta
+      included?: Meta
+    }
+  | { ok: false; status: number; message: string; data?: unknown }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === 'object' && !Array.isArray(value)
@@ -32,6 +34,15 @@ function firstStringField(
   for (const key of keys) {
     const val = obj[key]
     if (typeof val === 'string' && val.trim()) return val
+    // Django-Ninja's schema-validation errors put a list of Pydantic error
+    // objects here instead of a string, e.g. [{ msg: "value is not a valid
+    // email address: ...", loc: [...], ... }]. Surface the first one's
+    // message rather than falling through to a generic error.
+    if (Array.isArray(val) && val.length) {
+      const first = asRecord(val[0])
+      const msg = first && typeof first.msg === 'string' ? first.msg : null
+      if (msg) return msg
+    }
   }
   return null
 }
@@ -88,21 +99,21 @@ export async function responseInterceptor<T = unknown>(
     }
   }
 
-  // Django AllAuth doesn't consider 401 responses errors but rather an
-  // message to put the caller in an unauthenticated flow state.
-  // Pass the response to the calling component to handle the returned AllAuth flows.
-
-  // TODO: Clients and frontend apps shouldn't have to know anything about Django. Move AllAuth logic to the server
-  if (response.ok || response.status === 401) {
+  if (response.ok) {
     const record = asRecord(body)
     const looksEnveloped =
-      record !== null && ('data' in record || 'meta' in record)
+      record !== null &&
+      'data' in record &&
+      ('meta' in record || 'included' in record)
 
     const data = (looksEnveloped ? record!.data : body) as T
     const message = extractSuccessMessage(body, response)
     const meta = looksEnveloped ? (record!.meta as Meta | undefined) : undefined
+    const included = looksEnveloped
+      ? (record!.included as Meta | undefined)
+      : undefined
 
-    return { ok: true, data, status: response.status, message, meta }
+    return { ok: true, data, status: response.status, message, meta, included }
   }
 
   // Error path
@@ -110,5 +121,6 @@ export async function responseInterceptor<T = unknown>(
     ok: false,
     status: response.status,
     message: extractErrorMessage(body),
+    data: body,
   }
 }

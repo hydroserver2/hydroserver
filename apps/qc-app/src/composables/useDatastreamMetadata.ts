@@ -1,14 +1,14 @@
 /**
- * Reference data the create-datastream form offers: the workspace's sensors
- * (a datastream's "method" in HydroServer) and the datastream status
- * vocabulary. Loaded on demand rather than with the workspace catalog, since
- * only that one form needs them. A list that fails to load stays empty and
- * the form falls back to the source datastream's own value.
+ * Reference data the create-datastream form offers: the workspace's methods
+ * and the datastream status vocabulary. Loaded on demand rather than with the
+ * workspace catalog, since only that one form needs them. A list that fails
+ * to load stays empty and the form falls back to the source datastream's own
+ * value.
  */
 
 import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
-import type { Sensor } from '@hydroserver/client'
+import type { Method } from '@hydroserver/client'
 import { useHydroServer } from '@/store/hydroserver'
 import { useWorkspaceStore } from '@/store/workspaces'
 
@@ -16,27 +16,32 @@ export function useDatastreamMetadata() {
   const { hs } = storeToRefs(useHydroServer())
   const { selectedWorkspaceId } = storeToRefs(useWorkspaceStore())
 
-  const sensors = ref<Sensor[]>([])
+  const methods = ref<Method[]>([])
   const statuses = ref<string[]>([])
 
   async function load(): Promise<void> {
     const workspaceId = selectedWorkspaceId.value
     if (!hs.value || !workspaceId) return
 
-    const [sensorList, statusList] = await Promise.allSettled([
-      // 'null' keeps the system-level sensors, which are selectable too.
-      hs.value.sensors.listAllItems({
-        workspace_id: [workspaceId, 'null'] as (string | 'null')[],
-        order_by: ['name'] as const,
+    const [methodList, statusList] = await Promise.allSettled([
+      // 'null' keeps the system-level methods, which are selectable too.
+      hs.value.methods.list({
+        workspaceId: [workspaceId, 'null'],
+        sortby: ['name'],
+        fetch_all: true,
       }),
-      hs.value.datastreams.getStatuses(),
+      hs.value.datastreamStatuses.list({ fetch_all: true }),
     ])
 
-    if (sensorList.status === 'rejected') {
-      console.warn('Could not load the method list', sensorList.reason)
+    if (methodList.status === 'rejected') {
+      console.warn('Could not load the method list', methodList.reason)
+      methods.value = []
+    } else if (!methodList.value.ok) {
+      console.warn('Could not load the method list', methodList.value)
+      methods.value = []
+    } else {
+      methods.value = methodList.value.data
     }
-    sensors.value =
-      sensorList.status === 'fulfilled' ? (sensorList.value as Sensor[]) : []
 
     if (statusList.status === 'rejected') {
       console.warn('Could not load the status list', statusList.reason)
@@ -45,9 +50,9 @@ export function useDatastreamMetadata() {
       console.warn('Could not load the status list', statusList.value)
       statuses.value = []
     } else {
-      statuses.value = statusList.value.data
+      statuses.value = statusList.value.data.map((status) => status.name)
     }
   }
 
-  return { sensors, statuses, load }
+  return { methods, statuses, load }
 }

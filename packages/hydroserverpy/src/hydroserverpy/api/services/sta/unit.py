@@ -6,7 +6,7 @@ from ..base import HydroServerBaseService
 
 if TYPE_CHECKING:
     from hydroserverpy import HydroServer
-    from hydroserverpy.api.models import Workspace, Thing, Datastream
+    from hydroserverpy.api.models import Workspace, MonitoringSite, Datastream
 
 
 class UnitService(HydroServerBaseService):
@@ -16,25 +16,25 @@ class UnitService(HydroServerBaseService):
 
     def list(
         self,
-        page: int = ...,
-        page_size: int = ...,
-        order_by: List[str] = ...,
+        offset: int = ...,
+        limit: int = ...,
+        sortby: List[str] = ...,
         workspace: Union["Workspace", UUID, str] = ...,
-        thing: Optional[Union["Thing", UUID, str]] = ...,
+        monitoring_site: Optional[Union["MonitoringSite", UUID, str]] = ...,
         datastream: Optional[Union["Datastream", UUID, str]] = ...,
-        unit_type: str = ...,
+        type: str = ...,
         fetch_all: bool = False,
     ) -> List["Unit"]:
         """Fetch a collection of units."""
 
         return super().list(
-            page=page,
-            page_size=page_size,
-            order_by=order_by,
+            offset=offset,
+            limit=limit,
+            sortby=sortby,
             workspace_id=normalize_uuid(workspace),
-            thing_id=normalize_uuid(thing),
+            monitoring_site_id=normalize_uuid(monitoring_site),
             datastream_id=normalize_uuid(datastream),
-            unit_type=unit_type,
+            type=type,
             fetch_all=fetch_all,
         )
 
@@ -42,10 +42,10 @@ class UnitService(HydroServerBaseService):
         self,
         name: str,
         symbol: str,
-        definition: str,
-        unit_type: str,
+        type: str,
+        definition: Optional[str] = None,
         workspace: Optional[Union["Workspace", UUID, str]] = None,
-        uid: Optional[UUID] = None
+        uid: Optional[UUID] = None,
     ) -> "Unit":
         """Create a new unit."""
 
@@ -54,7 +54,7 @@ class UnitService(HydroServerBaseService):
             "name": name,
             "symbol": symbol,
             "definition": definition,
-            "type": unit_type,
+            "type": type,
             "workspaceId": normalize_uuid(workspace),
         }
 
@@ -65,8 +65,8 @@ class UnitService(HydroServerBaseService):
         uid: Union[UUID, str],
         name: str = ...,
         symbol: str = ...,
-        definition: str = ...,
-        unit_type: str = ...,
+        type: str = ...,
+        definition: Optional[str] = ...,
     ) -> "Unit":
         """Update a unit."""
 
@@ -74,7 +74,7 @@ class UnitService(HydroServerBaseService):
             "name": name,
             "symbol": symbol,
             "definition": definition,
-            "type": unit_type,
+            "type": type,
         }
 
         return super().update(uid=str(uid), **body)

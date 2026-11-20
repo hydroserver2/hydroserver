@@ -1,91 +1,63 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from '../support/test'
 
-import { login, requestBrowserSession } from '../support/auth'
+import { login } from '../support/auth'
 import { users } from '../support/fixtures'
-
-const API_BASE_URL = process.env.E2E_API_BASE_URL || 'http://127.0.0.1:18000'
 
 test.describe('account management', () => {
   test.use({ storageState: { cookies: [], origins: [] } })
 
-  test('user with no workspaces lands on your sites and sees onboarding guidance', async ({
+  test('user with no workspaces lands on Browse with site registration disabled', async ({
     page,
   }) => {
     await login(page, users.deleteMe.email, users.deleteMe.password)
 
-    await expect(page).toHaveURL(/\/sites$/)
-    await expect(page.getByText('No workspaces found')).toBeVisible()
+    await expect(page).toHaveURL(/\/browse$/)
     await expect(
-      page.getByText('Click the "Add workspace" button to create one.')
+      page.getByRole('heading', { name: 'Monitoring sites', level: 1 })
     ).toBeVisible()
+    await expect(page.getByTestId('register-site-button')).toBeDisabled()
   })
 
   test('account menu opens the profile page and profile editing can remove organization details', async ({
     page,
   }) => {
     await login(page, users.profile.email, users.profile.password)
-    await expect(page).toHaveURL(/\/sites$/)
+    await expect(page).toHaveURL(/\/browse$/)
 
     await page.getByTestId('account-menu-button').click()
     await page.getByTestId('account-menu-item').click()
-    await expect(page).toHaveURL(/\/profile$/)
-    await expect(
-      page.getByRole('heading', { name: 'User information' })
-    ).toBeVisible()
-    await expect(
-      page.getByRole('heading', { name: 'Organization information' })
-    ).toBeVisible()
+    await expect(page).toHaveURL(/\/accounts\/profile\/(?:\?.*)?$/)
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Organization' })).toBeVisible()
 
-    await page.getByRole('button', { name: 'Edit account' }).click()
-    await page.getByLabel('First Name *').fill('Profile Updated')
-    await page.getByLabel('Affiliated with an Organization').click()
-
-    await expect(
-      page.getByText('Warning: Disabling organization affiliation')
-    ).toBeVisible()
-
-    await page.getByRole('button', { name: 'Save' }).click()
+    await page.getByRole('link', { name: 'Edit' }).click()
+    await page.getByLabel('First name').fill('Profile Updated')
+    await page.getByRole('checkbox', { name: 'Organization affiliation' }).uncheck()
+    await page.getByRole('button', { name: 'Save changes' }).click()
 
     await expect(page.getByText('Profile Updated Example')).toBeVisible()
-    await expect(
-      page.getByRole('heading', { name: 'Organization information' })
-    ).toHaveCount(0)
-
-    // Restore profile to original seeded state so retries start from a clean slate.
-    await page.request.patch(`${API_BASE_URL}/api/auth/browser/account`, {
-      data: {
-        first_name: 'Profile',
-        last_name: 'Example',
-        type: 'Other',
-        organization: {
-          code: 'E2E',
-          name: 'E2E Test Organization',
-          description: 'Deterministic organization for browser profile tests.',
-          link: 'https://example.com/org/e2e-profile',
-          type: 'Other',
-        },
-      },
-    })
+    await expect(page.getByRole('heading', { name: 'Organization' })).toHaveCount(0)
   })
 
   test('account deletion removes the user session and invalidates login', async ({
     page,
   }) => {
     await login(page, users.deleteMe.email, users.deleteMe.password)
-    await expect(page).toHaveURL(/\/sites$/)
+    await expect(page).toHaveURL(/\/browse$/)
 
     await page.goto('/profile')
-    await page.getByRole('button', { name: 'Delete Account' }).click()
-    await page.getByRole('textbox').fill('delete my account and data')
-    await page.getByRole('button', { name: 'Delete', exact: true }).click()
-
-    await expect(page).toHaveURL(/\/login$/)
-
-    const response = await requestBrowserSession(
-      page,
-      users.deleteMe.email,
-      users.deleteMe.password
+    await page.getByRole('link', { name: 'Delete Account' }).click()
+    await page.getByLabel('Type "delete my account and data" to confirm').fill(
+      'delete my account and data'
     )
-    expect(response.ok()).toBeFalsy()
+    await page.getByRole('button', { name: 'Delete my account' }).click()
+
+    await expect(page).toHaveURL(/\/accounts\/login\/(?:\?.*)?$/)
+
+    await page.getByLabel('Email').fill(users.deleteMe.email)
+    await page.getByLabel('Password').fill(users.deleteMe.password)
+    await page.getByRole('button', { name: 'Sign In' }).click()
+    await expect(page).toHaveURL(/\/accounts\/login\/(?:\?.*)?$/)
+    await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible()
   })
 })

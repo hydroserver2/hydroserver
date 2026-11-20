@@ -4,8 +4,9 @@
  * `QualityControlOperationService`). They return `ApiResponse` like the real
  * services and enforce the invariants the orchestration relies on (one
  * in-progress session per history, append-only operations, overlap-based
- * session dependencies). Not shipped: the real QC client lives in
- * `@hydroserver/client`.
+ * session dependencies). Like the API, creates answer with the new id, and a
+ * session's operations come only from the operations service. Not shipped:
+ * the real QC client lives in `@hydroserver/client`.
  */
 
 import type {
@@ -18,10 +19,11 @@ import type {
   QualityControlOperationContract,
 } from '@hydroserver/client'
 
-type QcHistoryDetail = QualityControlHistoryContract.DetailResponse
-type QcSessionDetail = QualityControlSessionContract.DetailResponse
+type QcHistory = QualityControlHistoryContract.SummaryResponse
 type QcSessionSummary = QualityControlSessionContract.SummaryResponse
 type QcOperation = QualityControlOperationContract.SummaryResponse
+/** A stored session keeps its operations; responses leave them out. */
+type QcStoredSession = QcSessionSummary & { operations: QcOperation[] }
 type QcOperationPostBody = QualityControlOperationContract.PostBody[number]
 type QcContact = { name: string; email: string }
 
@@ -35,9 +37,9 @@ const TEST_USER: QcContact = { name: 'Test User', email: 'test@example.org' }
 let seq = 0
 const nextId = (prefix: string) => `${prefix}-${(seq += 1)}`
 
-const summary = (s: QcSessionDetail): QcSessionSummary => {
-  const { operations: _o, dependencyIds: _d, ...rest } = s
-  return rest as QcSessionSummary
+const summary = (s: QcStoredSession): QcSessionSummary => {
+  const { operations: _o, ...rest } = s
+  return rest
 }
 
 export interface QcFake {
@@ -47,8 +49,8 @@ export interface QcFake {
 }
 
 export function makeQcFake(createdBy: QcContact = TEST_USER): QcFake {
-  const histories: QcHistoryDetail[] = []
-  const sessions: QcSessionDetail[] = []
+  const histories: QcHistory[] = []
+  const sessions: QcStoredSession[] = []
 
   const forHistory = (historyId: string) =>
     sessions.filter((s) => s.historyId === historyId)
@@ -76,32 +78,26 @@ export function makeQcFake(createdBy: QcContact = TEST_USER): QcFake {
       const history = {
         id: nextId('h'),
         createdAt: '2025-01-01T00:00:00Z',
-        managedDatastream: {
-          id: body.managedDatastreamId,
-          name: `Datastream ${body.managedDatastreamId}`,
-        },
-        sourceDatastream: {
-          id: body.sourceDatastreamId,
-          name: `Datastream ${body.sourceDatastreamId}`,
-        },
+        managedDatastreamId: body.managedDatastreamId,
+        sourceDatastreamId: body.sourceDatastreamId,
         phenomenonTimeStart: null,
         phenomenonTimeEnd: null,
         sourceChecksum: null,
         managedChecksum: null,
-      } as unknown as QcHistoryDetail
+      } as unknown as QcHistory
       histories.push(history)
-      return ok(history)
+      return ok({ id: history.id })
     },
 
     async list(
       query?: Partial<QualityControlHistoryContract.QueryParameters>
     ) {
       let list = histories
-      const managedIds = query?.managed_datastream_id
+      const managedIds = query?.managedDatastreamId
       if (managedIds && managedIds.length) {
-        list = list.filter((h) => managedIds.includes(h.managedDatastream.id))
+        list = list.filter((h) => managedIds.includes(h.managedDatastreamId))
       }
-      return ok([...list] as QcHistoryDetail[])
+      return ok([...list])
     },
 
     async get(historyId: string) {
@@ -149,15 +145,15 @@ export function makeQcFake(createdBy: QcContact = TEST_USER): QcFake {
         managedChecksum: null,
         dependencyIds,
         operations: [],
-      } as unknown as QcSessionDetail
+      } as unknown as QcStoredSession
       sessions.push(session)
-      return ok({ ...session, operations: [] } as QcSessionDetail)
+      return ok({ id })
     },
 
     async get(historyId: string, sessionId: string) {
       const s = find(sessionId)
       if (!s || s.historyId !== historyId) return fail('session not found', 404)
-      return ok({ ...s, operations: [...s.operations] } as QcSessionDetail)
+      return ok(summary(s))
     },
 
     async list(
@@ -165,16 +161,11 @@ export function makeQcFake(createdBy: QcContact = TEST_USER): QcFake {
       query?: Partial<QualityControlSessionContract.QueryParameters>
     ) {
       let list = forHistory(historyId)
-      if (query?.ancestor_of) {
-        const ids = ancestorsOf(query.ancestor_of)
+      if (query?.ancestorOf) {
+        const ids = ancestorsOf(query.ancestorOf)
         list = list.filter((s) => ids.has(s.id))
       }
       if (query?.status) list = list.filter((s) => s.status === query.status)
-      // Mirrors the API: `expand_related` returns the detail shape, which
-      // embeds each session's operations.
-      if (query?.expand_related) {
-        return ok(list.map((s) => ({ ...s, operations: [...s.operations] })))
-      }
       return ok(list.map(summary))
     },
 
@@ -186,7 +177,7 @@ export function makeQcFake(createdBy: QcContact = TEST_USER): QcFake {
       const s = find(sessionId)
       if (!s) return fail('session not found', 404)
       if (body.description !== undefined) s.description = body.description
-      return ok({ ...s, operations: [...s.operations] } as QcSessionDetail)
+      return ok(null)
     },
 
     async delete(_historyId: string, sessionId: string) {
@@ -203,14 +194,20 @@ export function makeQcFake(createdBy: QcContact = TEST_USER): QcFake {
       // orders a session's ancestor chain on reconstruction.
       s.committedAt = new Date(Date.UTC(2025, 5, 1, 0, 0, (seq += 1))).toISOString()
       s.managedChecksum = `mchk-${sessionId}`
-      return ok({ ...s, operations: [...s.operations] } as QcSessionDetail)
+      return ok(summary(s))
     },
   }
 
   const operationsService = {
-    async list(_historyId: string, sessionId: string) {
+    async list(
+      _historyId: string,
+      sessionId: string,
+      query?: Partial<QualityControlOperationContract.QueryParameters>
+    ) {
       const s = find(sessionId)
-      return ok(s ? [...s.operations] : [])
+      const ops = s ? [...s.operations] : []
+      if (query?.sortby?.includes('order')) ops.sort((a, b) => a.order - b.order)
+      return ok(ops)
     },
 
     async create(
@@ -235,7 +232,7 @@ export function makeQcFake(createdBy: QcContact = TEST_USER): QcFake {
           }) as unknown as QcOperation
       )
       s.operations.push(...created)
-      return ok(created)
+      return ok(created.map(({ id }) => ({ id })))
     },
 
     async update(
@@ -252,7 +249,7 @@ export function makeQcFake(createdBy: QcContact = TEST_USER): QcFake {
       if (!op) return fail('operation not found', 404)
       if (body.comment !== undefined) (op as any).comment = body.comment
       if (body.order !== undefined) (op as any).order = body.order
-      return ok(op)
+      return ok(null)
     },
 
     async delete(_historyId: string, sessionId: string, operationId: string) {
@@ -267,4 +264,28 @@ export function makeQcFake(createdBy: QcContact = TEST_USER): QcFake {
     sessions: sessionsService as unknown as QualityControlSessionService,
     operations: operationsService as unknown as QualityControlOperationService,
   }
+}
+
+/** Create a history and read it back, since a create answers with only the id. */
+export async function createHistory(
+  qc: QcFake,
+  body: QualityControlHistoryContract.PostBody
+): Promise<QcHistory> {
+  const { id } = unwrapOk(await qc.histories.create(body))
+  return unwrapOk(await qc.histories.get(id))
+}
+
+/** Create a session and read it back, since a create answers with only the id. */
+export async function createSession(
+  qc: QcFake,
+  historyId: string,
+  body: QualityControlSessionContract.PostBody
+): Promise<QcSessionSummary> {
+  const { id } = unwrapOk(await qc.sessions.create(historyId, body))
+  return unwrapOk(await qc.sessions.get(historyId, id))
+}
+
+function unwrapOk<T>(res: ApiResponse<T>): T {
+  if (!res.ok) throw new Error(res.message)
+  return res.data
 }

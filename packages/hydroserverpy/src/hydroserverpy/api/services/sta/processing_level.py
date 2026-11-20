@@ -6,7 +6,7 @@ from ..base import HydroServerBaseService
 
 if TYPE_CHECKING:
     from hydroserverpy import HydroServer
-    from hydroserverpy.api.models import Workspace, Thing, Datastream
+    from hydroserverpy.api.models import Workspace, MonitoringSite, Datastream
 
 
 class ProcessingLevelService(HydroServerBaseService):
@@ -16,41 +16,44 @@ class ProcessingLevelService(HydroServerBaseService):
 
     def list(
         self,
-        page: int = ...,
-        page_size: int = ...,
-        order_by: List[str] = ...,
+        offset: int = ...,
+        limit: int = ...,
+        sortby: List[str] = ...,
         workspace: Optional[Union["Workspace", UUID, str]] = ...,
-        thing: Optional[Union["Thing", UUID, str]] = ...,
+        monitoring_site: Optional[Union["MonitoringSite", UUID, str]] = ...,
         datastream: Optional[Union["Datastream", UUID, str]] = ...,
         fetch_all: bool = False,
     ) -> List["ProcessingLevel"]:
         """Fetch a collection of processing levels."""
 
         return super().list(
-            page=page,
-            page_size=page_size,
-            order_by=order_by,
+            offset=offset,
+            limit=limit,
+            sortby=sortby,
             workspace_id=normalize_uuid(workspace),
-            thing_id=normalize_uuid(thing),
+            monitoring_site_id=normalize_uuid(monitoring_site),
             datastream_id=normalize_uuid(datastream),
             fetch_all=fetch_all,
         )
 
     def create(
         self,
-        code: str,
+        name: str,
+        description: str,
+        *,
+        code: Optional[str] = None,
         definition: Optional[str] = None,
-        explanation: Optional[str] = None,
         workspace: Optional[Union["Workspace", UUID, str]] = None,
         uid: Optional[UUID] = None,
     ) -> "ProcessingLevel":
-        """Create a new processing level."""
+        """Create a processing level; pass optional arguments by keyword."""
 
         body = {
             "id": normalize_uuid(uid),
             "code": code,
+            "name": name,
+            "description": description,
             "definition": definition,
-            "explanation": explanation,
             "workspaceId": normalize_uuid(workspace),
         }
 
@@ -59,16 +62,18 @@ class ProcessingLevelService(HydroServerBaseService):
     def update(
         self,
         uid: Union[UUID, str],
-        code: str = ...,
-        definition: str = ...,
-        explanation: str = ...,
+        code: Optional[str] = ...,
+        name: str = ...,
+        description: str = ...,
+        definition: Optional[str] = ...,
     ) -> "ProcessingLevel":
         """Update a processing level."""
 
         body = {
             "code": code,
+            "name": name,
+            "description": description,
             "definition": definition,
-            "explanation": explanation,
         }
 
         return super().update(uid=str(uid), **body)

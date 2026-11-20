@@ -23,15 +23,15 @@ try {
   assert.deepEqual(declarationFiles, ['index.d.cts', 'index.d.ts'])
   await writeFile(join(directory, 'package.json'), '{"type":"module"}\n')
   const consumer = `
-import hs, { HydroServer, ThingContract, UserService } from '@hydroserver/client'
+import hs, { HydroServer, MonitoringSiteContract, UserService } from '@hydroserver/client'
 const client: HydroServer = hs
-const query: ThingContract.QueryParameters = { page: 1 }
-client.things.list(query)
-const name: ThingContract.DetailResponse['name'] = 'A site'
+const query: MonitoringSiteContract.QueryParameters = { limit: 1 }
+client.monitoringSites.list(query)
+const name: MonitoringSiteContract.DetailResponse['data']['name'] = 'A site'
 // @ts-expect-error Schema types must not silently become any.
-const invalidName: ThingContract.DetailResponse['name'] = 123
+const invalidName: MonitoringSiteContract.DetailResponse['data']['name'] = 123
 // @ts-expect-error Generated query types must reject invalid values.
-client.things.list({ page: 'invalid' })
+client.monitoringSites.list({ limit: 'invalid' })
 const userService: UserService = client.user
 `
   await writeFile(join(directory, 'consumer.mts'), consumer)

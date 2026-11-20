@@ -41,6 +41,7 @@ describe('valueThresholdCore', () => {
       [ThresholdOp.GT, 10, [3, 4]],
       [ThresholdOp.GTE, 10, [2, 3, 4]],
       [ThresholdOp.E, 10, [2]],
+      [ThresholdOp.NE, 10, [0, 1, 3, 4]],
     ]
     for (const [op, v, expected] of cases) {
       expect(valueThresholdCore(y, 0, y.length, [op], [v])).toEqual(expected)
@@ -66,6 +67,26 @@ describe('valueThresholdCore', () => {
 
   it('honors the [start, end) range', () => {
     expect(valueThresholdCore(y, 1, 4, [ThresholdOp.GTE], [5])).toEqual([1, 2, 3])
+  })
+
+  it('requires every filter with matchAll', () => {
+    expect(
+      valueThresholdCore(y, 0, y.length, [ThresholdOp.GT, ThresholdOp.LT], [1, 20], true)
+    ).toEqual([1, 2, 3])
+  })
+
+  it('excludes a fill value with matchAll and not-equal', () => {
+    const t = f64([-9999, -3, 2, -9999, -1])
+    expect(
+      valueThresholdCore(t, 0, t.length, [ThresholdOp.LT, ThresholdOp.NE], [0, -9999], true)
+    ).toEqual([1, 4])
+    expect(
+      valueThresholdCore(t, 0, t.length, [ThresholdOp.LT, ThresholdOp.NE], [0, -9999])
+    ).toEqual([0, 1, 2, 3, 4])
+  })
+
+  it('selects nothing without filters, even with matchAll', () => {
+    expect(valueThresholdCore(y, 0, y.length, [], [], true)).toEqual([])
   })
 })
 

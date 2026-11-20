@@ -29,7 +29,7 @@ const props = defineProps<{
           <v-col>
             {{
               props.message ??
-              "You don't have permissions to perform this action. Contact your system administrator to change your permissions."
+              "You don't have permission to perform this action."
             }}
           </v-col>
         </v-row>

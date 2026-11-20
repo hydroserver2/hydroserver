@@ -1,6 +1,7 @@
 import { GraphSeries } from '@hydroserver/client'
 import { storeToRefs } from 'pinia'
 import { useDataVisStore } from '@/store/dataVisualization'
+import { setPngDpi } from './imageExport'
 
 type YAxisConfiguration = {
   index: number
@@ -157,7 +158,7 @@ const buildSummaryButton = () => {
   const { showSummaryStatistics } = storeToRefs(useDataVisStore())
 
   return {
-    name: 'Summary Statistics',
+    name: 'Summary statistics',
     icon: {
       width: 512,
       height: 512,
@@ -208,14 +209,22 @@ const getExportConfig = (gd: any) => {
   }
 }
 
-const downloadPlotlyImage = async (
+export const downloadPlotlyImage = async (
   gd: any,
   {
     filename,
     format = 'png',
+    scale: requestedScale,
+    width: requestedWidth,
+    height: requestedHeight,
+    dpi,
   }: {
     filename: string
     format?: 'png' | 'jpeg' | 'svg'
+    scale?: number
+    width?: number
+    height?: number
+    dpi?: number
   }
 ) => {
   const { width, height, scale } = getExportConfig(gd)
@@ -223,12 +232,19 @@ const downloadPlotlyImage = async (
   const Plotly = (PlotlyModule as any).default ?? PlotlyModule
   const dataUrl = await Plotly.toImage(gd, {
     format,
-    width,
-    height,
-    scale,
+    width: requestedWidth ?? width,
+    height: requestedHeight ?? height,
+    scale: requestedScale ?? scale,
   })
+  if (!dataUrl.startsWith('data:image/')) {
+    throw new Error('The browser could not render the requested image size.')
+  }
   const response = await fetch(dataUrl)
-  const blob = await response.blob()
+  let blob = await response.blob()
+  if (format === 'png' && dpi !== undefined) {
+    const bytes = setPngDpi(new Uint8Array(await blob.arrayBuffer()), dpi)
+    blob = new Blob([bytes.buffer], { type: 'image/png' })
+  }
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
 

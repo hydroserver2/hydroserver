@@ -60,25 +60,25 @@
           New processing level
         </div>
         <v-text-field
-          v-model="newLevel.code"
-          data-testid="new-level-code"
-          label="Code *"
+          v-model="newLevel.name"
+          data-testid="new-level-name"
+          label="Name *"
           density="compact"
           hide-details="auto"
           class="mb-2"
         />
         <v-text-field
-          v-model="newLevel.definition"
-          data-testid="new-level-definition"
-          label="Definition"
+          v-model="newLevel.code"
+          data-testid="new-level-code"
+          label="Code"
           density="compact"
           hide-details="auto"
           class="mb-2"
         />
         <v-textarea
-          v-model="newLevel.explanation"
-          data-testid="new-level-explanation"
-          label="Explanation"
+          v-model="newLevel.description"
+          data-testid="new-level-description"
+          label="Description *"
           rows="2"
           auto-grow
           density="compact"
@@ -100,7 +100,7 @@
             size="small"
             color="primary"
             variant="flat"
-            :disabled="!newLevel.code.trim()"
+            :disabled="!newLevel.name.trim() || !newLevel.description.trim()"
             :loading="addingLevel"
             @click="onAddLevel"
           >
@@ -143,15 +143,15 @@
     />
 
     <v-select
-      v-model="sensorId"
-      data-testid="create-sensor"
-      :items="sensorItems"
+      v-model="methodId"
+      data-testid="create-method"
+      :items="methodItems"
       item-title="title"
       item-value="value"
       label="Select method"
       no-data-text="No available methods"
       density="compact"
-      :error-messages="sensorError"
+      :error-messages="methodError"
       hide-details="auto"
       class="mb-3"
     />
@@ -183,14 +183,15 @@
 import { computed, ref } from 'vue'
 import type { Datastream } from '@hydroserver/client'
 import type { CreateManagedDatastreamSpec } from '@/composables/useCreateManagedDatastream'
+import type { NewProcessingLevelInput } from '@/composables/useProcessingLevels'
 
 interface ProcessingLevelOption {
   id: string
-  definition?: string
-  code?: string
+  name?: string
+  code?: string | null
 }
 
-interface SensorOption {
+interface MethodOption {
   id: string
   name: string
 }
@@ -200,7 +201,7 @@ const props = defineProps<{
   processingLevels: ProcessingLevelOption[]
   /** The workspace's methods. Empty when the list could not be loaded, and
    *  the source's own method is then the only option. */
-  sensors?: SensorOption[]
+  methods?: MethodOption[]
   /** The datastream status vocabulary. Empty when it could not be loaded. */
   statuses?: string[]
   defaultProcessingLevelId?: string | null
@@ -214,11 +215,9 @@ const props = defineProps<{
    *  level" affordance is shown so users don't have to leave for the
    *  management app. The parent is expected to add the result to
    *  `processingLevels`. */
-  onCreateProcessingLevel?: (input: {
-    code: string
-    definition?: string
-    explanation?: string
-  }) => Promise<{ id: string } | null>
+  onCreateProcessingLevel?: (
+    input: NewProcessingLevelInput
+  ) => Promise<{ id: string } | null>
 }>()
 
 const emit = defineEmits<{
@@ -244,12 +243,12 @@ const name = ref(`${props.source.name} (QC)`)
 const description = ref(props.source.description ?? '')
 const status = ref<string | null>(props.source.status ?? null)
 
-// Datastreams load expand_related, so the sensor arrives nested.
-const sourceSensor = computed(() => {
-  const s = props.source as Datastream & { sensor?: SensorOption }
-  return { id: props.source.sensorId ?? s.sensor?.id ?? '', name: s.sensor?.name }
+// Datastreams load expand_related, so the method arrives nested.
+const sourceMethod = computed(() => {
+  const s = props.source as Datastream & { method?: MethodOption }
+  return { id: props.source.methodId ?? s.method?.id ?? '', name: s.method?.name }
 })
-const sensorId = ref(sourceSensor.value.id)
+const methodId = ref(sourceMethod.value.id)
 
 // The source's own value stays selectable when the list is missing it, so a
 // failed load never silently changes what gets created.
@@ -260,14 +259,14 @@ const statusItems = computed(() => {
   return items
 })
 
-const sensorItems = computed(() => {
-  const items = (props.sensors ?? []).map((s) => ({
+const methodItems = computed(() => {
+  const items = (props.methods ?? []).map((s) => ({
     title: s.name,
     value: s.id,
   }))
-  const { id, name: sensorName } = sourceSensor.value
+  const { id, name: methodName } = sourceMethod.value
   if (id && !items.some((i) => i.value === id)) {
-    items.unshift({ title: sensorName || "The source's method", value: id })
+    items.unshift({ title: methodName || "The source's method", value: id })
   }
   return items
 })
@@ -276,11 +275,11 @@ const descriptionError = computed(() =>
   description.value.trim() ? '' : 'A description is required'
 )
 
-const sensorError = computed(() => (sensorId.value ? '' : 'A method is required'))
+const methodError = computed(() => (methodId.value ? '' : 'A method is required'))
 
 const processingLevelItems = computed(() =>
   props.processingLevels.map((p) => ({
-    title: p.definition || p.code || p.id,
+    title: p.name || p.code || p.id,
     value: p.id,
   }))
 )
@@ -305,7 +304,7 @@ const isValid = computed(
     knownLevelIds.value.has(processingLevelId.value) &&
     !processingLevelError.value &&
     !descriptionError.value &&
-    !!sensorId.value &&
+    !!methodId.value &&
     !props.permissionError
 )
 
@@ -317,29 +316,30 @@ function onConfirm(): void {
     name: name.value.trim() || undefined,
     description: description.value.trim(),
     status: status.value || undefined,
-    sensorId: sensorId.value,
+    methodId: methodId.value,
   })
 }
 
 // --- Inline "add processing level" -------------------------------------
 const showAddLevel = ref(false)
 const addingLevel = ref(false)
-const newLevel = ref({ code: '', definition: '', explanation: '' })
+const newLevel = ref({ name: '', code: '', description: '' })
 
 function cancelAddLevel(): void {
   showAddLevel.value = false
-  newLevel.value = { code: '', definition: '', explanation: '' }
+  newLevel.value = { name: '', code: '', description: '' }
 }
 
 async function onAddLevel(): Promise<void> {
-  const code = newLevel.value.code.trim()
-  if (!code || !props.onCreateProcessingLevel) return
+  const name = newLevel.value.name.trim()
+  const description = newLevel.value.description.trim()
+  if (!name || !description || !props.onCreateProcessingLevel) return
   addingLevel.value = true
   try {
     const created = await props.onCreateProcessingLevel({
-      code,
-      definition: newLevel.value.definition.trim() || undefined,
-      explanation: newLevel.value.explanation.trim() || undefined,
+      name,
+      description,
+      code: newLevel.value.code.trim() || undefined,
     })
     // Parent appends the new level to `processingLevels`, so selecting its id
     // here lands on a now-valid option.

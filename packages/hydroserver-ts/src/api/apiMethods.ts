@@ -1,17 +1,44 @@
-import { requestInterceptor, RequestOptions } from './requestInterceptor'
+import {
+  notifyUnauthorized,
+  requestInterceptor,
+  RequestOptions,
+} from './requestInterceptor'
 import { ApiResponse, responseInterceptor } from './responseInterceptor'
-import { createPatchObject } from './createPatchObject'
+import { createMergePatch } from './createMergePatch'
 import pLimit from 'p-limit'
 
 const limit = pLimit(10)
 const DEFAULT_PAGE_SIZE = 200
 
+function canResend(body: BodyInit | null | undefined): boolean {
+  return !(typeof ReadableStream !== 'undefined' && body instanceof ReadableStream)
+}
+
+/**
+ * Sends a request, retrying a token-authenticated 401 once with a fresh
+ * token. A 401 that stands is reported to the unauthorized handler.
+ */
+async function send(
+  endpoint: string,
+  options: RequestOptions
+): Promise<Response> {
+  const opts = await requestInterceptor(options)
+  let response = await fetch(endpoint, opts)
+  if (response.status !== 401) return response
+
+  const usedToken = new Headers(opts.headers).has('Authorization')
+  if (usedToken && canResend(opts.body)) {
+    response = await fetch(endpoint, await requestInterceptor(options))
+  }
+  if (response.status === 401) notifyUnauthorized(usedToken)
+  return response
+}
+
 async function interceptedFetch<T>(
   endpoint: string,
   options: RequestOptions
 ): Promise<ApiResponse<T>> {
-  const opts = requestInterceptor(options)
-  const response = await fetch(endpoint, opts)
+  const response = await send(endpoint, options)
   return await responseInterceptor<T>(response)
 }
 
@@ -29,19 +56,33 @@ export const apiMethods = {
     originalBody: unknown = null,
     options: RequestOptions = {}
   ): Promise<ApiResponse<T>> {
+    const isFormData =
+      typeof FormData !== 'undefined' && body instanceof FormData
+
     options.method = 'PATCH'
-    options.body = originalBody
-      ? createPatchObject(
+    options.body = isFormData
+      ? body
+      : originalBody
+      ? createMergePatch(
           originalBody as Record<string, unknown>,
           body as Record<string, unknown>
         )
       : body
+
+    if (!isFormData) {
+      const headers = new Headers(options.headers)
+      headers.set('Content-Type', 'application/merge-patch+json')
+      options.headers = headers
+    }
+
     const bodyIsEmpty =
+      !isFormData &&
       typeof options.body === 'object' &&
       options.body !== null &&
+      !Array.isArray(options.body) &&
       Object.keys(options.body).length === 0
 
-    if (!options.body || bodyIsEmpty) {
+    if (options.body === undefined || bodyIsEmpty) {
       return {
         ok: true,
         data: (originalBody ?? null) as T,
@@ -81,8 +122,7 @@ export const apiMethods = {
 
   /** GET `endpoint` and return the value of response header `name`. */
   async fetchHeader(endpoint: string, name: string): Promise<ApiResponse<string>> {
-    const opts = requestInterceptor({ method: 'GET' })
-    const response = await limit(() => fetch(endpoint, opts))
+    const response = await limit(() => send(endpoint, { method: 'GET' }))
     const res = await responseInterceptor<unknown>(response)
     if (!res.ok) return res
     const value = response.headers.get(name)
@@ -94,21 +134,18 @@ export const apiMethods = {
 
   async paginatedFetch<T>(base: string): Promise<ApiResponse<T>> {
     const url = new URL(String(base), globalThis.location?.origin ?? undefined)
-    const urlAlreadyHasPage = url.searchParams.has('page')
-    if (!urlAlreadyHasPage) url.searchParams.set('page', '1')
+    const urlAlreadyHasOffset = url.searchParams.has('offset')
+    if (!urlAlreadyHasOffset) url.searchParams.set('offset', '0')
 
-    if (!url.searchParams.has('page_size'))
-      url.searchParams.set('page_size', String(DEFAULT_PAGE_SIZE))
+    if (!url.searchParams.has('limit'))
+      url.searchParams.set('limit', String(DEFAULT_PAGE_SIZE))
+    const limitParam =
+      Number(url.searchParams.get('limit')) || DEFAULT_PAGE_SIZE
 
-    const opts = requestInterceptor({ method: 'GET' })
+    const res = await interceptedFetch<T>(url.toString(), { method: 'GET' })
 
-    // fetch first page without response interceptor so we can read headers
-    const firstResponse = await limit(() => fetch(url, opts))
-    const totalPages = Number(firstResponse.headers.get('X-Total-Pages')) || 1
-    const res = await responseInterceptor<T>(firstResponse)
-
-    // If the caller explicitly asked for a single page, return it as-is
-    if (urlAlreadyHasPage) return res
+    // If the caller explicitly asked for a specific offset, return it as-is
+    if (urlAlreadyHasOffset) return res
 
     // Errors carry no `data` to merge; surface them to the caller unchanged.
     if (!res.ok) return res
@@ -119,6 +156,13 @@ export const apiMethods = {
 
     const concatInto = (target: Columnar, src: Columnar) => {
       for (const [k, v] of Object.entries(src)) {
+        if (k === 'meta') continue
+        if (k === 'fields') {
+          // Row-format's column-name list is identical on every page;
+          // keep the first page's copy instead of concatenating duplicates.
+          if (target[k] === undefined) target[k] = v
+          continue
+        }
         if (Array.isArray(v)) {
           if (!Array.isArray(target[k])) target[k] = []
           ;(target[k] as unknown[]).push(...v)
@@ -129,71 +173,222 @@ export const apiMethods = {
       }
     }
 
-    // Normalize first page
-    let mode: 'array' | 'columnar'
-    let allArray: T[] = []
-    let allColumnar: Columnar | null = null
+    // Row and column profiles of observations group values by datastream; a
+    // datastream's group can continue on the next page.
+    type Group = Columnar & { datastreamId: string }
+    const isGrouped = (x: unknown): x is Group[] =>
+      Array.isArray(x) &&
+      x.length > 0 &&
+      x.every(
+        (g) =>
+          isColumnar(g) &&
+          typeof g.datastreamId === 'string' &&
+          ('rows' in g || 'columns' in g)
+      )
 
-    if (Array.isArray(res.data)) {
-      mode = 'array'
-      allArray = [...(res.data as T[])]
-    } else if (isColumnar(res.data)) {
-      mode = 'columnar'
-      allColumnar = {}
-      concatInto(allColumnar, res.data as Columnar)
-    } else {
-      return res // unknown shape, don’t attempt to paginate
+    // A column group with no selected per-observation property has no column
+    // to count its observations by.
+    const groupRowCount = (group: Group): number => {
+      if (Array.isArray(group.rows)) return group.rows.length
+      const column = isColumnar(group.columns)
+        ? Object.values(group.columns).find(Array.isArray)
+        : undefined
+      return column ? column.length : 0
     }
 
-    // Fetch remaining pages concurrently (bounded by the shared `limit`) and merge in page order.
-    // Each page gets its own URL so the requests don't share mutable searchParams state.
-    const remainingPages = await Promise.all(
-      Array.from({ length: Math.max(totalPages - 1, 0) }, (_, index) => {
-        const pageUrl = new URL(url)
-        pageUrl.searchParams.set('page', String(index + 2))
-        return limit(() =>
-          interceptedFetch<unknown>(pageUrl.toString(), { method: 'GET' })
-        )
-      })
-    )
-
-    for (const page of remainingPages) {
-      // A failed page has no data; stop merging to avoid silent gaps.
-      if (!page.ok) break
-      if (mode === 'array') {
-        if (Array.isArray(page.data)) {
-          allArray.push(...(page.data as T[]))
-        } else if (isColumnar(page.data) && Array.isArray(page.data.results)) {
-          // some endpoints expose { results: [] }
-          allArray.push(...(page.data.results as T[]))
-        } else {
-          // mixed shapes across pages — stop merging to avoid corrupting data
-          break
+    const groupKey = (group: Group) => String(group.datastreamId)
+    const mergeGroups = (target: Map<string, Group>, groups: Group[]) => {
+      for (const group of groups) {
+        const existing = target.get(groupKey(group))
+        if (!existing) {
+          target.set(groupKey(group), {
+            ...group,
+            ...(Array.isArray(group.rows) ? { rows: [...group.rows] } : {}),
+            ...(isColumnar(group.columns)
+              ? {
+                  columns: Object.fromEntries(
+                    Object.entries(group.columns).map(([k, v]) => [
+                      k,
+                      Array.isArray(v) ? [...v] : v,
+                    ])
+                  ),
+                }
+              : {}),
+          })
+          continue
         }
-      } else {
-        if (isColumnar(page.data)) {
-          concatInto(allColumnar!, page.data as Columnar)
-        } else if (Array.isArray(page.data)) {
-          // if a later page comes back as a plain array, tuck it under `results`
-          if (!Array.isArray(allColumnar!.results)) allColumnar!.results = []
-          ;(allColumnar!.results as unknown[]).push(...page.data)
-        } else {
-          break
+        if (Array.isArray(existing.rows) && Array.isArray(group.rows)) {
+          existing.rows.push(...group.rows)
+        }
+        if (isColumnar(existing.columns) && isColumnar(group.columns)) {
+          concatInto(existing.columns, group.columns)
         }
       }
     }
 
+    const pageRowCount = (data: unknown): number => {
+      if (isGrouped(data)) {
+        return data.reduce((sum, g) => sum + groupRowCount(g), 0)
+      }
+      if (Array.isArray(data)) return data.length
+      if (isColumnar(data)) {
+        if (Array.isArray((data as Columnar).results)) {
+          return ((data as Columnar).results as unknown[]).length
+        }
+        for (const [k, v] of Object.entries(data as Columnar)) {
+          if (k === 'fields') continue
+          if (Array.isArray(v)) return v.length
+        }
+      }
+      return 0
+    }
+
+    // Normalize first page
+    let mode: 'array' | 'columnar' | 'grouped'
+    let allArray: T[] = []
+    const allGroups = new Map<string, Group>()
+    let allColumnar: Columnar | null = null
+    let firstPageMeta = res.meta as Record<string, unknown> | undefined
+
+    type IncludedBuckets = Record<string, unknown[]>
+    const mergeIncluded = (
+      target: IncludedBuckets | undefined,
+      src: unknown
+    ): IncludedBuckets | undefined => {
+      if (!isColumnar(src)) return target
+      const merged = target ?? {}
+      for (const [key, val] of Object.entries(src)) {
+        if (!Array.isArray(val)) continue
+        if (!Array.isArray(merged[key])) merged[key] = []
+        merged[key].push(...val)
+      }
+      return merged
+    }
+    let mergedIncluded = mergeIncluded(undefined, res.included)
+
+    if (isGrouped(res.data)) {
+      mode = 'grouped'
+      mergeGroups(allGroups, res.data)
+    } else if (Array.isArray(res.data)) {
+      mode = 'array'
+      allArray = [...(res.data as T[])]
+    } else if (isColumnar(res.data)) {
+      mode = 'columnar'
+      const raw = res.data as Columnar
+      if (!firstPageMeta && isColumnar(raw.meta))
+        firstPageMeta = raw.meta as Record<string, unknown>
+      allColumnar = {}
+      concatInto(allColumnar, raw)
+    } else {
+      return res // unknown shape, don’t attempt to paginate
+    }
+
+    const mergePageData = (page: ApiResponse<unknown>): boolean => {
+      if (mode === 'grouped') {
+        if (!Array.isArray(page.data)) return false
+        if (isGrouped(page.data)) mergeGroups(allGroups, page.data)
+        return true
+      }
+      if (mode === 'array') {
+        if (Array.isArray(page.data)) {
+          allArray.push(...(page.data as T[]))
+          return true
+        }
+        if (isColumnar(page.data) && Array.isArray(page.data.results)) {
+          // some endpoints expose { results: [] }
+          allArray.push(...(page.data.results as T[]))
+          return true
+        }
+        return false
+      }
+      if (isColumnar(page.data)) {
+        concatInto(allColumnar!, page.data as Columnar)
+        return true
+      }
+      if (Array.isArray(page.data)) {
+        // if a later page comes back as a plain array, tuck it under `results`
+        if (!Array.isArray(allColumnar!.results)) allColumnar!.results = []
+        ;(allColumnar!.results as unknown[]).push(...page.data)
+        return true
+      }
+      return false
+    }
+
+    const fetchPage = (offset: number) => {
+      const pageUrl = new URL(url)
+      pageUrl.searchParams.set('offset', String(offset))
+      return limit(() =>
+        interceptedFetch<unknown>(pageUrl.toString(), { method: 'GET' })
+      )
+    }
+
+    const metaLimit = Number(firstPageMeta?.limit)
+    const pageSize =
+      Number.isInteger(metaLimit) && metaLimit > 0 ? metaLimit : limitParam
+
+    const numberMatched =
+      typeof firstPageMeta?.numberMatched === 'number'
+        ? firstPageMeta.numberMatched
+        : undefined
+
+    const offsets: number[] = []
+    if (numberMatched !== undefined) {
+      for (let offset = pageSize; offset < numberMatched; offset += pageSize) {
+        offsets.push(offset)
+      }
+    }
+
+    const remainingPages = await Promise.all(offsets.map(fetchPage))
+
+    let lastRowCount = pageRowCount(res.data)
+    for (const page of remainingPages) {
+      // Never report a partial multi-page result as successful. Callers use
+      // `ok` to decide whether a management table is complete and actionable.
+      if (!page.ok) return page
+      mergedIncluded = mergeIncluded(mergedIncluded, page.included)
+      if (!mergePageData(page)) break
+      lastRowCount = pageRowCount(page.data)
+    }
+
+    let nextOffset = pageSize * (1 + offsets.length)
+    const MAX_EXTRA_PAGES = 1000
+    let extraPages = 0
+    while (
+      pageSize > 0 &&
+      lastRowCount === pageSize &&
+      extraPages < MAX_EXTRA_PAGES
+    ) {
+      const page = await fetchPage(nextOffset)
+      if (!page.ok) return page
+      mergedIncluded = mergeIncluded(mergedIncluded, page.included)
+      if (!mergePageData(page)) break
+      lastRowCount = pageRowCount(page.data)
+      nextOffset += pageSize
+      extraPages += 1
+    }
+
     const merged =
-      mode === 'array'
+      mode === 'grouped'
+        ? ([...allGroups.values()] as unknown as T)
+        : mode === 'array'
         ? (allArray as unknown as T)
         : (allColumnar as unknown as T)
+
+    const mergedCount = pageRowCount(merged)
 
     return {
       ok: true,
       data: merged,
       status: res.status,
       message: res.message,
-      meta: res.meta,
+      meta: {
+        ...(firstPageMeta ?? {}),
+        offset: 0,
+        limit: mergedCount,
+        numberMatched: mergedCount,
+        numberReturned: mergedCount,
+      },
+      included: mergedIncluded,
     }
   },
 }

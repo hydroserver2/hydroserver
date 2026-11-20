@@ -61,7 +61,10 @@ export async function persistSessionOperations(
   // fetch_all: the reconcile is position-based, so it needs every persisted
   // operation, not just the first page.
   const existing = unwrap(
-    await qcOperations.list(historyId, sessionId, { fetch_all: true })
+    await qcOperations.list(historyId, sessionId, {
+      fetch_all: true,
+      sortby: ['order'],
+    })
   )
 
   let kept = 0
@@ -99,6 +102,9 @@ export async function persistSessionOperations(
   }
 
   return unwrap(
-    await qcOperations.list(historyId, sessionId, { fetch_all: true })
+    await qcOperations.list(historyId, sessionId, {
+      fetch_all: true,
+      sortby: ['order'],
+    })
   )
 }

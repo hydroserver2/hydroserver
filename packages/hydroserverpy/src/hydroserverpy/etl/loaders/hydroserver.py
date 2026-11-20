@@ -114,47 +114,55 @@ class HydroServerLoader(Loader):
                 self.chunk_size,
             )
 
-            if data_ingestion_window_start is not None:
-                try:
-                    self.client.datastreams.delete_observations(
-                        uid=datastream.uid,
-                        phenomenon_time_start=target_df["timestamp"].min(),
-                        phenomenon_time_end=target_df["timestamp"].max(),
-                    )
-                except Exception as e:
-                    etl_results.target_results[target_id].status = "failed"
-                    etl_results.target_results[target_id].error = str(e)
-                    etl_results.target_results[target_id].traceback = traceback.format_exc()
-                    logger.info(
-                        "Load result: loaded=0 available=%s cutoff=%s",
-                        observations_to_load,
-                        self._format_cutoff(datastream.phenomenon_end_time),
-                    )
-                    continue
-
-            upload_df = target_df.rename(columns={"timestamp": "phenomenon_time", "value": "result"})
+            upload_df = (
+                target_df.sort_values("timestamp")
+                .rename(columns={"timestamp": "phenomenon_time", "value": "result"})
+            )
+            replace = data_ingestion_window_start is not None
 
             for start_idx in range(0, observations_to_load, self.chunk_size):
                 end_idx = min(start_idx + self.chunk_size, observations_to_load)
                 chunk = upload_df.iloc[start_idx:end_idx]
+                chunk_start, chunk_end = chunk["phenomenon_time"].min(), chunk["phenomenon_time"].max()
+
+                # Each chunk replaces a contiguous slice of the reload range in one atomic request,
+                # so a failed chunk leaves its slice (and every later one) untouched.
+                replace_range = {}
+                if replace:
+                    replace_range = {
+                        "phenomenon_time_start": chunk_start,
+                        "phenomenon_time_end": (
+                            upload_df["phenomenon_time"].iloc[end_idx] - pd.Timedelta(microseconds=1)
+                            if end_idx < observations_to_load else chunk_end
+                        ),
+                    }
 
                 try:
                     self.client.datastreams.load_observations(
                         uid=datastream.uid, observations=chunk,
-                        mode="insert" if data_ingestion_window_start is not None else "append",
+                        mode="replace" if replace else "append",
+                        **replace_range,
                     )
-                    etl_results.target_results[target_id].values_loaded += len(chunk)
+                    target_result = etl_results.target_results[target_id]
+                    target_result.values_loaded += len(chunk)
+                    target_result.earliest_timestamp = (
+                        chunk_start if target_result.earliest_timestamp is None
+                        else min(target_result.earliest_timestamp, chunk_start)
+                    )
+                    target_result.latest_timestamp = (
+                        chunk_end if target_result.latest_timestamp is None
+                        else max(target_result.latest_timestamp, chunk_end)
+                    )
                 except Exception as e:
                     etl_results.target_results[target_id].status = "failed"
                     etl_results.target_results[target_id].error = str(e)
                     etl_results.target_results[target_id].traceback = traceback.format_exc()
                     break
 
-            if not etl_results.target_results[target_id].values_loaded > 0:
-                etl_results.target_results[target_id].status = "skipped"
-
-            if etl_results.target_results[target_id].status not in ["skipped", "failed"]:
-                etl_results.target_results[target_id].status = "success"
+            if etl_results.target_results[target_id].status is None:
+                etl_results.target_results[target_id].status = (
+                    "success" if etl_results.target_results[target_id].values_loaded > 0 else "skipped"
+                )
 
             logger.info(
                 "Load result: loaded=%s available=%s cutoff=%s",

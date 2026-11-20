@@ -5,14 +5,21 @@ import tailwindcss from '@tailwindcss/vite'
 import vuetify from 'vite-plugin-vuetify'
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '')
+  const env = { ...loadEnv(mode, process.cwd(), ''), ...process.env }
   const apiProxyTarget = env.VITE_APP_PROXY_BASE_URL
-  const qcProxyTarget = env.VITE_APP_QC_PROXY_BASE_URL || 'http://127.0.0.1:5173'
+  const qcProxyTarget =
+    env.VITE_APP_QC_PROXY_BASE_URL || 'http://127.0.0.1:5173'
   const useLocal = env.VITE_HYDROSERVER_CLIENT_LOCAL !== '0'
   const sdkRoot = resolve(
     __dirname,
     env.VITE_HYDROSERVER_CLIENT_PATH || '../../packages/hydroserver-ts/src'
   )
+  const designSystemRoot = resolve(__dirname, '../../packages/design-system')
+  const designSystemVuetifySettings = resolve(
+    __dirname,
+    'node_modules/@hydroserver/design-system/vue/settings.scss'
+  )
+  const workspaceNodeModules = resolve(__dirname, '../../node_modules')
   const sdkEntry = resolve(sdkRoot, 'index.ts')
   console.log('[SDK alias active?]', useLocal, sdkEntry)
 
@@ -23,11 +30,17 @@ export default defineConfig(({ mode }) => {
       tailwindcss(),
       vuetify({
         autoImport: true,
-        styles: { configFile: 'src/styles/settings.scss' },
+        // Resolve through this app's linked package so Sass finds the app's
+        // Vuetify installation in clean CI checkouts.
+        styles: { configFile: designSystemVuetifySettings },
       }),
     ],
     optimizeDeps: {
-      exclude: ['vuetify', ...(useLocal ? ['@hydroserver/client'] : [])],
+      exclude: [
+        'vuetify',
+        '@hydroserver/design-system',
+        ...(useLocal ? ['@hydroserver/client'] : []),
+      ],
     },
     server: {
       host: '127.0.0.1',
@@ -35,12 +48,12 @@ export default defineConfig(({ mode }) => {
       strictPort: true,
       proxy: {
         ...(apiProxyTarget
-          ? {
-              '/api': {
-                target: apiProxyTarget,
-                changeOrigin: true,
-              },
-            }
+          ? Object.fromEntries(
+              // Account pages and their assets share the API's Django server.
+              ['/api', '/accounts', '/identity', '/.well-known', '/static'].map(
+                (path) => [path, { target: apiProxyTarget, changeOrigin: true }]
+              )
+            )
           : {}),
         '/qc': {
           target: qcProxyTarget,
@@ -49,15 +62,35 @@ export default defineConfig(({ mode }) => {
         },
       },
       fs: {
+        // Linked workspace packages resolve their dependencies from the root.
+        // Allow that dependency directory without exposing the whole repo.
         allow: [
+          resolve(__dirname),
           sdkRoot,
-          resolve(__dirname), // <- add this
+          designSystemRoot,
+          workspaceNodeModules,
         ],
       },
     },
     resolve: {
+      preserveSymlinks: true,
+      // Shared source must resolve its runtime and font dependencies from this
+      // app, including in CI where packages/design-system has no node_modules.
+      dedupe: [
+        'vue',
+        'vuetify',
+        '@mdi/js',
+        '@fontsource-variable/archivo',
+        '@fontsource/jetbrains-mono',
+      ],
       extensions: ['.js', '.json', '.vue', '.less', '.scss', '.ts'],
       alias: {
+        // Watch workspace source instead of caching the installed file: copy.
+        '@hydroserver/design-system': designSystemRoot,
+        'vuetify/styles': resolve(
+          __dirname,
+          'node_modules/vuetify/lib/styles/main.sass'
+        ),
         '@': resolve(__dirname, 'src'),
         ...(useLocal ? { '@hydroserver/client': sdkEntry } : {}),
       },

@@ -4,12 +4,12 @@ A monitoring "site" refers to a single location where observations are recorded 
 
 A site encompasses both the physical location and the metadata describing the site such as site name, site code, any photos of the site, and a key:value tagging system to help you describe that location beyond what's available in the fields provided by the data model and API.
 
-A site is _not_ the physical sensors or instruments that are deployed at the site's location. That metadata lives in the Sensor table of HydroServer's database.
+A site is _not_ the physical instruments that are deployed at the site's location. Instrument and procedure metadata lives in the Method table of HydroServer's database.
 
-::: tip A side note on Thing vs. Site
-Given that it is an "Internet of Things" standard, SensorThings uses the term `Thing` in order to stay as general as possible. In the field of water data management, users are more more often familiar with the term `Site` as in a `monitoring site`. Therefore, we've opted to refer to a `Thing` as `Site` in all of our user facing applications. But, to strictly follow the SensorThings specification, we've kept SensorThing's original `Thing` naming in our data model and APIs.
+::: tip MonitoringSite and SensorThings
+HydroServer's data model and the HydroServer Data Management API use `MonitoringSite`. The SensorThings API continues to expose the standard `Thing` and `Location` entities by deriving one of each from a monitoring site.
 :::
 
 ## key:value tagging system
 
-Most of the metadata you will need is already supported by HydroServer’s API. However, for organization-specific or custom information, tags offer a flexible way to store additional metadata that doesn’t fit into the standard fields. Tags are extra, customizable, key:value pairs that provide more context or categorization to the data. For example, you might use tags to link to your sites to 3rd party websites: `website:https://my-website.com`. You can use tags to specify values for additional attributes of a site, or you can point to external websites or URLs where more detailed information about that site might be maintained.
+Most of the metadata you will need is already supported by HydroServer’s API. However, for organization-specific or custom information, tags offer a flexible way to store additional metadata that doesn’t fit into the standard fields. Tags are extra, customizable, key:value pairs that provide more context or categorization to the data. For example, you might use tags to store the USGS Hydrologic Unit your site is located within: `huc_12:160102030307`.

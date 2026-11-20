@@ -1,15 +1,20 @@
 import type {
   QualityControlHistory,
+  QualityControlOperation,
   QualityControlSession,
 } from '@hydroserver/client'
 
-/** A history lists its datastreams as ids (summary) or nested (detail). */
+/** A session with its operations, which load from their own endpoint. */
+export type QcSession = QualityControlSession & {
+  operations: QualityControlOperation[]
+}
+
 export const historyManagedId = (h: QualityControlHistory): string =>
-  'managedDatastream' in h ? h.managedDatastream.id : h.managedDatastreamId
+  h.managedDatastreamId
 
 export const historySourceId = (h: QualityControlHistory): string =>
-  'sourceDatastream' in h ? h.sourceDatastream.id : h.sourceDatastreamId
+  h.sourceDatastreamId
 
-/** A session's operations, which only the detail shape embeds. */
-export const sessionOperations = (s: QualityControlSession) =>
+/** A session's operations, or none for a session read without them. */
+export const sessionOperations = (s: QcSession | QualityControlSession) =>
   'operations' in s ? s.operations : []

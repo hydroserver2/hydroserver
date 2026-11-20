@@ -37,7 +37,7 @@ await record.reload()
 
 // Find the spike, replace it with the previous value.
 await record.dispatch([
-  [EnumFilterOperations.VALUE_THRESHOLD, { 'Greater than': 100 }],
+  [EnumFilterOperations.VALUE_THRESHOLD, { filters: [{ operator: 'Greater than', value: 100 }], match: 'any' }],
   [EnumEditOperations.CHANGE_VALUES, Operator.ASSIGN, 11.5],
 ])
 
@@ -94,7 +94,7 @@ window in epoch ms; `DATETIME_RANGE`'s args ARE the window.
 
 | Op                | Args                                                       |
 |-------------------|------------------------------------------------------------|
-| `VALUE_THRESHOLD` | `[{ 'Greater than': n, 'Less than': n, ... }, range?]`     |
+| `VALUE_THRESHOLD` | `[{ filters: [{ operator, value }], match }, range?]` — `operator` is a `FilterOperation`, `match` is `'any'` or `'all'` |
 | `DATETIME_RANGE`  | `[fromTs?, toTs?]`                                         |
 | `CHANGE`          | `[comparator, value, range?]` — Δ between adjacent points  |
 | `RATE_OF_CHANGE`  | `[comparator, value, range?]` — value is a fraction (0.5 = 50%) |

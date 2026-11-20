@@ -9,7 +9,7 @@ from processing.products.models import (
 
 
 class RatingCurveAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "thing__name", "thing__workspace__name", "fitting_method")
+    list_display = ("id", "name", "monitoring_site__name", "monitoring_site__workspace__name", "fitting_method")
 
 
 class RatingCurvePointAdmin(admin.ModelAdmin):
@@ -17,7 +17,7 @@ class RatingCurvePointAdmin(admin.ModelAdmin):
 
 
 class DataProductTaskAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "thing__name", "thing__workspace__name")
+    list_display = ("id", "name", "monitoring_site__name", "monitoring_site__workspace__name")
 
 
 class DataProductTransformationAdmin(admin.ModelAdmin):

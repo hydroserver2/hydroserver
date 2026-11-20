@@ -99,8 +99,10 @@ UI freeze on operations that take >300 ms inline.
 
 ## Network performance
 
-Observation fetches use HydroServer's columnar format (`format=column`)
-because the row format times out on ~35k-point ranges (see comments in
+Observation fetches use HydroServer's column profile
+(`ObservationProfile.Column`) with `properties=phenomenonTime,result`,
+because observation records are far slower for large ranges: about 0.6 s
+versus 64 s for a 100,000-observation page in a local stress test (see
 `src/utils/observations.ts`). The QC App paginates client-side at
 50,000 obs / page and merges into the cache.
 

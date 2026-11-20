@@ -1,18 +1,105 @@
 <template>
   <div class="map-wrapper">
-    <!-- 2) Dropdown, absolutely positioned -->
-    <div class="basemap-select-container" v-if="basemapTileSources.length > 1">
+    <div class="map-controls">
       <v-select
         v-model="selectedTileSourceName"
         :items="basemapTileSources"
         item-title="name"
         item-value="name"
-        label="Base Map"
+        label="Base map"
         dense
         hide-details
         variant="solo-filled"
-        style="width: 180px"
-      />
+        class="basemap-select"
+      >
+        <template #menu-footer>
+          <v-divider />
+          <div class="layer-opacity-control">
+            <div class="layer-opacity-label hs-text-sm">
+              <span>Opacity</span>
+              <span aria-hidden="true">{{ basemapOpacity }}%</span>
+            </div>
+            <v-slider
+              v-model="basemapOpacity"
+              aria-label="Base map opacity"
+              :aria-valuetext="`${basemapOpacity}%`"
+              :min="0"
+              :max="100"
+              :step="1"
+              color="primary"
+              hide-details
+              @keydown="onOpacityKeydown"
+            />
+          </div>
+        </template>
+      </v-select>
+      <v-menu v-if="overlays.length" :close-on-content-click="false">
+        <template #activator="{ props: menuProps }">
+          <!-- Vuetify's aria-owns otherwise adds menu contents to the button name. -->
+          <v-btn
+            v-bind="menuProps"
+            :prepend-icon="mdiLayers"
+            :append-icon="mdiChevronDown"
+            aria-label="Overlays"
+            variant="flat"
+            rounded="var(--hs-radius-sm)"
+            class="overlay-menu-button"
+          >
+            Overlays
+          </v-btn>
+        </template>
+        <v-card class="overlay-layer-control">
+          <v-card-text>
+            <div
+              v-for="{ overlay, index } in overlayMenuItems"
+              :key="overlay.configuration.name"
+            >
+              <v-checkbox
+                class="overlay-visibility"
+                :model-value="overlayVisibility[index]"
+                :label="overlay.configuration.name"
+                hide-details
+                @update:model-value="setOverlayVisibility(index, !!$event)"
+              />
+              <div class="overlay-opacity-controls">
+                <div
+                  class="layer-opacity-label hs-text-sm"
+                  :class="{ 'text-disabled': !overlayVisibility[index] }"
+                >
+                  <span>Opacity</span>
+                  <span aria-hidden="true">{{ overlayOpacities[index] }}%</span>
+                </div>
+                <!-- Vuetify disables interaction but does not mark the thumb aria-disabled. -->
+                <v-slider
+                  :model-value="overlayOpacities[index]"
+                  :disabled="!overlayVisibility[index]"
+                  :aria-disabled="!overlayVisibility[index]"
+                  :aria-label="`${overlay.configuration.name} opacity`"
+                  :aria-valuetext="`${overlayOpacities[index]}%`"
+                  :min="0"
+                  :max="100"
+                  :step="1"
+                  color="primary"
+                  hide-details
+                  @update:model-value="setOverlayOpacity(index, $event)"
+                  @keydown="onOpacityKeydown"
+                />
+                <p
+                  v-if="overlayErrors[index]"
+                  class="text-error hs-text-sm"
+                  role="status"
+                >
+                  Could not load layer. Turn it off and on to retry.
+                </p>
+              </div>
+              <v-divider
+                v-if="index > 0"
+                class="overlay-group-divider"
+              />
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-menu>
     </div>
     <div ref="mapContainer" class="fill-width fill-height"></div>
 
@@ -25,32 +112,44 @@
       <div ref="popupContent" />
     </div>
 
-    <div ref="selectionLabelContainer" class="selected-site-label">
-      {{ selectedSiteLabel }}
-    </div>
-
-    <div v-if="uniqueColoredThings.length" class="legend">
-      <h3>Legend</h3>
+    <div
+      v-if="uniqueColoredMonitoringSites.length"
+      class="legend"
+      :class="{ 'legend--browse': selectable }"
+      data-testid="map-marker-legend"
+    >
+      <h3>{{ legendTitle }}</h3>
       <ul>
-        <li v-for="thing in uniqueColoredThings" :key="thing.tagValue">
+        <li
+          v-for="monitoringSite in uniqueColoredMonitoringSites"
+          :key="monitoringSite.tagValue ?? ''"
+        >
           <v-icon
             :icon="mdiMapMarker"
-            :style="{ color: thing.color?.background }"
+            :style="{ color: monitoringSite.color?.background }"
           ></v-icon>
-          {{ thing?.tagValue }}
+          {{ getLegendLabel(monitoringSite.tagValue) }}
         </li>
       </ul>
     </div>
 
-    <transition name="detail-card">
-      <div v-if="selectable && detailThing" class="site-detail-card">
+    <div
+      ref="selectionPopupContainer"
+      class="selection-popup"
+      :class="{ 'selection-popup--visible': selectionPopupVisible }"
+    >
+      <div v-if="selectable && detailMonitoringSite" class="site-detail-card">
         <div class="detail-accent" />
         <div class="detail-body">
           <div class="detail-header">
             <div class="detail-heading">
-              <h2 class="detail-name">{{ detailThing.name }}</h2>
-              <div v-if="detailSubtitle" class="detail-meta">
-                <v-icon :icon="mdiMapMarker" size="14" />
+              <h2 class="detail-name hs-subheading">{{ detailMonitoringSite.name }}</h2>
+              <div v-if="detailSubtitle" class="detail-meta hs-text-sm">
+                <v-icon
+                  :icon="detailSiteTypeIcon"
+                  size="14"
+                  data-testid="selected-site-type-icon"
+                />
                 <span>{{ detailSubtitle }}</span>
               </div>
             </div>
@@ -64,8 +163,8 @@
           </div>
 
           <div v-if="detailCoordinates" class="detail-grid">
-            <div class="detail-field-label">Coordinates</div>
-            <div class="detail-field-value detail-mono">
+            <div class="detail-field-label hs-text-2xs">Coordinates</div>
+            <div class="detail-field-value hs-text-sm font-weight-medium hs-font-data">
               {{ detailCoordinates }}
             </div>
           </div>
@@ -76,14 +175,14 @@
               variant="flat"
               style="flex: 1"
               :append-icon="mdiChevronRight"
-              :href="`/sites/${detailThing.id}`"
+              :to="{ name: 'SiteDetails', params: { id: detailMonitoringSite.id } }"
             >
               View details
             </v-btn>
           </div>
         </div>
       </div>
-    </transition>
+    </div>
   </div>
 </template>
 
@@ -96,17 +195,27 @@ import {
   computed,
   type PropType,
 } from 'vue'
-import hs, { Thing } from '@hydroserver/client'
-import { MapThing, MapThingWithColor } from '@/types'
+import { storeToRefs } from 'pinia'
+import { useTheme } from 'vuetify'
+import hs, { MonitoringSite } from '@hydroserver/client'
+import { MapMonitoringSite, MapMonitoringSiteWithColor } from '@/types'
+import { useVocabularyStore } from '@/composables/useVocabulary'
+import {
+  buildSiteTypeIconRules,
+  getSiteTypeIcon as resolveSiteTypeIcon,
+} from '@/utils/siteTypeIcons'
 import {
   addColorToMarkers,
+  addSiteTypeColorToMarkers,
+  addWorkspaceColorToMarkers,
   generateMarkerContent,
-  hasThingTags,
-  isThingMarker,
+  hasMonitoringSiteTags,
+  isMonitoringSiteMarker,
 } from '@/utils/maps/markers'
 import OlMap from 'ol/Map'
 import View from 'ol/View'
 import TileLayer from 'ol/layer/Tile'
+import LayerGroup from 'ol/layer/Group'
 import VectorLayer from 'ol/layer/Vector'
 import VectorSource from 'ol/source/Vector'
 import { Feature, Overlay } from 'ol'
@@ -115,35 +224,54 @@ import Point from 'ol/geom/Point'
 import { Style, Icon } from 'ol/style'
 import { fromLonLat, toLonLat } from 'ol/proj'
 import { settings } from '@/config/settings'
-import { Extent, isEmpty as extentIsEmpty } from 'ol/extent'
+import {
+  Extent,
+  equals as extentEquals,
+  isEmpty as extentIsEmpty,
+} from 'ol/extent'
 import { fetchLocationData } from '@/utils/maps/location'
+import { createOverlayLayers } from '@/utils/maps/overlays'
 import WebGLVectorLayer from 'ol/layer/WebGLVector'
 import mapMarkerUrl from '@/assets/map-marker-64.png?url'
 import { OSM, XYZ } from 'ol/source'
-import { mdiMapMarker, mdiChevronRight, mdiClose } from '@mdi/js'
+import {
+  mdiMapMarker,
+  mdiChevronRight,
+  mdiChevronDown,
+  mdiClose,
+  mdiLayers,
+} from '@mdi/js'
 
 const props = defineProps({
-  things: {
-    type: Array as PropType<MapThing[]>,
+  monitoringSites: {
+    type: Array as PropType<MapMonitoringSite[]>,
     default: () => [],
   },
   colorKey: { type: String, default: '' },
+  colorMode: {
+    type: String as PropType<'none' | 'workspace' | 'type' | 'metadata'>,
+    default: 'none',
+  },
+  colorLabels: {
+    type: Object as PropType<Record<string, string>>,
+    default: () => ({}),
+  },
   startInSatellite: Boolean,
   singleMarkerMode: Boolean,
   fitPadding: {
     type: Array as unknown as PropType<[number, number, number, number]>,
     default: () => [100, 100, 100, 100],
   },
-  selectedThingId: {
+  selectedMonitoringSiteId: {
     type: String,
     default: undefined,
   },
-  // Browse-style selection: clicking a marker selects it (instead of opening
-  // the anchored popup), the selected marker grows + shows its name label, and
-  // details render in a fixed card rather than a marker-tethered popup.
+  // Browse-style selection opens a marker-attached site details card.
   selectable: Boolean,
 })
 const emit = defineEmits(['location-clicked', 'select'])
+const theme = useTheme()
+const { siteTypeIcons } = storeToRefs(useVocabularyStore())
 
 interface ConfigTileSource {
   name: string
@@ -168,16 +296,46 @@ const basemapTileSources = settings.mapConfiguration.basemapLayers.map(
   })
 )
 
-// TODO: Create a separate map control to toggle overlay layers
-const overlayTileSources = settings.mapConfiguration.overlayLayers.map(
-  (mapLayer) => ({
-    name: mapLayer.name,
-    source: new XYZ({
-      url: mapLayer.source,
-      attributions: mapLayer.attribution,
-    }),
-  })
-)
+const overlays = createOverlayLayers(settings.mapConfiguration.overlayLayers)
+// List the topmost layer first without changing the map's drawing order.
+const overlayMenuItems = overlays
+  .map((overlay, index) => ({ overlay, index }))
+  .reverse()
+const overlayVisibility = ref(overlays.map(({ layer }) => layer.getVisible()))
+const overlayErrors = ref(overlays.map(() => false))
+const basemapOpacity = ref(100)
+const overlayOpacities = ref(overlays.map(() => 100))
+const overlayGroup = new LayerGroup({
+  layers: overlays.map(({ layer }) => layer),
+  zIndex: 1,
+})
+
+function setOverlayOpacity(index: number, opacity: number) {
+  overlayOpacities.value[index] = opacity
+  overlays[index].layer.setOpacity(opacity / 100)
+}
+
+function onOpacityKeydown(event: KeyboardEvent) {
+  // Let the slider handle navigation keys without moving focus to menu items.
+  if (event.key !== 'Escape' && event.key !== 'Tab') event.stopPropagation()
+}
+
+async function setOverlayVisibility(index: number, visible: boolean) {
+  overlayVisibility.value[index] = visible
+  const overlay = overlays[index]
+  overlay.layer.setVisible(visible)
+  if (!visible) return
+  overlayErrors.value[index] = false
+  try {
+    await overlay.load()
+  } catch (error) {
+    overlayErrors.value[index] = true
+    console.error(
+      `[OpenLayersMap] Could not load overlay "${overlay.configuration.name}"`,
+      error
+    )
+  }
+}
 
 if (basemapTileSources.length === 0) {
   basemapTileSources.push({
@@ -190,78 +348,101 @@ const mapContainer = ref<HTMLElement>()
 const popupContainer = ref<HTMLElement>()
 const popupContent = ref<HTMLElement>()
 const popupCloser = ref<HTMLElement>()
-const selectionLabelContainer = ref<HTMLElement>()
+const selectionPopupContainer = ref<HTMLElement>()
 
-const coloredThings = ref<MapThingWithColor[]>([])
+const coloredMonitoringSites = ref<MapMonitoringSiteWithColor[]>([])
 const selectedTileSourceName = ref<string>(basemapTileSources[0].name)
-const detailedThingCache = new Map<string, Thing>()
+const detailedMonitoringSiteCache = new Map<string, MonitoringSite>()
 
 let map: OlMap
 let rasterLayer: TileLayer
 let popupOverlay: Overlay | undefined
-let selectionLabelOverlay: Overlay | undefined
-let selectedThingTransitionId = 0
+let selectionPopupOverlay: Overlay | undefined
+let selectedMonitoringSiteTransitionId = 0
 let activeFlyId = 0
 const vectorSource = new VectorSource<Feature>()
 const markerLayer = ref<WebGLVectorLayer>()
 const DEFAULT_MARKER_OPACITY = 0.85
 
 // ── Browse-style selection (only used when `selectable`) ──
-const detailThing = ref<MapThing>()
+const detailMonitoringSite = ref<MapMonitoringSite>()
+const selectionPopupVisible = ref(false)
 const selectionSource = new VectorSource<Feature>()
 let selectionLayer: VectorLayer | undefined
+// Reference layers should never intercept monitoring-site clicks or hover states.
+const siteHitOptions = {
+  layerFilter: (layer: import('ol/layer/Layer').default) =>
+    layer === markerLayer.value || layer === selectionLayer,
+}
 // Final scale of the grown selection marker, relative to the 64px source png.
 const SELECTION_SCALE = 0.78
 let selectionScale = SELECTION_SCALE
 let selectionAnimId = 0
-const selectedSiteLabel = ref('')
 
 const detailSubtitle = computed(() => {
-  const thing = detailThing.value
-  if (!thing) return ''
+  const monitoringSite = detailMonitoringSite.value
+  if (!monitoringSite) return ''
   const parts: string[] = []
-  if (thing.siteType) parts.push(thing.siteType)
-  if (!isThingMarker(thing)) {
-    const area = [thing.location.adminArea2, thing.location.adminArea1]
+  if (monitoringSite.type) parts.push(monitoringSite.type)
+  if (!isMonitoringSiteMarker(monitoringSite)) {
+    const area = [monitoringSite.adminArea2, monitoringSite.adminArea1]
       .filter(Boolean)
       .join(', ')
     if (area) parts.push(area)
   }
   return parts.join(' · ')
 })
+const siteTypeIconRules = computed(() =>
+  buildSiteTypeIconRules(siteTypeIcons.value)
+)
+const detailSiteTypeIcon = computed(() =>
+  resolveSiteTypeIcon(
+    detailMonitoringSite.value?.type ?? '',
+    siteTypeIconRules.value
+  )
+)
 
 const detailCoordinates = computed(() => {
-  const thing = detailThing.value
-  if (!thing) return ''
-  const [lng, lat] = getThingCoordinates(thing as MapThingWithColor)
+  const monitoringSite = detailMonitoringSite.value
+  if (!monitoringSite) return ''
+  const [lng, lat] = getMonitoringSiteCoordinates(
+    monitoringSite as MapMonitoringSiteWithColor
+  )
   const latNum = Number(lat)
   const lngNum = Number(lng)
   if (!isFinite(latNum) || !isFinite(lngNum)) return ''
   return `${latNum.toFixed(4)}, ${lngNum.toFixed(4)}`
 })
 
-const uniqueColoredThings = computed(() => {
-  const firstOccurrenceMap = new Map()
-  coloredThings.value.forEach((thing) => {
-    if (thing.tagValue && !firstOccurrenceMap.has(thing.tagValue)) {
-      firstOccurrenceMap.set(thing.tagValue, thing)
+const uniqueColoredMonitoringSites = computed(() => {
+  const firstOccurrenceMap = new Map<string | undefined, MapMonitoringSiteWithColor>()
+  coloredMonitoringSites.value.forEach((monitoringSite) => {
+    if (monitoringSite.color && !firstOccurrenceMap.has(monitoringSite.tagValue)) {
+      firstOccurrenceMap.set(monitoringSite.tagValue, monitoringSite)
     }
   })
   return Array.from(firstOccurrenceMap.values()).sort((a, b) => {
-    return a.tagValue.localeCompare(b.tagValue)
+    return (a.tagValue ?? '').localeCompare(b.tagValue ?? '')
   })
 })
 
-const getThingCoordinates = (thing: MapThingWithColor) => {
-  if (isThingMarker(thing)) {
-    return [thing.longitude, thing.latitude] as const
-  }
+const legendTitle = computed(() =>
+  props.colorMode === 'workspace'
+    ? 'Workspace'
+    : props.colorMode === 'type'
+      ? 'Site type'
+      : props.colorKey || 'Legend'
+)
 
-  return [thing.location.longitude, thing.location.latitude] as const
-}
+const getLegendLabel = (value?: string) =>
+  value ? (props.colorLabels[value] ?? value) : 'Untagged'
 
-const createFeature = (thing: MapThingWithColor) => {
-  const [longitude, latitude] = getThingCoordinates(thing)
+const getMonitoringSiteCoordinates = (
+  monitoringSite: MapMonitoringSiteWithColor
+) => [monitoringSite.longitude, monitoringSite.latitude] as const
+
+const createFeature = (monitoringSite: MapMonitoringSiteWithColor) => {
+  const [longitude, latitude] = getMonitoringSiteCoordinates(monitoringSite)
   if (
     latitude == null ||
     longitude == null ||
@@ -272,9 +453,9 @@ const createFeature = (thing: MapThingWithColor) => {
   const f = new Feature({
     geometry: new Point(fromLonLat([longitude, latitude])),
   })
-  f.set('markerColor', thing?.color?.background || '#D32F2F')
+  f.set('markerColor', monitoringSite?.color?.background || '#D32F2F')
   f.set('markerOpacity', DEFAULT_MARKER_OPACITY)
-  f.set('thing', thing)
+  f.set('monitoringSite', monitoringSite)
   return f
 }
 
@@ -282,8 +463,10 @@ const fitViewToMarkers = (duration = 0) => {
   if (!map) return
 
   const extent = vectorSource.getExtent() as Extent
-  if (extentIsEmpty(extent) || props.singleMarkerMode) return
+  if (extentIsEmpty(extent)) return
 
+  // A one-point extent fits to maxZoom. This keeps an existing site local in
+  // edit mode while a new-site map (which has no marker yet) stays at default.
   map.getView().fit(extent, {
     padding: props.fitPadding,
     maxZoom: 16,
@@ -291,38 +474,40 @@ const fitViewToMarkers = (duration = 0) => {
   })
 }
 
-const getPopupThing = async (thing: MapThing): Promise<MapThing> => {
-  if (!isThingMarker(thing)) return thing
+const getPopupMonitoringSite = async (
+  monitoringSite: MapMonitoringSite
+): Promise<MapMonitoringSite> => {
+  if (!isMonitoringSiteMarker(monitoringSite)) return monitoringSite
 
-  const cachedThing = detailedThingCache.get(thing.id)
-  if (cachedThing) return cachedThing
+  const cachedMonitoringSite = detailedMonitoringSiteCache.get(monitoringSite.id)
+  if (cachedMonitoringSite) return cachedMonitoringSite
 
   try {
-    const detailedThing = await hs.things.getItem(thing.id)
-    if (!detailedThing) return thing
-    detailedThingCache.set(thing.id, detailedThing)
-    return detailedThing
+    const detailedMonitoringSite = await hs.monitoringSites.getItem(monitoringSite.id)
+    if (!detailedMonitoringSite) return monitoringSite
+    detailedMonitoringSiteCache.set(monitoringSite.id, detailedMonitoringSite)
+    return detailedMonitoringSite
   } catch (error) {
     console.error('Error fetching marker details', error)
-    return thing
+    return monitoringSite
   }
 }
 
-const getFeatureThing = (feature: Feature) =>
-  feature.get('thing') as MapThing | undefined
+const getFeatureMonitoringSite = (feature: Feature) =>
+  feature.get('monitoringSite') as MapMonitoringSite | undefined
 
-const findFeatureByThingId = (thingId: string) =>
+const findFeatureByMonitoringSiteId = (monitoringSiteId: string) =>
   vectorSource
     .getFeatures()
-    .find((feature) => getFeatureThing(feature)?.id === thingId)
+    .find((feature) => getFeatureMonitoringSite(feature)?.id === monitoringSiteId)
 
 const openPopupForFeature = async (feature: Feature) => {
-  const thing = getFeatureThing(feature)
+  const monitoringSite = getFeatureMonitoringSite(feature)
   const geometry = feature.getGeometry()
-  if (!thing || !(geometry instanceof Point) || !popupOverlay) return
+  if (!monitoringSite || !(geometry instanceof Point) || !popupOverlay) return
 
-  const popupThing = await getPopupThing(thing)
-  popupContent.value!.innerHTML = generateMarkerContent(popupThing)
+  const popupMonitoringSite = await getPopupMonitoringSite(monitoringSite)
+  popupContent.value!.innerHTML = generateMarkerContent(popupMonitoringSite)
   popupOverlay.setPosition(geometry.getCoordinates())
 }
 
@@ -354,47 +539,41 @@ const animateSelectionScale = (from: number, to: number, duration = 180) => {
   requestAnimationFrame(step)
 }
 
-const updateSelectionMarker = (thingId?: string | null) => {
+const updateSelectionMarker = (monitoringSiteId?: string | null) => {
   selectionSource.clear()
   // The enlarged selection marker replaces the base marker instead of
   // stacking on top of its semi-opaque pixels.
   vectorSource.getFeatures().forEach((feature) => {
-    const isSelected = getFeatureThing(feature)?.id === thingId
+    const isSelected = getFeatureMonitoringSite(feature)?.id === monitoringSiteId
     feature.set('markerOpacity', isSelected ? 0 : DEFAULT_MARKER_OPACITY)
   })
-  if (!thingId) {
-    selectedSiteLabel.value = ''
-    selectionLabelOverlay?.setPosition(undefined)
+  if (!monitoringSiteId) {
     selectionAnimId++ // stop any in-flight grow
     return
   }
-  const feature = findFeatureByThingId(thingId)
+  const feature = findFeatureByMonitoringSiteId(monitoringSiteId)
   const geometry = feature?.getGeometry()
   if (!feature || !(geometry instanceof Point)) {
-    selectedSiteLabel.value = ''
-    selectionLabelOverlay?.setPosition(undefined)
     return
   }
 
   const clone = new Feature({ geometry: geometry.clone() })
   clone.set('markerColor', feature.get('markerColor'))
-  clone.set('thing', getFeatureThing(feature))
+  clone.set('monitoringSite', getFeatureMonitoringSite(feature))
   selectionSource.addFeature(clone)
-  selectedSiteLabel.value = getFeatureThing(feature)?.name ?? ''
-  selectionLabelOverlay?.setPosition(geometry.getCoordinates())
   animateSelectionScale(SELECTION_SCALE * 0.78, SELECTION_SCALE)
 }
 
-const loadDetailThing = async (thingId?: string | null) => {
-  if (!thingId) {
-    detailThing.value = undefined
+const loadDetailMonitoringSite = async (monitoringSiteId?: string | null) => {
+  if (!monitoringSiteId) {
+    detailMonitoringSite.value = undefined
     return
   }
-  const base = props.things.find((thing) => thing.id === thingId)
+  const base = props.monitoringSites.find((monitoringSite) => monitoringSite.id === monitoringSiteId)
   if (!base) return
-  detailThing.value = base // show immediately, then enrich
-  const detailed = await getPopupThing(base)
-  if (props.selectedThingId === thingId) detailThing.value = detailed
+  detailMonitoringSite.value = base // show immediately, then enrich
+  const detailed = await getPopupMonitoringSite(base)
+  if (props.selectedMonitoringSiteId === monitoringSiteId) detailMonitoringSite.value = detailed
 }
 
 const getPaddedCenter = (
@@ -420,7 +599,11 @@ const getPaddedCenter = (
 const flyTo = (
   targetCenter: [number, number],
   targetZoom: number,
-  { duration, onComplete }: { duration?: number; onComplete?: () => void } = {}
+  { duration, onComplete, onProgress }: {
+    duration?: number
+    onComplete?: () => void
+    onProgress?: (progress: number) => void
+  } = {}
 ) => {
   if (!map) return
   const view = map.getView()
@@ -455,6 +638,7 @@ const flyTo = (
     const step = (now: number) => {
       if (flyId !== activeFlyId) return
       const k = Math.min(1, (now - start) / totalDuration)
+      onProgress?.(k)
       const e = easeOutFly(k)
       view.setCenter([from[0] + dx * e, from[1] + dy * e])
       view.setResolution(
@@ -494,6 +678,7 @@ const flyTo = (
   const step = (now: number) => {
     if (flyId !== activeFlyId) return
     const k = Math.min(1, (now - start) / totalDuration)
+    onProgress?.(k)
     if (k < 1) {
       const s = easeOutFly(k) * bigS
       const frac = u(s) / u1
@@ -509,18 +694,20 @@ const flyTo = (
   requestAnimationFrame(step)
 }
 
-const focusThingById = (thingId?: string | null) => {
-  selectedThingTransitionId++
-  const transitionId = selectedThingTransitionId
+const focusMonitoringSiteById = (monitoringSiteId?: string | null) => {
+  selectedMonitoringSiteTransitionId++
+  const transitionId = selectedMonitoringSiteTransitionId
+  selectionPopupVisible.value = false
 
-  if (!map || !thingId) {
+  if (!map || !monitoringSiteId) {
     activeFlyId++ // cancel any in-flight fly
     popupOverlay?.setPosition(undefined)
+    selectionPopupOverlay?.setPosition(undefined)
     if (props.selectable) updateSelectionMarker(undefined)
     return
   }
 
-  const feature = findFeatureByThingId(thingId)
+  const feature = findFeatureByMonitoringSiteId(monitoringSiteId)
   const geometry = feature?.getGeometry()
   if (!feature || !(geometry instanceof Point)) return
 
@@ -531,18 +718,32 @@ const focusThingById = (thingId?: string | null) => {
   const targetCenter = getPaddedCenter(targetCoordinates, targetZoom)
 
   popupOverlay?.setPosition(undefined)
+  selectionPopupOverlay?.setPosition(undefined)
 
   if (props.selectable) {
-    // Browse mode: grow the marker + show its label; details live in the card.
-    updateSelectionMarker(thingId)
-    flyTo(targetCenter, targetZoom, { duration: 700 })
+    updateSelectionMarker(monitoringSiteId)
+    selectionPopupOverlay?.setPosition(targetCoordinates)
+    flyTo(targetCenter, targetZoom, {
+      duration: 700,
+      onProgress: (progress) => {
+        if (progress >= 0.8) selectionPopupVisible.value = true
+      },
+      onComplete: () => {
+        if (transitionId !== selectedMonitoringSiteTransitionId) return
+        selectionPopupVisible.value = true
+        selectionPopupOverlay?.panIntoView({
+          animation: { duration: 250 },
+          margin: 16,
+        })
+      },
+    })
     return
   }
 
   flyTo(targetCenter, targetZoom, {
     duration: 700,
     onComplete: () => {
-      if (transitionId !== selectedThingTransitionId) return
+      if (transitionId !== selectedMonitoringSiteTransitionId) return
       void openPopupForFeature(feature)
     },
   })
@@ -550,32 +751,52 @@ const focusThingById = (thingId?: string | null) => {
 
 async function updateFeatures() {
   // 1) Rebuild features
-  coloredThings.value = props.colorKey
-    ? props.things.every(hasThingTags)
-      ? addColorToMarkers(props.things, props.colorKey)
-      : props.things
-    : props.things
+  if (props.colorMode === 'workspace') {
+    coloredMonitoringSites.value = addWorkspaceColorToMarkers(props.monitoringSites)
+  } else if (props.colorMode === 'type') {
+    coloredMonitoringSites.value = addSiteTypeColorToMarkers(props.monitoringSites)
+  } else if (
+    props.colorMode === 'metadata' &&
+    props.colorKey &&
+    props.monitoringSites.every(hasMonitoringSiteTags)
+  ) {
+    coloredMonitoringSites.value = addColorToMarkers(
+      props.monitoringSites,
+      props.colorKey,
+      theme.current.value.colors.default as string
+    )
+  } else {
+    coloredMonitoringSites.value = props.monitoringSites
+  }
 
-  const features = coloredThings.value
+  const features = coloredMonitoringSites.value
     .map(createFeature)
     .filter((feature) => feature !== null)
 
   // 2) clear & add
   if (!vectorSource) return
+  const previousExtent = vectorSource.getExtent()?.slice()
   vectorSource.clear()
   vectorSource.addFeatures(features)
 
-  if (props.selectedThingId) {
-    if (findFeatureByThingId(props.selectedThingId)) {
-      focusThingById(props.selectedThingId)
+  if (props.selectedMonitoringSiteId) {
+    if (findFeatureByMonitoringSiteId(props.selectedMonitoringSiteId)) {
+      focusMonitoringSiteById(props.selectedMonitoringSiteId)
       return
     }
 
     if (props.selectable) updateSelectionMarker(undefined)
   }
 
-  // 3) zoom to the extent of whatever source we used
-  fitViewToMarkers()
+  // Route/selection and color updates can re-emit the same sites. Preserve
+  // the current view unless the markers' geographic bounds actually change.
+  const currentExtent = vectorSource.getExtent()
+  if (
+    currentExtent &&
+    (!previousExtent || !extentEquals(previousExtent, currentExtent))
+  ) {
+    fitViewToMarkers()
+  }
 }
 
 const initializeMap = () => {
@@ -599,8 +820,13 @@ const initializeMap = () => {
   if (!chosenSource) chosenSource = basemapTileSources[0]
   selectedTileSourceName.value = chosenSource.name
 
-  rasterLayer = new TileLayer({ source: chosenSource.source })
+  rasterLayer = new TileLayer({
+    source: chosenSource.source,
+    zIndex: 0,
+    opacity: basemapOpacity.value / 100,
+  })
   markerLayer.value = new WebGLVectorLayer({
+    zIndex: 2,
     source: vectorSource,
     style: {
       'icon-src': mapMarkerUrl,
@@ -623,6 +849,7 @@ const initializeMap = () => {
   })
 
   selectionLayer = new VectorLayer({
+    zIndex: 3,
     source: selectionSource,
     style: selectionStyle,
   })
@@ -632,11 +859,10 @@ const initializeMap = () => {
     autoPan: props.singleMarkerMode ? false : { animation: { duration: 250 } },
   })
 
-  selectionLabelOverlay = new Overlay({
-    element: selectionLabelContainer.value,
-    positioning: 'center-left',
-    offset: [42, -26],
-    stopEvent: false,
+  selectionPopupOverlay = new Overlay({
+    element: selectionPopupContainer.value,
+    positioning: 'bottom-center',
+    offset: [0, -50],
   })
 
   popupCloser.value!.onclick = () => {
@@ -646,9 +872,13 @@ const initializeMap = () => {
 
   map = new OlMap({
     target: mapContainer.value,
-    layers: [rasterLayer, markerLayer.value, selectionLayer],
-    overlays: [popupOverlay, selectionLabelOverlay],
+    layers: [rasterLayer, overlayGroup, markerLayer.value, selectionLayer],
+    overlays: [popupOverlay, selectionPopupOverlay],
     view: new View(defaultView),
+  })
+
+  overlays.forEach((overlay, index) => {
+    if (overlay.layer.getVisible()) void setOverlayVisibility(index, true)
   })
 
   map.on('click', async (evt) => {
@@ -665,7 +895,11 @@ const initializeMap = () => {
       return
     }
 
-    const rawFeatures = map.forEachFeatureAtPixel(evt.pixel, (f) => f)
+    const rawFeatures = map.forEachFeatureAtPixel(
+      evt.pixel,
+      (f) => f,
+      siteHitOptions
+    )
 
     // Browse mode: clicks drive selection rather than opening a popup.
     if (props.selectable) {
@@ -676,8 +910,8 @@ const initializeMap = () => {
       const clickedFeature = Array.isArray(rawFeatures.get('features'))
         ? rawFeatures.get('features')[0]
         : rawFeatures
-      const thingId = getFeatureThing(clickedFeature as Feature)?.id
-      if (thingId) emit('select', thingId)
+      const monitoringSiteId = getFeatureMonitoringSite(clickedFeature as Feature)?.id
+      if (monitoringSiteId) emit('select', monitoringSiteId)
       return
     }
 
@@ -694,7 +928,7 @@ const initializeMap = () => {
 
   map.on('pointermove', function (e) {
     // change mouse cursor when over marker
-    const hit = map.hasFeatureAtPixel(e.pixel)
+    const hit = map.hasFeatureAtPixel(e.pixel, siteHitOptions)
     map.getTargetElement().style.cursor = hit ? 'pointer' : ''
   })
 
@@ -708,14 +942,14 @@ const initializeMap = () => {
 }
 
 const onKeydown = (e: KeyboardEvent) => {
-  if (e.key === 'Escape' && props.selectedThingId) emit('select', undefined)
+  if (e.key === 'Escape' && props.selectedMonitoringSiteId) emit('select', undefined)
 }
 
 onMounted(async () => {
   if (!mapContainer.value) return
   initializeMap()
   if (props.selectable) {
-    void loadDetailThing(props.selectedThingId)
+    void loadDetailMonitoringSite(props.selectedMonitoringSiteId)
     window.addEventListener('keydown', onKeydown)
   }
 })
@@ -732,13 +966,18 @@ onBeforeUnmount(() => {
   }
 })
 
-watch(() => [props.things] as const, updateFeatures, { deep: true })
+watch(
+  () =>
+    [props.monitoringSites, props.colorMode, props.colorKey, props.colorLabels] as const,
+  updateFeatures,
+  { deep: true }
+)
 
 watch(
-  () => props.selectedThingId,
-  (thingId) => {
-    void focusThingById(thingId)
-    if (props.selectable) void loadDetailThing(thingId)
+  () => props.selectedMonitoringSiteId,
+  (monitoringSiteId) => {
+    void focusMonitoringSiteById(monitoringSiteId)
+    if (props.selectable) void loadDetailMonitoringSite(monitoringSiteId)
   }
 )
 
@@ -747,8 +986,8 @@ watch(
   () => {
     if (!map) return
     map.updateSize()
-    if (props.selectedThingId) {
-      void focusThingById(props.selectedThingId)
+    if (props.selectedMonitoringSiteId) {
+      void focusMonitoringSiteById(props.selectedMonitoringSiteId)
     } else {
       fitViewToMarkers(250)
     }
@@ -760,6 +999,10 @@ function getConfigByName(name: string): ConfigTileSource {
   const found = basemapTileSources.find((cfg) => cfg.name === name)
   return found || basemapTileSources[0]
 }
+watch(basemapOpacity, (opacity) => {
+  rasterLayer?.setOpacity(opacity / 100)
+})
+
 watch(
   () => selectedTileSourceName.value,
   (newName) => {
@@ -785,18 +1028,76 @@ watch(
   left: auto;
 }
 
+/* No template hook — OpenLayers renders its own zoom control markup. */
 :deep(.ol-zoom button) {
   width: 36px;
   height: 36px;
-  font-size: 1.4rem;
+  font-size: var(--hs-font-lg);
 }
 
-/* 2) Position the dropdown in the top-right corner */
-.basemap-select-container {
+.map-controls {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: var(--hs-space-12);
+  right: var(--hs-space-12);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--hs-space-8);
   z-index: 2; /* above the map tiles */
+}
+
+.basemap-select {
+  width: calc(var(--hs-space-16) * 12);
+}
+
+/* Matches the Create Site page action, in blue. */
+.overlay-menu-button {
+  padding-inline: var(--hs-space-16);
+  font-size: var(--hs-font-sm);
+  font-weight: var(--hs-font-weight-bold);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.overlay-menu-button :deep(.v-btn__content) {
+  gap: var(--hs-space-6);
+}
+
+.overlay-layer-control {
+  width: calc(var(--hs-space-32) * 9);
+  max-width: calc(100vw - var(--hs-space-24));
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.layer-opacity-control {
+  min-width: calc(var(--hs-space-24) * 10);
+  padding: var(--hs-space-8) var(--hs-space-16);
+}
+
+.overlay-group-divider {
+  margin-block: var(--hs-space-8);
+}
+
+.overlay-visibility :deep(.v-label) {
+  margin-inline-start: var(--hs-space-4);
+}
+
+.overlay-opacity-controls {
+  margin-inline-start: var(--hs-space-32);
+  /* Keep the slider thumb's hit area and focus ring inside the menu at 100%. */
+  padding-inline-end: var(--hs-space-8);
+}
+
+.overlay-opacity-controls :deep(.v-slider > .v-input__control) {
+  margin-inline: 0;
+}
+
+.layer-opacity-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--hs-space-8);
 }
 
 .fill-width {
@@ -823,53 +1124,64 @@ watch(
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.selected-site-label {
-  max-width: 320px;
-  padding: 6px 12px;
-  overflow: hidden;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
-  color: rgba(0, 0, 0, 0.78);
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.2;
-  pointer-events: none;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.selected-site-label:empty {
-  display: none;
-}
-
-/* ── Browse selected-site detail card ── */
-.site-detail-card {
-  position: absolute;
-  left: 412px;
+.legend--browse {
+  right: 64px;
   bottom: 16px;
-  width: 348px;
-  z-index: 6;
-  background: #fff;
-  border-radius: 14px;
-  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.22);
+  left: auto;
+  z-index: 4;
+}
+
+.selection-popup {
+  width: calc(var(--hs-space-32) * 10);
+  max-width: calc(100vw - var(--hs-space-32));
+  opacity: 0;
+  pointer-events: none;
+}
+
+.selection-popup--visible {
+  opacity: 1;
+  pointer-events: auto;
+  transition: opacity 180ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .selection-popup--visible {
+    transition: none;
+  }
+}
+
+.selection-popup::after {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border: var(--hs-space-10) solid transparent;
+  border-top-color: var(--hs-surface-floating);
+  content: '';
+  transform: translateX(-50%);
+}
+
+.site-detail-card {
+  background: var(--hs-surface-floating);
+  border-radius: var(--hs-radius-lg);
+  box-shadow: var(--hs-shadow-popover);
   overflow: hidden;
 }
 
 .detail-accent {
-  height: 4px;
+  height: var(--hs-space-4);
   background: rgb(var(--v-theme-primary));
 }
 
 .detail-body {
-  padding: 13px 16px 15px;
+  padding: var(--hs-space-16);
 }
 
 .detail-header {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: var(--hs-space-10);
 }
 
 .detail-heading {
@@ -878,19 +1190,15 @@ watch(
 }
 
 .detail-name {
-  font-size: 16.5px;
-  font-weight: 600;
-  line-height: 1.25;
-  color: rgba(0, 0, 0, 0.87);
+  color: var(--hs-text-primary);
 }
 
 .detail-meta {
   display: flex;
   align-items: center;
-  gap: 5px;
-  margin-top: 4px;
-  font-size: 12.5px;
-  color: rgba(0, 0, 0, 0.6);
+  gap: var(--hs-space-4);
+  margin-top: var(--hs-space-4);
+  color: var(--hs-text-secondary);
 }
 
 .detail-close {
@@ -899,66 +1207,34 @@ watch(
   border: none;
   background: transparent;
   border-radius: 50%;
-  padding: 5px;
+  padding: var(--hs-space-4);
   cursor: pointer;
-  color: rgba(0, 0, 0, 0.6);
+  color: var(--hs-text-secondary);
 }
 
 .detail-close:hover {
-  background: rgba(0, 0, 0, 0.07);
+  background: var(--hs-surface-muted);
 }
 
 .detail-grid {
-  margin: 13px 0;
-  padding: 11px 12px;
-  background: rgba(0, 0, 0, 0.04);
-  border-radius: 10px;
+  margin: var(--hs-space-12) 0;
+  padding: var(--hs-space-12);
+  background: var(--hs-surface-muted);
+  border-radius: var(--hs-radius-md);
 }
 
 .detail-field-label {
-  font-size: 10.5px;
-  color: rgba(0, 0, 0, 0.6);
-  margin-bottom: 2px;
+  color: var(--hs-text-secondary);
+  margin-bottom: var(--hs-space-2);
 }
 
 .detail-field-value {
-  font-size: 12.5px;
-  font-weight: 500;
-  color: rgba(0, 0, 0, 0.87);
-}
-
-.detail-mono {
-  font-family: 'Roboto Mono', monospace;
-  font-weight: 400;
+  color: var(--hs-text-primary);
 }
 
 .detail-actions {
   display: flex;
-  gap: 8px;
-}
-
-.detail-card-enter-active,
-.detail-card-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.2, 0.8, 0.3, 1);
-}
-
-.detail-card-enter-from,
-.detail-card-leave-to {
-  opacity: 0;
-  transform: translateY(14px);
-}
-
-@media (max-width: 900px) {
-  .selected-site-label {
-    display: none;
-  }
-
-  .site-detail-card {
-    left: 12px;
-    right: 12px;
-    bottom: 12px;
-    width: auto;
-  }
+  gap: var(--hs-space-8);
 }
 
 .ol-popup {

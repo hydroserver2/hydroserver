@@ -362,7 +362,7 @@ const showOnlySelected = ref(false)
 const openInfoCard = ref(false)
 const downloading = ref(false)
 // The catalog endpoint returns enriched datastream records with the
-// nested `unit` / `observedProperty` / `thing` etc. relationships, so
+// nested `unit` / `observedProperty` / `monitoringSite` etc. relationships, so
 // the info card receives `Datastream & DatastreamExtended` at runtime
 // even though `Datastream[]` is what the list APIs declare.
 const selectedDatastream = ref<(Datastream & DatastreamExtended) | null>(null)
@@ -411,10 +411,10 @@ const tableItems = computed(() => {
   return displayDatastreams.value.map((ds) => {
     return {
       ...ds,
-      siteCodeName: ds.thing?.samplingFeatureCode ?? '',
-      siteName: ds.thing?.name ?? '',
+      siteCodeName: ds.monitoringSite?.code ?? '',
+      siteName: ds.monitoringSite?.name ?? '',
       observedPropertyName: ds.observedProperty?.name ?? '',
-      qualityControlLevelDefinition: ds.processingLevel?.definition ?? '',
+      processingLevelName: ds.processingLevel?.name ?? '',
     }
   })
 })
@@ -555,7 +555,7 @@ const headers = reactive([
   },
   {
     title: 'Processing level',
-    key: 'qualityControlLevelDefinition',
+    key: 'processingLevelName',
     visible: true,
   },
   {

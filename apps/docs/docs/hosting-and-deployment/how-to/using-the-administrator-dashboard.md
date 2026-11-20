@@ -31,23 +31,22 @@ HydroServer can be configured to limit access to certain features for new users 
 accounts cannot create or own workspaces, but they can be added as collaborators to existing workspaces.
 
 Administrators can manually upgrade a limited account to a standard account by clicking on
-**Identity and Access Management** > **Users**, selecting a user, and toggling **Is Ownership Allowed** to `true`.
+**Identity and Access Management** > **Users**, selecting a user, and changing **Owned workspace limit** from `0` to a
+positive number. Leaving the field blank allows unlimited workspace ownership.
 
 The **Identity and Access Management** section also exposes the following admin models:
 
-| Model | Purpose |
+| Model                | Purpose                                                                                                                                                                      |
 | --- | --- |
-| **Users** | Manage user profile fields, account status, staff/superuser access, and ownership permission. |
-| **Organizations** | Manage organizations that can be associated with users and workspaces. |
-| **Workspaces** | Review or edit workspace ownership, privacy, and workspace metadata. |
-| **Roles** | Configure reusable permission bundles for collaborators and API keys. |
-| **Permissions** | Review the resource-level permissions that belong to roles. |
-| **Collaborators** | Review or edit user access to workspaces. |
-| **API Keys** | Review API key metadata, deactivate keys, or regenerate a selected key. |
-
-To regenerate an API key, open **Identity and Access Management** > **API Keys**, select exactly one API key, choose
-**Regenerate selected API key** from the action menu, and click **Go**. The new key is shown once after the action
-completes.
+| **Users**            | Manage user profile fields (including user type, which accepts any text), account status, staff/superuser access, and workspace ownership limits. Superusers created with `createsuperuser` get the user type `Admin`. |
+| **User Types**       | Manage the account types users can choose from when signing up or editing their profile. Only types marked **Public** are offered. If there are none, users are given the type `Other`. Use **Load Default Data** to add HydroServer's default types. |
+| **Organizations**    | Review or edit the organizations users are affiliated with.                                                                                                                  |
+| **Organization Types** | Manage the organization types users can choose from for their organization. Only types marked **Public** are offered. If there are none, organizations are given the type `Other`. Use **Load Default Data** to add HydroServer's default types. |
+| **Workspaces**       | Review or edit workspace ownership, privacy, and workspace metadata.                                                                                                         |
+| **Roles**            | Configure reusable permission bundles for user and service-account collaborators.                                                                                            |
+| **Permissions**      | Review the resource-level permissions that belong to roles.                                                                                                                  |
+| **Collaborators**    | Review or edit user and service-account access to workspaces.                                                                                                                |
+| **Service Accounts** | Review service-account metadata and activate or deactivate accounts. API keys are created and regenerated from Workspace Management, where the new secret can be shown once. |
 
 ## HydroServer Configuration
 
@@ -127,11 +126,24 @@ Use **Website Configuration** > **Map Layers** to add basemap and overlay option
 | --- | --- |
 | **Name** | Sets the display name shown to users. |
 | **Type** | Classifies the layer as a **Basemap** or **Overlay**. |
-| **Priority** | Controls layer ordering when multiple layers are available. |
-| **Source** | Stores the map tile or layer source URL used by the frontend map. |
+| **Priority** | Larger priority numbers render on top of smaller numbers; for example, priority 10 renders on top of priority 5. Equal priorities sort by name. All overlays stay above the basemap and below site markers. |
+| **Visible by default** | Turns an overlay on when a map first loads. Ignored for basemaps. Defaults to off. |
+| **Source** | XYZ raster tile URL containing `{z}`, `{x}`, and `{y}` placeholders. Overlays also accept ArcGIS `VectorTileServer` URLs or their `resources/styles/root.json` URL. |
 | **Attribution** | Sets the attribution text required by the layer provider. |
 
 After creating a basemap or satellite layer, return to **Map Configuration** to select it as a default layer.
+
+The map's **Overlays** control lists the topmost overlay first and lets users turn each overlay on or off. Enabled overlays show their attribution in the map's attribution control. Hidden overlays do not request tiles; ArcGIS metadata and styles load when the overlay is first enabled. Choices apply to the current map and reset to the administrator's defaults when a new map loads.
+
+The **Base Map** menu and each overlay have an **Opacity** slider, from 0% (transparent) to 100% (fully opaque). Adjustments update the map immediately and leave site markers at their normal opacity. Opacity is retained while switching basemaps or toggling overlays in the current map, and resets to 100% when a new map loads. Opacity controls are muted and disabled while an overlay is off; turning it back on restores the selected opacity and makes the slider adjustable again.
+
+For example, to add the NetFlowlines stream network, create a layer with **Type** set to **Overlay**, supply its provider attribution, and use this **Source**:
+
+```text
+https://tiles.arcgis.com/tiles/ZzrwjTRez6FJiOq4/arcgis/rest/services/NetFlowlinesVTPK/VectorTileServer?f=json
+```
+
+ArcGIS overlays use the service's published style and Web Mercator tile grid. Both a service URL ending in `VectorTileServer` and the `?f=json` form are supported. Public services must allow access from the browser. WMS, WMTS, and unstyled vector tile templates are not supported.
 
 ### Contact Information
 
@@ -167,21 +179,18 @@ performing administrator-only maintenance.
 Additional vocabulary models also appear in this admin section and are documented under **Controlled Vocabularies**
 below.
 
-| Model | Purpose |
-| --- | --- |
-| **Things** | Manage monitoring sites and their workspace/privacy metadata. |
-| **Locations** | Review or edit site location records. |
-| **Sensors** | Manage reusable sensor metadata. |
-| **Observed Properties** | Manage reusable observed property metadata. |
-| **Units** | Manage reusable unit metadata. |
-| **Processing Levels** | Manage reusable processing level metadata. |
-| **Datastreams** | Review datastream metadata and run selected maintenance actions. |
-| **Result Qualifiers** | Manage result qualifier codes. |
-| **File Attachment Types** | Manage file attachment type vocabulary values. |
-| **Thing File Attachments** | Review files attached to monitoring sites. |
-| **Datastream File Attachments** | Review files attached to datastreams. |
-| **Thing Tags** | Review key/value tags attached to monitoring sites. |
-| **Datastream Tags** | Review key/value tags attached to datastreams. |
+| Model | Purpose                                                                 |
+| --- |-------------------------------------------------------------------------|
+| **Monitoring Sites** | Manage monitoring sites, including their location, tags, and workspace/privacy metadata. |
+| **Methods** | Manage reusable method metadata, including optional instrument details. |
+| **Observed Properties** | Manage reusable observed property metadata.                             |
+| **Units** | Manage reusable unit metadata.                                          |
+| **Processing Levels** | Manage reusable processing level metadata.                              |
+| **Datastreams** | Review datastream metadata and tags, and run selected maintenance actions. |
+| **Result Qualifiers** | Manage result qualifiers.                                               |
+| **Linked Resource Types** | Manage linked resource type vocabulary values.                          |
+| **Monitoring Site Linked Resources** | Review linked resources attached to monitoring sites.                   |
+| **Datastream Linked Resources** | Review linked resources associated with datastreams.                    |
 
 The **Datastreams** admin page includes two actions for selected datastreams:
 
@@ -206,16 +215,14 @@ models below and click its **Load Default ...** button in the upper-right corner
 | **Measurement Data** | **Observed Properties** | Default observed property metadata. |
 | **Measurement Data** | **Processing Levels** | Default processing level metadata. |
 | **Measurement Data** | **Units** | Default unit metadata. |
-| **Measurement Data** | **Site Types** | Default monitoring site type vocabulary values. |
-| **Measurement Data** | **Sampling Feature Types** | Default sampling feature type vocabulary values. |
+| **Measurement Data** | **Monitoring Site Types** | Default monitoring site type vocabulary values. |
 | **Measurement Data** | **Method Types** | Default method type vocabulary values. |
-| **Measurement Data** | **Sensor Encoding Types** | Default sensor encoding type vocabulary values. |
-| **Measurement Data** | **Variable Types** | Default variable type vocabulary values. |
+| **Measurement Data** | **Observed Property Types** | Default observed property type vocabulary values. |
 | **Measurement Data** | **Unit Types** | Default unit type vocabulary values. |
-| **Measurement Data** | **Datastream Aggregations** | Default aggregation statistic vocabulary values. |
+| **Measurement Data** | **Aggregation Statistics** | Default aggregation statistic vocabulary values. |
 | **Measurement Data** | **Datastream Statuses** | Default datastream status vocabulary values. |
 | **Measurement Data** | **Sampled Mediums** | Default sampled medium vocabulary values. |
-| **Measurement Data** | **File Attachment Types** | Default file attachment type vocabulary values. |
+| **Measurement Data** | **Linked Resource Types** | Default linked resource type vocabulary values. |
 
 The load action imports fixture data into the database. It does not replace the need to review locally customized
 metadata after upgrades.
@@ -228,10 +235,31 @@ see in metadata forms:
 | Section | Models |
 | --- | --- |
 | **Identity and Access Management** | **User Types**, **Organization Types**, **Roles** |
-| **Measurement Data** | **Datastream Aggregations**, **Datastream Statuses**, **File Attachment Types**, **Method Types**, **Sampled Mediums**, **Sampling Feature Types**, **Sensor Encoding Types**, **Site Types**, **Unit Types**, **Variable Types** |
+| **Measurement Data** | **Aggregation Statistics**, **Datastream Statuses**, **Linked Resource Types**, **Method Types**, **Monitoring Site Types**, **Observed Property Types**, **Sampled Mediums**, **Unit Types** |
 
-Workspace-scoped metadata such as observed properties, units, processing levels, sensors, and result qualifiers can also
+Workspace-scoped metadata such as observed properties, units, processing levels, methods, and result qualifiers can also
 be reviewed in the admin dashboard. When a record has no workspace, it is available as system-level metadata.
+
+## Registering OIDC Clients
+
+HydroServer can act as an OpenID Connect provider, so third-party apps can sign users in and call the HydroServer
+APIs on their behalf. To register an app:
+
+- Navigate to **OpenID Connect IdP** > **Clients** > **Add Client**.
+- Enter the app's client ID and name. The name is shown to users on the consent screen and in the sign-in page.
+- Choose the client type. Use **Public** for browser and mobile apps that can't keep a secret, and **Confidential**
+  for server-side apps.
+- Add the grant types (usually `authorization_code`, plus `refresh_token` if the app should renew tokens), the
+  response type `code`, and the app's redirect URIs.
+- Under **Scopes**, list each scope the app may request, one per line. Scopes not listed here are dropped from the
+  app's tokens. Along with `openid`, `profile`, and `email`, HydroServer defines `data:read`, `data:write`,
+  `workspace:read`, `workspace:write`, `iam:read`, `iam:write`, `task:read`, `task:write`, and `task:run`. See
+  [Using OIDC Scopes](/developing-and-contributing/how-to/using-oidc-scopes) for what each one grants.
+
+Allow `iam:write` only for apps you trust to manage workspace access. Service accounts and collaborators an app creates
+with it keep working after a user revokes the app.
+
+To end an app's access immediately, delete its tokens under **OpenID Connect IdP** > **Tokens**, or delete the client.
 
 ## Third-Party Identity Providers
 
@@ -251,4 +279,6 @@ To enable authentication through third-party identity providers, do the followin
 - Use **allowConnection** to control whether users can connect the provider to an existing HydroServer account.
 - When omitted, **allowSignUp** defaults to enabled, but **allowConnection** is enabled only when explicitly set to
   `true`.
+- Use **icon** to set an OpenID Connect provider's button icon path. See
+  [Sign-In Provider Icons](/hosting-and-deployment/how-to/setting-up-a-production-deployment.md#sign-in-provider-icons).
 - Assign the default site that the provider can authenticate against.

@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Literal, Optional, Union, TYPE_CHECKING
 from uuid import UUID
 from hydroserverpy.api.models.etl.task import EtlTask
 from hydroserverpy.api.models.orchestration.run import TaskRun
-from hydroserverpy.api.utils import normalize_uuid, order_by_to_camel
+from hydroserverpy.api.utils import normalize_uuid, sortby_to_camel
 from ..base import HydroServerBaseService
 
 if TYPE_CHECKING:
@@ -17,43 +17,32 @@ class TaskService(HydroServerBaseService):
 
     def list(
         self,
-        page: int = ...,
-        page_size: int = ...,
-        order_by: List[str] = ...,
+        offset: int = ...,
+        limit: int = ...,
+        sortby: List[str] = ...,
         workspace: Optional[Union[UUID, str]] = ...,
         data_connection: Optional[Union[UUID, str]] = ...,
         latest_run_status: str = ...,
-        latest_run_started_at_min: Optional[datetime] = ...,
-        latest_run_started_at_max: Optional[datetime] = ...,
-        latest_run_finished_at_min: Optional[datetime] = ...,
-        latest_run_finished_at_max: Optional[datetime] = ...,
+        min_latest_run_started_at: Optional[datetime] = ...,
+        max_latest_run_started_at: Optional[datetime] = ...,
+        min_latest_run_finished_at: Optional[datetime] = ...,
+        max_latest_run_finished_at: Optional[datetime] = ...,
         fetch_all: bool = False,
     ) -> List[EtlTask]:
         """Fetch a collection of ETL tasks."""
 
         return super().list(
-            page=page,
-            page_size=page_size,
-            order_by=order_by,
+            offset=offset,
+            limit=limit,
+            sortby=sortby,
             fetch_all=fetch_all,
-            expand_related=True,
             workspace_id=normalize_uuid(workspace),
             data_connection_id=normalize_uuid(data_connection),
             latest_run_status=latest_run_status,
-            latest_run_started_at_min=latest_run_started_at_min,
-            latest_run_started_at_max=latest_run_started_at_max,
-            latest_run_finished_at_min=latest_run_finished_at_min,
-            latest_run_finished_at_max=latest_run_finished_at_max,
-        )
-
-    def get(self, uid: Union[UUID, str]) -> EtlTask:
-        """Fetch a single ETL task."""
-
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}"
-        response = self.client.request("get", path, params={"expand_related": True}).json()
-
-        return self.model(
-            client=self.client, uid=UUID(str(response.pop("id"))), **response
+            min_latest_run_started_at=min_latest_run_started_at,
+            max_latest_run_started_at=max_latest_run_started_at,
+            min_latest_run_finished_at=min_latest_run_finished_at,
+            max_latest_run_finished_at=max_latest_run_finished_at,
         )
 
     def create(
@@ -62,7 +51,6 @@ class TaskService(HydroServerBaseService):
         data_connection: Union[UUID, str],
         description: Optional[str] = None,
         task_variables: Optional[Dict[str, Any]] = None,
-        mappings: Optional[List[dict]] = None,
         crontab: Optional[str] = None,
         interval: Optional[int] = None,
         interval_period: Optional[Literal["minutes", "hours", "days"]] = None,
@@ -77,11 +65,6 @@ class TaskService(HydroServerBaseService):
             "description": description,
             "dataConnectionId": normalize_uuid(data_connection),
             "taskVariables": task_variables or {},
-            "mappings": [
-                {"sourceIdentifier": m.get("source_identifier") or m.get("sourceIdentifier"),
-                 "targetDatastreamId": str(m.get("target_datastream_id") or m.get("targetDatastreamId"))}
-                for m in (mappings or [])
-            ],
         }
 
         if uid is not None:
@@ -101,27 +84,25 @@ class TaskService(HydroServerBaseService):
     def update(
         self,
         uid: Union[UUID, str],
-        name: str,
-        mappings: List[dict],
-        description: Optional[str] = None,
-        task_variables: Optional[Dict[str, Any]] = None,
+        name: str = ...,
+        description: Optional[str] = ...,
+        task_variables: Optional[Dict[str, Any]] = ...,
         crontab: Optional[str] = ...,
         interval: Optional[int] = ...,
         interval_period: Optional[Literal["minutes", "hours", "days"]] = ...,
         start_time: Optional[datetime] = ...,
         enabled: bool = ...,
     ) -> EtlTask:
-        """Update an ETL task."""
+        """Merge supplied fields into an ETL task; None deletes a variable key.
+
+        Omit task_variables to leave variables unchanged. Passing None is sent
+        to the server, which rejects it because task variables must be an object.
+        """
 
         body: Dict[str, Any] = {
             "name": name,
             "description": description,
-            "taskVariables": task_variables or {},
-            "mappings": [
-                {"sourceIdentifier": m.get("source_identifier") or m.get("sourceIdentifier"),
-                 "targetDatastreamId": str(m.get("target_datastream_id") or m.get("targetDatastreamId"))}
-                for m in mappings
-            ],
+            "taskVariables": task_variables,
         }
 
         if crontab is None and interval is None:
@@ -141,43 +122,43 @@ class TaskService(HydroServerBaseService):
         """Trigger an immediate run of an ETL task."""
 
         path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/trigger"
-        response = self.client.request("post", path).json()
+        response = self.client.request("post", path).json()["data"]
 
         return TaskRun(**response)
 
     def list_runs(
         self,
         uid: Union[UUID, str],
-        page: int = ...,
-        page_size: int = ...,
-        order_by: List[str] = ...,
+        offset: int = ...,
+        limit: int = ...,
+        sortby: List[str] = ...,
         status: str = ...,
-        started_at_min: datetime = ...,
-        started_at_max: datetime = ...,
-        finished_at_min: datetime = ...,
-        finished_at_max: datetime = ...,
+        min_started_at: datetime = ...,
+        max_started_at: datetime = ...,
+        min_finished_at: datetime = ...,
+        max_finished_at: datetime = ...,
     ) -> List[TaskRun]:
         """Fetch a collection of task runs for an ETL task."""
 
         params = {
-            "page": page,
-            "page_size": page_size,
-            "order_by": [order_by_to_camel(o) for o in order_by] if order_by is not ... else order_by,
+            "offset": offset,
+            "limit": limit,
+            "sortby": [sortby_to_camel(o) for o in sortby] if sortby is not ... else sortby,
             "status": status,
-            "started_at_min": started_at_min,
-            "started_at_max": started_at_max,
-            "finished_at_min": finished_at_min,
-            "finished_at_max": finished_at_max,
+            "minStartedAt": min_started_at,
+            "maxStartedAt": max_started_at,
+            "minFinishedAt": min_finished_at,
+            "maxFinishedAt": max_finished_at,
         }
         params = {k: v for k, v in params.items() if v is not ...}
 
         path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/runs"
 
-        return [TaskRun(**run) for run in self.client.request("get", path, params=params).json()]
+        return [TaskRun(**run) for run in self.client.request("get", path, params=params).json()["data"]]
 
     def get_run(self, uid: Union[UUID, str], run_id: Union[UUID, str]) -> TaskRun:
         """Fetch a single task run for an ETL task."""
 
         path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/runs/{str(run_id)}"
 
-        return TaskRun(**self.client.request("get", path).json())
+        return TaskRun(**self.client.request("get", path).json()["data"])

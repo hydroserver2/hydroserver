@@ -13,7 +13,7 @@ const source = {
   name: 'Raw Temp',
   description: 'Raw temperature readings',
   status: 'ongoing',
-  sensorId: 'sn-1',
+  methodId: 'sn-1',
   processingLevelId: 'pl-raw',
 } as any
 
@@ -22,7 +22,7 @@ const processingLevels = [
   { id: 'pl-qc', definition: 'Quality Controlled' },
 ]
 
-const sensors = [
+const methods = [
   { id: 'sn-1', name: 'Thermistor' },
   { id: 'sn-2', name: 'Weather station' },
 ]
@@ -31,7 +31,7 @@ const statuses = ['ongoing', 'complete']
 
 const mountForm = (props: Record<string, unknown> = {}) =>
   mount(CreateDatastreamForm, {
-    props: { source, processingLevels, sensors, statuses, ...props },
+    props: { source, processingLevels, methods, statuses, ...props },
     global: { plugins: [createTestVuetify()] },
   })
 
@@ -66,31 +66,31 @@ describe('CreateDatastreamForm', () => {
       name?: string
       description: string
       status?: string
-      sensorId: string
+      methodId: string
     }
     expect(spec.source.id).toBe('s-1')
     expect(spec.processingLevelId).toBe('pl-qc')
     expect(spec.name).toBe('Raw Temp (QC)')
     expect(spec.description).toBe('Raw temperature readings')
     expect(spec.status).toBe('ongoing')
-    expect(spec.sensorId).toBe('sn-1')
+    expect(spec.methodId).toBe('sn-1')
   })
 
   it('emits the edited description, status and method', async () => {
     const w = mountForm({ defaultProcessingLevelId: 'pl-qc' })
     await field(w, 'create-description').vm.$emit('update:modelValue', 'QC pass')
     await field(w, 'create-status').vm.$emit('update:modelValue', 'complete')
-    await field(w, 'create-sensor').vm.$emit('update:modelValue', 'sn-2')
+    await field(w, 'create-method').vm.$emit('update:modelValue', 'sn-2')
     await w.find('[data-testid="create-confirm"]').trigger('click')
 
     const spec = w.emitted('confirm')![0][0] as {
       description: string
       status?: string
-      sensorId: string
+      methodId: string
     }
     expect(spec.description).toBe('QC pass')
     expect(spec.status).toBe('complete')
-    expect(spec.sensorId).toBe('sn-2')
+    expect(spec.methodId).toBe('sn-2')
   })
 
   it('requires a description, and allows an empty status', async () => {
@@ -113,16 +113,16 @@ describe('CreateDatastreamForm', () => {
   it('keeps the source values when the lists could not be loaded', async () => {
     const w = mountForm({
       defaultProcessingLevelId: 'pl-qc',
-      sensors: [],
+      methods: [],
       statuses: [],
     })
     await w.find('[data-testid="create-confirm"]').trigger('click')
     const spec = w.emitted('confirm')![0][0] as {
       status?: string
-      sensorId: string
+      methodId: string
     }
     expect(spec.status).toBe('ongoing')
-    expect(spec.sensorId).toBe('sn-1')
+    expect(spec.methodId).toBe('sn-1')
   })
 
   it('uses the provided default processing level', async () => {
@@ -154,24 +154,30 @@ describe('CreateDatastreamForm', () => {
   })
 
   it('adds a processing level inline and selects the new one', async () => {
-    const created = { id: 'pl-new', code: 'Quality Controlled' }
+    const created = { id: 'pl-new', name: 'Quality Controlled' }
     const onCreateProcessingLevel = vi.fn().mockResolvedValue(created)
     const w = mountForm({ onCreateProcessingLevel })
 
     // Open the inline add panel and submit a new level.
     await w.find('[data-testid="add-level-toggle"]').trigger('click')
-    await w.find('[data-testid="new-level-code"] input').setValue('Quality Controlled')
+    await w.find('[data-testid="new-level-name"] input').setValue('Quality Controlled')
+    await w
+      .find('[data-testid="new-level-description"] textarea')
+      .setValue('Reviewed readings')
     await w.find('[data-testid="new-level-save"]').trigger('click')
     await flushPromises()
 
     expect(onCreateProcessingLevel).toHaveBeenCalledWith(
-      expect.objectContaining({ code: 'Quality Controlled' })
+      expect.objectContaining({
+        name: 'Quality Controlled',
+        description: 'Reviewed readings',
+      })
     )
     // Parent appends the created level to the catalog.
     await w.setProps({ processingLevels: [...processingLevels, created] })
 
     // Panel collapsed, and the new level is selected -> confirm carries it.
-    expect(w.find('[data-testid="new-level-code"]').exists()).toBe(false)
+    expect(w.find('[data-testid="new-level-name"]').exists()).toBe(false)
     await w.find('[data-testid="create-confirm"]').trigger('click')
     const spec = w.emitted('confirm')![0][0] as { processingLevelId: string }
     expect(spec.processingLevelId).toBe('pl-new')

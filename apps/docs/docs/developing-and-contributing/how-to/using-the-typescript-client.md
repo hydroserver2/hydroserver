@@ -21,9 +21,10 @@ The TypeScript client exposes these services:
 | Area | Services |
 | --- | --- |
 | Authentication and account | `session`, `user` |
-| Data management | `workspaces`, `things`, `datastreams`, `sensors`, `units`, `processingLevels`, `observedProperties`, `resultQualifiers` |
-| Ingestion and orchestration | `dataConnections`, `tasks`, `monitoringTasks`, `dataProductTasks`, `ratingCurves` |
-| Files and quality control | `thingFileAttachments`, `qualityControlHistories`, `qualityControlSessions`, `qualityControlOperations` |
+| Data management | `workspaces`, `monitoringSites`, `datastreams`, `methods`, `units`, `processingLevels`, `observedProperties`, `resultQualifiers` |
+| Controlled vocabularies | `monitoringSiteTypes`, `methodTypes`, `observedPropertyTypes`, `unitTypes`, `sampledMediums`, `aggregationStatistics`, `datastreamStatuses`, `linkedResourceTypes` |
+| Ingestion and orchestration | `dataConnections`, `tasks`, `etlMappings`, `monitoringTasks`, `monitoringRules`, `dataProductTasks`, `dataProductTransformations`, `ratingCurves` |
+| Quality control | `qualityControlHistories`, `qualityControlSessions`, `qualityControlOperations` |
 
 Services are created lazily, so reading a service property does not make a request.
 
@@ -58,15 +59,18 @@ Model-backed collection services support:
 
 They also provide `get`/`getItem`, `create`/`createItem`, `update`/`updateItem`, and `delete`. Methods ending in `Item` return the payload directly, with `null` or `[]` on failure; use the methods returning `ApiResponse` when the caller needs status or error details.
 
-QC sessions and operations use similar helpers but also require their parent history and session IDs. Authentication and file-attachment services expose purpose-specific methods instead.
+QC sessions and operations use similar helpers but also require their parent history and session IDs. Authentication and linked resource methods expose purpose-specific methods instead.
 
-Most endpoints support query params such as:
+Most collection endpoints support query params such as:
 
-- `page`
-- `page_size`
-- `order_by`
-- `expand_related`
+- `limit` and `offset` for paging
+- `sortby`
+- `properties`, to return only some properties of each item
+- `include`, to add related resources to the response's `included` section
+- `q`, `bbox` and `datetime`, where a collection supports them
 - Resource-specific filters
+
+`f` selects the response format (for example `geojson` on workspaces, monitoring sites, datastreams, and observations), and observations also accept a `profile` (see [Get observations](#example-get-observations)).
 
 ### Example: Access collection items
 
@@ -80,15 +84,15 @@ for (const workspace of workspaces) {
 ### Example: Collection pagination
 
 ```ts
-// Fetch page 2 only
+// Fetch the second page of 5 only
 const page2 = await hs.workspaces.list({
-  page: 2,
-  page_size: 5,
+  offset: 5,
+  limit: 5,
 });
 
 // Fetch all pages
 const allWorkspaces = await hs.workspaces.listAllItems({
-  is_associated: true,
+  isAssociated: true,
 });
 ```
 
@@ -96,11 +100,11 @@ const allWorkspaces = await hs.workspaces.listAllItems({
 
 ```ts
 const ordered = await hs.workspaces.list({
-  order_by: ["name"],
+  sortby: ["name"],
 });
 
 const multiOrdered = await hs.workspaces.list({
-  order_by: ["-name", "isPrivate"],
+  sortby: ["-name", "isPrivate"],
 });
 ```
 
@@ -108,44 +112,111 @@ const multiOrdered = await hs.workspaces.list({
 
 ```ts
 const publicWorkspaces = await hs.workspaces.listAllItems({
-  is_private: false,
+  isPrivate: false,
 });
 
 const yourPrivateWorkspaces = await hs.workspaces.listAllItems({
-  is_private: true,
-  is_associated: true,
+  isPrivate: true,
+  isAssociated: true,
 });
 ```
 
 ## Authentication and session
 
+HydroServer provides pages for signing in, signing up, and editing account details. Your app can open these pages
+using the client methods below.
+
+### Sign in and sign out
+
+Call `hs.session.login()` when the user clicks your app's sign-in button. This opens HydroServer's sign-in page.
+The user enters their email and password there.
+
 ```ts
-const loginRes = await hs.session.login("user@example.com", "password");
-if (!loginRes.ok) {
-  console.error(loginRes.message);
+async function signIn() {
+  await hs.session.login("/");
 }
 
-if (hs.session.isAuthenticated) {
-  console.log("Logged in");
+async function signOut() {
+  await hs.session.logout("/");
 }
-
-hs.on("session:expired", () => {
-  console.log("Session expired");
-});
-
-await hs.session.logout();
 ```
 
-`createHydroServer` initializes the session snapshot before it resolves. Account operations are available through `hs.user`:
+The `"/"` tells HydroServer to send the user back to your app's home page afterwards. You can replace it with another
+path in your app, such as `"/workspaces"`. If you leave it out, signing in returns to the current page and signing out
+returns to the home page.
+
+### Check who is signed in
+
+After setting up the client with `await createHydroServer(...)`, you can check whether the user is signed in.
+Check again when the user returns from the sign-in page:
+
+```ts
+if (hs.session.isAuthenticated) {
+  console.log("You are signed in.");
+} else {
+  console.log("Please sign in.");
+}
+```
+
+Use `hs.user.get()` to read the signed-in user's details. Check `ok` before using the returned data:
 
 ```ts
 const accountRes = await hs.user.get();
 if (accountRes.ok) {
-  const account = accountRes.data;
-  account.firstName = "Updated";
-  await hs.user.update(account);
+  console.log(accountRes.data.firstName);
+} else {
+  console.log(accountRes.message);
 }
 ```
+
+### Edit an account or sign up
+
+To let the user edit their profile, open HydroServer's account page:
+
+```ts
+window.location.assign(hs.session.getAccountProfileUrl("/"));
+```
+
+Here, `getAccountProfileUrl()` builds the account page's address, and `window.location.assign()` opens it in the browser.
+Use `getAccountSignupUrl()` in the same way to open the sign-up page. The `"/"` sets the return page, just as it does
+for signing in. If you leave it out, the return page is your current page.
+
+See [Managing Your Account](/user-guides/how-to/creating-user-accounts.md#managing-your-account)
+for the changes a user can make on the account page.
+
+::: details If your app uses OpenID Connect (OIDC)
+If you set the client's `oidc` option, your app needs a page to handle the user's return from signing in.
+On that page, call `await hs.session.completeLogin()` to finish signing in. It returns the path your app should open next.
+:::
+
+### Tokens managed by your app
+
+If your app already holds HydroServer access tokens, for example because its backend signs users in through
+HydroServer, pass an `accessTokenProvider` so the client uses those tokens instead of signing the user in itself:
+
+```ts
+await createHydroServer({
+  host: "https://playground.hydroserver.org",
+  accessTokenProvider: async () => {
+    const res = await fetch("/my-app/hydroserver-token/");
+    return res.ok ? (await res.json()).access_token : null;
+  },
+  onUnauthorized: () => window.location.assign("/login/"),
+});
+```
+
+- The provider is called before each request, so cache the token until shortly before it expires. Return `null` when
+  the user isn't signed in.
+- When a request is rejected with a `401`, the client calls the provider again and retries once. If the retry is also
+  rejected, it calls `onUnauthorized` and emits `session:expired`.
+- `hs.session.isAuthenticated` reflects whether the provider returned a token. `hs.user.get()` reads the user from the
+  OIDC UserInfo endpoint, so the token needs the `openid`, `profile`, and `email` scopes.
+- Your app handles sign-in and sign-out: `hs.session.login()` and `hs.session.logout()` throw in this mode.
+- `accessTokenProvider` can't be combined with the `oidc` option.
+
+The endpoint that returns the token should require your app's own sign-in, reject cross-origin requests, and send
+`Cache-Control: no-store`. The browser can use the token for everything its scopes allow, so request only the
+[scopes](/developing-and-contributing/how-to/using-oidc-scopes) your frontend needs.
 
 ## Workspaces
 
@@ -157,7 +228,7 @@ Workspaces are the top-level access-control boundary for HydroServer data.
 const publicWorkspaces = await hs.workspaces.listAllItems();
 
 const yourWorkspaces = await hs.workspaces.listAllItems({
-  is_associated: true,
+  isAssociated: true,
 });
 
 const workspace = await hs.workspaces.getItem(
@@ -207,100 +278,112 @@ await hs.workspaces.acceptOwnershipTransfer(workspaceId);
 await hs.workspaces.rejectOwnershipTransfer(workspaceId);
 ```
 
-## Things (Sites)
+## Monitoring Sites
 
-Things represent physical monitoring locations.
+Monitoring sites represent physical monitoring locations.
 
-### Example: Get things
+### Example: Get monitoringSites
 
 ```ts
-const publicThings = await hs.things.listAllItems();
+const publicMonitoringSites = await hs.monitoringSites.listAllItems();
 
-const workspaceThings = await hs.things.listAllItems({
-  workspace_id: ["00000000-0000-0000-0000-000000000000"],
+const workspaceMonitoringSites = await hs.monitoringSites.listAllItems({
+  workspaceId: ["00000000-0000-0000-0000-000000000000"],
 });
 
-const boundedThings = await hs.things.listAllItems({
+const boundedMonitoringSites = await hs.monitoringSites.listAllItems({
   bbox: ["-112.166,41.369,-111.402,42.999"],
 });
 
-const filteredThings = await hs.things.listAllItems({
+const filteredMonitoringSites = await hs.monitoringSites.listAllItems({
   tag: ["Region:A"],
 });
 ```
 
-### Example: Create a thing
+### Example: Create a monitoringSite
 
 ```ts
-import { Thing } from "@hydroserver/client";
+import { MonitoringSite } from "@hydroserver/client";
 
-const thing = new Thing();
-thing.workspaceId = "00000000-0000-0000-0000-000000000000";
-thing.name = "My Site";
-thing.description = "This site records environmental observations.";
-thing.samplingFeatureType = "Site";
-thing.samplingFeatureCode = "OBSERVATION_SITE";
-thing.siteType = "Atmosphere";
-thing.location.latitude = 41.739;
-thing.location.longitude = -111.7957;
-thing.location.elevation_m = 1414;
-thing.location.elevationDatum = "EGM96";
-thing.location.adminArea1 = "UT";
-thing.location.adminArea2 = "Cache";
-thing.location.country = "US";
-thing.dataDisclaimer = "Data may be provisional and subject to revision.";
-thing.isPrivate = false;
+const monitoringSite = new MonitoringSite();
+monitoringSite.workspaceId = "00000000-0000-0000-0000-000000000000";
+monitoringSite.name = "My Site";
+monitoringSite.description = "This site records environmental observations.";
+monitoringSite.code = "OBSERVATION_SITE";
+monitoringSite.type = "Atmosphere";
+monitoringSite.latitude = 41.739;
+monitoringSite.longitude = -111.7957;
+monitoringSite.elevationM = 1414;
+monitoringSite.elevationDatum = "EGM96";
+monitoringSite.adminArea1 = "UT";
+monitoringSite.adminArea2 = "Cache";
+monitoringSite.country = "US";
+monitoringSite.dataDisclaimer = "Data may be provisional and subject to revision.";
+monitoringSite.isPrivate = false;
 
-await hs.things.create(thing);
+await hs.monitoringSites.create(monitoringSite);
 ```
 
-### Example: Modify thing metadata and privacy
+### Example: Modify monitoringSite metadata and privacy
 
 ```ts
-const thing = await hs.things.getItem("00000000-0000-0000-0000-000000000000");
-if (!thing) throw new Error("Thing not found");
+const monitoringSite = await hs.monitoringSites.getItem("00000000-0000-0000-0000-000000000000");
+if (!monitoringSite) throw new Error("MonitoringSite not found");
 
-thing.name = "Updated Site Name";
-thing.description = "Updated site metadata";
-await hs.things.update(thing);
+monitoringSite.name = "Updated Site Name";
+monitoringSite.description = "Updated site metadata";
+await hs.monitoringSites.update(monitoringSite);
 
-await hs.things.updatePrivacy(thing.id, true);
+await hs.monitoringSites.updatePrivacy(monitoringSite.id, true);
 ```
 
-### Example: Manage thing tags
+### Example: Manage monitoringSite tags
 
 ```ts
-const thingId = "00000000-0000-0000-0000-000000000000";
+const monitoringSiteId = "00000000-0000-0000-0000-000000000000";
 
-await hs.things.createTag(thingId, { key: "Region", value: "A" });
-await hs.things.updateTag(thingId, { key: "Region", value: "B" });
-await hs.things.deleteTag(thingId, { key: "Region" });
+await hs.monitoringSites.setTag(monitoringSiteId, "Region", "A");
+await hs.monitoringSites.deleteTag(monitoringSiteId, "Region");
 ```
 
-### Example: Manage thing file attachments
+### Example: Manage monitoringSite linked resources
 
 ```ts
-const thingId = "00000000-0000-0000-0000-000000000000";
-const data = new FormData();
-data.append("file", fileInput.files![0]);
+const monitoringSiteId = "00000000-0000-0000-0000-000000000000";
 
-await hs.things.uploadAttachments(thingId, data);
-await hs.things.getAttachments(thingId);
-await hs.things.deleteAttachment(thingId, "site-photo.png");
+const hostedData = new FormData();
+hostedData.append("name", "site-photo.png");
+hostedData.append("type", "Photo");
+hostedData.append("file", fileInput.files![0]);
+const created = await hs.monitoringSites.createLinkedResource(monitoringSiteId, hostedData);
+
+const externalData = new FormData();
+externalData.append("name", "Site report");
+externalData.append("type", "Document");
+externalData.append("link", "https://example.com/report.pdf");
+await hs.monitoringSites.createLinkedResource(monitoringSiteId, externalData);
+
+await hs.monitoringSites.getLinkedResources(monitoringSiteId);
+
+const renameData = new FormData();
+renameData.append("name", "Updated site photo");
+await hs.monitoringSites.updateLinkedResource(monitoringSiteId, created.data!.id, renameData);
+
+await hs.monitoringSites.deleteLinkedResource(monitoringSiteId, created.data!.id);
 ```
 
-### Example: Get datastreams for a thing
+### Example: Get datastreams for a monitoringSite
 
 ```ts
-const thingDatastreams = await hs.datastreams.listAllItems({
-  thing_id: ["00000000-0000-0000-0000-000000000000"],
+const monitoringSiteDatastreams = await hs.datastreams.listAllItems({
+  monitoringSiteId: ["00000000-0000-0000-0000-000000000000"],
 });
 ```
 
-### Example: Delete a thing
+### Example: Delete a monitoringSite
 
 ```ts
-await hs.things.delete("00000000-0000-0000-0000-000000000000");
+await hs.monitoringSites.delete("00000000-0000-0000-0000-000000000000");
 ```
 
 ## Observed Properties
@@ -311,7 +394,7 @@ await hs.things.delete("00000000-0000-0000-0000-000000000000");
 const observedProperties = await hs.observedProperties.listAllItems();
 
 const workspaceObservedProperties = await hs.observedProperties.listAllItems({
-  workspace_id: ["00000000-0000-0000-0000-000000000000"],
+  workspaceId: ["00000000-0000-0000-0000-000000000000"],
 });
 ```
 
@@ -323,7 +406,8 @@ import { ObservedProperty } from "@hydroserver/client";
 const observedProperty = new ObservedProperty();
 observedProperty.workspaceId = "00000000-0000-0000-0000-000000000000";
 observedProperty.name = "Temperature";
-observedProperty.definition = "Air temperature";
+observedProperty.definition =
+  "http://vocabulary.odm2.org/variablename/airTemperature/";
 observedProperty.description = "Near-surface air temperature";
 observedProperty.type = "Climate";
 observedProperty.code = "AirTemp";
@@ -352,7 +436,7 @@ const unit = new Unit();
 unit.workspaceId = "00000000-0000-0000-0000-000000000000";
 unit.name = "Degree Celsius";
 unit.symbol = "C";
-unit.definition = "Degree Celsius";
+unit.definition = "https://qudt.org/vocab/unit/DEG_C";
 unit.type = "Temperature";
 
 const created = await hs.units.createItem(unit);
@@ -368,36 +452,35 @@ await hs.units.update(created);
 await hs.units.delete("00000000-0000-0000-0000-000000000000");
 ```
 
-## Sensors
+## Methods
 
-### Example: Create and modify a sensor
+### Example: Create and modify a method
 
 ```ts
-import { Sensor } from "@hydroserver/client";
+import { Method } from "@hydroserver/client";
 
-const sensor = new Sensor();
-sensor.workspaceId = "00000000-0000-0000-0000-000000000000";
-sensor.name = "Environmental Sensor";
-sensor.description = "Records environmental observations.";
-sensor.encodingType = "application/json";
-sensor.manufacturer = "Campbell Scientific";
-sensor.model = "A";
-sensor.modelLink = "https://example.com/sensors/A";
-sensor.methodType = "Sensor";
-sensor.methodLink = "https://example.com/methods/sensor";
-sensor.methodCode = "SENSOR_A";
+const method = new Method();
+method.workspaceId = "00000000-0000-0000-0000-000000000000";
+method.name = "Environmental Instrument";
+method.description = "Records environmental observations.";
+method.type = "Instrument Deployment";
+method.code = "SENSOR_A";
+method.definition = "https://example.com/methods/sensor";
+method.sensorModel = "A";
+method.sensorModelManufacturer = "Campbell Scientific";
+method.sensorModelDefinition = "https://example.com/sensors/A";
 
-const created = await hs.sensors.createItem(sensor);
-if (!created) throw new Error("Unable to create sensor");
+const created = await hs.methods.createItem(method);
+if (!created) throw new Error("Unable to create method");
 
-created.name = "Environmental Sensor - Updated";
-await hs.sensors.update(created);
+created.name = "Environmental Instrument - Updated";
+await hs.methods.update(created);
 ```
 
-### Example: Delete a sensor
+### Example: Delete a method
 
 ```ts
-await hs.sensors.delete("00000000-0000-0000-0000-000000000000");
+await hs.methods.delete("00000000-0000-0000-0000-000000000000");
 ```
 
 ## Processing Levels
@@ -410,8 +493,8 @@ import { ProcessingLevel } from "@hydroserver/client";
 const processingLevel = new ProcessingLevel();
 processingLevel.workspaceId = "00000000-0000-0000-0000-000000000000";
 processingLevel.code = "0";
-processingLevel.definition = "Raw";
-processingLevel.explanation =
+processingLevel.name = "Raw";
+processingLevel.description =
   "Data have not been processed or quality controlled.";
 
 const created = await hs.processingLevels.createItem(processingLevel);
@@ -436,13 +519,13 @@ import { ResultQualifier } from "@hydroserver/client";
 
 const resultQualifier = new ResultQualifier();
 resultQualifier.workspaceId = "00000000-0000-0000-0000-000000000000";
-resultQualifier.code = "PF";
+resultQualifier.name = "PF";
 resultQualifier.description = "Power Failure";
 
 const created = await hs.resultQualifiers.createItem(resultQualifier);
 if (!created) throw new Error("Unable to create result qualifier");
 
-created.code = "PF2";
+created.name = "PF2";
 await hs.resultQualifiers.update(created);
 ```
 
@@ -452,9 +535,24 @@ await hs.resultQualifiers.update(created);
 await hs.resultQualifiers.delete("00000000-0000-0000-0000-000000000000");
 ```
 
+## Controlled Vocabularies
+
+Metadata forms choose some values from controlled vocabularies: monitoring site types, method types, observed property types, unit types, sampled mediums, aggregation statistics, datastream statuses, and linked resource types. Each vocabulary has its own service with the standard collection helpers. Every term has an `id`, a `name`, and an optional `description`. Monitoring sites, datastreams, and other records store the term's `name`.
+
+### Example: List vocabulary terms
+
+```ts
+const siteTypes = await hs.monitoringSiteTypes.listAllItems();
+const siteTypeNames = siteTypes.map((term) => term.name);
+
+const statuses = await hs.datastreamStatuses.listAllItems({ q: "complete" });
+```
+
+Anyone can read vocabulary terms. Only HydroServer administrators can create, update, or delete them, using the same `create`, `update`, and `delete` helpers as other services.
+
 ## Datastreams
 
-Datastreams group observations for one observed property, measured by one sensor, at one thing.
+Datastreams group observations for one observed property, produced by one method, at one monitoring site.
 
 ### Example: Get datastreams
 
@@ -462,11 +560,11 @@ Datastreams group observations for one observed property, measured by one sensor
 const datastreams = await hs.datastreams.listAllItems();
 
 const workspaceDatastreams = await hs.datastreams.listAllItems({
-  workspace_id: ["00000000-0000-0000-0000-000000000000"],
+  workspaceId: ["00000000-0000-0000-0000-000000000000"],
 });
 
-const thingDatastreams = await hs.datastreams.listAllItems({
-  thing_id: ["00000000-0000-0000-0000-000000000000"],
+const monitoringSiteDatastreams = await hs.datastreams.listAllItems({
+  monitoringSiteId: ["00000000-0000-0000-0000-000000000000"],
 });
 
 const datastream = await hs.datastreams.getItem(
@@ -481,8 +579,8 @@ import { Datastream } from "@hydroserver/client";
 
 const datastream = new Datastream();
 datastream.workspaceId = "00000000-0000-0000-0000-000000000000";
-datastream.thingId = "11111111-1111-1111-1111-111111111111";
-datastream.sensorId = "22222222-2222-2222-2222-222222222222";
+datastream.monitoringSiteId = "11111111-1111-1111-1111-111111111111";
+datastream.methodId = "22222222-2222-2222-2222-222222222222";
 datastream.observedPropertyId = "33333333-3333-3333-3333-333333333333";
 datastream.processingLevelId = "44444444-4444-4444-4444-444444444444";
 datastream.unitId = "55555555-5555-5555-5555-555555555555";
@@ -496,7 +594,7 @@ datastream.timeAggregationIntervalUnit = "minutes";
 datastream.intendedTimeSpacing = 15;
 datastream.intendedTimeSpacingUnit = "minutes";
 datastream.isPrivate = false;
-datastream.isVisible = true;
+datastream.isRestricted = false;
 
 const created = await hs.datastreams.createItem(datastream);
 if (!created) throw new Error("Unable to create datastream");
@@ -510,34 +608,27 @@ await hs.datastreams.update(created);
 ```ts
 const datastreamId = "00000000-0000-0000-0000-000000000000";
 
-await hs.datastreams.createTag(datastreamId, {
-  key: "MaxAllowableResult",
-  value: "100",
-});
-
-await hs.datastreams.updateTag(datastreamId, {
-  key: "MaxAllowableResult",
-  value: "120",
-});
-
-await hs.datastreams.deleteTag(datastreamId, {
-  key: "MaxAllowableResult",
-});
+await hs.datastreams.setTag(datastreamId, "MaxAllowableResult", "100");
+await hs.datastreams.deleteTag(datastreamId, "MaxAllowableResult");
 ```
 
-### Example: Manage datastream file attachments
+### Example: Manage datastream linked resources
 
 ```ts
 const datastreamId = "00000000-0000-0000-0000-000000000000";
 const data = new FormData();
+data.append("name", "rating-curve.csv");
+data.append("type", "Rating Curve");
 data.append("file", fileInput.files![0]);
 
-await hs.datastreams.uploadAttachments(datastreamId, data);
-await hs.datastreams.getAttachments(datastreamId);
-await hs.datastreams.deleteAttachment(datastreamId, "rating-curve.csv");
+const created = await hs.datastreams.createLinkedResource(datastreamId, data);
+await hs.datastreams.getLinkedResources(datastreamId);
+await hs.datastreams.deleteLinkedResource(datastreamId, created.data!.id);
 ```
 
 ### Example: Get related metadata for a datastream
+
+The datastream service accepts `expand_related`, which requests the datastream's related resources with `include` and nests them in the datastream it returns.
 
 ```ts
 import type { DatastreamExtended } from "@hydroserver/client";
@@ -549,8 +640,8 @@ const res = await hs.datastreams.get(
 
 if (res.ok) {
   const datastream = res.data as unknown as DatastreamExtended;
-  console.log(datastream.thing);
-  console.log(datastream.sensor);
+  console.log(datastream.monitoringSite);
+  console.log(datastream.method);
   console.log(datastream.observedProperty);
   console.log(datastream.unit);
   console.log(datastream.processingLevel);
@@ -559,17 +650,28 @@ if (res.ok) {
 
 ### Example: Get observations
 
+Without a `profile`, `getObservations` returns observation records. The row and column profiles return the same properties grouped by datastream: each group has `datastreamId` and either `fields` and `rows`, or `columns` with one array per property. Use `properties` to request only the properties you need.
+
 ```ts
+import { ObservationProfile } from "@hydroserver/client";
+
 const observations = await hs.datastreams.getObservations(
   "00000000-0000-0000-0000-000000000000",
   {
-    format: "row",
-    order_by: ["phenomenonTime"],
-    phenomenon_time_min: "2025-01-01T00:00:00Z",
-    phenomenon_time_max: "2025-12-31T23:59:59Z",
-    page_size: 1000,
+    profile: [ObservationProfile.Column],
+    properties: ["phenomenonTime", "result"],
+    sortby: ["phenomenonTime"],
+    datetime: "2025-01-01T00:00:00Z/2025-12-31T23:59:59Z",
+    limit: 1000,
   }
 );
+
+if (observations.ok) {
+  const [group] = observations.data;
+  if (group && "columns" in group) {
+    console.log(group.columns.phenomenonTime, group.columns.result);
+  }
+}
 ```
 
 ### Example: Upload observations
@@ -653,8 +755,7 @@ Data connections define the source, payload format, timestamp handling, placehol
 
 ```ts
 const dataConnections = await hs.dataConnections.listAllItems({
-  workspace_id: ["00000000-0000-0000-0000-000000000000"],
-  expand_related: true,
+  workspaceId: ["00000000-0000-0000-0000-000000000000"],
 });
 ```
 
@@ -703,8 +804,7 @@ ETL tasks bind a data connection to source-to-datastream mappings.
 
 ```ts
 const tasks = await hs.tasks.listAllItems({
-  workspace_id: ["00000000-0000-0000-0000-000000000000"],
-  expand_related: true,
+  workspaceId: ["00000000-0000-0000-0000-000000000000"],
 });
 ```
 
@@ -732,6 +832,23 @@ created.name = "Updated Task";
 await hs.tasks.update(created);
 ```
 
+### Example: Manage a task's mappings
+
+A task's `mappings` are also available as a top-level resource through `hs.etlMappings`, which is useful when you need to find which tasks load a datastream or change one mapping without updating the whole task.
+
+```ts
+const mappings = await hs.etlMappings.listAllItems({
+  targetDatastreamId: ["33333333-3333-3333-3333-333333333333"],
+  include: ["targetDatastream"],
+});
+
+await hs.etlMappings.create({
+  etlTaskId: "00000000-0000-0000-0000-000000000000",
+  sourceIdentifier: "humidity",
+  targetDatastreamId: "44444444-4444-4444-4444-444444444444",
+});
+```
+
 ### Example: Trigger a task run
 
 ```ts
@@ -754,8 +871,8 @@ HydroServer stores task run history for ETL execution.
 const taskId = "00000000-0000-0000-0000-000000000000";
 
 const runs = await hs.tasks.getTaskRuns(taskId, {
-  page_size: 50,
-  order_by: ["-startedAt"],
+  limit: 50,
+  sortby: ["-startedAt"],
 });
 
 const run = await hs.tasks.getTaskRun(
@@ -768,7 +885,7 @@ The same `runTask`, `getTaskRuns`, and `getTaskRun` helpers are available on `mo
 
 ## Monitoring Tasks
 
-Monitoring tasks run data-quality rules for the datastreams at a Thing and can notify a list of recipients.
+Monitoring tasks run data-quality rules for the datastreams at a MonitoringSite and can notify a list of recipients.
 
 ```ts
 import { MonitoringTask } from "@hydroserver/client";
@@ -776,7 +893,7 @@ import { MonitoringTask } from "@hydroserver/client";
 const task = await hs.monitoringTasks.createItem(
   new MonitoringTask({
     name: "Daily range checks",
-    thingId: "00000000-0000-0000-0000-000000000000",
+    monitoringSiteId: "00000000-0000-0000-0000-000000000000",
     recipients: ["alerts@example.com"],
     schedule: null,
   })
@@ -784,7 +901,9 @@ const task = await hs.monitoringTasks.createItem(
 
 if (!task) throw new Error("Unable to create monitoring task");
 
-await hs.monitoringTasks.createRule(task.id, {
+await hs.monitoringRules.create({
+  id: "",
+  taskId: task.id,
   datastreamId: "11111111-1111-1111-1111-111111111111",
   ruleType: "range",
   minValue: -40,
@@ -794,7 +913,7 @@ await hs.monitoringTasks.createRule(task.id, {
 await hs.monitoringTasks.runTask(task.id);
 ```
 
-Use `listRules`, `getRule`, `createRule`, `updateRule`, and `deleteRule` to manage a monitoring task's rules.
+Monitoring rules are a top-level resource: use `hs.monitoringRules`' `list` (filtered with `{ taskId: task.id }`), `get`, `create`, `update`, and `delete` methods to manage a monitoring task's rules.
 
 ## Data Product Tasks and Rating Curves
 
@@ -806,22 +925,28 @@ import { DataProductTask } from "@hydroserver/client";
 const task = await hs.dataProductTasks.createItem(
   new DataProductTask({
     name: "Convert temperature",
-    thingId: "00000000-0000-0000-0000-000000000000",
+    monitoringSiteId: "00000000-0000-0000-0000-000000000000",
     schedule: null,
   })
 );
 
 if (!task) throw new Error("Unable to create data product task");
 
-await hs.dataProductTasks.createDerivationTransformation(task.id, {
-  inputDatastreamId: "11111111-1111-1111-1111-111111111111",
+await hs.dataProductTransformations.create({
+  taskId: task.id,
+  transformationType: "derivation",
   outputDatastreamId: "22222222-2222-2222-2222-222222222222",
-  variableName: "temperature",
+  inputDatastreams: [
+    {
+      datastreamId: "11111111-1111-1111-1111-111111111111",
+      variableName: "temperature",
+    },
+  ],
   formula: "temperature * 9 / 5 + 32",
 });
 ```
 
-Each transformation type has matching `create`, `list`, `update`, and `delete` helpers. Rating curves themselves are managed through `hs.ratingCurves`:
+Transformations are a top-level resource: use `hs.dataProductTransformations`' `list` (filtered with `{ taskId: task.id }`), `get`, `create`, `update`, and `delete` methods for every transformation type. Set `transformationType` to `derivation`, `rating_curve`, or `aggregation` and supply that type's fields. Rating curves themselves are managed through `hs.ratingCurves`:
 
 ```ts
 import { RatingCurve } from "@hydroserver/client";
@@ -829,7 +954,7 @@ import { RatingCurve } from "@hydroserver/client";
 const curve = await hs.ratingCurves.createItem(
   new RatingCurve({
     name: "Stage to discharge",
-    thingId: "00000000-0000-0000-0000-000000000000",
+    monitoringSiteId: "00000000-0000-0000-0000-000000000000",
     fittingMethod: "power_law",
     points: [
       [0.1, 0.3],
@@ -840,35 +965,7 @@ const curve = await hs.ratingCurves.createItem(
 );
 ```
 
-Use `listItemsForThing(thingId)` to retrieve all curves for one Thing.
-
-## Typed Thing File Attachments
-
-`hs.things` accepts raw `FormData` for general attachment operations. `hs.thingFileAttachments` provides typed upload, metadata update, replacement, deletion, and rating-curve preview helpers.
-
-```ts
-const thingId = "00000000-0000-0000-0000-000000000000";
-const file = fileInput.files![0];
-const replacementFile = replacementFileInput.files![0];
-
-const uploadRes = await hs.thingFileAttachments.upload(thingId, file, {
-  type: "rating_curve",
-  name: "rating-curve.csv",
-  description: "Approved field rating curve",
-});
-
-if (uploadRes.ok) {
-  await hs.thingFileAttachments.replaceFile(
-    thingId,
-    uploadRes.data.id,
-    replacementFile
-  );
-}
-
-const attachments = await hs.thingFileAttachments.listItems(thingId, {
-  type: "rating_curve",
-});
-```
+Use `listItemsForMonitoringSite(monitoringSiteId)` to retrieve all curves for one MonitoringSite.
 
 ## Quality Control Histories
 
@@ -883,15 +980,17 @@ const historyRes = await hs.qualityControlHistories.create({
 });
 
 if (!historyRes.ok) throw new Error(historyRes.message);
-const history = historyRes.data;
 
-const histories = await hs.qualityControlHistories.listAllItems({
-  managed_datastream_id: [history.managedDatastream.id],
-  expand_related: true,
+const history = await hs.qualityControlHistories.getItem(historyRes.data.id);
+if (!history) throw new Error("Quality control history not found");
+
+const historiesRes = await hs.qualityControlHistories.list({
+  managedDatastreamId: [history.managedDatastreamId],
+  include: ["sourceDatastream", "managedDatastream"],
 });
 ```
 
-Without `expand_related`, history responses contain `sourceDatastreamId` and `managedDatastreamId`. With it, they contain expanded `sourceDatastream` and `managedDatastream` objects.
+History responses contain `sourceDatastreamId` and `managedDatastreamId`. With `include`, the datastreams themselves come back in the response's `included` section, as `sourceDatastreams` and `managedDatastreams`.
 
 ### Example: Correct observations in a range
 
@@ -911,12 +1010,10 @@ if (!sessionRes.ok) throw new Error(sessionRes.message);
 const session = sessionRes.data;
 
 const sourceRes = await hs.datastreams.getObservations(
-  history.sourceDatastream.id,
+  history.sourceDatastreamId,
   {
-    format: "record",
-    order_by: ["phenomenonTime"],
-    phenomenon_time_min: rangeStart,
-    phenomenon_time_max: rangeEnd,
+    sortby: ["phenomenonTime"],
+    datetime: `${rangeStart}/${rangeEnd}`,
   }
 );
 
@@ -925,10 +1022,16 @@ if (!Array.isArray(sourceRes.data) || sourceRes.data.length === 0) {
   throw new Error("No source observations found in the QC range");
 }
 
-const correctedRows = sourceRes.data.map((observation) => [
+const sourceObservations = sourceRes.data as Array<{
+  phenomenonTime: string;
+  result: number;
+  resultQualifiers: string[];
+}>;
+
+const correctedRows = sourceObservations.map((observation) => [
   observation.phenomenonTime,
   observation.result * 0.1,
-  observation.resultQualifierCodes,
+  observation.resultQualifiers,
 ]);
 
 const operationsRes = await hs.qualityControlOperations.create(
@@ -953,9 +1056,9 @@ const operationsRes = await hs.qualityControlOperations.create(
 if (!operationsRes.ok) throw new Error(operationsRes.message);
 
 const writeRes = await hs.datastreams.createObservations(
-  history.managedDatastream.id,
+  history.managedDatastreamId,
   {
-    fields: ["phenomenonTime", "result", "resultQualifierCodes"],
+    fields: ["phenomenonTime", "result", "resultQualifiers"],
     data: correctedRows,
   },
   { mode: "replace" }
@@ -978,13 +1081,13 @@ Operation `arguments` are specific to the selected `operationType`. Timestamps i
 ```ts
 const sessions = await hs.qualityControlSessions.listAllItems(history.id, {
   status: "committed",
-  range_start: "2026-01-01T00:00:00Z",
-  range_end: "2026-02-01T00:00:00Z",
-  include_ancestors: true,
+  rangeStart: "2026-01-01T00:00:00Z",
+  rangeEnd: "2026-02-01T00:00:00Z",
+  includeAncestors: true,
 });
 
 const ancestors = await hs.qualityControlSessions.listAllItems(history.id, {
-  ancestor_of: session.id,
+  ancestorOf: session.id,
 });
 ```
 

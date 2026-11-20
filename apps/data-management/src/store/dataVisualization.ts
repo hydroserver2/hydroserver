@@ -1,9 +1,11 @@
 import {
   Datastream,
+  Method,
   ObservedProperty,
   ProcessingLevel,
-  Thing,
+  MonitoringSite,
   GraphSeries,
+  Unit,
   Workspace,
 } from '@hydroserver/client'
 import {
@@ -19,21 +21,42 @@ import { useObservationStore } from '@/store/observations'
 export const useDataVisStore = defineStore('dataVisualization', () => {
   const { fetchGraphSeries, fetchGraphSeriesData } = useObservationStore()
 
-  const things = ref<Thing[]>([])
-  const datastreams = ref<Datastream[]>([])
+  // Filter options. Datastreams themselves are paged from the server.
+  const monitoringSites = ref<MonitoringSite[]>([])
   const observedProperties = ref<ObservedProperty[]>([])
   const processingLevels = ref<ProcessingLevel[]>([])
+  const units = ref<Unit[]>([])
+  const methods = ref<Method[]>([])
+  // Includes public workspaces independently of management memberships.
+  const workspaces = ref<Workspace[]>([])
 
-  const selectedThings = ref<Thing[]>([])
+  const selectedMonitoringSites = ref<MonitoringSite[]>([])
   const plottedDatastreams = ref<Datastream[]>([])
   const selectedWorkspaces = ref<Workspace[]>([])
   const selectedObservedPropertyNames = ref<string[]>([])
+  const selectedUnitNames = ref<string[]>([])
+  const selectedMethodNames = ref<string[]>([])
   const selectedProcessingLevelNames = ref<string[]>([])
 
   const showSummaryStatistics = ref(false)
+  const tableSearch = ref('')
   const summaryStatisticsArray = ref<SummaryStatistics[]>([])
 
   const graphSeriesArray = ref<GraphSeries[]>([])
+  const plotLabelItems = computed(() =>
+    plottedDatastreams.value.map((ds) => {
+      const siteName =
+        monitoringSiteById.value.get(ds.monitoringSiteId)?.name ||
+        ds.monitoringSiteId
+      return {
+        id: ds.id,
+        name: ds.name,
+        siteName,
+        label: `${ds.name}\n@ ${siteName}`,
+      }
+    })
+  )
+
   const plotlyOptions = ref<PlotlyOptions | undefined>()
   const loadingStates = ref(new Map<string, boolean>()) // State to track loading status of individual datasets
   const prevIds = ref<string[]>([])
@@ -45,32 +68,18 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   const tableHeight = ref(30)
   const showPlot = ref(true)
   const showTable = ref(true)
+  const datastreamDetailLevel = ref(1)
   const tableHeaders = reactive([
     { title: 'Plot', key: 'plot', visible: true },
     {
-      title: 'Site Code',
-      key: 'siteCodeName',
-      visible: true,
-    },
-    {
-      title: 'Observed Property',
-      key: 'observedPropertyName',
-      visible: true,
-    },
-    {
-      title: 'Processing Level',
-      key: 'qualityControlLevelDefinition',
-      visible: true,
-    },
-    {
-      title: 'Number Observations',
+      title: 'Number of observations',
       key: 'valueCount',
-      visible: true,
+      visible: false,
     },
     {
-      title: 'Date Last Updated',
+      title: 'Date last updated',
       key: 'phenomenonEndTime',
-      visible: true,
+      visible: false,
     },
   ])
 
@@ -82,47 +91,44 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   const dataZoomEnd = ref(100)
   const xAxisRange = ref<{ start: number; end: number } | null>(null)
   const yAxisRanges = ref<Record<string, [number, number]>>({})
-  const thingById = computed(
-    () => new Map(things.value.map((thing) => [thing.id, thing]))
-  )
-  const observedPropertyById = computed(
+  const monitoringSiteById = computed(
     () =>
       new Map(
-        observedProperties.value.map((observedProperty) => [
-          observedProperty.id,
-          observedProperty,
+        monitoringSites.value.map((monitoringSite) => [
+          monitoringSite.id,
+          monitoringSite,
         ])
       )
   )
-  const processingLevelById = computed(
-    () =>
-      new Map(
-        processingLevels.value.map((processingLevel) => [
-          processingLevel.id,
-          processingLevel,
-        ])
-      )
-  )
-  const selectedThingIds = computed(
-    () => new Set(selectedThings.value.map((thing) => thing.id))
-  )
-  const selectedWorkspaceIds = computed(
-    () => new Set(selectedWorkspaces.value.map((workspace) => workspace.id))
-  )
-  const selectedObservedPropertyNameSet = computed(
-    () => new Set(selectedObservedPropertyNames.value)
-  )
-  const selectedProcessingLevelNameSet = computed(
-    () => new Set(selectedProcessingLevelNames.value)
-  )
+  const idsByName = (items: { id: string; name: string }[], names: string[]) =>
+    items.filter((item) => names.includes(item.name)).map((item) => item.id)
+
+  // Server-side filters for the datastream table, from the selected options.
+  const datastreamFilters = computed(() => ({
+    workspaceId: selectedWorkspaces.value.map((item) => item.id),
+    monitoringSiteId: selectedMonitoringSites.value.map((item) => item.id),
+    observedPropertyId: idsByName(
+      observedProperties.value,
+      selectedObservedPropertyNames.value
+    ),
+    unitId: idsByName(units.value, selectedUnitNames.value),
+    methodId: idsByName(methods.value, selectedMethodNames.value),
+    processingLevelId: idsByName(
+      processingLevels.value,
+      selectedProcessingLevelNames.value
+    ),
+  }))
 
   function resetState() {
-    selectedThings.value = []
+    selectedMonitoringSites.value = []
     plottedDatastreams.value = []
     selectedWorkspaces.value = []
     selectedObservedPropertyNames.value = []
+    selectedUnitNames.value = []
+    selectedMethodNames.value = []
     selectedProcessingLevelNames.value = []
     showSummaryStatistics.value = false
+    tableSearch.value = ''
     summaryStatisticsArray.value = []
     endDate.value = new Date()
     beginDate.value = new Date(new Date().getTime() - oneWeek)
@@ -131,63 +137,13 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     dataZoomEnd.value = 100
     showPlot.value = true
     showTable.value = true
+    datastreamDetailLevel.value = 1
     tableHeaders.forEach((header) => {
-      header.visible = true
+      header.visible = header.key === 'plot'
     })
     xAxisRange.value = null
     yAxisRanges.value = {}
   }
-
-  function matchesSelectedObservedProperty(datastream: Datastream) {
-    if (selectedObservedPropertyNameSet.value.size === 0) return true
-
-    const OPName = observedPropertyById.value.get(
-      datastream.observedPropertyId
-    )?.name
-    return (
-      OPName !== undefined && selectedObservedPropertyNameSet.value.has(OPName)
-    )
-  }
-
-  function matchesSelectedProcessingLevel(datastream: Datastream) {
-    if (selectedProcessingLevelNameSet.value.size === 0) return true
-
-    const PLName = processingLevelById.value.get(
-      datastream.processingLevelId
-    )?.definition
-    return (
-      PLName !== undefined && selectedProcessingLevelNameSet.value.has(PLName)
-    )
-  }
-
-  function matchesSelectedThing(datastream: Datastream) {
-    return (
-      selectedThingIds.value.size === 0 ||
-      selectedThingIds.value.has(datastream.thingId)
-    )
-  }
-
-  function matchesSelectedWorkspace(datastream: Datastream) {
-    if (selectedWorkspaceIds.value.size === 0) return true
-
-    const thingWorkspaceId = thingById.value.get(
-      datastream.thingId
-    )?.workspaceId
-
-    if (!thingWorkspaceId) return false
-
-    return selectedWorkspaceIds.value.has(thingWorkspaceId)
-  }
-
-  const filteredDatastreams = computed(() => {
-    return datastreams.value.filter(
-      (datastream) =>
-        matchesSelectedThing(datastream) &&
-        matchesSelectedWorkspace(datastream) &&
-        matchesSelectedObservedProperty(datastream) &&
-        matchesSelectedProcessingLevel(datastream)
-    )
-  })
 
   const getOldestBeginTime = () => {
     const earliest = plottedDatastreams.value.reduce((oldest, ds) => {
@@ -431,17 +387,6 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     updateVisualization()
   }
 
-  // If currently selected datastreams are no longer in filteredDatastreams, deselect them
-  watch(
-    () => filteredDatastreams.value,
-    (newDatastreams) => {
-      plottedDatastreams.value = plottedDatastreams.value.filter((ds) =>
-        newDatastreams.some((datastream) => datastream.id === ds.id)
-      )
-    },
-    { deep: true }
-  )
-
   const clearState = () => {
     graphSeriesArray.value = []
     prevIds.value = []
@@ -508,18 +453,20 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
   )
 
   return {
-    things,
-    datastreams,
+    monitoringSites,
     processingLevels,
     observedProperties,
-    thingById,
-    observedPropertyById,
-    processingLevelById,
-    selectedThings,
+    units,
+    methods,
+    workspaces,
+    monitoringSiteById,
+    datastreamFilters,
+    selectedMonitoringSites,
     selectedWorkspaces,
     selectedObservedPropertyNames,
+    selectedUnitNames,
+    selectedMethodNames,
     selectedProcessingLevelNames,
-    filteredDatastreams,
     plottedDatastreams,
     beginDate,
     endDate,
@@ -529,21 +476,20 @@ export const useDataVisStore = defineStore('dataVisualization', () => {
     yAxisRanges,
     dateOptions,
     graphSeriesArray,
+    plotLabelItems,
     plotlyOptions,
     prevIds,
     loadingStates,
     selectedDateBtnId,
     showSummaryStatistics,
+    tableSearch,
     summaryStatisticsArray,
     cardHeight,
     tableHeight,
     showPlot,
     showTable,
+    datastreamDetailLevel,
     tableHeaders,
-    matchesSelectedObservedProperty,
-    matchesSelectedProcessingLevel,
-    matchesSelectedThing,
-    matchesSelectedWorkspace,
     setDateRange,
     onDateBtnClick,
     setAxisRanges,

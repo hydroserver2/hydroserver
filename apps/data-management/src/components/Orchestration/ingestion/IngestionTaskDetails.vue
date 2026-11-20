@@ -1,19 +1,25 @@
 <template>
   <div
     v-if="task"
-    class="flex flex-col flex-1 min-h-0 h-full bg-white overflow-hidden"
+    class="task-detail flex flex-col flex-1 min-h-0 h-full overflow-hidden"
   >
-    <header class="pt-[14px] border-b border-[#e8e8e8] bg-white shrink-0">
-      <button class="task-details-back" type="button" @click="close">
+    <header class="pt-[14px] border-b border-[#e8e8e8] shrink-0">
+      <button
+        class="task-details-back hs-text-sm font-weight-medium"
+        type="button"
+        @click="close"
+      >
         <v-icon :icon="mdiArrowLeft" size="16" />
         <span>{{ backLabel }}</span>
       </button>
 
       <div class="flex items-start gap-3 pb-3">
         <div class="flex items-center gap-[10px] flex-wrap min-w-0">
-          <h2 class="task-details-title">{{ task.name }}</h2>
+          <h2 class="task-details-title hs-text-md font-weight-regular">
+            {{ task.name }}
+          </h2>
           <TaskStatus :status="statusName" :paused="!task.schedule?.enabled" />
-          <span v-if="scheduleText" class="schedule-pill">{{
+          <span v-if="scheduleText" class="schedule-pill hs-text-2xs">{{
             scheduleText
           }}</span>
         </div>
@@ -21,7 +27,7 @@
         <div class="ml-auto flex gap-2 shrink-0 flex-wrap">
           <button
             type="button"
-            class="header-btn header-btn--neutral"
+            class="header-btn header-btn--neutral hs-text-sm font-weight-semibold"
             :disabled="!!pauseDisabledReason"
             @click.stop="togglePaused"
           >
@@ -35,8 +41,8 @@
               !task.schedule
                 ? 'No schedule'
                 : task.schedule.enabled
-                ? 'Pause'
-                : 'Resume'
+                  ? 'Pause'
+                  : 'Resume'
             }}</span>
           </button>
 
@@ -45,8 +51,8 @@
               <button
                 v-bind="props"
                 type="button"
-                class="header-btn header-btn--neutral"
-                :disabled="!canEdit"
+                class="header-btn header-btn--neutral hs-text-sm font-weight-semibold"
+                :disabled="!canEdit || !mappingsLoaded"
               >
                 <v-icon :icon="mdiPencil" size="16" />
                 <span>Edit</span>
@@ -55,6 +61,7 @@
             <IngestionTaskForm
               :old-task="task"
               :data-connection="task.dataConnection"
+              :mappings="mappings"
               @close="closeEditTaskDialog"
               @updated="onTaskUpdated"
             />
@@ -65,8 +72,8 @@
               <button
                 v-bind="props"
                 type="button"
-                class="header-btn header-btn--danger"
-                :disabled="!canEdit"
+                class="header-btn header-btn--danger hs-text-sm font-weight-semibold"
+                :disabled="!canDelete"
               >
                 <v-icon :icon="mdiTrashCanOutline" size="16" />
                 <span>Delete</span>
@@ -79,39 +86,36 @@
             />
           </v-dialog>
 
-          <button
-            type="button"
-            class="header-btn header-btn--run"
-            :disabled="!!runNowDisabledReason"
-            @click="runNow"
-          >
-            <v-icon :icon="mdiPlay" size="16" />
-            <span>{{ runNowRequested ? 'Run requested' : 'Run now' }}</span>
-          </button>
+          <v-tooltip location="top" :disabled="!runNowDisabledReason">
+            <template #activator="{ props: tooltipProps }">
+              <span v-bind="tooltipProps" class="inline-flex">
+                <button
+                  type="button"
+                  class="header-btn header-btn--neutral hs-text-sm font-weight-semibold"
+                  :disabled="!!runNowDisabledReason"
+                  @click="runNow"
+                >
+                  <v-icon :icon="mdiPlay" size="16" />
+                  <span>{{ runNowRequested ? 'Run requested' : 'Run now' }}</span>
+                </button>
+              </span>
+            </template>
+            <span>{{ runNowDisabledReason }}</span>
+          </v-tooltip>
         </div>
       </div>
     </header>
 
-    <div class="flex">
-      <button
-        type="button"
-        class="task-details-tab"
-        :class="{ 'task-details-tab--active': tab === 'runs' }"
-        @click="tab = 'runs'"
-      >
-        Run history
-      </button>
-      <button
-        type="button"
-        class="task-details-tab"
-        :class="{ 'task-details-tab--active': tab === 'mappings' }"
-        @click="tab = 'mappings'"
-      >
-        Mappings
-      </button>
+    <div class="detail-tabbar">
+      <v-tabs v-model="tab" color="primary" density="comfortable" show-arrows>
+        <v-tab value="runs" :prepend-icon="mdiHistory">Run history</v-tab>
+        <v-tab value="mappings" :prepend-icon="mdiTransitConnectionVariant">
+          Mappings
+        </v-tab>
+      </v-tabs>
     </div>
 
-    <section class="task-details-body">
+    <section class="task-details-body hs-workbench-canvas">
       <div class="task-details-panel">
         <TaskRunHistory
           v-if="tab === 'runs'"
@@ -124,7 +128,7 @@
           @copy="copy"
         />
         <template v-else>
-          <Swimlanes v-if="task.mappings?.length" :task="task" />
+          <Swimlanes v-if="mappings.length" :mappings="mappings" />
           <p v-else class="empty">No mappings configured for this task.</p>
         </template>
       </div>
@@ -134,7 +138,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+import hs, { type EtlMapping } from '@hydroserver/client'
 import TaskStatus from '@/components/Orchestration/shared/TaskStatus.vue'
 import IngestionTaskForm from '@/components/Orchestration/ingestion/IngestionTaskForm.vue'
 import DeleteTaskCard from '@/components/Orchestration/shared/DeleteTaskCard.vue'
@@ -144,9 +149,11 @@ import TaskRunHistory from '@/components/Orchestration/shared/TaskRunHistory.vue
 import { useSimpleTaskDetails } from '@/composables/orchestration/useSimpleTaskDetails'
 import {
   mdiArrowLeft,
+  mdiHistory,
   mdiPause,
   mdiPencil,
   mdiPlay,
+  mdiTransitConnectionVariant,
   mdiTrashCanOutline,
 } from '@mdi/js'
 
@@ -165,6 +172,7 @@ const {
   loadingRuns,
   runRows,
   canEdit,
+  canDelete,
   backLabel,
   statusName,
   scheduleText,
@@ -184,9 +192,30 @@ function closeEditTaskDialog() {
   editTaskDialogOpen.value = false
 }
 
+const mappings = ref<EtlMapping[]>([])
+const mappingsLoaded = ref(false)
+
+async function loadMappings() {
+  mappingsLoaded.value = false
+  const taskId = task.value?.id
+  if (!taskId) {
+    mappings.value = []
+    return
+  }
+  const loaded = await hs.etlMappings.listAllItems({
+    etlTaskId: taskId,
+  } as any)
+  if (task.value?.id !== taskId) return
+  mappings.value = loaded
+  mappingsLoaded.value = true
+}
+
+watch(() => task.value?.id, () => void loadMappings(), { immediate: true })
+
 function onTaskUpdated() {
   closeEditTaskDialog()
   onUpdated()
+  void loadMappings()
 }
 </script>
 
@@ -194,6 +223,10 @@ function onTaskUpdated() {
 header {
   padding-left: 22px;
   padding-right: 22px;
+  background: var(--hs-surface);
+}
+.task-detail {
+  background: var(--hs-surface);
 }
 .task-details-back {
   display: inline-flex;
@@ -203,8 +236,6 @@ header {
   border: none;
   cursor: pointer;
   font-family: inherit;
-  font-size: 12px;
-  font-weight: 500;
   color: #1565c0;
   padding: 3px 6px;
   border-radius: 6px;
@@ -214,15 +245,12 @@ header {
   background: rgba(0, 0, 0, 0.05);
 }
 h2.task-details-title {
-  font-size: 18px;
-  font-weight: 400;
   color: #1c1b1f;
   margin: 0;
   overflow-wrap: anywhere;
 }
 .schedule-pill {
-  font-size: 11px;
-  background: #f5f7fa;
+  background: var(--hs-surface-muted);
   border-radius: 4px;
   padding: 2px 7px;
   color: #49454f;
@@ -234,16 +262,17 @@ h2.task-details-title {
   gap: 8px;
   min-height: 34px;
   padding: 0 14px;
-  background: #ffffff;
-  border: 1px solid #cac4d0;
+  background: var(--hs-surface);
+  border: 1px solid var(--hs-input-border);
   border-radius: 8px;
-  color: #1c1b1f;
+  color: var(--hs-text-primary);
   cursor: pointer;
   font-family: inherit;
-  font-size: 13px;
-  font-weight: 600;
   line-height: 1.1;
-  transition: background-color 0.12s, border-color 0.12s, color 0.12s;
+  transition:
+    background-color 0.12s,
+    border-color 0.12s,
+    color 0.12s;
   white-space: nowrap;
 }
 .header-btn :deep(.v-icon) {
@@ -260,13 +289,6 @@ h2.task-details-title {
   border-color: #cac4d0;
   color: #1c1b1f;
 }
-.header-btn--run {
-  border-color: #2e7d32;
-  color: #2e7d32;
-}
-.header-btn--run:hover:not(:disabled) {
-  background: rgba(46, 125, 50, 0.08);
-}
 .header-btn--danger {
   border-color: #b3261e;
   color: #b3261e;
@@ -275,31 +297,16 @@ h2.task-details-title {
   background: rgba(179, 38, 30, 0.08);
   border-color: #b3261e;
 }
-.task-details-tab {
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 500;
-  color: #49454f;
-  padding: 8px 14px;
-  margin-bottom: -1px;
-  transition: color 0.12s, border-color 0.12s;
-}
-.task-details-tab:hover {
-  color: #1c1b1f;
-}
-.task-details-tab--active {
-  color: #1565c0;
-  border-bottom-color: #1565c0;
+.detail-tabbar {
+  padding: 0 var(--hs-space-24);
+  border-bottom: 1px solid var(--hs-border);
+  background: var(--hs-surface-subtle);
+  flex-shrink: 0;
 }
 .task-details-body {
   flex: 1;
   overflow-y: auto;
   padding: 16px 22px;
-  background: #f5f7fa;
   min-height: 0;
 }
 .task-details-panel {
@@ -309,12 +316,18 @@ h2.task-details-title {
 }
 .task-details-panel :deep(.etl-source-display),
 .task-details-panel :deep(.etl-target-display) {
-  background: #ffffff;
+  background: var(--hs-surface);
 }
 .empty,
 .loading {
   padding: 40px 20px;
   text-align: center;
   color: #5f5a67;
+}
+
+@media (max-width: 700px) {
+  .detail-tabbar {
+    padding: 0 var(--hs-space-8);
+  }
 }
 </style>

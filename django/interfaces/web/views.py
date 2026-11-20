@@ -1,8 +1,8 @@
 from allauth.socialaccount.models import SocialApp
 from django.templatetags.static import static
 from django.shortcuts import render
-from django.views.decorators.cache import cache_page
 from django.conf import settings
+from core.iam.templatetags.provider_icons import provider_icon
 from core.web.models import InstanceConfiguration, MapLayer, ContactInformation
 
 
@@ -11,16 +11,21 @@ def get_app_settings_context():
     contact_information = ContactInformation.objects.all()
     map_layers = MapLayer.objects.all()
     social_apps = SocialApp.objects.all()
+    static_prefix = settings.PROXY_BASE_URL if settings.STATIC_STORAGE_IS_LOCAL and not settings.STATIC_HOST else ""
 
     return {
         "authenticationConfiguration": {
             "hydroserverSignupEnabled": settings.ACCOUNT_SIGNUP_ENABLED,
+            "csrfCookieName": settings.CSRF_COOKIE_NAME,
             "providers": [
                 {
                     "id": social_app.provider_id,
                     "name": social_app.name,
-                    "iconLink": f"{settings.PROXY_BASE_URL if settings.DEPLOYMENT_BACKEND == 'local' else ''}"
-                    f"{static(f'providers/{social_app.provider_id}.png')}",
+                    "iconLink": (
+                        (f"{static_prefix}{icon}" if (icon := provider_icon(social_app)) else None)
+                        if social_app.provider == "openid_connect"
+                        else f"{static_prefix}{static(f'providers/{social_app.provider_id}.png')}"
+                    ),
                     "signupEnabled": (
                         True
                         if social_app.settings.get("allowSignUp") is not False
@@ -81,6 +86,7 @@ def get_app_settings_context():
                     "source": map_layer.source,
                     "attribution": map_layer.attribution,
                     "priority": map_layer.priority,
+                    "visibleByDefault": map_layer.visible_by_default,
                 }
                 for map_layer in map_layers
                 if map_layer.type == "overlay"
@@ -92,6 +98,10 @@ def get_app_settings_context():
             "enableGoogleAnalytics": instance_configuration.analytics_configuration.enable_google_analytics,
             "googleAnalyticsMeasurementId": instance_configuration.analytics_configuration.google_analytics_measurement_id,
         },
+        "extensionsConfiguration": {
+            "fileUploadEnabled": settings.MEDIA_STORAGE_ENABLED,
+            "orchestrationEnabled": settings.CELERY_ENABLED,
+        },
         "legalInformation": {
             "termsOfUseLink": instance_configuration.terms_of_use_link,
             "privacyPolicyLink": instance_configuration.privacy_policy_link,
@@ -100,18 +110,32 @@ def get_app_settings_context():
     }
 
 
-@cache_page(60 * 10)
+def get_current_user_context(request):
+    user = request.user
+    if not user.is_authenticated:
+        return None
+
+    return user.to_profile_claims()
+
+
 def main_spa_view(request):
     context = get_app_settings_context()
+    current_user = get_current_user_context(request)
 
-    return render(request, "index.html", {"settings": context})
+    return render(
+        request, "index.html", {"settings": context, "current_user": current_user}
+    )
 
 
-@cache_page(60 * 10)
 def qc_spa_view(request):
     context = get_app_settings_context()
+    current_user = get_current_user_context(request)
 
-    return render(request, "qc/index.html", {"settings": context})
+    return render(
+        request,
+        "qc/index.html",
+        {"settings": context, "current_user": current_user},
+    )
 
 
 index = main_spa_view

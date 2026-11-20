@@ -1,16 +1,8 @@
 import { RouteRecordRaw } from 'vue-router'
 import { enableHomePage } from '@/config/homeConfig'
-import { useWorkspaceStore } from '@/store/workspaces'
+import hs from '@hydroserver/client'
 
-const disableAccountCreation =
-  import.meta.env.VITE_APP_DISABLE_ACCOUNT_CREATION || 'false'
-
-const validOrchestrationViews = new Set([
-  'ingestion',
-  'aggregation',
-  'quality',
-  'workspaces',
-])
+const validOrchestrationViews = new Set(['ingestion', 'aggregation', 'quality'])
 
 const orchestrationComponent = () => import('@/pages/Orchestration.vue')
 const ingestionTaskDetailsComponent = () =>
@@ -37,12 +29,28 @@ export const routes: RouteRecordRaw[] = [
         redirect: '/browse',
       },
   {
+    path: '/workspaces',
+    name: 'Workspaces',
+    component: () => import('@/pages/Workspaces.vue'),
+    meta: {
+      requiresAuth: true,
+      hideFooter: true,
+      title: 'Manage workspaces',
+      metaTags: [
+        {
+          name: 'keywords',
+          content: 'HydroServer, Workspaces, Access Control, Metadata',
+        },
+      ],
+    },
+  },
+  {
     path: '/browse',
     name: 'Browse',
     component: () => import('@/pages/Browse.vue'),
     meta: {
       hideFooter: true,
-      title: 'Browse Monitoring Sites',
+      title: 'Browse monitoring sites',
       metaTags: [
         {
           name: 'keywords',
@@ -53,18 +61,11 @@ export const routes: RouteRecordRaw[] = [
   },
   {
     path: '/sites',
-    name: 'Sites',
-    component: () => import('@/pages/Sites.vue'),
-    meta: {
-      requiresAuth: true,
-      title: 'Your Sites',
-      metaTags: [
-        {
-          name: 'keywords',
-          content: 'HydroServer, Your Sites',
-        },
-      ],
-    },
+    redirect: (to) => ({
+      name: 'Browse',
+      query: to.query,
+      hash: to.hash,
+    }),
   },
   {
     path: '/sites/:id',
@@ -97,10 +98,7 @@ export const routes: RouteRecordRaw[] = [
   {
     path: '/orchestration',
     name: 'Orchestration',
-    redirect: () =>
-      useWorkspaceStore().selectedWorkspace
-        ? '/orchestration/ingestion'
-        : '/orchestration/workspaces',
+    redirect: '/orchestration/ingestion',
   },
   {
     path: '/orchestration/:view',
@@ -164,93 +162,54 @@ export const routes: RouteRecordRaw[] = [
     ],
   },
   {
-    path: '/hydroloader/download',
-    name: 'HydroLoader',
-    component: () => import('@/pages/HydroLoaderDownload.vue'),
-  },
-  {
-    // AllAuth emails will link users to this page if a password reset was requested but the email provided does not
-    // have an account associated with it yet.
-    path: '/sign-up',
-    name: 'SignUp',
-    component: () => {
-      if (disableAccountCreation === 'true') {
-        return import('@/pages/PageNotFound.vue')
-      } else {
-        return import('@/pages/account/Signup.vue')
-      }
-    },
+    path: '/streaming-data-loader/download',
+    name: 'StreamingDataLoaderDownload',
+    component: () => import('@/pages/StreamingDataLoaderDownload.vue'),
     meta: {
-      requiresLoggedOut: true,
-      title: 'Sign Up',
+      title: 'Download Streaming Data Loader',
       metaTags: [
         {
           name: 'keywords',
-          content: 'Sign Up, Account, User',
+          content: 'HydroServer, Streaming Data Loader, SDL, Download',
         },
       ],
     },
   },
   {
-    path: '/login',
-    name: 'Login',
-    component: () => import('@/pages/account/Login.vue'),
-    meta: {
-      title: 'Login',
-      requiresLoggedOut: true,
-    },
-  },
-  {
-    // AllAuth password reset emails will link users to this page. This page will need to request the user for a new
-    // password and then POST the password and reset key to the resetPassword endpoint complete the password reset
-    // process. Full docs here:
-    // https://docs.allauth.org/en/dev/headless/openapi-specification/#tag/Authentication:-Password-Reset/paths/~1_allauth~1%7Bclient%7D~1v1~1auth~1password~1reset/post
-    path: '/reset-password/:passwordResetKey?',
-    name: 'ResetPassword',
-    component: () => import('@/pages/account/ResetPassword.vue'),
-    meta: {
-      title: 'Reset Password',
-    },
+    // Renamed from /hydroloader/download. Kept as a redirect since this
+    // page has already shipped to production and may be bookmarked or
+    // linked from elsewhere.
+    path: '/hydroloader/download',
+    redirect: '/streaming-data-loader/download',
   },
   {
     path: '/profile',
     name: 'Profile',
-    component: () => import('@/pages/account/Profile.vue'),
+    component: () => import('@/pages/Redirecting.vue'),
+    beforeEnter: (_to, from) => {
+      window.location.assign(hs.session.getAccountProfileUrl(from.fullPath))
+      return false
+    },
     meta: { requiresAuth: true, title: 'Profile' },
   },
   {
-    path: '/complete-profile',
-    name: 'CompleteProfile',
-    component: () => import('@/pages/account/CompleteProfile.vue'),
-    meta: { title: 'Complete Profile' },
-  },
-  {
-    // AllAuth verification emails will link users to this page. This page will need to POST a key to the verifyEmail
-    // endpoint to complete the verification process. Full docs here:
-    // https://docs.allauth.org/en/dev/headless/openapi-specification/#tag/Authentication:-Account/paths/~1_allauth~1%7Bclient%7D~1v1~1auth~1email~1verify/post
-    path: '/verify-email',
-    name: 'VerifyEmail',
-    component: () => import('@/pages/account/VerifyEmail.vue'),
-    meta: { title: 'Verify Email' },
-  },
-  {
+    // The Manage Metadata page now lives in the Workspaces page as a tab.
     path: '/metadata',
     name: 'Metadata',
-    component: () => import('@/pages/Metadata.vue'),
-    meta: { requiresAuth: true },
+    redirect: { path: '/workspaces', query: { section: 'metadata' } },
   },
   {
     path: '/access-denied',
     name: 'AccessDenied',
     component: () => import('@/pages/AccessDenied.vue'),
-    meta: { requiresAuth: true, title: 'Access Denied' },
+    meta: { requiresAuth: true, title: 'Access denied' },
   },
   {
-    path: '/visualize-data/:thingId?',
+    path: '/visualize-data/:monitoringSiteId?',
     name: 'VisualizeData',
     component: () => import('@/pages/VisualizeData.vue'),
     meta: {
-      title: 'VisualizeData',
+      title: 'Visualize data',
       hasSidebar: true,
       hideFooter: true,
       metaTags: [
@@ -265,6 +224,6 @@ export const routes: RouteRecordRaw[] = [
     path: '/:catchAll(.*)*',
     name: 'PageNotFound',
     component: () => import('@/pages/PageNotFound.vue'),
-    meta: { title: 'Page Not Found' },
+    meta: { title: 'Page not found' },
   },
 ]

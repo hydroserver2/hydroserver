@@ -1,0 +1,273 @@
+import uuid
+
+from decimal import Decimal
+from country_list import countries_for_language
+from typing import Literal, Optional, Annotated
+from ninja import Field, Query, Schema
+from pydantic import BeforeValidator, WithJsonSchema, field_validator
+from pydantic.alias_generators import to_camel
+
+from core.sta.models import MonitoringSiteType
+from interfaces.api.schemas import (
+    BaseGetResponse,
+    BasePatchBody,
+    BasePostBody,
+    BaseQueryParameters,
+    CollectionQueryParameters,
+    ExtentQueryParameters,
+    BoundingBoxQuery,
+    WorkspaceResponse,
+    split_comma_separated,
+    comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
+    QueryBool,
+)
+from interfaces.api.schemas.sta.linked_resource import LinkedResourceGetResponse
+from interfaces.api.schemas.sta.tags import reject_empty_tag_keys_and_values
+from interfaces.api.schemas.sta.vocabulary import VocabularyResponse
+from interfaces.api.schemas.base import ItemId, NewItemId
+
+
+valid_country_codes = [code for code, _ in countries_for_language("en")]
+
+
+class MonitoringSiteLocationFields(Schema):
+    latitude: float = Field(..., ge=-90, le=90)
+    longitude: float = Field(..., ge=-180, le=180)
+
+
+class MonitoringSiteAttributeFields(Schema):
+    name: str = Field(..., max_length=200)
+    description: str
+    code: str = Field(..., max_length=200)
+    type: str = Field(..., max_length=200)
+    elevation_m: Optional[float] = Field(None, ge=-99999, le=99999)
+    elevation_datum: Optional[str] = Field(None, max_length=255)
+    admin_area_1: Optional[str] = Field(None, max_length=200)
+    admin_area_2: Optional[str] = Field(None, max_length=200)
+    country: Optional[str] = Field(None, max_length=2)
+    data_disclaimer: Optional[str] = None
+    is_private: bool
+
+    @field_validator("country", mode="after")
+    def check_country_code(cls, value):
+        if value and value.upper() not in valid_country_codes:
+            raise ValueError(
+                f"Invalid country code: {value}. Must be an ISO 3166-1 alpha-2 country code."
+            )
+        return value
+
+
+class MonitoringSiteFields(MonitoringSiteAttributeFields, MonitoringSiteLocationFields):
+    pass
+
+
+MONITORING_SITE_INCLUDE_RELATIONS = {
+    "workspace": {
+        "path": "workspace",
+        "bucket": "workspaces",
+        "response_schema": WorkspaceResponse,
+    },
+    "type": {
+        "bucket": "monitoringSiteTypes",
+        "response_schema": VocabularyResponse,
+        "vocabulary_model": MonitoringSiteType,
+        "value_field": "type",
+    },
+}
+MonitoringSiteIncludeRelation = Literal[*MONITORING_SITE_INCLUDE_RELATIONS.keys()]
+
+_sortby_fields = (
+    "name",
+    "code",
+    "type",
+    "isPrivate",
+    "latitude",
+    "longitude",
+    "elevationM",
+    "elevationDatum",
+    "adminArea1",
+    "adminArea2",
+    "country",
+)
+MonitoringSiteSortByFields = Literal[
+    *_sortby_fields, *[f"-{field}" for field in _sortby_fields]
+]
+
+_property_fields = (
+    "id",
+    "workspaceId",
+    *(
+        field.alias or to_camel(name)
+        for name, field in MonitoringSiteFields.model_fields.items()
+    ),
+    "tags",
+    "linkedResources",
+)
+MonitoringSitePropertyName = Literal[*_property_fields]
+
+
+class MonitoringSiteFilterFields(Schema):
+    properties: Annotated[
+        Optional[list[MonitoringSitePropertyName]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(MonitoringSitePropertyName)),
+    ] = Query(
+        None,
+        description="Comma-separated list of properties to include in the response. "
+        "All properties are returned if omitted.",
+    )
+    include: Annotated[
+        Optional[list[MonitoringSiteIncludeRelation]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(MonitoringSiteIncludeRelation)),
+    ] = Query(
+        None,
+        description="Comma-separated list of related resources to include in the response.",
+    )
+
+
+class MonitoringSiteItemQueryParameters(MonitoringSiteFilterFields, BaseQueryParameters):
+    pass
+
+
+class MonitoringSiteQueryParameters(MonitoringSiteFilterFields, CollectionQueryParameters, ExtentQueryParameters):
+    sortby: Annotated[
+        Optional[list[MonitoringSiteSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(MonitoringSiteSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
+    q: Optional[str] = Query(
+        None,
+        description="Full-text search query. Comma-separated terms are combined with OR; "
+        "whitespace-separated words within a term are combined with AND.",
+    )
+    workspace_id: list[uuid.UUID] = Query(
+        [], description="Monitoring sites in this workspace. Matches `id` in `workspaces`."
+    )
+    admin_area_1: list[str | Literal["null"]] = Query(
+        [],
+        description="Monitoring sites in this first-level administrative area, such as a state or province. "
+        "`null` matches sites without one.",
+    )
+    admin_area_2: list[str | Literal["null"]] = Query(
+        [],
+        description="Monitoring sites in this second-level administrative area, such as a county. `null` "
+        "matches sites without one.",
+    )
+    country: list[str | Literal["null"]] = Query(
+        [],
+        description="Monitoring sites in this country, as an ISO 3166-1 alpha-2 code such as `US`. `null` "
+        "matches sites without one.",
+    )
+    type: list[str] = Query(
+        [],
+        description="Monitoring sites of this type. Matches `name` in `monitoring-site-types`.",
+    )
+    tag: list[str] = Query(
+        [],
+        description="Monitoring sites with this tag, as `{key}:{value}`. Repeat the parameter to require "
+        "several tags.",
+    )
+    is_private: Optional[QueryBool] = Query(
+        None,
+        description="`false` returns only monitoring sites that are public, in public workspaces. `true` "
+        "returns only private monitoring sites in private workspaces.",
+    )
+
+
+class MonitoringSiteMarkerQueryParameters(BaseQueryParameters):
+    workspace_id: list[uuid.UUID] = Query(
+        [], description="Markers for monitoring sites in this workspace. Matches `id` in `workspaces`."
+    )
+    bbox: BoundingBoxQuery = Query(None)
+    type: list[str] = Query(
+        [],
+        description="Markers for monitoring sites of this type. Matches `name` in `monitoring-site-types`.",
+    )
+
+
+class MonitoringSiteMarkerResponse(BaseGetResponse, ItemId):
+    workspace_id: uuid.UUID
+    name: str = Field(..., max_length=200)
+    type: str = Field(..., max_length=200)
+    is_private: bool
+    latitude: float
+    longitude: float
+
+
+class SiteTypeIconResponse(BaseGetResponse):
+    icon: str
+    site_types: list[str]
+
+
+class MonitoringSiteMapSummaryQueryParameters(BaseQueryParameters):
+    workspace_id: list[uuid.UUID] = Query(
+        [], description="Summaries of monitoring sites in this workspace. Matches `id` in `workspaces`."
+    )
+    type: list[str] = Query(
+        [],
+        description="Summaries of monitoring sites of this type. Matches `name` in `monitoring-site-types`.",
+    )
+
+
+class MonitoringSiteTaskSummaryQueryParameters(BaseQueryParameters):
+    workspace_id: list[uuid.UUID] = Query(
+        [],
+        description="Task summaries for monitoring sites in this workspace. Matches `id` in `workspaces`.",
+    )
+    type: list[str] = Query(
+        [],
+        description="Task summaries for monitoring sites of this type. Matches `name` in "
+        "`monitoring-site-types`.",
+    )
+
+
+class MonitoringSiteTaskSummaryResponse(BaseGetResponse, ItemId):
+    name: str
+    type: str
+    product_task_count: int = 0
+    product_task_attention_count: int = 0
+    monitoring_task_count: int = 0
+    monitoring_task_attention_count: int = 0
+
+
+class MonitoringSiteMapSummaryResponse(BaseGetResponse, ItemId):
+    workspace_id: uuid.UUID
+    name: str = Field(..., max_length=200)
+    code: str = Field(..., max_length=200)
+    type: str = Field(..., max_length=200)
+    is_private: bool
+    latitude: float
+    longitude: float
+    tags: dict[str, str]
+
+
+class MonitoringSiteProperties(BaseGetResponse, MonitoringSiteAttributeFields):
+    workspace_id: uuid.UUID
+    tags: dict[str, str] = {}
+    monitoring_site_linked_resources: list[LinkedResourceGetResponse] = Field(..., alias="linkedResources")
+
+
+class MonitoringSiteResponse(MonitoringSiteProperties, MonitoringSiteLocationFields, ItemId):
+    pass
+
+
+class MonitoringSitePostBody(BasePostBody, MonitoringSiteFields, NewItemId):
+    workspace_id: uuid.UUID
+    tags: dict[str, str] = {}
+    latitude: Decimal = Field(..., ge=-90, le=90)
+    longitude: Decimal = Field(..., ge=-180, le=180)
+    elevation_m: Optional[Decimal] = Field(None, ge=-99999, le=99999)
+
+    _validate_tags = field_validator("tags", mode="after")(reject_empty_tag_keys_and_values)
+
+
+class MonitoringSitePatchBody(BasePatchBody, MonitoringSiteFields):
+    tags: dict[str, str | None] = {}
+    latitude: Decimal = Field(..., ge=-90, le=90)
+    longitude: Decimal = Field(..., ge=-180, le=180)
+    elevation_m: Optional[Decimal] = Field(None, ge=-99999, le=99999)
+
+    _validate_tags = field_validator("tags", mode="after")(reject_empty_tag_keys_and_values)

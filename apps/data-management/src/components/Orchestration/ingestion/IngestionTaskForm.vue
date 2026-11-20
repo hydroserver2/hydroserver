@@ -1,18 +1,16 @@
 <template>
   <StickyForm>
     <template #header>
-      <div class="px-6 pt-4 pb-3 max-[640px]:px-4">
-        <h2 class="text-[1.15rem] leading-tight font-medium text-[#1c1b1f]">
-          {{ isEdit ? 'Edit task' : 'Add task' }}
-        </h2>
-        <div
-          v-if="headerContextLabel"
-          class="mt-1 flex items-center gap-2 text-[0.82rem] font-medium text-[#4f4b59]"
-        >
-          <span class="size-2.5 rounded-full bg-[#1565c0]" />
-          <span>{{ headerContextLabel }}</span>
+      <v-toolbar color="primary" flat>
+        <div class="task-form-header">
+          <h2 class="hs-subheading">
+            {{ isEdit ? 'Edit ingestion task' : 'Create ingestion task' }}
+          </h2>
+          <div v-if="headerContextLabel" class="task-form-header__context">
+            <span class="hs-text-sm">{{ headerContextLabel }}</span>
+          </div>
         </div>
-      </div>
+      </v-toolbar>
     </template>
 
     <v-form
@@ -21,252 +19,137 @@
       v-model="valid"
       validate-on="blur"
     >
-      <div
-        v-if="task"
-        class="task-form-shell mx-6 my-4 max-[640px]:mx-4 max-[640px]:my-3 [&_.v-messages]:min-h-3 [&_.v-messages]:text-[0.66rem]"
-      >
-        <div class="flex flex-col gap-2">
-          <div class="flex flex-col gap-2">
-            <label
-              class="text-[0.82rem] font-bold text-[#1f1d24]"
-              for="task-name"
-            >
-              Task name <span class="text-[#d32f2f]">*</span>
-            </label>
+      <div v-if="task" class="task-form-shell">
+        <TaskFormLayout>
+          <TaskFormSection>
             <v-text-field
-              id="task-name"
               v-model="task.name"
+              label="Task name"
+              class="required-label"
               placeholder="e.g. North Fork telemetry import"
               :rules="rules.requiredAndMaxLength255"
-              variant="outlined"
-              rounded="lg"
-              density="compact"
-              hide-details="auto"
             />
-          </div>
-        </div>
+          </TaskFormSection>
 
-        <v-divider class="my-4" />
+          <v-divider />
 
-        <ScheduleFields v-model="task.schedule" color="#1565c0" />
+          <ScheduleFields v-model="task.schedule" />
 
-        <v-divider v-if="perTaskPlaceholders.length" class="my-4" />
+          <template v-if="perTaskPlaceholders.length">
+            <v-divider />
 
-        <div v-if="perTaskPlaceholders.length" class="flex flex-col gap-3">
-          <div class="flex flex-col gap-1">
-            <h3
-              class="text-[0.72rem] font-extrabold uppercase tracking-[0.08em] text-[#4f4b59]"
-            >
-              Template variables
-            </h3>
-            <p class="text-[0.8rem] leading-[1.35] text-[#5f5a67]">
-              Fill in values for URL placeholders defined in this data
-              connection.
-            </p>
-          </div>
+            <TaskFormSection title="Template variables">
+              <p class="form-note hs-text-sm">
+                Fill in values for URL placeholders defined in this data
+                connection.
+              </p>
 
-          <div
-            class="grid grid-cols-[repeat(auto-fit,minmax(260px,420px))] gap-2"
-          >
-            <div
-              v-for="variable in perTaskPlaceholders"
-              :key="variable.name"
-              class="flex flex-col gap-1"
-            >
-              <label
-                class="text-[0.82rem] font-bold text-[#1f1d24]"
-                :for="`task-variable-${variable.name}`"
-              >
-                {{ variable.name }} <span class="text-[#d32f2f]">*</span>
-              </label>
-              <v-text-field
-                :id="`task-variable-${variable.name}`"
-                v-model="task.taskVariables[variable.name]"
-                :placeholder="templateVariablePlaceholder(variable.name)"
-                :rules="rules.requiredAndMaxLength255"
-                variant="outlined"
-                rounded="lg"
-                density="compact"
-                hide-details="auto"
-              />
-            </div>
-          </div>
-        </div>
+              <div class="template-variables">
+                <v-text-field
+                  v-for="variable in perTaskPlaceholders"
+                  :key="variable.name"
+                  v-model="task.taskVariables[variable.name]"
+                  :label="variable.name"
+                  class="required-label"
+                  :placeholder="templateVariablePlaceholder(variable.name)"
+                  :rules="rules.requiredAndMaxLength255"
+                />
+              </div>
+            </TaskFormSection>
+          </template>
 
-        <v-divider class="my-4" />
+          <v-divider />
 
-        <div class="flex flex-col gap-3">
-          <div class="flex flex-col gap-1">
-            <h3
-              class="text-[0.72rem] font-extrabold uppercase tracking-[0.08em] text-[#4f4b59]"
-            >
-              Data mapping
-            </h3>
-            <p class="text-[0.8rem] leading-[1.35] text-[#5f5a67]">
+          <TaskFormSection title="Data mapping">
+            <p class="form-note hs-text-sm">
               Map each source field (CSV column or JSON key) to a HydroServer
               datastream.
             </p>
-          </div>
 
-          <v-alert
-            v-if="showErrors && noMappingsError"
-            type="error"
-            variant="tonal"
-            density="compact"
-            class="mb-3"
-          >
-            At least one source target mapping is required.
-          </v-alert>
-
-          <div class="flex flex-col gap-2">
-            <div
-              class="grid grid-cols-[minmax(0,1fr)_42px_minmax(0,2fr)_44px] gap-2 max-[640px]:hidden"
+            <v-alert
+              v-if="noMappingsError"
+              type="error"
+              variant="tonal"
+              density="compact"
             >
-              <div
-                class="text-[0.72rem] font-extrabold uppercase tracking-[0.04em] text-[#4f4b59]"
-              >
-                Source field
-              </div>
-              <div />
-              <div
-                class="text-[0.72rem] font-extrabold uppercase tracking-[0.04em] text-[#4f4b59]"
-              >
-                Target datastream
-              </div>
-              <div />
-            </div>
+              At least one source target mapping is required.
+            </v-alert>
 
-            <template v-for="(m, mi) in formMappings" :key="mi">
-              <div
-                class="grid grid-cols-[minmax(0,1fr)_42px_minmax(0,2fr)_44px] items-center gap-2 max-[640px]:grid-cols-1 max-[640px]:gap-2"
-              >
-                <div class="min-w-0 self-center [&_.v-field__input]:text-left">
-                  <v-text-field
-                    v-model="m.sourceIdentifier"
-                    placeholder="CSV column or JSON key"
-                    density="compact"
-                    variant="outlined"
-                    rounded="lg"
-                    hide-details="auto"
-                    :rules="rules.requiredAndMaxLength150"
-                  />
-                </div>
+            <div class="mapping-list">
+              <div class="mapping-row mapping-row--headers">
+                <label class="hs-title required-label">Source field</label>
+                <div />
+                <label class="hs-title required-label">Target datastream</label>
+                <div />
+              </div>
 
-                <div
-                  class="flex items-center justify-center text-[#c0b8c9] min-h-[40px] max-[640px]:justify-start max-[640px]:min-h-0"
-                >
+              <div
+                v-for="(mapping, index) in formMappings"
+                :key="index"
+                class="mapping-row"
+              >
+                <v-text-field
+                  v-model="mapping.sourceIdentifier"
+                  placeholder="CSV column or JSON key"
+                  :rules="rules.requiredAndMaxLength150"
+                />
+
+                <div class="mapping-row__arrow">
                   <v-icon :icon="mdiArrowRight" size="22" />
                 </div>
 
-                <div class="min-w-0 self-center">
-                  <v-btn
-                    v-if="!m.targetDatastreamId"
-                    variant="outlined"
-                    rounded="lg"
-                    type="button"
-                    class="h-auto min-h-10 w-full justify-start border-2 border-dashed border-[#1565c0] bg-[#f6f9ff] px-3 py-1.5 text-left text-[0.84rem] text-[#1565c0] normal-case [&_.v-btn__content]:w-full [&_.v-btn__content]:min-w-0 [&_.v-btn__content]:justify-start [&_.v-btn__content]:overflow-visible [&_.v-btn__content]:text-left"
-                    :class="{
-                      'border-[#d32f2f] text-[#d32f2f]': hasTargetError(mi),
-                    }"
-                    @click="openTargetSelector(mi)"
-                  >
-                    <span class="inline-flex items-center gap-1.5 font-bold">
-                      <v-icon :icon="mdiPlusCircleOutline" size="18" />
-                      <span>Select target datastream</span>
-                    </span>
-                  </v-btn>
+                <DatastreamCardSelector
+                  v-model="mapping.targetDatastreamId"
+                  :datastreams="workspaceDatastreams"
+                  :monitoring-sites="workspaceMonitoringSites"
+                  :workspace-id="selectedWorkspaceId"
+                  :draft-datastreams="draftDatastreams"
+                  enforce-unique-selections
+                  label="Target datastream"
+                  placeholder="Select target datastream"
+                  :clearable="false"
+                  :rules="rules.required"
+                  density="compact"
+                  @select="onTargetSelected(index, $event)"
+                />
 
-                  <v-btn
-                    v-else
-                    variant="outlined"
-                    rounded="lg"
-                    type="button"
-                    class="h-auto min-h-[48px] w-full justify-start border-2 border-solid border-[#1565c0] bg-white px-3 py-1.5 text-left text-[0.84rem] text-[#1c1b1f] normal-case [&_.v-btn__content]:w-full [&_.v-btn__content]:min-w-0 [&_.v-btn__content]:justify-start [&_.v-btn__content]:overflow-visible [&_.v-btn__content]:text-left"
-                    @click="openTargetSelector(mi)"
-                  >
-                    <span class="block max-w-full leading-[1.25] py-[2px]">
-                      <span
-                        class="block whitespace-normal font-semibold text-[#1c1b1f] [overflow-wrap:anywhere]"
-                      >
-                        {{ datastreamNameById(m.targetDatastreamId) }}
-                      </span>
-                      <span
-                        class="block whitespace-normal text-[0.72rem] text-[rgba(0,0,0,0.55)] [overflow-wrap:anywhere]"
-                      >
-                        {{ m.targetDatastreamId }}
-                      </span>
-                    </span>
-                  </v-btn>
-
-                  <div
-                    v-if="hasTargetError(mi)"
-                    class="text-error text-caption mt-1"
-                  >
-                    Target is required
-                  </div>
-                </div>
-
-                <div
-                  class="flex items-center justify-center min-h-[40px] max-[640px]:justify-start max-[640px]:min-h-0"
-                >
-                  <v-btn
-                    icon
-                    variant="text"
-                    color="grey-lighten-1"
-                    type="button"
-                    title="Delete mapping"
-                    @click.stop="removeMapping(mi)"
-                  >
-                    <v-icon
-                      :icon="mdiTrashCanOutline"
-                      color="red-darken-3"
-                      size="22"
-                    />
-                  </v-btn>
-                </div>
+                <v-btn-icon
+                  :icon="mdiTrashCanOutline"
+                  size="small"
+                  aria-label="Delete mapping"
+                  @click.stop="removeMapping(index)"
+                />
               </div>
-            </template>
 
-            <div class="mt-px">
-              <v-btn
-                variant="outlined"
-                rounded="lg"
-                type="button"
-                class="min-h-9 w-fit border-2 border-dashed border-[#d0c9d8] px-3 text-[0.84rem] text-[#1565c0] normal-case"
-                :prepend-icon="mdiPlus"
-                @click="addMapping"
-              >
-                Add mapping
-              </v-btn>
+              <div>
+                <v-btn
+                  variant="outlined"
+                  size="small"
+                  type="button"
+                  :prepend-icon="mdiPlus"
+                  @click="addMapping"
+                >
+                  Add mapping
+                </v-btn>
+              </div>
             </div>
-          </div>
-        </div>
+          </TaskFormSection>
+        </TaskFormLayout>
       </div>
     </v-form>
 
     <template #actions>
       <v-spacer />
       <v-btn-cancel @click="closeForm">Cancel</v-btn-cancel>
-      <v-btn-primary
+      <v-btn-dialog-action
         :loading="submitLoading"
-        :color="INGESTION_ACCENT"
         type="submit"
         @click="onSubmit"
       >
         Save task
-      </v-btn-primary>
+      </v-btn-dialog-action>
     </template>
   </StickyForm>
-
-  <v-dialog v-model="datastreamSelectorOpen" width="75rem">
-    <DatastreamSelectorCard
-      card-title="Select a target datastream"
-      @selected-datastream="onTargetSelected"
-      @close="datastreamSelectorOpen = false"
-      enforce-unique-selections
-      :draft-datastreams="draftDatastreams"
-    />
-  </v-dialog>
 </template>
 
 <script setup lang="ts">
@@ -276,33 +159,34 @@ import { storeToRefs } from 'pinia'
 import hs, {
   DataConnection,
   DatastreamExtended,
-  EtlMappingPostBody,
+  type EtlMapping,
   PlaceholderVariable,
   Task,
   TaskExpanded,
   TaskSchedule,
 } from '@hydroserver/client'
 import StickyForm from '@/components/Forms/StickyForm.vue'
-import DatastreamSelectorCard from '@/components/Datastream/DatastreamSelectorCard.vue'
+import DatastreamCardSelector from '@/components/Orchestration/shared/DatastreamCardSelector.vue'
 import ScheduleFields from '@/components/Orchestration/shared/ScheduleFields.vue'
+import TaskFormLayout from '@/components/Orchestration/shared/TaskFormLayout.vue'
+import TaskFormSection from '@/components/Orchestration/shared/TaskFormSection.vue'
 import { Snackbar } from '@/utils/notifications'
 import { rules } from '@/utils/rules'
 import { ensureIsoUtc } from '@/utils/time'
 import { useOrchestrationStore } from '@/store/orchestration'
 import { useWorkspaceStore } from '@/store/workspaces'
-import { INGESTION_ACCENT } from '../workbench/orchestrationTabs'
-import {
-  mdiArrowRight,
-  mdiPlus,
-  mdiPlusCircleOutline,
-  mdiTrashCanOutline,
-} from '@mdi/js'
+import { mdiArrowRight, mdiPlus, mdiTrashCanOutline } from '@mdi/js'
 
-type FormMapping = { sourceIdentifier: string; targetDatastreamId: string }
+type FormMapping = {
+  id?: string
+  sourceIdentifier: string
+  targetDatastreamId: string
+}
 
 const props = defineProps<{
   oldTask?: TaskExpanded
   dataConnection: DataConnection
+  mappings?: EtlMapping[]
 }>()
 
 const emit = defineEmits(['created', 'updated', 'close'])
@@ -321,18 +205,14 @@ const headerContextLabel = props.dataConnection.name || null
 const orchestrationStore = useOrchestrationStore()
 const {
   linkedDatastreamIds,
-  linkedDatastreams,
   draftDatastreams,
   workspaceDatastreams,
-  workspaceThings,
+  workspaceMonitoringSites,
 } = storeToRefs(orchestrationStore)
-const { ensureWorkspaceDatastreams, ensureWorkspaceThings } = orchestrationStore
+const { ensureWorkspaceDatastreams, ensureWorkspaceMonitoringSites } =
+  orchestrationStore
 
-const showErrors = ref(false)
-const missingTargetKeys = ref<Set<string>>(new Set())
 const noMappingsError = ref(false)
-const datastreamSelectorOpen = ref(false)
-const activeMappingIndex = ref<number | null>(null)
 
 function defaultSchedule(): TaskSchedule {
   return {
@@ -349,15 +229,11 @@ function cloneSchedule(schedule: TaskSchedule | null): TaskSchedule | null {
   return schedule ? { ...schedule } : null
 }
 
-function editableMappingFrom(mapping: any): FormMapping {
-  const id = mapping.targetDatastreamId
-    ? String(mapping.targetDatastreamId)
-    : mapping.targetDatastream?.id
-    ? String(mapping.targetDatastream.id)
-    : ''
+function editableMappingFrom(mapping: EtlMapping): FormMapping {
   return {
-    sourceIdentifier: String(mapping.sourceIdentifier ?? ''),
-    targetDatastreamId: id,
+    id: mapping.id,
+    sourceIdentifier: mapping.sourceIdentifier,
+    targetDatastreamId: mapping.targetDatastreamId,
   }
 }
 
@@ -369,13 +245,11 @@ function hydrateTask(source?: TaskExpanded): Task {
         description: source.description ?? null,
         taskVariables: { ...source.taskVariables },
         dataConnectionId: source.dataConnection.id ?? props.dataConnection.id,
-        mappings: source.mappings.map(editableMappingFrom) as any,
         schedule: cloneSchedule(source.schedule),
       })
     : new Task({
         dataConnectionId: props.dataConnection.id,
         schedule: defaultSchedule(),
-        mappings: [],
       })
 
   ;(['startTime', 'nextRunAt'] as const).forEach((k) => {
@@ -399,42 +273,16 @@ function initializeTaskVariables(base: Task) {
 
 const task = ref<Task>(hydrateTask(props.oldTask))
 initializeTaskVariables(task.value)
-if (task.value.mappings.length === 0) {
-  task.value.mappings.push({
-    sourceIdentifier: '',
-    targetDatastreamId: '',
-  } as any)
-}
 
-const formMappings = computed(
-  () => task.value.mappings as unknown as FormMapping[]
+const formMappings = ref<FormMapping[]>(
+  (props.mappings ?? []).map(editableMappingFrom)
 )
+if (formMappings.value.length === 0) {
+  formMappings.value.push({ sourceIdentifier: '', targetDatastreamId: '' })
+}
 
 function templateVariablePlaceholder(name: string) {
   return `e.g. ${name.toUpperCase()}`
-}
-
-function hasTargetError(mi: number) {
-  return showErrors.value && missingTargetKeys.value.has(`${mi}`)
-}
-
-function datastreamById(id: string | undefined | null): any {
-  if (!id) return null
-  return (
-    workspaceDatastreams.value.find((d) => String(d.id) === id) ||
-    linkedDatastreams.value.find((d) => String(d.id) === id) ||
-    draftDatastreams.value.find((d) => String(d.id) === id) ||
-    null
-  )
-}
-
-function datastreamNameById(id: string | undefined | null) {
-  return datastreamById(id)?.name || ''
-}
-
-function openTargetSelector(mi: number) {
-  activeMappingIndex.value = mi
-  datastreamSelectorOpen.value = true
 }
 
 function syncDraftDatastreams() {
@@ -452,33 +300,21 @@ function syncDraftDatastreams() {
   draftDatastreams.value = [...byId.values()]
 }
 
-function onTargetSelected(event: DatastreamExtended) {
-  const mi = activeMappingIndex.value
-  if (mi == null) return
-  const m = formMappings.value[mi]
-  if (!m) return
-  m.targetDatastreamId = String(event.id)
-  draftDatastreams.value = [event, ...draftDatastreams.value]
+function onTargetSelected(index: number, datastream: DatastreamExtended) {
+  if (!formMappings.value[index]) return
+  // Keep the picked record around so it stays visible in the selector's list
+  // even before the task is saved.
+  draftDatastreams.value = [datastream, ...draftDatastreams.value]
   syncDraftDatastreams()
-  if (missingTargetKeys.value.has(`${mi}`)) {
-    const next = new Set(missingTargetKeys.value)
-    next.delete(`${mi}`)
-    missingTargetKeys.value = next
-  }
-  activeMappingIndex.value = null
-  datastreamSelectorOpen.value = false
 }
 
 function removeMapping(mi: number) {
-  task.value.mappings.splice(mi, 1)
+  formMappings.value.splice(mi, 1)
   syncDraftDatastreams()
 }
 
 function addMapping() {
-  task.value.mappings.push({
-    sourceIdentifier: '',
-    targetDatastreamId: '',
-  } as any)
+  formMappings.value.push({ sourceIdentifier: '', targetDatastreamId: '' })
   noMappingsError.value = false
 }
 
@@ -487,15 +323,11 @@ function closeForm() {
   emit('close')
 }
 
+// Each row's fields validate themselves through the form; only "no rows at
+// all" has no field to hang an error on.
 function validateMappings() {
-  showErrors.value = true
   noMappingsError.value = formMappings.value.length === 0
-  const nextMissingKeys = new Set<string>()
-  formMappings.value.forEach((m, mi) => {
-    if (!m.targetDatastreamId) nextMissingKeys.add(`${mi}`)
-  })
-  missingTargetKeys.value = nextMissingKeys
-  return !noMappingsError.value && nextMissingKeys.size === 0
+  return !noMappingsError.value
 }
 
 function taskToPayload(): Task {
@@ -506,13 +338,42 @@ function taskToPayload(): Task {
     taskVariables: task.value.taskVariables,
     dataConnectionId: props.dataConnection.id,
     schedule: task.value.schedule,
-    mappings: formMappings.value.map(
-      (m): EtlMappingPostBody => ({
+  })
+}
+
+async function saveMappings(taskId: string) {
+  const originalById = new Map((props.mappings ?? []).map((m) => [m.id, m]))
+  const currentIds = new Set(
+    formMappings.value.filter((m): m is FormMapping & { id: string } => !!m.id).map((m) => m.id)
+  )
+  const deletedIds = [...originalById.keys()].filter(
+    (id) => !currentIds.has(id)
+  )
+
+  const results = await Promise.all([
+    ...deletedIds.map((id) => hs.etlMappings.delete(id)),
+    ...formMappings.value.map((m) => {
+      const payload = {
         sourceIdentifier: m.sourceIdentifier,
         targetDatastreamId: m.targetDatastreamId,
-      })
-    ),
-  })
+      }
+      if (!m.id)
+        return hs.etlMappings.create({
+          id: '',
+          etlTaskId: taskId,
+          ...payload,
+        } as any)
+      const original = originalById.get(m.id)
+      const unchanged =
+        original?.sourceIdentifier === m.sourceIdentifier &&
+        original?.targetDatastreamId === m.targetDatastreamId
+      return unchanged
+        ? Promise.resolve({ ok: true as const })
+        : hs.etlMappings.update({ id: m.id, ...payload })
+    }),
+  ])
+
+  return results.find((r) => !r.ok) ?? null
 }
 
 async function onSubmit() {
@@ -523,11 +384,17 @@ async function onSubmit() {
   try {
     const payload = taskToPayload()
     const res = isEdit
-      ? await hs.tasks.update(payload)
+      ? await hs.tasks.update(payload, props.oldTask)
       : await hs.tasks.create(payload)
     if (!res.ok) {
       Snackbar.error(res.message)
       console.error(res)
+      return
+    }
+    const mappingFailure = await saveMappings(res.data.id)
+    if (mappingFailure) {
+      Snackbar.error(mappingFailure.message || 'Unable to save mappings.')
+      console.error(mappingFailure)
       return
     }
     emit(isEdit ? 'updated' : 'created', res.data)
@@ -549,10 +416,13 @@ watch(
     try {
       await Promise.all([
         ensureWorkspaceDatastreams(workspaceId),
-        ensureWorkspaceThings(workspaceId),
+        ensureWorkspaceMonitoringSites(workspaceId),
       ])
     } catch (error) {
-      console.error('Error fetching workspace datastreams and things', error)
+      console.error(
+        'Error fetching workspace datastreams and monitoringSites',
+        error
+      )
     }
   },
   { immediate: true }
@@ -560,39 +430,118 @@ watch(
 </script>
 
 <style scoped>
-:deep(.sticky-form-card) {
-  border-radius: 12px !important;
+.task-form-header {
+  padding: var(--hs-space-8) var(--hs-space-16);
 }
+
+.task-form-header__context {
+  display: flex;
+  gap: var(--hs-space-8);
+  align-items: center;
+  margin-top: var(--hs-space-4);
+  color: var(--hs-surface);
+  opacity: 0.8;
+}
+
+.task-form-shell {
+  padding: var(--hs-space-16) var(--hs-space-24);
+}
+
+.form-note {
+  margin: 0;
+  color: var(--hs-text-secondary);
+}
+
+.template-variables {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 420px));
+  gap: var(--hs-space-12);
+}
+
+.mapping-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hs-space-12);
+}
+
+.mapping-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--hs-space-32) minmax(0, 2fr) auto;
+  gap: var(--hs-space-8);
+  align-items: center;
+}
+
+.mapping-row--headers {
+  color: var(--hs-text-secondary);
+}
+
+.mapping-row__arrow {
+  display: flex;
+  justify-content: center;
+  color: var(--hs-text-muted);
+}
+
+:deep(.sticky-form-card) {
+  border-radius: var(--hs-radius-lg) !important;
+}
+
+:deep(.sticky-header-content) {
+  padding: 0;
+}
+
 :deep(.sticky-header .v-divider),
 :deep(.sticky-actions .v-divider) {
-  border-color: #e7e2eb !important;
+  border-color: var(--hs-border) !important;
   opacity: 1;
 }
-:deep(.v-expansion-panel-text__wrapper) {
-  padding: 0 !important;
-}
+
 :deep(.sticky-actions .v-card-actions) {
-  padding: 8px 24px;
-  gap: 8px;
+  gap: var(--hs-space-8);
+  padding: var(--hs-space-8) var(--hs-space-24);
 }
+
 :deep(.schedule-start-input .v-field__input) {
   align-items: center;
-  padding-right: 8px;
+  padding-right: var(--hs-space-8);
 }
+
 :deep(.schedule-start-input input[type='datetime-local']) {
-  line-height: 1;
   min-width: 0;
-  padding-right: 8px;
+  padding-right: var(--hs-space-8);
+  line-height: 1;
 }
+
 :deep(
-    .schedule-start-input
-      input[type='datetime-local']::-webkit-calendar-picker-indicator
-  ) {
-  height: 16px;
-  margin: 0 4px 0 2px;
-  padding: 0;
+  .schedule-start-input
+    input[type='datetime-local']::-webkit-calendar-picker-indicator
+) {
   width: 16px;
+  height: 16px;
+  margin: 0 var(--hs-space-4) 0 var(--hs-space-2);
+  padding: 0;
   opacity: 0.82;
   transform: translateY(-1px);
+}
+
+@media (max-width: 640px) {
+  .task-form-header {
+    padding-inline: var(--hs-space-16);
+  }
+
+  .task-form-shell {
+    padding: var(--hs-space-12) var(--hs-space-16);
+  }
+
+  .mapping-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .mapping-row--headers {
+    display: none;
+  }
+
+  .mapping-row__arrow {
+    justify-content: flex-start;
+  }
 }
 </style>

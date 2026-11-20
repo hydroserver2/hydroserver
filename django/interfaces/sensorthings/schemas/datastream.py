@@ -6,12 +6,12 @@ from .workspace import WorkspaceProperties
 
 
 class DatastreamProperties(BaseModel):
-    result_type: str
+    type: str
     status: Optional[str] = None
     sampled_medium: str
     value_count: Optional[int] = None
     no_data_value: float
-    processing_level_code: str
+    processing_level_code: Optional[str]
     processing_level_id: UUID
     unit_id: UUID
     intended_time_spacing: Optional[float] = None
@@ -24,9 +24,9 @@ class DatastreamProperties(BaseModel):
         "seconds", "minutes", "hours", "days"
     ]
     is_private: bool
-    is_visible: bool
+    is_restricted: bool
     workspace: WorkspaceProperties
-    file_attachments: dict[str, str]
+    linked_resources: dict[str, str]
     tags: dict[str, str]
 
     model_config = ConfigDict(

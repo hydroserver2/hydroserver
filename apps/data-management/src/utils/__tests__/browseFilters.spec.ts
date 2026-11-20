@@ -1,129 +1,223 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildBrowseFilterQuery,
-  filterThingMarkers,
+  filterMonitoringSiteMarkers,
   parseBrowseFilterQuery,
 } from '../browseFilters'
 
-describe('filterThingMarkers', () => {
-  const things = [
+describe('filterMonitoringSiteMarkers', () => {
+  const monitoringSites = [
     {
-      id: 'thing-1',
+      id: 'monitoringSite-1',
       workspaceId: 'workspace-1',
       name: 'Lake Site',
-      siteType: 'Lake',
+      type: 'Lake',
       isPrivate: false,
       latitude: 41.7,
       longitude: -111.8,
+      code: 'LAKE-1',
+      tags: { Network: 'Primary' },
     },
     {
-      id: 'thing-2',
+      id: 'monitoringSite-2',
       workspaceId: 'workspace-2',
       name: 'River Site',
-      siteType: 'Stream',
+      type: 'Stream',
       isPrivate: false,
       latitude: 41.8,
       longitude: -111.7,
+      code: 'RIVER-1',
+      tags: { Network: 'Secondary' },
     },
     {
-      id: 'thing-3',
+      id: 'monitoringSite-3',
       workspaceId: 'workspace-1',
       name: 'Spring Site',
-      siteType: 'Spring',
+      type: 'Spring',
       isPrivate: false,
       latitude: 41.9,
       longitude: -111.6,
+      code: 'SPRING-1',
+      tags: { Network: 'Primary' },
     },
     {
-      id: 'thing-4',
+      id: 'monitoringSite-4',
       workspaceId: 'workspace-1',
       name: 'Reservoir Site',
-      siteType: 'Lake, Reservoir, Impoundment',
+      type: 'Lake, Reservoir, Impoundment',
       isPrivate: false,
       latitude: 42.0,
       longitude: -111.5,
+      code: 'RESERVOIR-1',
+      tags: { Region: 'North' },
     },
   ]
 
-  it('returns all things when no filters are selected', () => {
+  it('returns all monitoringSites when no filters are selected', () => {
     expect(
-      filterThingMarkers(things as any, [], []).map((thing) => thing.id)
-    ).toEqual(['thing-1', 'thing-2', 'thing-3', 'thing-4'])
+      filterMonitoringSiteMarkers(monitoringSites as any, [], []).map((monitoringSite) => monitoringSite.id)
+    ).toEqual(['monitoringSite-1', 'monitoringSite-2', 'monitoringSite-3', 'monitoringSite-4'])
   })
 
-  it('filters things by selected workspaces', () => {
+  it('filters monitoringSites by selected workspaces', () => {
     const selectedWorkspaces = [{ id: 'workspace-1', name: 'Workspace 1' }]
 
     expect(
-      filterThingMarkers(things as any, selectedWorkspaces as any, []).map(
-        (thing) => thing.id
+      filterMonitoringSiteMarkers(monitoringSites as any, selectedWorkspaces as any, []).map(
+        (monitoringSite) => monitoringSite.id
       )
-    ).toEqual(['thing-1', 'thing-3', 'thing-4'])
+    ).toEqual(['monitoringSite-1', 'monitoringSite-3', 'monitoringSite-4'])
   })
 
-  it('filters things by selected site types', () => {
+  it('filters monitoringSites by selected site types', () => {
     expect(
-      filterThingMarkers(things as any, [], ['Lake', 'Stream']).map(
-        (thing) => thing.id
+      filterMonitoringSiteMarkers(monitoringSites as any, [], ['Lake', 'Stream']).map(
+        (monitoringSite) => monitoringSite.id
       )
-    ).toEqual(['thing-1', 'thing-2'])
+    ).toEqual(['monitoringSite-1', 'monitoringSite-2'])
   })
 
-  it('filters things by custom site types that contain commas', () => {
+  it('filters monitoringSites by custom site types that contain commas', () => {
     expect(
-      filterThingMarkers(things as any, [], [
-        'Lake, Reservoir, Impoundment',
-      ]).map((thing) => thing.id)
-    ).toEqual(['thing-4'])
+      filterMonitoringSiteMarkers(
+        monitoringSites as any,
+        [],
+        ['Lake, Reservoir, Impoundment']
+      ).map((monitoringSite) => monitoringSite.id)
+    ).toEqual(['monitoringSite-4'])
   })
 
-  it('requires a thing to match both workspace and site type filters', () => {
+  it('requires a monitoringSite to match both workspace and site type filters', () => {
     const selectedWorkspaces = [{ id: 'workspace-1', name: 'Workspace 1' }]
 
     expect(
-      filterThingMarkers(things as any, selectedWorkspaces as any, [
+      filterMonitoringSiteMarkers(monitoringSites as any, selectedWorkspaces as any, [
         'Spring',
-      ]).map((thing) => thing.id)
-    ).toEqual(['thing-3'])
+      ]).map((monitoringSite) => monitoringSite.id)
+    ).toEqual(['monitoringSite-3'])
   })
 
-  it('filters things by selected site', () => {
+  it('filters monitoringSites by selected site', () => {
     expect(
-      filterThingMarkers(things as any, [], [], things[1] as any).map(
-        (thing) => thing.id
+      filterMonitoringSiteMarkers(monitoringSites as any, [], [], monitoringSites[1] as any).map(
+        (monitoringSite) => monitoringSite.id
       )
-    ).toEqual(['thing-2'])
+    ).toEqual(['monitoringSite-2'])
   })
 
   it('requires a selected site to match the other filters', () => {
     const selectedWorkspaces = [{ id: 'workspace-1', name: 'Workspace 1' }]
 
     expect(
-      filterThingMarkers(
-        things as any,
+      filterMonitoringSiteMarkers(
+        monitoringSites as any,
         selectedWorkspaces as any,
         ['Stream'],
-        things[1] as any
-      ).map((thing) => thing.id)
+        monitoringSites[1] as any
+      ).map((monitoringSite) => monitoringSite.id)
+    ).toEqual([])
+  })
+
+  it('keeps untagged monitoringSites when only a metadata key is selected', () => {
+    expect(
+      filterMonitoringSiteMarkers(monitoringSites as any, [], [], undefined, 'Network').map(
+        (monitoringSite) => monitoringSite.id
+      )
+    ).toEqual(['monitoringSite-1', 'monitoringSite-2', 'monitoringSite-3', 'monitoringSite-4'])
+  })
+
+  it('only includes matching key:value pairs when a value is selected', () => {
+    expect(
+      filterMonitoringSiteMarkers(monitoringSites as any, [], [], undefined, 'Network', [
+        'Primary',
+      ]).map((monitoringSite) => monitoringSite.id)
+    ).toEqual(['monitoringSite-1', 'monitoringSite-3'])
+  })
+
+  it('matches any selected value while excluding sites without the key', () => {
+    expect(
+      filterMonitoringSiteMarkers(
+        monitoringSites as any, [], [], undefined, 'Network', ['Primary', 'Secondary']
+      ).map((site) => site.id)
+    ).toEqual(['monitoringSite-1', 'monitoringSite-2', 'monitoringSite-3'])
+  })
+
+  it('keeps workspace and site type filters active for key-only selections', () => {
+    expect(
+      filterMonitoringSiteMarkers(
+        monitoringSites as any,
+        [{ id: 'workspace-1' }] as any,
+        ['Lake, Reservoir, Impoundment'],
+        undefined,
+        'Network'
+      ).map((site) => site.id)
+    ).toEqual(['monitoringSite-4'])
+  })
+
+  it('returns no sites for a key:value pair that does not exist', () => {
+    expect(
+      filterMonitoringSiteMarkers(
+        monitoringSites as any, [], [], undefined, 'Network', ['Unknown']
+      )
+    ).toEqual([])
+  })
+
+  it('does not match a prototype-named tag key against sites without that own tag', () => {
+    expect(
+      filterMonitoringSiteMarkers(
+        monitoringSites as any,
+        [],
+        [],
+        undefined,
+        'constructor',
+        ['Object']
+      ).map((monitoringSite) => monitoringSite.id)
     ).toEqual([])
   })
 })
 
 describe('parseBrowseFilterQuery', () => {
+  it('activates metadata coloring from a key-only URL', () => {
+    expect(parseBrowseFilterQuery({ tagKey: 'basin' })).toMatchObject({
+      tagKey: 'basin',
+      colorBy: 'metadata',
+      colorTagKey: 'basin',
+    })
+  })
+
+  it('preserves explicit coloring choices alongside a metadata filter', () => {
+    expect(parseBrowseFilterQuery({ tagKey: 'basin', colorBy: 'none' }))
+      .toMatchObject({ colorBy: 'none', colorTagKey: '' })
+    expect(parseBrowseFilterQuery({ tagKey: 'basin', colorBy: 'workspace' }))
+      .toMatchObject({ colorBy: 'workspace' })
+    expect(parseBrowseFilterQuery({ tagKey: 'basin', colorBy: 'metadata', colorTagKey: 'Network' }))
+      .toMatchObject({ colorBy: 'metadata', colorTagKey: 'Network' })
+  })
+
   it('reads canonical query params', () => {
     expect(
       parseBrowseFilterQuery({
-        selectedSite: 'thing-1',
+        selectedSite: 'monitoringSite-1',
         search: 'Logan',
         workspaces: ['workspace-1', 'workspace-2'],
         siteTypes: ['Lake', 'Stream'],
+        tagKey: 'Network',
+        tagValues: ['Primary', 'Secondary'],
+        mySites: '1',
+        colorBy: 'metadata',
+        colorTagKey: 'Network',
         drawer: '0',
       })
     ).toEqual({
-      siteIds: ['thing-1'],
+      siteIds: ['monitoringSite-1'],
       searchText: 'Logan',
       workspaceIds: ['workspace-1', 'workspace-2'],
       siteTypes: ['Lake', 'Stream'],
+      tagKey: 'Network',
+      tagValues: ['Primary', 'Secondary'],
+      mySites: true,
+      colorBy: 'metadata',
+      colorTagKey: 'Network',
       drawer: false,
     })
   })
@@ -131,17 +225,22 @@ describe('parseBrowseFilterQuery', () => {
   it('deduplicates canonical values and accepts comma-separated non-site-type lists', () => {
     expect(
       parseBrowseFilterQuery({
-        selectedSite: ['thing-1', 'thing-1'],
+        selectedSite: ['monitoringSite-1', 'monitoringSite-1'],
         workspaces: 'workspace-1,workspace-2',
         siteTypes: ['Lake', 'Lake'],
         search: 'Logan',
         drawer: 'yes',
       })
     ).toEqual({
-      siteIds: ['thing-1'],
+      siteIds: ['monitoringSite-1'],
       searchText: 'Logan',
       workspaceIds: ['workspace-1', 'workspace-2'],
       siteTypes: ['Lake'],
+      tagKey: '',
+      tagValues: [],
+      mySites: null,
+      colorBy: null,
+      colorTagKey: '',
       drawer: true,
     })
   })
@@ -157,6 +256,13 @@ describe('parseBrowseFilterQuery', () => {
   it('returns null for an absent or unrecognized drawer state', () => {
     expect(parseBrowseFilterQuery({ drawer: 'maybe' }).drawer).toBeNull()
     expect(parseBrowseFilterQuery({}).drawer).toBeNull()
+    expect(parseBrowseFilterQuery({ colorBy: 'maybe' }).colorBy).toBeNull()
+  })
+
+  it('accepts site type marker coloring', () => {
+    expect(parseBrowseFilterQuery({ colorBy: 'type' }).colorBy).toBe(
+      'type'
+    )
   })
 
   it('preserves commas in the search text instead of truncating', () => {
@@ -170,34 +276,52 @@ describe('parseBrowseFilterQuery', () => {
   })
 
   it('preserves comma-containing site types through query round trips', () => {
-    const siteType = 'Lake, Reservoir, Impoundment'
+    const type = 'Lake, Reservoir, Impoundment'
     const query = buildBrowseFilterQuery(
       {},
-      { searchText: '', workspaceIds: [], siteTypes: [siteType] }
+      { searchText: '', workspaceIds: [], siteTypes: [type] }
     )
 
-    expect(parseBrowseFilterQuery(query).siteTypes).toEqual([siteType])
+    expect(parseBrowseFilterQuery(query).siteTypes).toEqual([type])
   })
 })
 
 describe('buildBrowseFilterQuery', () => {
+  it('retains an explicit opt-out of metadata coloring through query round trips', () => {
+    const query = buildBrowseFilterQuery({}, {
+      workspaceIds: [], siteTypes: [], tagKey: 'basin', colorBy: 'none',
+    })
+    expect(query).toEqual({ tagKey: 'basin', colorBy: 'none' })
+    expect(parseBrowseFilterQuery(query).colorBy).toBe('none')
+  })
+
   it('writes selected Browse state to canonical query params and omits an open drawer', () => {
     expect(
       buildBrowseFilterQuery(
         {},
         {
-          siteId: 'thing-1',
+          siteId: 'monitoringSite-1',
           searchText: 'Logan',
           workspaceIds: ['workspace-1', 'workspace-2'],
           siteTypes: ['Lake'],
+          tagKey: 'Network',
+          tagValues: ['Primary', 'Secondary'],
+          mySites: true,
+          colorBy: 'metadata',
+          colorTagKey: 'Network',
           drawer: true,
         }
       )
     ).toEqual({
-      selectedSite: 'thing-1',
+      selectedSite: 'monitoringSite-1',
       search: 'Logan',
       workspaces: ['workspace-1', 'workspace-2'],
       siteTypes: 'Lake',
+      tagKey: 'Network',
+      tagValues: ['Primary', 'Secondary'],
+      mySites: '1',
+      colorBy: 'metadata',
+      colorTagKey: 'Network',
     })
   })
 
@@ -205,9 +329,11 @@ describe('buildBrowseFilterQuery', () => {
     expect(
       buildBrowseFilterQuery(
         {
-          selectedSite: 'thing-1',
+          selectedSite: 'monitoringSite-1',
           workspaces: 'workspace-1',
           siteTypes: 'Lake',
+          mySites: '1',
+          colorByTag: '1',
           page: '2',
         },
         {
@@ -215,6 +341,11 @@ describe('buildBrowseFilterQuery', () => {
           searchText: '',
           workspaceIds: [],
           siteTypes: [],
+          tagKey: '',
+          tagValues: [],
+          mySites: false,
+          colorBy: 'none',
+          colorTagKey: '',
           drawer: false,
         }
       )

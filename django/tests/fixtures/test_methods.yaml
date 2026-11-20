@@ -1,0 +1,51 @@
+# System Method
+- model: sta.method
+  pk: a947c551-8e21-4848-a89b-3048aec69574
+  fields:
+    name: System Method
+    description: System Method
+    type: System Method
+
+# System Assigned Method
+- model: sta.method
+  pk: 41e44514-b52f-4788-94e1-93c7587aa84a
+  fields:
+    name: System Assigned Method
+    description: System Assigned Method
+    type: System Assigned Method
+
+# Public Method
+- model: sta.method
+  pk: f87072e1-6ccb-46ec-ab34-befb453140de
+  fields:
+    name: Public Method
+    description: Public Method
+    type: Public Method
+    workspace: 6e0deaf2-a92b-421b-9ece-86783265596f
+
+# Public Assigned Method
+- model: sta.method
+  pk: 291625d8-0f6e-46d6-918c-6c3af3d345ab
+  fields:
+    name: Public Assigned Method
+    description: Public Assigned Method
+    type: Public Assigned Method
+    workspace: 6e0deaf2-a92b-421b-9ece-86783265596f
+
+# Private Method
+- model: sta.method
+  pk: 89a6ae16-9f85-4279-985e-83484db47107
+  fields:
+    name: Private Method
+    description: Private Method
+    type: Private Method
+    workspace: b27c51a0-7374-462d-8a53-d97d47176c10
+
+# Private Assigned Method
+- model: sta.method
+  pk: b2cc0c86-c131-4721-8080-9f5f722224ec
+  fields:
+    name: Private Assigned Method
+    description: Private Assigned Method
+    type: Private Assigned Method
+    workspace: b27c51a0-7374-462d-8a53-d97d47176c10

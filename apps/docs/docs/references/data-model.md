@@ -2,7 +2,7 @@
 
 The following are entity relationship diagrams illustrating the HydroServer data model design. You can also access a [data dictionary](/references/data-dictionary.md) that describes each of the entities and attributes along with data types and descriptive information.
 
-Primary and foreign keys are specified in the first column of each entity. Mandatory attributes are specified with "(M)" preceding the attribute name. Optional attributes are specified with "(O)" preceding the attribute name. Data types are defined in the data dictionary document. Entities shown with blue title bars are part of the SensorThings API data model. Entities with white title bars were added to the SensorThings data model to accommodate functionality required for the HydroServer software.
+Primary and foreign keys are specified in the first column of each entity. Mandatory attributes are specified with "(M)" preceding the attribute name. Optional attributes are specified with "(O)" preceding the attribute name. Data types are defined in the data dictionary document. In the data storage model, entities shown with blue title bars are part of the SensorThings API data model, and entities with white title bars were added to accommodate functionality required for the HydroServer software. Greyed-out entities with a struck-through name are SensorThings concepts that HydroServer exposes through the SensorThings API but doesn't store as tables. In the data processing model, title bar colors group the entities by feature: orchestration, ETL, data products, and monitoring. `PeriodicTask` (purple) belongs to the django-celery-beat scheduler and is abbreviated.
 
 ## Identity and Access Management Model
 

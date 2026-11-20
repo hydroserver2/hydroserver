@@ -1,5 +1,6 @@
 import { onBeforeUnmount, reactive, type Ref } from 'vue'
 import type { TaskRun } from '@hydroserver/client'
+import { isOrchestrationEnabled } from '@/composables/orchestration/orchestrationAvailability'
 import {
   serviceForKind,
   type TaskKind,
@@ -217,6 +218,7 @@ export function useTaskRunNowPolling({ lists, currentWorkspaceId }: Options) {
   }
 
   const runTaskNow = async (kind: TaskKind, taskId: string) => {
+    if (!isOrchestrationEnabled()) return
     runNowTriggeredByTaskId[taskId] = true
     const startedAt = Date.now()
     runNowStartedAt.set(taskId, startedAt)

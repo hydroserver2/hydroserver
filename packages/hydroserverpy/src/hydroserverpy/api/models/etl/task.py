@@ -1,8 +1,10 @@
 import uuid
 from datetime import datetime
+from functools import cached_property
 from typing import Any, ClassVar, Dict, List, Literal, Optional, Union, TYPE_CHECKING
 from pydantic import AliasChoices, Field, AliasPath
 from ..base import HydroServerBaseModel
+from ...utils import create_merge_patch
 from ..orchestration.run import TaskRun
 from .mapping import EtlMapping
 
@@ -15,6 +17,7 @@ class EtlTask(HydroServerBaseModel):
     name: str
     description: Optional[str] = None
     task_variables: Dict[str, Any] = Field(default_factory=dict)
+    workspace_id: uuid.UUID
     data_connection_id: uuid.UUID = Field(
         validation_alias=AliasChoices(
             "dataConnectionId", AliasPath("dataConnection", "id")
@@ -29,7 +32,7 @@ class EtlTask(HydroServerBaseModel):
     )
     next_run_at: Optional[datetime] = Field(None, validation_alias=AliasPath("schedule", "nextRunAt"))
     latest_run: Optional[TaskRun] = None
-    mappings: List[EtlMapping] = []
+    mapping_count: int = 0
 
     _editable_fields: ClassVar[set[str]] = set()
 
@@ -45,29 +48,32 @@ class EtlTask(HydroServerBaseModel):
         if not self.uid:
             raise AttributeError("Data cannot be saved: UID is not set.")
 
-        mappings = self.mappings
         saved_resource = self.service.update(
             self.uid,
             name=self.name,
             description=self.description,
-            task_variables=self.task_variables,
-            mappings=[
-                {"source_identifier": m.source_identifier, "target_datastream_id": str(m.target_datastream_id)}
-                for m in mappings
-            ],
+            task_variables=create_merge_patch(
+                {"task_variables": self._server_data["task_variables"]},
+                {"task_variables": self.task_variables},
+            ).get("task_variables", ...),
             crontab=self.crontab,
             interval=self.interval,
             interval_period=self.interval_period,
             start_time=self.start_time,
             enabled=self.enabled,
         )
-        saved_resource.mappings = mappings
         self._server_data = saved_resource.dict(by_alias=False).copy()
         self.__dict__.update(saved_resource.__dict__)
 
     @classmethod
     def get_route(cls):
-        return "etl/tasks"
+        return "collections/etl-tasks/items"
+
+    @cached_property
+    def mappings(self) -> List[EtlMapping]:
+        """All source-to-datastream mappings for this ETL task."""
+
+        return self.client.etlmappings.list(etl_task=self.uid, fetch_all=True).items
 
     @property
     def data_connection(self) -> "DataConnection":
@@ -82,27 +88,27 @@ class EtlTask(HydroServerBaseModel):
 
     def list_runs(
         self,
-        page: int = ...,
-        page_size: int = ...,
-        order_by: List[str] = ...,
+        offset: int = ...,
+        limit: int = ...,
+        sortby: List[str] = ...,
         status: str = ...,
-        started_at_min: datetime = ...,
-        started_at_max: datetime = ...,
-        finished_at_min: datetime = ...,
-        finished_at_max: datetime = ...,
+        min_started_at: datetime = ...,
+        max_started_at: datetime = ...,
+        min_finished_at: datetime = ...,
+        max_finished_at: datetime = ...,
     ) -> List[TaskRun]:
         """Get a collection of task runs for this ETL task."""
 
         return self.client.etltasks.list_runs(
             uid=self.uid,
-            page=page,
-            page_size=page_size,
-            order_by=order_by,
+            offset=offset,
+            limit=limit,
+            sortby=sortby,
             status=status,
-            started_at_min=started_at_min,
-            started_at_max=started_at_max,
-            finished_at_min=finished_at_min,
-            finished_at_max=finished_at_max,
+            min_started_at=min_started_at,
+            max_started_at=max_started_at,
+            min_finished_at=min_finished_at,
+            max_finished_at=max_finished_at,
         )
 
     def get_run(self, run_id: Union[uuid.UUID, str]) -> TaskRun:

@@ -1,4 +1,5 @@
 import path from 'path'
+import { randomUUID } from 'crypto'
 import { fileURLToPath } from 'url'
 import { defineConfig, devices } from '@playwright/test'
 
@@ -6,20 +7,27 @@ const here = path.dirname(fileURLToPath(import.meta.url))
 const repoRoot = path.resolve(here, '../..')
 const apiDir = path.join(repoRoot, 'django')
 const ensureDbScript = path.join(here, 'e2e/scripts/ensure_e2e_database.py')
+const injectSettingsScript = path.join(
+  here,
+  'e2e/scripts/injectBuiltSettings.mjs'
+)
 
-const e2ePython = process.env.E2E_PYTHON || 'python3.11'
+const e2ePython = process.env.E2E_PYTHON || 'python3.14'
 const apiHost = process.env.E2E_API_HOST || '127.0.0.1'
 const apiPort = process.env.E2E_API_PORT || '18000'
 const apiBaseUrl = `http://${apiHost}:${apiPort}`
 const appHost = process.env.E2E_APP_HOST || '127.0.0.1'
 const appPort = process.env.E2E_APP_PORT || '14173'
 const appBaseUrl = `http://${appHost}:${appPort}`
+const workerCount = Number(process.env.E2E_WORKERS || (process.env.CI ? 2 : 1))
+const e2eControlToken =
+  process.env.E2E_CONTROL_TOKEN || `hydroserver-e2e-${randomUUID()}`
 
 // Local runs use the fast Vite dev server (quiet, no rebuild between runs); CI
 // builds and previews the production bundle so the release gate tests the real
 // artifact.
 const appCommand = process.env.CI
-  ? `npm run build && npm run preview -- --host ${appHost} --port ${appPort}`
+  ? `npm run build && node ${injectSettingsScript} && npm run preview -- --host ${appHost} --port ${appPort}`
   : `npm run dev -- --host ${appHost} --port ${appPort}`
 
 // Suppress the managed servers' output in the local test console so the
@@ -38,6 +46,7 @@ const e2eAdminDatabaseUrl =
 
 process.env.E2E_API_BASE_URL = process.env.E2E_API_BASE_URL || apiBaseUrl
 process.env.E2E_APP_BASE_URL = process.env.E2E_APP_BASE_URL || appBaseUrl
+process.env.E2E_CONTROL_TOKEN = e2eControlToken
 
 const reporter = process.env.CI
   ? [
@@ -61,7 +70,7 @@ export default defineConfig({
   expect: {
     timeout: 10 * 1000,
   },
-  workers: process.env.CI ? 2 : 1,
+  workers: workerCount,
   reporter,
   outputDir: path.join(here, 'test-results'),
   use: {
@@ -87,22 +96,22 @@ export default defineConfig({
         DATABASE_URL: e2eDatabaseUrl,
         E2E_DATABASE_URL: e2eDatabaseUrl,
         E2E_ADMIN_DATABASE_URL: e2eAdminDatabaseUrl,
-        CELERY_BROKER_URL: process.env.CELERY_BROKER_URL || 'redis://127.0.0.1:6379/0',
-        SMTP_URL: process.env.SMTP_URL || 'memory://',
+        CELERY_BROKER_URL:
+          process.env.CELERY_BROKER_URL || 'redis://127.0.0.1:6379/0',
+        SMTP_URL: process.env.SMTP_URL || 'memorymail://',
         PROXY_BASE_URL: appBaseUrl,
+        WEB_CLIENT_URL: appBaseUrl,
         ALLOWED_HOSTS: '127.0.0.1,localhost',
-        // The seeded browser suite issues many short bursts of API requests while
-        // bootstrapping pages. Keep throttling effectively disabled in the
-        // isolated E2E environment so the release pass reflects product failures,
-        // not test-runner rate limiting.
-        ANON_THROTTLE_RATE: '10000/s',
-        AUTH_THROTTLE_RATE: '10000/s',
-        ACCOUNT_RATE_LIMITS_DISABLED: 'true',
         DEPLOYMENT_BACKEND: 'dev',
         DEBUG: 'True',
+        MEDIA_STORAGE_ENABLED: 'True',
+        E2E_TESTING: 'True',
+        E2E_CONTROL_TOKEN: e2eControlToken,
       },
-      url: `${apiBaseUrl}/api/data/workspaces`,
-      reuseExistingServer: false,
+      url: `${apiBaseUrl}/api/ogc/collections/workspaces/items`,
+      // Isolated per-test scenarios make reusing a developer's local API safe
+      // and remove repeated migration/startup cost. CI always starts fresh.
+      reuseExistingServer: !process.env.CI,
       timeout: 180 * 1000,
       ...serverOutput,
     },

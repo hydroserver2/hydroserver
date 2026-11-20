@@ -11,9 +11,9 @@ import { useHydroServer } from '@/store/hydroserver'
 import { useWorkspaceStore } from '@/store/workspaces'
 
 export interface NewProcessingLevelInput {
-  code: string
-  definition?: string
-  explanation?: string
+  name: string
+  description: string
+  code?: string
 }
 
 export function useProcessingLevels() {
@@ -30,9 +30,10 @@ export function useProcessingLevels() {
     }
     const body = Object.assign(new ProcessingLevel(), {
       workspaceId,
-      code: input.code,
-      definition: input.definition ?? '',
-      explanation: input.explanation ?? '',
+      name: input.name,
+      description: input.description,
+      code: input.code ?? null,
+      definition: null,
     })
     const res = await hs.value.processingLevels.create(body)
     if (!res.ok || !res.data) {

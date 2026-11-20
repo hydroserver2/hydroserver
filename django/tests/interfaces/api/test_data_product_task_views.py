@@ -1,0 +1,531 @@
+from datetime import timedelta
+from unittest.mock import patch
+
+import pytest
+from django.test import override_settings
+from django.conf import settings
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
+from django.utils import timezone
+
+from processing.orchestration.models import TaskRun
+from tests.core.iam.factories import (
+    CollaboratorFactory,
+    PermissionFactory,
+    RoleFactory,
+    UserFactory,
+    WorkspaceFactory,
+)
+from tests.core.sta.factories import DatastreamFactory, MonitoringSiteFactory
+from tests.processing.products.factories import (
+    DataProductTaskFactory,
+    DataProductTransformationFactory,
+    DataProductTransformationInputFactory,
+    RatingCurveFactory,
+)
+
+pytestmark = pytest.mark.django_db
+
+DATA_PRODUCT_TASKS_URL = "/api/ogc/collections/data-product-tasks/items"
+
+
+def _detail_url(task_id):
+    return f"{DATA_PRODUCT_TASKS_URL}/{task_id}"
+
+
+def _collaborator_with_permission(workspace, **permissions):
+    role = RoleFactory(workspace=workspace)
+    PermissionFactory(role=role, resource_type="DataProductTask", **permissions)
+    return CollaboratorFactory(workspace=workspace, role=role)
+
+
+def _make_data_product_task(workspace, **kwargs):
+    return DataProductTaskFactory(monitoring_site=MonitoringSiteFactory(workspace=workspace), **kwargs)
+
+
+def _data_product_task_body(monitoring_site_id, **overrides):
+    body = {
+        "name": "New Data Product Task",
+        "monitoringSiteId": str(monitoring_site_id),
+    }
+    body.update(overrides)
+    return body
+
+
+# --- get_data_product_tasks ---------------------------------------------------------
+
+
+def test_get_data_product_tasks_includes_task_for_workspace_owner(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task = _make_data_product_task(workspace)
+    client.force_login(owner)
+
+    response = client.get(DATA_PRODUCT_TASKS_URL)
+
+    assert response.status_code == 200
+    assert str(task.id) in [t["id"] for t in response.json()["data"]]
+
+
+def test_get_data_product_tasks_excludes_task_for_outsider(client):
+    workspace = WorkspaceFactory()
+    _make_data_product_task(workspace)
+    outsider = UserFactory()
+    client.force_login(outsider)
+
+    response = client.get(DATA_PRODUCT_TASKS_URL)
+
+    assert response.json()["data"] == []
+
+
+def test_get_data_product_tasks_properties_filters_response_and_skips_expensive_queries(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task = _make_data_product_task(workspace)
+    monitoring_site = task.monitoring_site
+    transformation = DataProductTransformationFactory(
+        task=task,
+        output_datastream=DatastreamFactory(monitoring_site=monitoring_site),
+        transformation_type="derivation",
+        formula="x",
+    )
+    DataProductTransformationInputFactory(
+        transformation=transformation,
+        datastream=DatastreamFactory(monitoring_site=monitoring_site),
+        variable_name="x",
+    )
+    client.force_login(owner)
+
+    response = client.get(DATA_PRODUCT_TASKS_URL)
+    listed = next(t for t in response.json()["data"] if t["id"] == str(task.id))
+    assert listed["transformationTypes"] == ["derivation"]
+
+    with CaptureQueriesContext(connection) as ctx:
+        response = client.get(DATA_PRODUCT_TASKS_URL, {"properties": "id,name"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert set(body["data"][0].keys()) == {"id", "name"}
+
+    sqls = [q["sql"] for q in ctx.captured_queries]
+    assert not any("products_dataproducttransformation" in sql for sql in sqls), \
+        "transformationTypes aggregation should be skipped"
+    assert not any("DISTINCT ON" in sql for sql in sqls), "attach_latest_runs should be skipped"
+
+
+def test_get_data_product_tasks_returns_401_when_unauthenticated(client):
+    response = client.get(DATA_PRODUCT_TASKS_URL)
+
+    assert response.status_code == 401
+
+
+# --- create_data_product_task -----------------------------------------------------------
+
+
+def test_create_data_product_task_succeeds_for_workspace_owner(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.post(
+        DATA_PRODUCT_TASKS_URL,
+        data=_data_product_task_body(monitoring_site.id),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
+    assert set(response.json().keys()) == {"id"}
+    detail = client.get(_detail_url(response.json()["id"]))
+    assert detail.json()["data"]["name"] == "New Data Product Task"
+
+
+def test_create_data_product_task_returns_401_when_unauthenticated(client):
+    workspace = WorkspaceFactory()
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+
+    response = client.post(
+        DATA_PRODUCT_TASKS_URL,
+        data=_data_product_task_body(monitoring_site.id),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 401
+
+
+def test_create_data_product_task_returns_403_without_create_permission(client):
+    workspace = WorkspaceFactory()
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    collaborator = _collaborator_with_permission(workspace, can_view=True)
+    client.force_login(collaborator.user)
+
+    response = client.post(
+        DATA_PRODUCT_TASKS_URL,
+        data=_data_product_task_body(monitoring_site.id),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 403
+
+
+# --- get_data_product_task ----------------------------------------------------------------
+
+
+def test_get_data_product_task_returns_200_for_workspace_owner(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task = _make_data_product_task(workspace)
+    client.force_login(owner)
+
+    response = client.get(_detail_url(task.id))
+
+    assert response.status_code == 200
+    assert response.json()["data"]["id"] == str(task.id)
+
+
+def test_get_data_product_task_reports_transformation_types_of_every_type(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task = _make_data_product_task(workspace)
+    monitoring_site = task.monitoring_site
+
+    rating_curve = RatingCurveFactory(monitoring_site=monitoring_site)
+    rc_transformation = DataProductTransformationFactory(
+        task=task,
+        output_datastream=DatastreamFactory(monitoring_site=monitoring_site),
+        transformation_type="rating_curve",
+        formula=None,
+        rating_curve=rating_curve,
+    )
+    DataProductTransformationInputFactory(
+        transformation=rc_transformation,
+        datastream=DatastreamFactory(monitoring_site=monitoring_site),
+    )
+
+    derivation_transformation = DataProductTransformationFactory(
+        task=task,
+        output_datastream=DatastreamFactory(monitoring_site=monitoring_site),
+        transformation_type="derivation",
+        formula="x",
+    )
+    DataProductTransformationInputFactory(
+        transformation=derivation_transformation,
+        datastream=DatastreamFactory(monitoring_site=monitoring_site),
+        variable_name="x",
+    )
+
+    aggregation_transformation = DataProductTransformationFactory(
+        task=task,
+        output_datastream=DatastreamFactory(monitoring_site=monitoring_site),
+        transformation_type="aggregation",
+        formula=None,
+        aggregation_method="mean",
+        output_interval_units="hours",
+        output_interval=1,
+    )
+    DataProductTransformationInputFactory(
+        transformation=aggregation_transformation,
+        datastream=DatastreamFactory(monitoring_site=monitoring_site),
+    )
+
+    client.force_login(owner)
+
+    list_response = client.get(DATA_PRODUCT_TASKS_URL)
+    assert list_response.status_code == 200
+    listed_task = next(
+        t for t in list_response.json()["data"] if t["id"] == str(task.id)
+    )
+    assert set(listed_task["transformationTypes"]) == {"rating_curve", "derivation", "aggregation"}
+
+    detail_response = client.get(_detail_url(task.id))
+    assert detail_response.status_code == 200
+    assert set(detail_response.json()["data"]["transformationTypes"]) == {
+        "rating_curve", "derivation", "aggregation"
+    }
+
+
+def test_get_data_product_task_returns_404_for_outsider(client):
+    workspace = WorkspaceFactory()
+    task = _make_data_product_task(workspace)
+    outsider = UserFactory()
+    client.force_login(outsider)
+
+    response = client.get(_detail_url(task.id))
+
+    assert response.status_code == 404
+
+
+def test_get_data_product_task_returns_401_when_unauthenticated(client):
+    workspace = WorkspaceFactory()
+    task = _make_data_product_task(workspace)
+
+    response = client.get(_detail_url(task.id))
+
+    assert response.status_code == 401
+
+
+def test_get_data_product_task_returns_404_for_nonexistent_task(client):
+    owner = UserFactory()
+    client.force_login(owner)
+
+    response = client.get(_detail_url("00000000-0000-0000-0000-000000000000"))
+
+    assert response.status_code == 404
+
+
+# --- update_data_product_task ----------------------------------------------------------------
+
+
+def test_update_data_product_task_succeeds_for_workspace_owner(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task = _make_data_product_task(workspace, name="Original Name")
+    client.force_login(owner)
+
+    response = client.patch(
+        _detail_url(task.id),
+        data={"name": "Updated Name"},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 204
+    assert not response.content
+    detail = client.get(_detail_url(task.id))
+    assert detail.json()["data"]["name"] == "Updated Name"
+
+
+def test_update_data_product_task_returns_403_for_viewer_collaborator(client):
+    workspace = WorkspaceFactory()
+    task = _make_data_product_task(workspace)
+    collaborator = _collaborator_with_permission(workspace, can_view=True)
+    client.force_login(collaborator.user)
+
+    response = client.patch(
+        _detail_url(task.id),
+        data={"name": "Updated Name"},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 403
+
+
+# --- delete_data_product_task ----------------------------------------------------------------
+
+
+def test_delete_data_product_task_succeeds_for_workspace_owner(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task = _make_data_product_task(workspace)
+    client.force_login(owner)
+
+    response = client.delete(_detail_url(task.id))
+
+    assert response.status_code == 204
+    assert client.get(_detail_url(task.id)).status_code == 404
+
+
+def test_delete_data_product_task_returns_403_for_viewer_collaborator(client):
+    workspace = WorkspaceFactory()
+    task = _make_data_product_task(workspace)
+    collaborator = _collaborator_with_permission(workspace, can_view=True)
+    client.force_login(collaborator.user)
+
+    response = client.delete(_detail_url(task.id))
+
+    assert response.status_code == 403
+
+
+# --- trigger_data_product_task (basic verification, no real transformation execution) ------
+
+
+def test_trigger_data_product_task_creates_pending_run_for_workspace_owner(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task = _make_data_product_task(workspace)
+    client.force_login(owner)
+
+    with patch("processing.products.tasks.run_data_product_task.apply_async") as mock_apply_async:
+        response = client.post(f"{_detail_url(task.id)}/trigger")
+
+    assert response.status_code == 202
+    assert response.json()["data"]["status"] == "PENDING"
+    mock_apply_async.assert_called_once()
+    assert TaskRun.objects.filter(task=task, status="PENDING").exists()
+
+
+def test_trigger_data_product_task_returns_403_for_viewer_collaborator(client):
+    workspace = WorkspaceFactory()
+    task = _make_data_product_task(workspace)
+    collaborator = _collaborator_with_permission(workspace, can_view=True)
+    client.force_login(collaborator.user)
+
+    with patch("processing.products.tasks.run_data_product_task.apply_async") as mock_apply_async:
+        response = client.post(f"{_detail_url(task.id)}/trigger")
+
+    assert response.status_code == 403
+    mock_apply_async.assert_not_called()
+
+
+# --- get_data_product_task_runs / get_data_product_task_run (basic verification only) ------
+
+
+def test_get_data_product_task_runs_returns_runs_for_workspace_owner(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task = _make_data_product_task(workspace)
+    run = TaskRun.objects.create(task=task, status="SUCCESS")
+    client.force_login(owner)
+
+    response = client.get(f"{_detail_url(task.id)}/runs")
+
+    assert response.status_code == 200
+    assert str(run.id) in [r["id"] for r in response.json()["data"]]
+
+
+def test_trigger_data_product_task_returns_the_run_with_links_to_it(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task = _make_data_product_task(workspace)
+    client.force_login(owner)
+
+    with patch("processing.products.tasks.run_data_product_task.apply_async"):
+        response = client.post(f"{_detail_url(task.id)}/trigger")
+
+    run = TaskRun.objects.get(task=task)
+    run_url = f"{settings.PROXY_BASE_URL.rstrip('/')}/api/ogc/collections/data-product-tasks/items/{task.id}/runs/{run.id}"
+    assert response.status_code == 202
+    assert response["Location"] == run_url
+    assert response.json()["data"]["id"] == str(run.id)
+    assert response.json()["links"] == [{"href": run_url, "rel": "self", "type": "application/json"}]
+
+
+def test_get_data_product_task_run_returns_a_self_link_and_no_collection_link(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task = _make_data_product_task(workspace)
+    run = TaskRun.objects.create(task=task, status="SUCCESS")
+    client.force_login(owner)
+
+    response = client.get(f"{_detail_url(task.id)}/runs/{run.id}")
+
+    assert response.json()["links"] == [
+        {
+            "href": f"{settings.PROXY_BASE_URL.rstrip('/')}/api/ogc/collections/data-product-tasks/items/{task.id}/runs/{run.id}",
+            "rel": "self",
+            "type": "application/json",
+        }
+    ]
+
+
+def test_get_data_product_task_run_returns_200_for_workspace_owner(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task = _make_data_product_task(workspace)
+    run = TaskRun.objects.create(task=task, status="SUCCESS")
+    client.force_login(owner)
+
+    response = client.get(f"{_detail_url(task.id)}/runs/{run.id}")
+
+    assert response.status_code == 200
+    assert response.json()["data"]["id"] == str(run.id)
+
+
+def test_get_data_product_task_runs_accepts_properties_filter(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task = _make_data_product_task(workspace)
+    TaskRun.objects.create(task=task, status="SUCCESS")
+    client.force_login(owner)
+
+    response = client.get(f"{_detail_url(task.id)}/runs", {"properties": "id,status"})
+
+    assert response.status_code == 200
+    assert set(response.json()["data"][0].keys()) == {"id", "status"}
+
+
+def test_get_data_product_task_runs_accepts_limit_zero(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task = _make_data_product_task(workspace)
+    TaskRun.objects.create(task=task, status="SUCCESS")
+    client.force_login(owner)
+
+    response = client.get(f"{_detail_url(task.id)}/runs", {"limit": "0"})
+
+    assert response.status_code == 200
+    assert response.json()["data"] == []
+    assert response.json()["meta"]["limit"] == 0
+
+
+def test_get_data_product_task_runs_ignores_unsupported_include(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task = _make_data_product_task(workspace)
+    client.force_login(owner)
+
+    response = client.get(f"{_detail_url(task.id)}/runs", {"include": "bogus"})
+
+    assert response.status_code == 200
+
+
+@pytest.mark.parametrize(
+    "sortby, expected",
+    [
+        ("latestRunStartedAt", ["older", "newer"]),
+        ("-latestRunStartedAt", ["newer", "older"]),
+        ("latestRunFinishedAt", ["older", "newer"]),
+        ("latestRunStatus", ["newer", "older"]),
+    ],
+)
+def test_get_data_product_tasks_sorts_by_latest_run_fields(client, sortby, expected):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    now = timezone.now()
+    tasks = {"older": _make_data_product_task(workspace), "newer": _make_data_product_task(workspace)}
+    TaskRun.objects.create(
+        task=tasks["older"], status="SUCCESS", started_at=now - timedelta(hours=2),
+        finished_at=now - timedelta(hours=1),
+    )
+    TaskRun.objects.create(task=tasks["newer"], status="FAILURE", started_at=now, finished_at=now)
+    client.force_login(owner)
+
+    response = client.get(DATA_PRODUCT_TASKS_URL, {"sortby": sortby})
+
+    assert response.status_code == 200
+    ids = [task["id"] for task in response.json()["data"]]
+    assert ids == [str(tasks[name].id) for name in expected]
+
+
+# --- CELERY_ENABLED=False ------------------------------------------------------------------
+
+
+@override_settings(CELERY_ENABLED=False)
+def test_create_data_product_task_returns_501_when_orchestration_disabled(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    monitoring_site = MonitoringSiteFactory(workspace=workspace)
+    client.force_login(owner)
+
+    response = client.post(
+        DATA_PRODUCT_TASKS_URL,
+        data=_data_product_task_body(monitoring_site.id),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 501
+    assert response.json()["message"] == "Job orchestration is not enabled on this HydroServer instance."
+
+
+@override_settings(CELERY_ENABLED=False)
+def test_trigger_data_product_task_returns_501_without_creating_run_when_orchestration_disabled(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    task = _make_data_product_task(workspace)
+    client.force_login(owner)
+
+    with patch("processing.products.tasks.run_data_product_task.apply_async") as mock_apply_async:
+        response = client.post(f"{_detail_url(task.id)}/trigger")
+
+    assert response.status_code == 501
+    mock_apply_async.assert_not_called()
+    assert not TaskRun.objects.filter(task=task).exists()

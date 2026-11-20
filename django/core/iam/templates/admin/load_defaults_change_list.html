@@ -1,0 +1,10 @@
+{% extends "admin/change_list.html" %}
+
+{% block object-tools-items %}
+  {% if load_defaults_url %}
+    <li>
+      <a href="{{ load_defaults_url }}" class="button">Load Default Data</a>
+    </li>
+  {% endif %}
+  {{ block.super }}
+{% endblock %}

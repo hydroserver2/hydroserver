@@ -88,7 +88,10 @@ export async function reconstructSession(
     committedWindows(committed)
   )
   const ops = unwrap(
-    await qcOperations.list(historyId, sessionId, { fetch_all: true })
+    await qcOperations.list(historyId, sessionId, {
+      fetch_all: true,
+      sortby: ['order'],
+    })
   )
 
   const report = await applyHistory(record, historyOf(session, ops))
@@ -114,7 +117,7 @@ export async function reconstructCommittedSession(
   const session = unwrap(await qcSessions.get(historyId, sessionId))
   const ancestors = unwrap(
     await qcSessions.list(historyId, {
-      ancestor_of: sessionId,
+      ancestorOf: sessionId,
       fetch_all: true,
     })
   ).sort((a, b) => commitOrder(a).localeCompare(commitOrder(b)))
@@ -129,7 +132,12 @@ export async function reconstructCommittedSession(
     ),
     Promise.all(
       chain.map(async (s) =>
-        unwrap(await qcOperations.list(historyId, s.id, { fetch_all: true }))
+        unwrap(
+          await qcOperations.list(historyId, s.id, {
+            fetch_all: true,
+            sortby: ['order'],
+          })
+        )
       )
     ),
   ])

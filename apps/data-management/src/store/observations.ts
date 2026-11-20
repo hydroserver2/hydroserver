@@ -18,7 +18,7 @@ export const useObservationStore = defineStore('observations', () => {
 
   type ObservationRaw = {
     datetimes: Float64Array
-    dataValues: Float32Array
+    dataValues: Float64Array
   }
 
   const observations = ref<Record<string, ObservationRecordLocal>>({})
@@ -43,7 +43,8 @@ export const useObservationStore = defineStore('observations', () => {
   const parseObservationRows = (rows: ObservationArray) => {
     const length = rows.length
     const datetimes = new Float64Array(length)
-    const dataValues = new Float32Array(length)
+    // Keep JS number precision so decimal no-data sentinels still match exactly.
+    const dataValues = new Float64Array(length)
     for (let i = 0; i < length; i += 1) {
       const [dateValue, rawValue] = rows[i]
       const time =
@@ -129,8 +130,7 @@ export const useObservationStore = defineStore('observations', () => {
         const fetchedData = (await fetchObservations(
           datastream,
           beginTime,
-          endTime,
-          signal
+          endTime
         )) as ObservationArray
         ensureLatest()
         observationsRaw.value[id] = parseObservationRows(fetchedData)
@@ -153,8 +153,7 @@ export const useObservationStore = defineStore('observations', () => {
         beginDataPromise = fetchObservations(
           datastream,
           beginTime,
-          new Date(storedStart).toISOString(),
-          signal
+          new Date(storedStart).toISOString()
         ) as Promise<ObservationArray>
       }
 
@@ -164,8 +163,7 @@ export const useObservationStore = defineStore('observations', () => {
         endDataPromise = fetchObservations(
           datastream,
           new Date(storedEnd).toISOString(),
-          endTime,
-          signal
+          endTime
         ) as Promise<ObservationArray>
       }
 
@@ -191,7 +189,7 @@ export const useObservationStore = defineStore('observations', () => {
         const newLength = beginLen + existingLen + endLen
 
         const newDatetimes = new Float64Array(newLength)
-        const newValues = new Float32Array(newLength)
+        const newValues = new Float64Array(newLength)
 
         let offset = 0
         if (beginRaw) {

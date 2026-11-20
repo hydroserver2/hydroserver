@@ -1,24 +1,24 @@
 <template>
   <HydroShareDeleteCard
-    v-if="thing?.id && openDelete"
-    :thing-id="thing.id"
+    v-if="monitoringSite?.id && openDelete"
+    :monitoring-site-id="monitoringSite.id"
     @close="openDelete = false"
     @delete="onDelete"
   />
   <v-card v-else-if="!openDelete">
     <v-card-title>
-      <v-row class="text-h5">
+      <v-row class="hs-text-md">
         <v-col v-if="linkToExistingAccount">
-          Link Site to HydroShare Archival Resource
+          Link site to HydroShare archival resource
         </v-col>
         <v-col v-else>
-          {{ isEdit ? 'Update' : 'Create' }} HydroShare Archival Resource
+          {{ isEdit ? 'Update' : 'Create' }} HydroShare archival resource
         </v-col>
         <v-spacer />
         <v-col cols="auto" v-if="isEdit">
-          <v-btn @click="archiveThing">
+          <v-btn @click="archiveMonitoringSite">
             <v-icon :icon="mdiUpload" left />
-            Archive Now
+            Archive now
           </v-btn>
         </v-col>
       </v-row>
@@ -33,8 +33,8 @@
       validate-on="blur"
       :disabled="loading"
     >
-      <h6 v-if="false" class="text-h6 my-4 d-flex justify-center align-center">
-        Archival Scheduling
+      <h6 v-if="false" class="hs-text-md my-4 d-flex justify-center align-center">
+        Archival scheduling
 
         <v-tooltip open-delay="500">
           <template v-slot:activator="{ props }">
@@ -94,23 +94,23 @@
 
         <div v-if="!isEdit">
           <v-radio-group v-model="linkToExistingAccount" inline>
-            <v-radio label="Create New Resource" :value="false" />
-            <v-radio label="Link Site to Existing Resource" :value="true" />
+            <v-radio label="Create new resource" :value="false" />
+            <v-radio label="Link site to existing resource" :value="true" />
           </v-radio-group>
 
           <div v-if="!linkToExistingAccount">
             <v-text-field
-              label="Resource Title *"
+              label="Resource title *"
               v-model="item.resourceTitle"
               :rules="rules.required"
             />
             <v-textarea
-              label="Resource Abstract *"
+              label="Resource abstract *"
               v-model="item.resourceAbstract"
               :rules="rules.required"
             />
             <v-combobox
-              label="Resource Keywords *"
+              label="Resource keywords *"
               v-model="item.resourceKeywords"
               multiple
               :rules="rules.minLength(1)"
@@ -122,7 +122,7 @@
                   closable
                   @click:close="removeKeyword(index)"
                 >
-                  <span>{{ item.title }}</span>
+                  <span>{{ item }}</span>
                 </v-chip>
               </template>
             </v-combobox>
@@ -132,21 +132,21 @@
         <v-text-field
           v-if="linkToExistingAccount || isEdit"
           v-model="item.link"
-          label="HydroShare Resource Link (URL) *"
+          label="HydroShare resource link (URL) *"
           placeholder="https://www.hydroshare.org/resource/9429f876dc71958d93f22909f2cb12f3/"
           :rules="hydroShareUrl"
           class="mb-4"
         />
 
         <v-text-field
-          label="Resource Folder Name *"
+          label="Resource folder name *"
           v-model="item.path"
           :rules="rules.required"
           class="mb-4"
         />
 
         <v-autocomplete
-          label="Included Datastreams *"
+          label="Included datastreams *"
           v-model="item.datastreamIds"
           :items="datastreams"
           :item-title="datastreamTitle"
@@ -161,7 +161,7 @@
               closable
               @click:close="removeDatastream(index)"
             >
-              <span>{{ item.title }}</span>
+              <span>{{ datastreamTitle(item) }}</span>
             </v-chip>
           </template>
         </v-autocomplete>
@@ -180,16 +180,16 @@
       <v-card-actions>
         <v-spacer />
         <v-btn-cancel @click="emit('close')">Close</v-btn-cancel>
-        <v-btn-primary @click="onSubmit">{{
+        <v-btn-dialog-action @click="onSubmit">{{
           isEdit ? 'Update' : 'Create'
-        }}</v-btn-primary>
+        }}</v-btn-dialog-action>
       </v-card-actions>
     </v-form>
   </v-card>
 </template>
 
 <script setup lang="ts">
-import { useThingStore } from '@/store/thing'
+import { useMonitoringSiteStore } from '@/store/monitoringSite'
 import { storeToRefs } from 'pinia'
 import { onMounted, ref } from 'vue'
 import hs, {
@@ -206,19 +206,18 @@ import { Snackbar } from '@/utils/notifications'
 import { mdiHelpCircleOutline, mdiUpload } from '@mdi/js'
 
 const emit = defineEmits(['close', 'delete'])
-const { hydroShareArchive: archive, loading } = storeToRefs(
-  useHydroShareStore()
-)
+const { hydroShareArchive: archive, loading } =
+  storeToRefs(useHydroShareStore())
 
 const { item, isEdit, valid, myForm, uploadItem } =
   useFormLogic<PostHydroShareArchive>(
-    hs.things.createHydroShareArchive,
-    hs.things.updateHydroShareArchive,
+    hs.monitoringSites.createHydroShareArchive,
+    hs.monitoringSites.updateHydroShareArchive,
     PostHydroShareArchive,
     archive.value || undefined
   )
 
-const { thing } = storeToRefs(useThingStore())
+const { monitoringSite } = storeToRefs(useMonitoringSiteStore())
 const datastreams = ref<Datastream[]>([])
 const linkToExistingAccount = ref(false)
 const openDelete = ref(false)
@@ -249,20 +248,20 @@ const generateKeywords = () => {
   const mediumsSet = new Set(datastreams.value.map((ds) => ds.sampledMedium))
   const EXCLUDED_MEDIUMS = ['Not applicable', 'Unknown', 'Other']
   EXCLUDED_MEDIUMS.forEach((medium) => mediumsSet.delete(medium))
-  if (thing.value?.siteType) mediumsSet.add(thing.value.siteType)
+  if (monitoringSite.value?.type) mediumsSet.add(monitoringSite.value.type)
   return ['HydroServer Site Archive', ...mediumsSet]
 }
 
 function generateDefaultFormData() {
-  item.value.thingId = thing.value!.id
+  item.value.monitoringSiteId = monitoringSite.value!.id
   item.value.path = 'HydroServer'
   item.value.resourceKeywords = generateKeywords()
-  item.value.resourceTitle = `HydroServer Archive: ${thing.value?.name}`
-  item.value.publicResource = !thing.value?.isPrivate
+  item.value.resourceTitle = `HydroServer Archive: ${monitoringSite.value?.name}`
+  item.value.publicResource = !monitoringSite.value?.isPrivate
   item.value.datastreamIds = datastreams.value.map((ds) => ds.id)
   item.value.resourceAbstract =
     `This HydroShare resource serves as an archive for monitoring data collected at ` +
-    `${thing.value?.name}. The datasets contained herein represent a collection of hydrologic observations ` +
+    `${monitoringSite.value?.name}. The datasets contained herein represent a collection of hydrologic observations ` +
     `collected at this location. The purpose of this archive is to provide a centralized repository for the ` +
     `hydrologic data recorded at this site, facilitating accessibility, analysis, and collaboration among ` +
     `researchers and stakeholders.`
@@ -290,12 +289,12 @@ async function onSubmit() {
   }
 }
 
-const archiveThing = async () => {
+const archiveMonitoringSite = async () => {
   try {
     loading.value = true
     emit('close')
     Snackbar.info('Uploading site data to HydroShare. This may take a minute.')
-    await hs.things.triggerHydroShareArchive(thing.value!.id)
+    await hs.monitoringSites.triggerHydroShareArchive(monitoringSite.value!.id)
   } catch (error) {
     Snackbar.error('Failed to upload site data to HydroShare')
     console.error('Error archiving to HydroShare', error)
@@ -306,7 +305,7 @@ const archiveThing = async () => {
 
 onMounted(async () => {
   datastreams.value = await hs.datastreams.listAllItems({
-    thing_id: [thing.value!.id],
+    monitoringSiteId: [monitoringSite.value!.id],
   })
   if (!isEdit.value) generateDefaultFormData()
 })

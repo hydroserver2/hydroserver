@@ -4,6 +4,7 @@ const devHost = import.meta.env.VITE_APP_PROXY_BASE_URL || 'http://127.0.0.1:800
 const defaultSettings: AppSettings = {
   authenticationConfiguration: {
     hydroserverSignupEnabled: false,
+    csrfCookieName: 'csrftoken',
     providers: [],
   },
   aboutInformation: {
@@ -29,6 +30,10 @@ const defaultSettings: AppSettings = {
     enableGoogleAnalytics: false,
     googleAnalyticsMeasurementId: null,
   },
+  extensionsConfiguration: {
+    fileUploadEnabled: false,
+    orchestrationEnabled: true,
+  },
   legalInformation: {
     termsOfUseLink: null,
     privacyPolicyLink: null,
@@ -39,15 +44,24 @@ const defaultSettings: AppSettings = {
 let scriptTag: HTMLScriptElement | null
 
 if (import.meta.env.DEV) {
-  const xhr = new XMLHttpRequest()
-  xhr.open('GET', devHost, false)
-  xhr.send(null)
-  const indexHtml = xhr.status >= 200 && xhr.status < 300 ? xhr.responseText : null
-  const parser = new DOMParser()
-  const doc = indexHtml
-    ? parser.parseFromString(indexHtml, 'text/html')
-    : document.implementation.createHTMLDocument('')
-  scriptTag = doc.getElementById('app-settings') as HTMLScriptElement
+  try {
+    const xhr = new XMLHttpRequest()
+    xhr.open('GET', devHost, false)
+    xhr.send(null)
+    const indexHtml =
+      xhr.status >= 200 && xhr.status < 300 ? xhr.responseText : null
+    const parser = new DOMParser()
+    const doc = indexHtml
+      ? parser.parseFromString(indexHtml, 'text/html')
+      : document.implementation.createHTMLDocument('')
+    scriptTag = doc.getElementById('app-settings') as HTMLScriptElement
+  } catch (error) {
+    console.warn(
+      `Could not load development settings from ${devHost}; using defaults.`,
+      error
+    )
+    scriptTag = null
+  }
 } else {
   scriptTag = document.getElementById('app-settings') as HTMLScriptElement
 }
@@ -83,6 +97,10 @@ export const settings: AppSettings = {
   analyticsConfiguration: {
     ...defaultSettings.analyticsConfiguration,
     ...parsedSettings.analyticsConfiguration,
+  },
+  extensionsConfiguration: {
+    ...defaultSettings.extensionsConfiguration,
+    ...parsedSettings.extensionsConfiguration,
   },
   legalInformation: {
     ...defaultSettings.legalInformation,

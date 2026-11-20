@@ -12,9 +12,9 @@ All resources in HydroServer (monitoring sites, datastreams, etc.) are handled w
 
 ## User Roles
 
-Each collaborator in a workspace is assigned a role. A role is a set of permissions configurable at the resource level. For example, you can give a role read only access to the monitoring sites in a workspace, but give it full edit access to the datastreams of a workspace. By default, HydroServer ships with owner, editor, and viewer roles, but you can configure your own as an admininstrative option.
+Each collaborator in a workspace is assigned a role. A role is a set of permissions configurable at the resource level. For example, you can give a role read only access to the monitoring sites in a workspace, but give it full edit access to the datastreams of a workspace. The workspace owner has full control of the workspace. By default, HydroServer also ships with Editor, Viewer, and Data Loader roles that can be assigned to collaborators and service accounts, and an administrator can configure additional roles.
 
-The following table is a comparison of permissions for the owners, editors, and viewers of a workspace.
+The following table is a comparison of permissions for the owner and the default roles of a workspace.
 
 | Permission                                              | Owner | Editor | Viewer | Data Loader |
 |---------------------------------------------------------| ----- | ------ | ------ |-------------|
@@ -22,25 +22,29 @@ The following table is a comparison of permissions for the owners, editors, and 
 | Invite new workspace collaborators                      | Yes   | Yes    | No     | No          |
 | Create, update, delete sites, datastreams, and metadata | Yes   | Yes    | No     | No          |
 | Stream observations into datastreams                    | Yes   | Yes    | No     | Yes         |
-| Set up Job Orchestration System tasks                   | Yes   | Yes    | No     | Yes         |
+| Set up Job Orchestration System tasks                   | Yes   | Yes    | No     | No          |
 | View public and private data within workspace           | Yes   | Yes    | Yes    | Yes         |
 
-## API Keys
+## Service Accounts and API Keys
 
-Remote systems code or applications may need to authenticate with HydroServer in whatever data loading, retrieval, or analysis workflows you build. Giving your username and password to these systems is risky since they'll have _all_ the permissions you do - including deleting your account and data. It's better to create an API key that has the minimum permissions required for the external system to do its job. API keys are assigned roles the same as collaborators. API keys can be designated with "Data Loader", "Editor", and "Viewer" permissions.
+Remote systems or applications may need to authenticate with HydroServer in data-loading, retrieval, or analysis workflows. Giving these systems your username and password is risky because they receive all of your permissions. Instead, create a service account, assign it the minimum workspace role required for its job, and authenticate it with the generated API key. Service accounts can use roles such as Data Loader, Editor, or Viewer just like user collaborators.
 
-## Data Visibility
+## Data Privacy and Visibility
 
-It's assumed in a HydroServer setup that you want your data to be publicly viewable. By default, when you load data to a datastream, any guest of your site will be able to view that data and all related metadata. These visibility setting can be changed at the workspace, site, and datastream levels.
+It's assumed in a HydroServer setup that you want your data to be publicly viewable. By default, when you load data to a datastream, any guest of your site will be able to view that data and all related metadata. These privacy settings can be changed at the workspace, site, and datastream levels.
 
-1. **Workspace Privacy**: This setting determines whether a workspace is private or public. If your workspace is private, all sites, datastreams, and associated metadata will only be accesible to the workspace owner and collaborators.
+1. **Workspace Privacy**: This setting determines whether a workspace is private or public. If your workspace is private, all sites, datastreams, and associated metadata will only be accessible to the workspace owner and collaborators.
 
 2. **Site Privacy**: This setting determines whether your site is private or public. If you set your site to private, it means that only the workspace owners and collaborators can view the site and all associated datastreams through the website or API. This is like having a closed folder that only selected people can open. This allows users to set some sites as public and others as private within a public workspace.
 
 3. **Datastream Privacy**: This setting is about who can see a specific datastream at your site. Even if your site is public, you might want to keep certain datastreams of that site private. When this setting is on, it means that only the workspace owners and collaborators can view this particular datastream's details and data.
 
-4. **Datastream Data Visibility**: This is a convenience setting for controlling visibility of data in the Data Management Web Application. The datastream is considered public and its metadata will be visible to the public, but datastream observations will be hidden. Note: Observations can still be retrieved by anyone through the SensorThings API regardless of this setting.
+4. **Datastream Data Download Restriction**: When this setting is on, the public can't download or query the datastream's data, through the Data Management Web Application or any API, including the SensorThings API and CSV downloads. The datastream and its metadata stay public, including its observation count and the time range its observations cover, so guests can see that the data exists, but can't download or query it. Only the workspace owner and collaborators whose role can view observations can download and query the data.
 
-These privacy settings work in a hierarchical, conditional manner:
+HydroServer checks privacy at all three levels. A datastream and its observations are publicly accessible only when its workspace, monitoring site, and the datastream itself are all public.
 
-If you set the **Site Privacy** to private (thing.is_private), then both **Datastream Visibility** (datastream.is_visible) and **Datastream Data Visibility** (datastream.is_data_visible) will automatically be set to private as well. However, if the site is public, you can still control the visibility of each datastream and its data individually.
+Making a site private blocks public access to its datastreams and observations. Each datastream keeps its own privacy (`datastream.isPrivate`) and data download restriction (`datastream.isRestricted`) settings.
+
+For example, if you make the site public again and its workspace is also public, datastreams that were public before become publicly accessible again. Datastreams marked private stay private, and datastreams with restricted data download stay restricted.
+
+Datastream privacy and data download restriction are independent settings. A private datastream hides its data whether or not its data download is restricted, but its restriction setting is kept. If you make a datastream private and then public again, its data download restriction is unchanged.

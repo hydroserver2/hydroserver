@@ -8,6 +8,9 @@ class Organization(models.Model):
     link = models.URLField(max_length=2000, blank=True, null=True)
     organization_type = models.CharField(max_length=255)
 
+    def __str__(self):
+        return self.name
+
 
 class OrganizationType(models.Model):
     name = models.CharField(max_length=255, unique=True)

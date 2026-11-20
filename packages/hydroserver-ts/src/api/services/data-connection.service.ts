@@ -6,8 +6,4 @@ export class DataConnectionService extends HydroServerBaseService<typeof C, M> {
   static route = C.route
   static writableKeys = C.writableKeys
   static Model = M
-
-  protected override getBaseUrl(): string {
-    return this._client.etlDataBase
-  }
 }

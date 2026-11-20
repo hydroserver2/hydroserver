@@ -1,0 +1,138 @@
+import uuid
+
+from typing import Optional, Literal, Annotated
+from pydantic import BeforeValidator, WithJsonSchema
+from pydantic.alias_generators import to_camel
+from ninja import Schema, Field, Query
+
+from core.sta.models import MethodType
+from interfaces.api.schemas import (
+    BaseGetResponse,
+    BasePostBody,
+    BasePatchBody,
+    BaseQueryParameters,
+    CollectionQueryParameters,
+    ExtentQueryParameters,
+    WorkspaceResponse,
+    split_comma_separated,
+    comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
+)
+from interfaces.api.schemas.sta.vocabulary import VocabularyResponse
+from interfaces.api.schemas.base import ItemId, NewItemId
+
+
+class MethodFields(Schema):
+    name: str = Field(..., max_length=255)
+    code: Optional[str] = Field(None, max_length=255)
+    type: str = Field(..., max_length=255)
+    description: str
+    definition: Optional[str] = Field(None, max_length=2000)
+    sensor_model: Optional[str] = Field(None, max_length=255)
+    sensor_model_manufacturer: Optional[str] = Field(None, max_length=255)
+    sensor_model_definition: Optional[str] = Field(None, max_length=2000)
+
+
+METHOD_INCLUDE_RELATIONS = {
+    "workspace": {
+        "path": "workspace",
+        "bucket": "workspaces",
+        "response_schema": WorkspaceResponse,
+    },
+    "type": {
+        "bucket": "methodTypes",
+        "response_schema": VocabularyResponse,
+        "vocabulary_model": MethodType,
+        "value_field": "type",
+    },
+}
+MethodIncludeRelation = Literal[*METHOD_INCLUDE_RELATIONS.keys()]
+
+_sortby_fields = (
+    "name",
+    "code",
+    "type",
+    "sensorModel",
+    "sensorModelManufacturer",
+    "definition",
+    "sensorModelDefinition",
+)
+MethodSortByFields = Literal[*_sortby_fields, *[f"-{f}" for f in _sortby_fields]]
+
+_property_fields = ("id", "workspaceId", *(to_camel(name) for name in MethodFields.model_fields))
+MethodPropertyName = Literal[*_property_fields]
+
+
+class MethodFilterFields(Schema):
+    properties: Annotated[
+        Optional[list[MethodPropertyName]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(MethodPropertyName)),
+    ] = Query(
+        None,
+        description="Comma-separated list of properties to include in the response. "
+        "All properties are returned if omitted.",
+    )
+    include: Annotated[
+        Optional[list[MethodIncludeRelation]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(MethodIncludeRelation)),
+    ] = Query(
+        None,
+        description="Comma-separated list of related resources to include in the response.",
+    )
+
+
+class MethodItemQueryParameters(MethodFilterFields, BaseQueryParameters):
+    pass
+
+
+class MethodQueryParameters(MethodFilterFields, CollectionQueryParameters, ExtentQueryParameters):
+    sortby: Annotated[
+        Optional[list[MethodSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(MethodSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
+    q: Optional[str] = Query(
+        None,
+        description="Full-text search query. Comma-separated terms are combined with OR; "
+        "whitespace-separated words within a term are combined with AND.",
+    )
+    workspace_id: list[uuid.UUID | Literal["null"]] = Query(
+        [],
+        description="Methods that belong to this workspace. Matches `id` in `workspaces`. `null` matches "
+        "methods shared by every workspace.",
+    )
+    datastreams__monitoring_site_id: list[uuid.UUID | Literal["null"]] = Query(
+        [],
+        description="Methods used by datastreams at this monitoring site. Matches `id` in `monitoring-sites`. "
+        "`null` matches methods that no datastream uses.",
+        alias="monitoringSiteId",
+    )
+    datastreams__id: list[uuid.UUID | Literal["null"]] = Query(
+        [],
+        description="Methods used by this datastream. Matches `id` in `datastreams`. `null` matches methods "
+        "that no datastream uses.",
+        alias="datastreamId",
+    )
+    type: list[str] = Query([], description="Methods of this type. Matches `name` in `method-types`.")
+    sensor_model: list[str | Literal["null"]] = Query(
+        [],
+        description="Methods with this sensor model. `null` matches methods without one.",
+    )
+    sensor_model_manufacturer: list[str | Literal["null"]] = Query(
+        [], description="Methods with this sensor manufacturer. `null` matches methods without one."
+    )
+
+
+class MethodResponse(BaseGetResponse, MethodFields, ItemId):
+    workspace_id: Optional[uuid.UUID]
+
+
+class MethodPostBody(BasePostBody, MethodFields, NewItemId):
+    workspace_id: Optional[uuid.UUID] = None
+
+
+class MethodPatchBody(BasePatchBody, MethodFields):
+    pass

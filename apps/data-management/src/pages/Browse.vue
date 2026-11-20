@@ -2,45 +2,200 @@
   <div class="browse-page">
     <BrowseFilterTool
       class="browse-filter-overlay"
-      :things="things"
-      :things-loaded="loaded"
-      :selected-site-id="selectedThingId"
-      @filter="updateFilteredThings"
-      @select-site="selectedThingId = $event"
+      :monitoringSites="monitoringSites"
+      :monitoringSites-loaded="loaded"
+      :selected-site-id="selectedMonitoringSiteId"
+      :show-my-sites-filter="hs.session.isAuthenticated"
+      :my-workspace-ids="myWorkspaceIds"
+      :show-register-site="hs.session.isAuthenticated"
+      :can-register-site="canRegisterSite"
+      :editable-workspace-ids="editableWorkspaceIds"
+      :deletable-workspace-ids="deletableWorkspaceIds"
+      @filter="updateFilteredMonitoringSites"
+      @select-site="selectedMonitoringSiteId = $event"
+      @color-settings="markerColorSettings = $event"
+      @register-site="openSiteRegistration"
+      @edit-site="openSiteEditor"
+      @delete-site="openSiteDeletion"
     />
     <OpenLayersMap
       v-if="loaded"
       class="browse-map"
       selectable
-      :things="filteredThings"
+      :monitoringSites="filteredMonitoringSites"
       :fit-padding="mapFitPadding"
-      :selected-thing-id="selectedThingId"
-      @select="selectedThingId = $event"
+      :selected-monitoring-site-id="selectedMonitoringSiteId"
+      :color-mode="markerColorSettings.mode"
+      :color-key="markerColorSettings.key"
+      :color-labels="markerColorSettings.labels"
+      @select="selectedMonitoringSiteId = $event"
     />
     <FullScreenLoader v-else loading-text="Loading map..." />
+
+    <v-dialog
+      v-model="showSiteForm"
+      width="60rem"
+      max-width="calc(100vw - var(--hs-space-32))"
+    >
+      <SiteForm
+        v-if="registrationWorkspaceId"
+        :workspace-id="registrationWorkspaceId"
+        @close="closeSiteRegistration"
+        @site-created="loadMonitoringSites"
+      >
+        <template #workspace>
+          <v-card-text class="pb-2">
+            <v-select
+              v-model="registrationWorkspaceId"
+              data-testid="registration-workspace-select"
+              :items="creatableWorkspaces"
+              item-title="name"
+              item-value="id"
+              label="Create site in workspace"
+              hide-details
+            />
+          </v-card-text>
+        </template>
+      </SiteForm>
+    </v-dialog>
+
+    <v-dialog
+      v-model="showEditSiteForm"
+      width="80rem"
+      max-width="calc(100vw - var(--hs-space-32))"
+    >
+      <SiteForm
+        v-if="editingSite"
+        :monitoring-site-id="editingSite.id"
+        :workspace-id="editingSite.workspaceId"
+        @close="closeSiteEditor"
+      />
+    </v-dialog>
+
+    <v-dialog
+      v-model="showDeleteSiteDialog"
+      width="40rem"
+      max-width="calc(100vw - var(--hs-space-32))"
+    >
+      <SiteDeleteModal
+        v-if="deletingSite"
+        :monitoringSite="deletingSite"
+        @switch-to-access-control="switchToAccessControl"
+        @close="closeSiteDeletion"
+        @delete="deleteSite"
+      />
+    </v-dialog>
+
+    <v-dialog
+      v-model="showAccessControlDialog"
+      width="40rem"
+      max-width="calc(100vw - var(--hs-space-32))"
+    >
+      <SiteAccessControl
+        v-if="deletingSite"
+        :monitoring-site-id="deletingSite.id"
+        @close="closeAccessControl"
+      />
+    </v-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { storeToRefs } from 'pinia'
 import OpenLayersMap from '@/components/Maps/OpenLayersMap.vue'
 import BrowseFilterTool from '@/components/Browse/BrowseFilterTool.vue'
-import FullScreenLoader from '@/components/base/FullScreenLoader.vue'
-import hs from '@hydroserver/client'
-import type { ThingMarker } from '@hydroserver/client'
+import { HsFullScreenLoader as FullScreenLoader } from '@hydroserver/design-system/vue'
+import SiteForm from '@/components/Site/SiteForm.vue'
+import SiteDeleteModal from '@/components/Site/SiteDeleteModal.vue'
+import SiteAccessControl from '@/components/Site/SiteAccessControl.vue'
+import hs, { PermissionAction, PermissionResource } from '@hydroserver/client'
+import type { MonitoringSite, MonitoringSiteMapSummary } from '@hydroserver/client'
+import { useWorkspaceStore } from '@/store/workspaces'
+import {
+  hasBootstrappedWorkspaces,
+  startAppInitialization,
+} from '@/bootstrap/appInitialization'
+import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
+import { useMonitoringSiteStore } from '@/store/monitoringSite'
+import { useTagStore } from '@/store/tags'
+import { usePhotosStore } from '@/store/photos'
+import { Snackbar } from '@/utils/notifications'
 
-const desktopMapFitPadding: [number, number, number, number] = [
-  44, 88, 96, 400,
-]
-const compactMapFitPadding: [number, number, number, number] = [
-  72, 48, 72, 48,
-]
+const desktopMapFitPadding: [number, number, number, number] = [44, 88, 96, 400]
+const compactMapFitPadding: [number, number, number, number] = [72, 48, 72, 48]
 
-const things = ref<ThingMarker[]>([])
-const filteredThings = ref<ThingMarker[]>([])
-const selectedThingId = ref<string>()
+const workspaceStore = useWorkspaceStore()
+const { workspaces, selectedWorkspace, associatedWorkspaces } =
+  storeToRefs(workspaceStore)
+const { monitoringSite: storedMonitoringSite } = storeToRefs(useMonitoringSiteStore())
+const { tags, previewTags } = storeToRefs(useTagStore())
+const { photos, newPhotos, photosToDelete } = storeToRefs(usePhotosStore())
+const { setWorkspaces } = workspaceStore
+const { hasPermission } = useWorkspacePermissions()
+
+const monitoringSites = ref<MonitoringSiteMapSummary[]>([])
+const filteredMonitoringSites = ref<MonitoringSiteMapSummary[]>([])
+const selectedMonitoringSiteId = ref<string>()
+const markerColorSettings = ref<MarkerColorSettings>({
+  mode: 'none',
+  key: '',
+  labels: {},
+})
 const loaded = ref(false)
 const isCompactMapViewport = ref(false)
+const showSiteForm = ref(false)
+const registrationWorkspaceId = ref('')
+const showEditSiteForm = ref(false)
+const editingSite = ref<MonitoringSiteMapSummary>()
+const showDeleteSiteDialog = ref(false)
+const deletingSite = ref<MonitoringSite>()
+const showAccessControlDialog = ref(false)
+
+interface MarkerColorSettings {
+  mode: 'none' | 'workspace' | 'type' | 'metadata'
+  key: string
+  labels: Record<string, string>
+}
+
+const creatableWorkspaces = computed(() =>
+  workspaces.value.filter((workspace) =>
+    hasPermission(PermissionResource.MonitoringSite, PermissionAction.Create, workspace)
+  )
+)
+const canRegisterSite = computed(() => creatableWorkspaces.value.length > 0)
+const hasSitePermission = (
+  site: MonitoringSiteMapSummary,
+  action: PermissionAction
+) => {
+  const workspace = workspaces.value.find(
+    (candidate) => candidate.id === site.workspaceId
+  )
+  return workspace
+    ? hasPermission(PermissionResource.MonitoringSite, action, workspace)
+    : false
+}
+const editableWorkspaceIds = computed(() =>
+  workspaces.value
+    .filter((workspace) =>
+      hasPermission(PermissionResource.MonitoringSite, PermissionAction.Edit, workspace)
+    )
+    .map((workspace) => workspace.id)
+)
+const deletableWorkspaceIds = computed(() =>
+  workspaces.value
+    .filter((workspace) =>
+      hasPermission(
+        PermissionResource.MonitoringSite,
+        PermissionAction.Delete,
+        workspace
+      )
+    )
+    .map((workspace) => workspace.id)
+)
+const myWorkspaceIds = computed(() =>
+  associatedWorkspaces.value.map((workspace) => workspace.id)
+)
 const mapFitPadding = computed<[number, number, number, number]>(() =>
   isCompactMapViewport.value ? compactMapFitPadding : desktopMapFitPadding
 )
@@ -52,14 +207,153 @@ const updateCompactMapViewport = (event?: MediaQueryListEvent) => {
     event?.matches ?? compactMapQuery?.matches ?? false
 }
 
-const updateFilteredThings = (updatedThings: ThingMarker[]) => {
-  filteredThings.value = updatedThings
+const updateFilteredMonitoringSites = (updatedMonitoringSites: MonitoringSiteMapSummary[]) => {
+  filteredMonitoringSites.value = updatedMonitoringSites
   if (
-    selectedThingId.value &&
-    !updatedThings.some((thing) => thing.id === selectedThingId.value)
+    selectedMonitoringSiteId.value &&
+    !updatedMonitoringSites.some((monitoringSite) => monitoringSite.id === selectedMonitoringSiteId.value)
   ) {
-    selectedThingId.value = undefined
+    selectedMonitoringSiteId.value = undefined
   }
+}
+
+const loadMonitoringSites = async () => {
+  const res = await hs.monitoringSites.listSiteSummaries()
+  filteredMonitoringSites.value = monitoringSites.value = res.ok ? res.data : []
+}
+
+const loadWorkspaces = async () => {
+  // App startup loads them; fetch here only if it couldn't.
+  await startAppInitialization()
+  if (
+    !hs.session.isAuthenticated ||
+    hasBootstrappedWorkspaces.value ||
+    workspaces.value.length
+  )
+    return
+
+  try {
+    const availableWorkspaces = await hs.workspaces.listAllItems(
+      workspaceStore.workspaceListFilters
+    )
+    setWorkspaces(availableWorkspaces)
+  } catch (error) {
+    console.error('Error fetching workspaces', error)
+  }
+}
+
+const openSiteRegistration = () => {
+  if (!canRegisterSite.value) return
+
+  resetSiteFormContext()
+  registrationWorkspaceId.value =
+    creatableWorkspaces.value.find(
+      (workspace) => workspace.id === selectedWorkspace.value?.id
+    )?.id ?? creatableWorkspaces.value[0].id
+  showSiteForm.value = true
+}
+
+const closeSiteRegistration = async () => {
+  showSiteForm.value = false
+  resetSiteFormContext()
+  await loadMonitoringSites()
+}
+
+const resetSiteFormContext = () => {
+  storedMonitoringSite.value = undefined
+  tags.value = {}
+  previewTags.value = {}
+  photos.value = []
+  newPhotos.value = []
+  photosToDelete.value = []
+}
+
+const fetchSite = async (site: MonitoringSiteMapSummary) => {
+  try {
+    const monitoringSite = await hs.monitoringSites.getItem(site.id)
+    if (monitoringSite) return monitoringSite
+  } catch (error) {
+    console.error('Error fetching site', error)
+  }
+
+  Snackbar.error(`Unable to load ${site.name}. Please try again.`)
+  return null
+}
+
+const openSiteEditor = async (site: MonitoringSiteMapSummary) => {
+  if (!hasSitePermission(site, PermissionAction.Edit)) return
+
+  try {
+    const [monitoringSite, linkedResourceResponse] = await Promise.all([
+      hs.monitoringSites.getItem(site.id),
+      hs.monitoringSites.getLinkedResources(site.id),
+    ])
+    if (!monitoringSite || !linkedResourceResponse.ok) {
+      throw new Error('The site editing context could not be loaded.')
+    }
+
+    resetSiteFormContext()
+    storedMonitoringSite.value = monitoringSite
+    tags.value = monitoringSite.tags ?? {}
+    photos.value = linkedResourceResponse.data.filter((linkedResource) => linkedResource.type === 'Photo')
+    editingSite.value = site
+    showEditSiteForm.value = true
+  } catch (error) {
+    console.error('Error preparing site editor', error)
+    Snackbar.error(`Unable to edit ${site.name}. Please try again.`)
+  }
+}
+
+const closeSiteEditor = async () => {
+  showEditSiteForm.value = false
+  editingSite.value = undefined
+  resetSiteFormContext()
+  await loadMonitoringSites()
+}
+
+const openSiteDeletion = async (site: MonitoringSiteMapSummary) => {
+  if (!hasSitePermission(site, PermissionAction.Delete)) return
+
+  const monitoringSite = await fetchSite(site)
+  if (!monitoringSite) return
+
+  storedMonitoringSite.value = monitoringSite
+  deletingSite.value = monitoringSite
+  showDeleteSiteDialog.value = true
+}
+
+const closeSiteDeletion = () => {
+  showDeleteSiteDialog.value = false
+  deletingSite.value = undefined
+}
+
+const deleteSite = async () => {
+  if (!deletingSite.value) return
+
+  const siteId = deletingSite.value.id
+  try {
+    const response = await hs.monitoringSites.delete(siteId)
+    if (!response.ok) throw new Error(response.message)
+
+    if (selectedMonitoringSiteId.value === siteId) selectedMonitoringSiteId.value = undefined
+    closeSiteDeletion()
+    await loadMonitoringSites()
+    Snackbar.success('Site deleted.')
+  } catch (error) {
+    console.error('Error deleting site', error)
+    Snackbar.error('Unable to delete the site. Please try again.')
+  }
+}
+
+const switchToAccessControl = () => {
+  showDeleteSiteDialog.value = false
+  showAccessControlDialog.value = true
+}
+
+const closeAccessControl = async () => {
+  showAccessControlDialog.value = false
+  deletingSite.value = undefined
+  await loadMonitoringSites()
 }
 
 onMounted(async () => {
@@ -67,8 +361,7 @@ onMounted(async () => {
   updateCompactMapViewport()
   compactMapQuery.addEventListener('change', updateCompactMapViewport)
 
-  const res = await hs.things.listMarkers()
-  filteredThings.value = things.value = res.ok ? res.data : []
+  await Promise.all([loadMonitoringSites(), loadWorkspaces()])
 
   await new Promise((r) => setTimeout(r, 100))
   loaded.value = true
@@ -83,7 +376,6 @@ onBeforeUnmount(() => {
 .browse-page {
   position: relative;
   height: calc(100dvh - var(--v-layout-top, 0px));
-  min-height: 520px;
   overflow: hidden;
 }
 
@@ -94,8 +386,8 @@ onBeforeUnmount(() => {
 
 .browse-filter-overlay {
   position: absolute;
-  top: 16px;
-  left: 16px;
+  top: var(--hs-space-16);
+  left: var(--hs-space-16);
   z-index: 1000;
 }
 
@@ -105,7 +397,7 @@ onBeforeUnmount(() => {
   }
 
   .browse-filter-overlay:not(.browse-filter-tool--expanded) {
-    inset: 12px auto auto 12px;
+    inset: var(--hs-space-12) auto auto var(--hs-space-12);
   }
 }
 </style>

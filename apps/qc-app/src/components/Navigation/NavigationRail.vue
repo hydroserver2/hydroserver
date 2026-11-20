@@ -167,10 +167,9 @@ function onMainRailItemClicked(item: DrawerType) {
 
 async function onLogout() {
   if (!(await closeEditor())) return
-  await hs.value.session.logout()
   workspaceStore.clearSelection()
   Snackbar.info('You have logged out')
-  window.location.assign('/login')
+  await hs.value.session.logout('/browse')
 }
 
 async function onSwitchWorkspace() {

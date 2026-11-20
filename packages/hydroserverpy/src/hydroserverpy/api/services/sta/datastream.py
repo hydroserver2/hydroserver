@@ -5,19 +5,24 @@ from uuid import UUID
 from datetime import datetime
 from pydantic.alias_generators import to_camel
 from hydroserverpy.api.models import Datastream, ObservationCollection
-from hydroserverpy.api.utils import normalize_uuid
+from hydroserverpy.api.utils import normalize_uuid, build_datetime_interval, sortby_to_camel
+from hydroserverpy.api.models.base import HydroServerCollection
 from ..base import HydroServerBaseService
 
 if TYPE_CHECKING:
     from hydroserverpy import HydroServer
     from hydroserverpy.api.models import (
         Workspace,
-        Thing,
+        MonitoringSite,
         Unit,
-        Sensor,
+        Method,
         ObservedProperty,
         ProcessingLevel,
     )
+
+COLUMN_PROFILE = "https://hydroserver.org/profiles/observations/column"
+LOADABLE_OBSERVATION_PROPERTIES = ("phenomenonTime", "result", "resultQualifiers")
+READ_ONLY_OBSERVATION_PROPERTIES = ("id", "workspaceId", "datastreamId")
 
 
 class DatastreamService(HydroServerBaseService):
@@ -27,75 +32,76 @@ class DatastreamService(HydroServerBaseService):
 
     def list(
         self,
-        page: int = ...,
-        page_size: int = ...,
-        order_by: List[str] = ...,
+        offset: int = ...,
+        limit: int = ...,
+        sortby: List[str] = ...,
         workspace: Union["Workspace", UUID, str] = ...,
-        thing: Union["Thing", UUID, str] = ...,
-        sensor: Union["Sensor", UUID, str] = ...,
+        monitoring_site: Union["MonitoringSite", UUID, str] = ...,
+        method: Union["Method", UUID, str] = ...,
         observed_property: Union["ObservedProperty", UUID, str] = ...,
         processing_level: Union["ProcessingLevel", UUID, str] = ...,
         unit: Union["Unit", UUID, str] = ...,
-        observation_type: str = ...,
+        type: Literal["timeSeriesCoverage"] = ...,
         sampled_medium: str = ...,
         status: Optional[str] = ...,
-        result_type: str = ...,
         tag: Tuple[str, str] = ...,
         is_private: bool = ...,
-        value_count_max: int = ...,
-        value_count_min: int = ...,
-        phenomenon_begin_time_max: datetime = ...,
-        phenomenon_begin_time_min: datetime = ...,
-        phenomenon_end_time_max: datetime = ...,
-        phenomenon_end_time_min: datetime = ...,
-        result_begin_time_max: datetime = ...,
-        result_begin_time_min: datetime = ...,
-        result_end_time_max: datetime = ...,
-        result_end_time_min: datetime = ...,
+        max_value_count: int = ...,
+        min_value_count: int = ...,
+        phenomenon_time_max: datetime = ...,
+        phenomenon_time_min: datetime = ...,
         fetch_all: bool = False,
-    ) -> List["Workspace"]:
-        """Fetch a collection of HydroServer workspaces."""
+    ) -> HydroServerCollection:
+        """
+        Fetch a collection of HydroServer datastreams.
+        """
 
-        return super().list(
-            page=page,
-            page_size=page_size,
-            order_by=order_by,
+        collection = super().list(
+            offset=offset,
+            limit=limit,
+            sortby=sortby,
             workspace_id=normalize_uuid(workspace),
-            thing_id=normalize_uuid(thing),
-            sensor_id=normalize_uuid(sensor),
+            monitoring_site_id=normalize_uuid(monitoring_site),
+            method_id=normalize_uuid(method),
             observed_property_id=normalize_uuid(observed_property),
             processing_level_id=normalize_uuid(processing_level),
             unit_id=normalize_uuid(unit),
-            observation_type=observation_type,
+            type=type,
             sampled_medium=sampled_medium,
             status=status,
-            result_type=result_type,
             tag=[f"{tag[0]}:{tag[1]}"] if tag is not ... else tag,
             is_private=is_private,
-            value_count_max=value_count_max,
-            value_count_min=value_count_min,
-            phenomenon_begin_time_max=phenomenon_begin_time_max,
-            phenomenon_begin_time_min=phenomenon_begin_time_min,
-            phenomenon_end_time_max=phenomenon_end_time_max,
-            phenomenon_end_time_min=phenomenon_end_time_min,
-            result_begin_time_max=result_begin_time_max,
-            result_begin_time_min=result_begin_time_min,
-            result_end_time_max=result_end_time_max,
-            result_end_time_min=result_end_time_min,
-            fetch_all=fetch_all,
+            max_value_count=max_value_count,
+            min_value_count=min_value_count,
+            datetime=build_datetime_interval(phenomenon_time_min, phenomenon_time_max),
+            fetch_all=False,
         )
+
+        collection.filters.pop("datetime", None)
+        collection.filters.update({
+            k: v
+            for k, v in {
+                "tag": tag,
+                "phenomenon_time_max": phenomenon_time_max,
+                "phenomenon_time_min": phenomenon_time_min,
+            }.items()
+            if v is not ...
+        })
+
+        if fetch_all is True:
+            collection = collection.fetch_all()
+
+        return collection
 
     def create(
         self,
         name: str,
         description: str,
-        thing: Union["Thing", UUID, str],
-        sensor: Union["Sensor", UUID, str],
+        monitoring_site: Union["MonitoringSite", UUID, str],
+        method: Union["Method", UUID, str],
         observed_property: Union["ObservedProperty", UUID, str],
         processing_level: Union["ProcessingLevel", UUID, str],
         unit: Union["Unit", UUID, str],
-        observation_type: str,
-        result_type: str,
         sampled_medium: str,
         no_data_value: float,
         aggregation_statistic: str,
@@ -106,13 +112,9 @@ class DatastreamService(HydroServerBaseService):
             Literal["seconds", "minutes", "hours", "days"]
         ] = None,
         status: Optional[str] = None,
-        value_count: Optional[int] = None,
-        phenomenon_begin_time: Optional[datetime] = None,
-        phenomenon_end_time: Optional[datetime] = None,
-        result_begin_time: Optional[datetime] = None,
-        result_end_time: Optional[datetime] = None,
+        type: Literal["timeSeriesCoverage"] = "timeSeriesCoverage",
         is_private: bool = False,
-        is_visible: bool = True,
+        is_restricted: bool = False,
         tags: Optional[Dict[str, str]] = None,
         uid: Optional[UUID] = None,
     ) -> "Datastream":
@@ -122,13 +124,12 @@ class DatastreamService(HydroServerBaseService):
             "id": normalize_uuid(uid),
             "name": name,
             "description": description,
-            "thingId": normalize_uuid(thing),
-            "sensorId": normalize_uuid(sensor),
+            "monitoringSiteId": normalize_uuid(monitoring_site),
+            "methodId": normalize_uuid(method),
             "observedPropertyId": normalize_uuid(observed_property),
             "processingLevelId": normalize_uuid(processing_level),
             "unitId": normalize_uuid(unit),
-            "observationType": observation_type,
-            "resultType": result_type,
+            "type": type,
             "sampledMedium": sampled_medium,
             "noDataValue": no_data_value,
             "aggregationStatistic": aggregation_statistic,
@@ -137,14 +138,9 @@ class DatastreamService(HydroServerBaseService):
             "intendedTimeSpacing": intended_time_spacing,
             "intendedTimeSpacingUnit": intended_time_spacing_unit,
             "status": status,
-            "valueCount": value_count,
-            "phenomenonBeginTime": phenomenon_begin_time,
-            "phenomenonEndTime": phenomenon_end_time,
-            "resultBeginTime": result_begin_time,
-            "resultEndTime": result_end_time,
             "isPrivate": is_private,
-            "isVisible": is_visible,
-            "tags": [{"key": k, "value": v} for k, v in tags.items()] if tags else [],
+            "isRestricted": is_restricted,
+            "tags": tags or {},
         }
 
         return super().create(**body)
@@ -154,18 +150,17 @@ class DatastreamService(HydroServerBaseService):
         uid: Union[UUID, str],
         name: str = ...,
         description: str = ...,
-        thing: Union["Thing", UUID, str] = ...,
-        thing_id: UUID = ...,
-        sensor: Union["Sensor", UUID, str] = ...,
-        sensor_id: UUID = ...,
+        monitoring_site: Union["MonitoringSite", UUID, str] = ...,
+        monitoring_site_id: UUID = ...,
+        method: Union["Method", UUID, str] = ...,
+        method_id: UUID = ...,
         observed_property: Union["ObservedProperty", UUID, str] = ...,
         observed_property_id: UUID = ...,
         processing_level: Union["ProcessingLevel", UUID, str] = ...,
         processing_level_id: UUID = ...,
         unit: Union["Unit", UUID, str] = ...,
         unit_id: UUID = ...,
-        observation_type: str = ...,
-        result_type: str = ...,
+        type: Literal["timeSeriesCoverage"] = ...,
         sampled_medium: str = ...,
         no_data_value: float = ...,
         aggregation_statistic: str = ...,
@@ -178,21 +173,17 @@ class DatastreamService(HydroServerBaseService):
             Literal["seconds", "minutes", "hours", "days"]
         ] = ...,
         status: Optional[str] = ...,
-        value_count: Optional[int] = ...,
-        phenomenon_begin_time: Optional[datetime] = ...,
-        phenomenon_end_time: Optional[datetime] = ...,
-        result_begin_time: Optional[datetime] = ...,
-        result_end_time: Optional[datetime] = ...,
         is_private: bool = ...,
-        is_visible: bool = ...,
+        is_restricted: bool = ...,
+        tags: Dict[str, Optional[str]] = ...,
     ) -> "Datastream":
         """Update a datastream."""
 
         body = {
             "name": name,
             "description": description,
-            "thingId": normalize_uuid(thing if thing is not ... else thing_id),
-            "sensorId": normalize_uuid(sensor if sensor is not ... else sensor_id),
+            "monitoringSiteId": normalize_uuid(monitoring_site if monitoring_site is not ... else monitoring_site_id),
+            "methodId": normalize_uuid(method if method is not ... else method_id),
             "observedPropertyId": normalize_uuid(
                 observed_property if observed_property is not ... else observed_property_id
             ),
@@ -200,8 +191,7 @@ class DatastreamService(HydroServerBaseService):
                 processing_level if processing_level is not ... else processing_level_id
             ),
             "unitId": normalize_uuid(unit if unit is not ... else unit_id),
-            "observationType": observation_type,
-            "resultType": result_type,
+            "type": type,
             "sampledMedium": sampled_medium,
             "noDataValue": no_data_value,
             "aggregationStatistic": aggregation_statistic,
@@ -210,38 +200,45 @@ class DatastreamService(HydroServerBaseService):
             "intendedTimeSpacing": intended_time_spacing,
             "intendedTimeSpacingUnit": intended_time_spacing_unit,
             "status": status,
-            "valueCount": value_count,
-            "phenomenonBeginTime": phenomenon_begin_time,
-            "phenomenonEndTime": phenomenon_end_time,
-            "resultBeginTime": result_begin_time,
-            "resultEndTime": result_end_time,
             "isPrivate": is_private,
-            "isVisible": is_visible,
+            "isRestricted": is_restricted,
+            "tags": tags,
         }
 
         return super().update(uid=str(uid), **body)
 
+    def set_tag(self, uid: Union[UUID, str], key: str, value: str) -> "Datastream":
+        """Create or update a tag on a HydroServer datastream."""
+
+        return self.update(uid=uid, tags={key: value})
+
+    def delete_tag(self, uid: Union[UUID, str], key: str) -> "Datastream":
+        """Remove a tag from a HydroServer datastream."""
+
+        return self.update(uid=uid, tags={key: None})
+
     def get_observations(
         self,
         uid: Union[UUID, str],
-        page: int = ...,
-        page_size: int = 100000,
-        order_by: List[str] = ...,
+        offset: int = ...,
+        limit: int = 100000,
+        sortby: List[str] = ...,
         phenomenon_time_max: datetime = ...,
         phenomenon_time_min: datetime = ...,
-        result_qualifier_code: str = ...,
+        result_qualifiers: str = ...,
         fetch_all: bool = False,
     ) -> ObservationCollection:
         """Retrieve observations of a datastream."""
 
         params = {
-            "page": page,
-            "page_size": page_size,
-            "order_by": ",".join(order_by) if order_by is not ... else order_by,
-            "phenomenon_time_max": phenomenon_time_max,
-            "phenomenon_time_min": phenomenon_time_min,
-            "result_qualifier_code": result_qualifier_code,
-            "format": "column"
+            "datastreamId": str(uid),
+            "offset": offset,
+            "limit": limit,
+            "sortby": ",".join(sortby_to_camel(o) for o in sortby) if sortby is not ... else sortby,
+            "datetime": build_datetime_interval(phenomenon_time_min, phenomenon_time_max),
+            "resultQualifiers": result_qualifiers,
+            "profile": COLUMN_PROFILE,
+            "properties": ",".join(LOADABLE_OBSERVATION_PROPERTIES),
         }
         params = {
             k: ("null" if v is None else v)
@@ -249,14 +246,22 @@ class DatastreamService(HydroServerBaseService):
             if v is not ...
         }
 
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/observations"
+        path = f"/{self.client.base_route}/collections/observations/items"
         response = self.client.request("get", path, params=params)
         datastream = self.get(uid=uid)
         collection = ObservationCollection(
             datastream=datastream,
             response=response,
-            order_by=order_by if order_by is not ... else None,
-            filters={k: v for k, v in params.items() if k not in ["page", "page_size", "order_by", "format"]},
+            sortby=sortby if sortby is not ... else None,
+            filters={
+                k: v
+                for k, v in {
+                    "phenomenon_time_max": phenomenon_time_max,
+                    "phenomenon_time_min": phenomenon_time_min,
+                    "result_qualifiers": result_qualifiers,
+                }.items()
+                if v is not ...
+            },
         )
         if fetch_all is True:
             collection = collection.fetch_all()
@@ -267,14 +272,28 @@ class DatastreamService(HydroServerBaseService):
         self,
         uid: Union[UUID, str],
         observations: pd.DataFrame,
-        mode: str = "insert"
+        mode: str = "insert",
+        phenomenon_time_start: Optional[datetime] = None,
+        phenomenon_time_end: Optional[datetime] = None,
     ) -> None:
-        """Load observations to a datastream."""
+        """
+        Load observations to a datastream. In replace mode, the optional phenomenon time range sets
+        what the server deletes in the same transaction as the insert.
+        """
 
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/observations/bulk-create"
+        observations = observations.drop(
+            columns=[col for col in observations.columns if to_camel(col) in READ_ONLY_OBSERVATION_PROPERTIES]
+        )
+
+        path = f"/{self.client.base_route}/collections/observations/bulk-create"
         headers = {"Content-type": "application/json"}
         params = {"mode": mode}
+        if phenomenon_time_start is not None:
+            params["phenomenonTimeStart"] = phenomenon_time_start.isoformat()
+        if phenomenon_time_end is not None:
+            params["phenomenonTimeEnd"] = phenomenon_time_end.isoformat()
         body = {
+            "datastreamId": str(uid),
             "fields": [to_camel(col) for col in observations.columns.tolist()],
             "data": observations.values.tolist()
         }
@@ -291,9 +310,9 @@ class DatastreamService(HydroServerBaseService):
     ) -> None:
         """Delete observations from a datastream."""
 
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/observations/bulk-delete"
+        path = f"/{self.client.base_route}/collections/observations/bulk-delete"
         headers = {"Content-type": "application/json"}
-        body = {}
+        body = {"datastreamId": str(uid)}
 
         if phenomenon_time_start is not None:
             body["phenomenonTimeStart"] = phenomenon_time_start
@@ -304,62 +323,100 @@ class DatastreamService(HydroServerBaseService):
             "post", path, headers=headers, data=json.dumps(body, default=self.default_serializer)
         )
 
-    def add_tag(self, uid: Union[UUID, str], key: str, value: str) -> Dict[str, str]:
-        """Tag a HydroServer datastream."""
+    def add_linked_resource(
+        self,
+        uid: Union[UUID, str],
+        name: str,
+        type: str,
+        file: Optional[IO[bytes]] = None,
+        url: Optional[str] = None,
+        description: Optional[str] = None,
+    ) -> Dict[str, str]:
+        """
+        Add a linked resource to a HydroServer datastream. Exactly one of `file`/`url` must be
+        given; whichever one is provided determines whether the resource is hosted by
+        HydroServer or an external link.
+        """
 
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/tags"
-        headers = {"Content-type": "application/json"}
-        body = {
-            "key": key,
-            "value": value
+        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/linked-resources"
+        data = {
+            "name": name,
+            "type": type,
         }
-        return self.client.request(
-            "post", path, headers=headers, data=json.dumps(body, default=self.default_serializer)
+        if description is not None:
+            data["description"] = description
+        if url is not None:
+            data["link"] = url
+
+        response = self.client.request(
+            "post", path, data=data, files={"file": file} if file is not None else None
         ).json()
 
-    def update_tag(self, uid: Union[UUID, str], key: str, value: str) -> Dict[str, str]:
-        """Update the tag of a HydroServer datastream."""
+        return self.get_linked_resource(uid=uid, linked_resource_id=response["id"])
 
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/tags"
-        headers = {"Content-type": "application/json"}
-        body = {
-            "key": key,
-            "value": value
+    def get_linked_resources(
+        self,
+        uid: Union[UUID, str],
+        offset: int = ...,
+        limit: int = ...,
+        type: List[str] = ...,
+    ) -> List[Dict[str, str]]:
+        """Get a page of linked resources associated with a HydroServer datastream."""
+
+        params = {
+            "offset": offset,
+            "limit": limit,
+            "type": type,
         }
-        return self.client.request(
-            "put", path, headers=headers, data=json.dumps(body, default=self.default_serializer)
-        ).json()
+        params = {k: v for k, v in params.items() if v is not ...}
 
-    def delete_tag(self, uid: Union[UUID, str], key: str, value: str) -> None:
-        """Remove a tag from a HydroServer datastream."""
+        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/linked-resources"
 
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/tags"
-        headers = {"Content-type": "application/json"}
-        body = {
-            "key": key,
-            "value": value
-        }
+        return self.client.request("get", path, params=params).json()["data"]
+
+    def get_linked_resource(
+        self, uid: Union[UUID, str], linked_resource_id: Union[UUID, str]
+    ) -> Dict[str, str]:
+        """Get a linked resource associated with a HydroServer datastream."""
+
+        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/linked-resources/{str(linked_resource_id)}"
+
+        return self.client.request("get", path).json()["data"]
+
+    def update_linked_resource(
+        self,
+        uid: Union[UUID, str],
+        linked_resource_id: Union[UUID, str],
+        name: Optional[str] = None,
+        type: Optional[str] = None,
+        file: Optional[IO[bytes]] = None,
+        url: Optional[str] = None,
+        description: Optional[str] = None,
+    ) -> Dict[str, str]:
+        """
+        Update a linked resource for a HydroServer datastream. A linked resource's mode
+        (hosted file vs. external URL) cannot be changed in place.
+        """
+
+        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/linked-resources/{str(linked_resource_id)}"
+        data = {}
+        if name is not None:
+            data["name"] = name
+        if type is not None:
+            data["type"] = type
+        if description is not None:
+            data["description"] = description
+        if url is not None:
+            data["link"] = url
+
         self.client.request(
-            "delete", path, headers=headers, data=json.dumps(body, default=self.default_serializer)
+            "patch", path, data=data, files={"file": file} if file is not None else None
         )
 
-    def add_file_attachment(self, uid: Union[UUID, str], file: IO[bytes], file_attachment_type: str) -> Dict[str, str]:
-        """Add a file attachment of a HydroServer datastream."""
+        return self.get_linked_resource(uid=uid, linked_resource_id=linked_resource_id)
 
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/file-attachments"
+    def delete_linked_resource(self, uid: Union[UUID, str], linked_resource_id: Union[UUID, str]) -> None:
+        """Delete a linked resource from a HydroServer datastream."""
 
-        return self.client.request(
-            "post", path, data={"file_attachment_type": file_attachment_type}, files={"file": file}
-        ).json()
-
-    def delete_file_attachment(self, uid: Union[UUID, str], name: str) -> None:
-        """Delete a file attachment of a HydroServer datastream."""
-
-        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/file-attachments"
-        headers = {"Content-type": "application/json"}
-        body = {
-            "name": name
-        }
-        self.client.request(
-            "delete", path, headers=headers, data=json.dumps(body, default=self.default_serializer)
-        )
+        path = f"/{self.client.base_route}/{self.model.get_route()}/{str(uid)}/linked-resources/{str(linked_resource_id)}"
+        self.client.request("delete", path)

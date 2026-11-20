@@ -47,9 +47,14 @@ export abstract class HydroServerBaseService<
     this._ModelCtor = ctor.Model
   }
 
-  /**  Not all resources are at api/data/ so provide this function to allow a service to override  */
+  /**  Not all resources are at api/ogc/ so provide this function to allow a service to override  */
   protected getBaseUrl(): string {
     return this._client.baseRoute
+  }
+
+  /** Collection root (the route without its trailing `/items`), for collection-level endpoints such as tag keys. */
+  protected get _collectionRoute(): string {
+    return this._route.replace(/\/items$/, '')
   }
   async list(
     params: Partial<QueryParamsOf<C>> & {
@@ -76,38 +81,31 @@ export abstract class HydroServerBaseService<
 
   get = async (
     id: string,
-    params?: {
-      expand_related: boolean
-    }
+    params?: Record<string, unknown>
   ): Promise<ApiResponse<M>> =>
     await apiMethods.fetch<M>(this.withQuery(`${this._route}/${id}`, params))
 
-  getItem = async (
-    id: string,
-    params?: {
-      expand_related: boolean
-    }
-  ) => {
+  getItem = async (id: string, params?: Record<string, unknown>) => {
     const res = await this.get(id, params)
     return res.ok ? res.data : null
   }
 
+  /** Create the item, then read it back with `params` (the same params `get` takes). */
   create = async (
     body: M,
-    params?: {
-      expand_related: boolean
-    }
-  ): Promise<ApiResponse<M>> =>
-    apiMethods.post<M>(
-      this.withQuery(this._route, params),
+    params?: Record<string, unknown>
+  ): Promise<ApiResponse<M>> => {
+    const res = await apiMethods.post<{ id: string }>(
+      this._route,
       this.serialize(body)
     )
+    if (!res.ok) return res as ApiResponse<M>
+    return this.get(res.data.id, params)
+  }
 
   createItem = async (
     body: M,
-    params?: {
-      expand_related: boolean
-    }
+    params?: Record<string, unknown>
   ): Promise<M | null> => {
     const res = await this.create(body, params)
     return res.ok ? res.data : null
@@ -116,18 +114,21 @@ export abstract class HydroServerBaseService<
   update = async (
     body: Partial<M> & Pick<M, 'id'>,
     originalBody?: Partial<M> & Pick<M, 'id'>
-  ) =>
-    apiMethods.patch<M>(`${this._route}/${body.id}`, body, originalBody ?? null)
+  ): Promise<ApiResponse<M>> => {
+    const res = await apiMethods.patch<null>(
+      `${this._route}/${body.id}`,
+      body,
+      originalBody ?? null
+    )
+    if (!res.ok) return res as ApiResponse<M>
+    return this.get(body.id)
+  }
 
   updateItem = async (
     body: PatchBody<M>,
     originalBody?: PatchBody<M>
   ): Promise<M | null> => {
-    const res = await apiMethods.patch<M>(
-      `${this._route}/${body.id}`,
-      body,
-      originalBody ?? null
-    )
+    const res = await this.update(body, originalBody)
     return res.ok ? res.data : null
   }
 

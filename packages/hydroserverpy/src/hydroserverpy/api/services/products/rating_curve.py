@@ -15,28 +15,28 @@ class RatingCurveService(HydroServerBaseService):
 
     def list(
         self,
-        page: int = ...,
-        page_size: int = ...,
-        order_by: List[str] = ...,
-        thing: Optional[Union[UUID, str]] = ...,
+        offset: int = ...,
+        limit: int = ...,
+        sortby: List[str] = ...,
+        monitoring_site: Optional[Union[UUID, str]] = ...,
         workspace: Optional[Union[UUID, str]] = ...,
         fetch_all: bool = False,
     ) -> List[RatingCurve]:
         """Fetch a collection of rating curves."""
 
         return super().list(
-            page=page,
-            page_size=page_size,
-            order_by=order_by,
+            offset=offset,
+            limit=limit,
+            sortby=sortby,
             fetch_all=fetch_all,
-            thing_id=normalize_uuid(thing),
+            monitoring_site_id=normalize_uuid(monitoring_site),
             workspace_id=normalize_uuid(workspace),
         )
 
     def create(
         self,
         name: str,
-        thing: Union[UUID, str],
+        monitoring_site: Union[UUID, str],
         fitting_method: Literal["linear", "power_law"],
         description: Optional[str] = None,
         points: Optional[List[tuple]] = None,
@@ -48,7 +48,7 @@ class RatingCurveService(HydroServerBaseService):
             "name": name,
             "description": description,
             "fittingMethod": fitting_method,
-            "thingId": normalize_uuid(thing),
+            "monitoringSiteId": normalize_uuid(monitoring_site),
             "points": points or [],
         }
 
@@ -63,7 +63,7 @@ class RatingCurveService(HydroServerBaseService):
         name: str,
         fitting_method: Literal["linear", "power_law"],
         points: List[tuple],
-        description: Optional[str] = None,
+        description: Optional[str] = ...,
     ) -> RatingCurve:
         """Update a rating curve."""
 

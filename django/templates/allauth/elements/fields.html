@@ -1,0 +1,23 @@
+{% for field in attrs.form %}
+    {% if field.is_hidden %}
+        {{ field }}
+    {% else %}
+        <div class="hs-field">
+            {% if field.widget_type == "checkbox" or field.widget_type == "radioselect" %}
+                <label for="{{ field.id_for_label }}" class="hs-checkbox-label">
+                    {{ field }}
+                    {{ field.label }}
+                </label>
+            {% else %}
+                <fieldset class="hs-field__control">
+                    <legend class="hs-field__legend">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>{% if field.field.required %}<span class="hs-field__required" aria-hidden="true"> *</span>{% endif %}
+                    </legend>
+                    {{ field }}
+                </fieldset>
+            {% endif %}
+            {% if field.help_text %}<p class="hs-help">{{ field.help_text }}</p>{% endif %}
+            {% if field.errors %}<p class="hs-field__error">{{ field.errors.0 }}</p>{% endif %}
+        </div>
+    {% endif %}
+{% endfor %}

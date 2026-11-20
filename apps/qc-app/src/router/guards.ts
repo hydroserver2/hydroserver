@@ -20,16 +20,8 @@ const getQcReturnPath = (to: RouteLocationNormalized) => {
   return `/qc${fullPath}`
 }
 
-const redirectToDataManagementLogin = (to: RouteLocationNormalized) => {
-  // In production the QC app is served by data-management under the same
-  // origin, so /login resolves there. In dev the two apps run on separate
-  // ports, so VITE_APP_DATA_MANAGEMENT_URL points at the data-management
-  // origin (e.g. http://127.0.0.1:1203); it falls back to the current origin.
-  const dataManagementOrigin =
-    import.meta.env.VITE_APP_DATA_MANAGEMENT_URL || window.location.origin
-  const loginUrl = new URL('/login', dataManagementOrigin)
-  loginUrl.searchParams.set('next', getQcReturnPath(to))
-  window.location.assign(loginUrl.toString())
+const redirectToLogin = async (to: RouteLocationNormalized) => {
+  await hs.session.login(getQcReturnPath(to))
   return false as const
 }
 
@@ -65,7 +57,7 @@ export const guards: RouteGuard[] = [
   (to) => {
     if (!to.meta?.hasAuthGuard) return null
     if (hs.session?.isAuthenticated) return null
-    return redirectToDataManagementLogin(to)
+    return redirectToLogin(to)
   },
 
   // Shared-link workspace switch. An incoming URL carrying `?ws=<id>`

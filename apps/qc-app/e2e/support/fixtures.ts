@@ -11,10 +11,10 @@
 export const WORKSPACE_ID = 'ws-qc-e2e'
 export const DATASTREAM_ID = 'ds-qc-e2e'
 export const UNIT_ID = 'unit-meters'
-export const THING_ID = 'thing-stream'
+export const MONITORING_SITE_ID = 'monitoring-site-stream'
 export const PROC_LEVEL_ID = 'pl-raw'
 export const OBSERVED_PROP_ID = 'op-streamflow'
-export const SENSOR_ID = 'sensor-adv'
+export const METHOD_ID = 'sensor-adv'
 
 // Companion datastream fixtures used by the multi-datastream e2e
 // scenarios. Different unit + observed property so the secondary
@@ -29,7 +29,7 @@ export const QC_HISTORY_ID = 'qch-e2e'
 export const QC_PROC_LEVEL_ID = 'pl-qc'
 export const UNIT_ID_B = 'unit-celsius'
 export const OBSERVED_PROP_ID_B = 'op-water-temp'
-export const SENSOR_ID_B = 'sensor-temp'
+export const METHOD_ID_B = 'sensor-temp'
 
 /**
  * Synthetic-observation timing constants. The catalog's phenomenon times are
@@ -58,15 +58,14 @@ export const workspaces = [
   },
 ]
 
-export const things = [
+export const monitoringSites = [
   {
-    id: THING_ID,
+    id: MONITORING_SITE_ID,
     workspaceId: WORKSPACE_ID,
     name: 'Test Stream Site',
     description: 'An e2e test site',
-    samplingFeatureCode: 'STRM-E2E',
-    samplingFeatureType: 'Site',
-    siteType: 'Stream',
+    code: 'STRM-E2E',
+    type: 'Stream',
     isPrivate: false,
   },
 ]
@@ -76,20 +75,24 @@ export const processingLevels = [
     id: PROC_LEVEL_ID,
     workspaceId: WORKSPACE_ID,
     code: 'Raw',
-    definition: 'Raw data',
-    explanation: 'Unprocessed readings',
+    name: 'Raw',
+    description: 'Unprocessed readings',
+    definition: 'https://example.com/processing-levels/raw',
   },
   {
     id: QC_PROC_LEVEL_ID,
     workspaceId: WORKSPACE_ID,
     code: 'QC',
-    definition: 'Quality controlled',
-    explanation: 'Reviewed readings',
+    name: 'Quality controlled',
+    description: 'Reviewed readings',
+    definition: null,
   },
 ]
 
 /** The datastream status vocabulary, as `/datastreams/statuses` serves it. */
-export const datastreamStatuses = ['ongoing', 'complete', 'planned']
+export const datastreamStatuses = ['ongoing', 'complete', 'planned'].map(
+  (name) => ({ id: `status-${name}`, name, description: '' })
+)
 
 export const observedProperties = [
   {
@@ -98,7 +101,7 @@ export const observedProperties = [
     name: 'Streamflow',
     type: 'Hydrology',
     code: 'Q',
-    definition: 'Stream discharge',
+    definition: 'https://example.com/observed-properties/streamflow',
     description: 'Flow rate at the gauge',
   },
   {
@@ -107,7 +110,7 @@ export const observedProperties = [
     name: 'Water Temperature',
     type: 'Hydrology',
     code: 'T',
-    definition: 'Water temperature',
+    definition: 'https://example.com/observed-properties/water-temperature',
     description: 'In-stream water temperature',
   },
 ]
@@ -118,7 +121,7 @@ export const units = [
     workspaceId: WORKSPACE_ID,
     name: 'cubic meters per second',
     symbol: 'm³/s',
-    definition: 'SI unit of volumetric flow rate',
+    definition: 'https://qudt.org/vocab/unit/M3-PER-SEC',
     type: 'Flow',
   },
   {
@@ -126,7 +129,7 @@ export const units = [
     workspaceId: WORKSPACE_ID,
     name: 'degrees Celsius',
     symbol: '°C',
-    definition: 'SI unit of temperature',
+    definition: 'https://qudt.org/vocab/unit/DEG_C',
     type: 'Temperature',
   },
 ]
@@ -137,58 +140,57 @@ export const datastreams = [
     workspaceId: WORKSPACE_ID,
     name: 'Streamflow Datastream',
     description: 'Synthetic sine-wave dataset for QC tests',
-    observationType: 'OM_Measurement',
+    type: 'timeSeriesCoverage',
     aggregationStatistic: 'Continuous',
     timeAggregationInterval: 15,
     timeAggregationIntervalUnit: 'minutes',
     intendedTimeSpacing: 15,
     intendedTimeSpacingUnit: 'minutes',
     sampledMedium: 'Surface water',
-    resultType: 'Time Series',
     status: 'ongoing',
     valueCount: 120,
     noDataValue: -9999,
     isPrivate: false,
-    isVisible: true,
+    isRestricted: false,
     unitId: UNIT_ID,
-    thingId: THING_ID,
+    monitoringSiteId: MONITORING_SITE_ID,
     processingLevelId: PROC_LEVEL_ID,
     observedPropertyId: OBSERVED_PROP_ID,
-    sensorId: SENSOR_ID,
+    methodId: METHOD_ID,
     phenomenonBeginTime: FIXTURE_OBS_START_ISO,
     phenomenonEndTime: FIXTURE_OBS_END_ISO,
     resultBeginTime: FIXTURE_OBS_START_ISO,
     resultEndTime: FIXTURE_OBS_END_ISO,
     // `expand_related: true` populates these nested objects on the
-    // real server; the filter panel + table reads `ds.thing.id`,
+    // real server; the filter panel + table reads `ds.monitoringSite.id`,
     // `ds.observedProperty.name`, etc. without optional chaining in
     // some call sites, so omitting them triggers render-time throws
     // that blank out the whole table.
-    thing: {
-      id: THING_ID,
+    monitoringSite: {
+      id: MONITORING_SITE_ID,
       name: 'Test Stream Site',
-      samplingFeatureCode: 'STRM-E2E',
-      samplingFeatureType: 'Site',
-      siteType: 'Stream',
+      code: 'STRM-E2E',
+      type: 'Stream',
     },
     observedProperty: {
       id: OBSERVED_PROP_ID,
       name: 'Streamflow',
       code: 'Q',
-      definition: 'Stream discharge',
+      definition: 'https://example.com/observed-properties/streamflow',
       type: 'Hydrology',
     },
     processingLevel: {
       id: PROC_LEVEL_ID,
       code: 'Raw',
-      definition: 'Raw data',
-      explanation: 'Unprocessed readings',
+      name: 'Raw',
+      description: 'Unprocessed readings',
+      definition: 'https://example.com/processing-levels/raw',
     },
     unit: {
       id: UNIT_ID,
       name: 'cubic meters per second',
       symbol: 'm³/s',
-      definition: 'SI unit of volumetric flow rate',
+      definition: 'https://qudt.org/vocab/unit/M3-PER-SEC',
       type: 'Flow',
     },
   },
@@ -197,53 +199,52 @@ export const datastreams = [
     workspaceId: WORKSPACE_ID,
     name: 'Water Temperature Datastream',
     description: 'Synthetic cosine-wave temperature for multi-axis tests',
-    observationType: 'OM_Measurement',
+    type: 'timeSeriesCoverage',
     aggregationStatistic: 'Continuous',
     timeAggregationInterval: 15,
     timeAggregationIntervalUnit: 'minutes',
     intendedTimeSpacing: 15,
     intendedTimeSpacingUnit: 'minutes',
     sampledMedium: 'Surface water',
-    resultType: 'Time Series',
     status: 'ongoing',
     valueCount: 120,
     noDataValue: -9999,
     isPrivate: false,
-    isVisible: true,
+    isRestricted: false,
     unitId: UNIT_ID_B,
-    thingId: THING_ID,
+    monitoringSiteId: MONITORING_SITE_ID,
     processingLevelId: PROC_LEVEL_ID,
     observedPropertyId: OBSERVED_PROP_ID_B,
-    sensorId: SENSOR_ID_B,
+    methodId: METHOD_ID_B,
     phenomenonBeginTime: FIXTURE_OBS_START_ISO,
     phenomenonEndTime: FIXTURE_OBS_END_ISO,
     resultBeginTime: FIXTURE_OBS_START_ISO,
     resultEndTime: FIXTURE_OBS_END_ISO,
-    thing: {
-      id: THING_ID,
+    monitoringSite: {
+      id: MONITORING_SITE_ID,
       name: 'Test Stream Site',
-      samplingFeatureCode: 'STRM-E2E',
-      samplingFeatureType: 'Site',
-      siteType: 'Stream',
+      code: 'STRM-E2E',
+      type: 'Stream',
     },
     observedProperty: {
       id: OBSERVED_PROP_ID_B,
       name: 'Water Temperature',
       code: 'T',
-      definition: 'Water temperature',
+      definition: 'https://example.com/observed-properties/water-temperature',
       type: 'Hydrology',
     },
     processingLevel: {
       id: PROC_LEVEL_ID,
       code: 'Raw',
-      definition: 'Raw data',
-      explanation: 'Unprocessed readings',
+      name: 'Raw',
+      description: 'Unprocessed readings',
+      definition: 'https://example.com/processing-levels/raw',
     },
     unit: {
       id: UNIT_ID_B,
       name: 'degrees Celsius',
       symbol: '°C',
-      definition: 'SI unit of temperature',
+      definition: 'https://qudt.org/vocab/unit/DEG_C',
       type: 'Temperature',
     },
   },
@@ -258,34 +259,32 @@ export const managedDatastream = {
     workspaceId: WORKSPACE_ID,
     name: 'Streamflow Datastream (QC)',
     description: 'Quality-controlled version of the streamflow datastream',
-    observationType: 'OM_Measurement',
+    type: 'timeSeriesCoverage',
     aggregationStatistic: 'Continuous',
     timeAggregationInterval: 15,
     timeAggregationIntervalUnit: 'minutes',
     intendedTimeSpacing: 15,
     intendedTimeSpacingUnit: 'minutes',
     sampledMedium: 'Surface water',
-    resultType: 'Time Series',
     status: 'ongoing',
     valueCount: 118,
     noDataValue: -9999,
     isPrivate: false,
-    isVisible: true,
+    isRestricted: false,
     unitId: UNIT_ID,
-    thingId: THING_ID,
+    monitoringSiteId: MONITORING_SITE_ID,
     processingLevelId: QC_PROC_LEVEL_ID,
     observedPropertyId: OBSERVED_PROP_ID,
-    sensorId: SENSOR_ID,
+    methodId: METHOD_ID,
     phenomenonBeginTime: FIXTURE_OBS_START_ISO,
     phenomenonEndTime: FIXTURE_OBS_END_ISO,
     resultBeginTime: FIXTURE_OBS_START_ISO,
     resultEndTime: FIXTURE_OBS_END_ISO,
-    thing: {
-      id: THING_ID,
+    monitoringSite: {
+      id: MONITORING_SITE_ID,
       name: 'Test Stream Site',
-      samplingFeatureCode: 'STRM-E2E',
-      samplingFeatureType: 'Site',
-      siteType: 'Stream',
+      code: 'STRM-E2E',
+      type: 'Stream',
     },
     observedProperty: {
       id: OBSERVED_PROP_ID,
@@ -297,8 +296,8 @@ export const managedDatastream = {
     processingLevel: {
       id: QC_PROC_LEVEL_ID,
       code: 'QC',
-      definition: 'Quality controlled',
-      explanation: 'Reviewed readings',
+      name: 'Quality controlled',
+      description: 'Reviewed readings',
     },
     unit: {
       id: UNIT_ID,
@@ -315,11 +314,6 @@ export const qcHistories = [
     workspaceId: WORKSPACE_ID,
     sourceDatastreamId: DATASTREAM_ID,
     managedDatastreamId: MANAGED_DATASTREAM_ID,
-    sourceDatastream: { id: DATASTREAM_ID, name: 'Streamflow Datastream' },
-    managedDatastream: {
-      id: MANAGED_DATASTREAM_ID,
-      name: 'Streamflow Datastream (QC)',
-    },
   },
 ]
 
@@ -417,25 +411,25 @@ export const resultQualifiers = [
   },
 ]
 
-export const sensors = [
+export const methods = [
   {
-    id: SENSOR_ID,
+    id: METHOD_ID,
     workspaceId: WORKSPACE_ID,
     name: 'ADVelocity Sensor',
     description: 'Synthetic sensor for tests',
-    manufacturer: 'E2E',
-    model: 'TestADV',
-    methodType: 'Instrument',
-    methodCode: 'ADV-01',
+    sensorModelManufacturer: 'E2E',
+    sensorModel: 'TestADV',
+    type: 'Instrument',
+    code: 'ADV-01',
   },
   {
-    id: SENSOR_ID_B,
+    id: METHOD_ID_B,
     workspaceId: WORKSPACE_ID,
     name: 'Thermistor Sensor',
     description: 'Synthetic temperature sensor for tests',
-    manufacturer: 'E2E',
-    model: 'TestTHERM',
-    methodType: 'Instrument',
-    methodCode: 'THERM-01',
+    sensorModelManufacturer: 'E2E',
+    sensorModel: 'TestTHERM',
+    type: 'Instrument',
+    code: 'THERM-01',
   },
 ]

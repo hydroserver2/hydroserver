@@ -69,8 +69,8 @@ export type BeginOutcome = 'resumed' | 'needs-session' | 'not-managed'
 export function useEditSession() {
   const { qcDatastream } = storeToRefs(useDataVisStore())
   const { replaceDatastream, setEditRecord } = useDataVisStore()
-  const { selectedSeries } = storeToRefs(usePlotlyStore())
-  const { hs } = storeToRefs(useHydroServer())
+  const { selectedSeries, previewIndex } = storeToRefs(usePlotlyStore())
+  const { hs, sessionExpired } = storeToRefs(useHydroServer())
   // Working copies build on records of their own, so the plotted source
   // keeps its context window.
   const { fetchDetachedRecord, forget } = useObservationStore()
@@ -152,7 +152,7 @@ export function useEditSession() {
     stillOwner()
     if (!history) return 'not-managed'
     const source =
-      (await hs.value.datastreams.getItem(history.sourceDatastream.id)) ?? null
+      (await hs.value.datastreams.getItem(history.sourceDatastreamId)) ?? null
     stillOwner()
     sourceDatastream.value = source
     const sessions = await sessionStore.fetchSessions(history.id)
@@ -242,6 +242,7 @@ export function useEditSession() {
     }
     const { session, resumed } = await startOrResumeSession(
       hs.value.qualityControlSessions,
+      hs.value.qualityControlOperations,
       historyId,
       clampSpecToSource(spec, source)
     )
@@ -310,6 +311,8 @@ export function useEditSession() {
       operations
     )
     snapshotSavedEdits()
+    // The save got through, so the login is good again.
+    sessionExpired.value = false
   }
 
   async function commit(description?: string): Promise<void> {
@@ -320,6 +323,13 @@ export function useEditSession() {
     const source = sourceDatastream.value
     if (!managed || !historyId || !session || !record || !source) {
       throw new Error('No active edit session to commit.')
+    }
+    // A preview shows an earlier step's data but keeps every step, so the
+    // pushed observations would not match the saved operations.
+    if (previewIndex.value !== null) {
+      throw new Error(
+        'You are previewing an earlier step. Return to the latest step before committing.'
+      )
     }
     await saveDraft()
 
@@ -354,8 +364,8 @@ export function useEditSession() {
         unwrap(
           await hs.value.datastreams.createObservations(managed.id, body, {
             mode: 'replace',
-            phenomenon_time_start: session.phenomenonTimeStart,
-            phenomenon_time_end: session.phenomenonTimeEnd,
+            phenomenonTimeStart: session.phenomenonTimeStart,
+            phenomenonTimeEnd: session.phenomenonTimeEnd,
           })
         )
         forget(managed.id)

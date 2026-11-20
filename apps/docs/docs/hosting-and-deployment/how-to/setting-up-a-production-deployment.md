@@ -18,9 +18,10 @@ HydroServer requires a [**PostgreSQL database (version 15 or higher)**](https://
 At present, no specific PostgreSQL extensions are required, although you should ensure the database is accessible from 
 the HydroServer deployment environment and configured with sufficient resources for your expected workload.
 
-Because Gunicorn is not designed to serve static files, HydroServer’s static assets must be collected and served 
-through a separate mechanism. Recommended approaches for serving static files will vary by platform and additional 
-details and examples are provided below.
+Because Gunicorn is not designed to serve static files on its own, HydroServer bundles 
+[**WhiteNoise**](https://whitenoise.readthedocs.io/) to serve static assets directly from Django whenever 
+local static storage is used, with compression and appropriate cache headers applied automatically. 
+Recommended approaches for serving static files will vary by platform, and details and examples are provided below.
 
 For user account management, HydroServer requires access to an external email server to send account verification and 
 password reset emails. Alternatively, you may integrate third-party identity providers (e.g. 
@@ -30,16 +31,12 @@ email—may not be required.
 
 ## Preparing for Production Deployment
 
-The example configurations provided in the previous section are intended for demonstration and evaluation purposes only.
+The example configurations provided in the [deployment tutorials](/hosting-and-deployment/tutorials/) are intended for demonstration and evaluation purposes only.
 For production use, additional configuration and infrastructure are strongly recommended.
 
 ### HydroServer Production Environment Variables
 
 HydroServer’s Docker image supports the following environment variables for configuring a deployment:
-
-- **DEPLOYMENT_BACKEND**  
-  Platform where HydroServer static files are collected.  
-  Example: `docker`, `aws`, `gcp`, `dev`
 
 - **SECRET_KEY**  
   Secret used by Django to encrypt passwords and sign sessions. Must be securely generated and stored in production.  
@@ -49,13 +46,31 @@ HydroServer’s Docker image supports the following environment variables for co
   Enables debug mode. Must be `False` in production.  
   Example: `True` / `False`
 
-- **DEFAULT_SUPERUSER_EMAIL**  
-  Email for the default admin user created with `python manage.py setup_admin_user`.  
-  Example: `admin@example.com`
+- **STRICT_SECURITY**  
+  Enables CSRF protection, requires a real `SECRET_KEY`, applies default account rate limits, and requires
+  `IDP_OIDC_PRIVATE_KEY` when OIDC is enabled. Must be `True` in production. The published Docker image already
+  defaults to `True`; this only needs to be set explicitly for deployments that don't use that image.  
+  Example: `True` / `False`
 
-- **DEFAULT_SUPERUSER_PASSWORD**  
-  Password for the default admin user.  
-  Example: `securepassword123`
+- **IDP_OIDC_ENABLED**  
+  Whether HydroServer's built-in OIDC identity provider (discovery, authorize, token, and JWKS endpoints) is enabled.
+  Defaults to `True`. When `STRICT_SECURITY` is also `True`, one of `IDP_OIDC_PRIVATE_KEY` or
+  `IDP_OIDC_PRIVATE_KEY_FILE` must be set, or startup will fail.  
+  Example: `True` / `False`
+
+- **IDP_OIDC_PRIVATE_KEY**  
+  RSA private key (PEM format) used to sign OIDC tokens issued by HydroServer's identity provider. Generate one with:
+  ```bash
+  openssl genpkey -algorithm RSA -out oidc_private_key.pem -pkeyopt rsa_keygen_bits:2048
+  ```
+  Set this to the contents of that file, or use `IDP_OIDC_PRIVATE_KEY_FILE` instead to point at its path. Keep it
+  secret and stable across restarts — rotating it invalidates any tokens signed with the old key.  
+  Example: contents of `oidc_private_key.pem`
+
+- **IDP_OIDC_PRIVATE_KEY_FILE**  
+  Path to a PEM file containing the RSA private key described above, as an alternative to setting
+  `IDP_OIDC_PRIVATE_KEY` directly. Takes precedence over `IDP_OIDC_PRIVATE_KEY` if both are set.  
+  Example: `/run/secrets/oidc_private_key.pem`
 
 - **PROXY_BASE_URL**  
   Base URL for your HydroServer instance.  
@@ -65,8 +80,15 @@ HydroServer’s Docker image supports the following environment variables for co
   PostgreSQL connection string.  
   Example: `postgresql://hsdbadmin:securepassword123@127.0.0.1:5432/hydroserver`
 
+- **CACHE_URL**  
+  Connection string for Django's cache backend. If unset and `STRICT_SECURITY` is `True` (as in production),
+  HydroServer defaults to a database-backed cache table in `DATABASE_URL` shared across worker processes and replicas.
+  If unset and `STRICT_SECURITY` is `False`, it uses a per-process in-memory cache. Set this to use a dedicated cache service instead,
+  such as Redis.  
+  Example: `redis://127.0.0.1:6379/1`
+
 - **ACCOUNT_SIGNUP_ENABLED**  
-  Whether public account creation is allowed.  
+  Whether public account creation is allowed, by email or through a third-party provider.  
   Example: `True` / `False`
 
 - **ACCOUNT_OWNERSHIP_ENABLED**  
@@ -74,7 +96,7 @@ HydroServer’s Docker image supports the following environment variables for co
   Example: `True` / `False`
 
 - **SOCIALACCOUNT_SIGNUP_ONLY**  
-  If `True`, account sign-up is allowed only via third-party providers.  
+  If `True`, new accounts can only be created through configured third-party providers. 
   Example: `True` / `False`
 
 - **SMTP_URL**  
@@ -85,17 +107,161 @@ HydroServer’s Docker image supports the following environment variables for co
   Email address used for account management emails if SMTP is configured.  
   Example: `noreply@example.com`
 
-- **STATIC_BUCKET_NAME**  
-  The name of the AWS or GCP bucket used to serve static files if DEPLOYMENT_BACKEND is `aws` or `gcp`.  
-  Example: `hydroserver-static-your-account-or-project-id`
+- **MEDIA_STORAGE_ENABLED**  
+  Whether HydroServer will accept file uploads for site/datastream linked resources, and expose them at `/media/`. 
+  Defaults to `False` — instances that don't want to manage file storage can leave this off and
+  only use external URL linked resources, without needing to configure `MEDIA_STORAGE_BACKEND` below at all. This
+  does not affect external URL-linked resources, which are always allowed.  
+  Example: `True`
 
-- **MEDIA_BUCKET_NAME**  
-  The name of the AWS or GCP bucket used to serve media files if DEPLOYMENT_BACKEND is `aws` or `gcp`.  
-  Example: `hydroserver-media-your-account-or-project-id`
+- **MEDIA_STORAGE_BACKEND**  
+  Dotted path to the Django storage backend used to store hosted linked resources (only relevant when
+  `MEDIA_STORAGE_ENABLED` is `True`). Defaults to `django.core.files.storage.FileSystemStorage` (local disk), which
+  is **not** recommended for production — set this explicitly to `storages.backends.s3.S3Storage` or
+  `storages.backends.gcloud.GoogleCloudStorage`.  
+  Example: `storages.backends.s3.S3Storage`
 
-- **GS_PROJECT_ID**  
-  The ID of your GCP project if DEPLOYMENT_BACKEND is `gcp`.  
-  Example: `your-gcp-project-id`
+- **MEDIA_STORAGE_OPTIONS**  
+  JSON object of keyword arguments passed to `MEDIA_STORAGE_BACKEND`.  
+  Example (S3): `{"bucket_name": "hydroserver-media-your-account-id", "location": "media"}`  
+  Example (GCS): `{"bucket_name": "hydroserver-media-your-project-id", "project_id": "your-gcp-project-id", "location": "media"}`
+
+- **STATIC_STORAGE_BACKEND**  
+  Dotted path to the Django storage backend used to serve static files. Defaults to
+  `django.contrib.staticfiles.storage.StaticFilesStorage` (local disk), which is **not** recommended for
+  production — set this explicitly to `storages.backends.s3.S3Storage` or
+  `storages.backends.gcloud.GoogleCloudStorage`.  
+  Example: `storages.backends.s3.S3Storage`
+
+- **STATIC_STORAGE_OPTIONS**  
+  JSON object of keyword arguments passed to `STATIC_STORAGE_BACKEND`.  
+  Example (S3): `{"bucket_name": "hydroserver-static-your-account-id", "location": "static"}`  
+  Example (GCS): `{"bucket_name": "hydroserver-static-your-project-id", "project_id": "your-gcp-project-id", "location": "static"}`
+
+- **STATIC_HOST**  
+  Optional origin prefixed to `STATIC_URL` to front static files served by HydroServer with a CDN (e.g., Amazon
+  CloudFront). Only applied when `STATIC_STORAGE_BACKEND` is local. Leave unset to serve static files at a relative 
+  `/static/` path.  
+  Example: `https://d123abc4567.cloudfront.net`
+
+- **WHITENOISE_MAX_AGE**  
+  `Cache-Control` max-age, in seconds, that WhiteNoise sets on locally served static files. Defaults to `86400` (1 day).  
+  Example: `86400`
+
+- **WHITENOISE_USE_FINDERS** / **WHITENOISE_AUTOREFRESH**  
+  Development conveniences that let WhiteNoise serve static files without running `collectstatic` and pick up changes
+  without a restart. Both default to the value of `DEBUG` and should be `False` in production.  
+  Example: `False`
+
+#### Hosts, Origins, and Cookies
+
+- **ALLOWED_HOSTS**  
+  Additional host names this instance responds to, as a comma-separated list. The host in `PROXY_BASE_URL` is always
+  allowed, so set this only if HydroServer is also reached through other host names.  
+  Example: `hydroserver.your-domain.com,www.hydroserver.your-domain.com`
+
+- **CSRF_TRUSTED_ORIGINS**  
+  Comma-separated list of origins trusted to make unsafe (e.g. `POST`) requests with a session cookie. Defaults to
+  `PROXY_BASE_URL`. Add the origin of any separately hosted frontend that uses session authentication.  
+  Example: `https://hydroserver.your-domain.com,https://app.your-domain.com`
+
+- **SAME_ORIGIN_FRONTEND**  
+  Whether the Data Management App is served from the same origin as HydroServer, as it is in the published Docker
+  image. When `True`, `WEB_CLIENT_URL` defaults to `PROXY_BASE_URL`. Defaults to `False`.  
+  Example: `True`
+
+- **WEB_CLIENT_URL**  
+  The URL of the Data Management App, where users are sent after signing in or out of HydroServer's account pages.
+  Defaults to `PROXY_BASE_URL` when `SAME_ORIGIN_FRONTEND` is `True`, otherwise to the local development frontend.  
+  Example: `https://hydroserver.your-domain.com`
+
+- **ACCOUNT_RETURN_URL_ALLOWED_HOSTS**  
+  Comma-separated list of additional hosts (with ports, if needed) that the account pages may send users back to
+  after signing in, signing up, or signing out. Set this for separately hosted apps that link users to HydroServer's
+  account pages.  
+  Example: `app.your-domain.com`
+
+- **CORS_ALLOW_CREDENTIALS**  
+  Whether browsers may send cookies with cross-origin requests to HydroServer's APIs. Defaults to `False` when
+  `STRICT_SECURITY` is `True`. Cross-origin apps should normally authenticate with OIDC access tokens instead.  
+  Example: `False`
+
+- **SESSION_COOKIE_NAME** / **CSRF_COOKIE_NAME**  
+  Names of the session and CSRF cookies. Default to `hs_session` and `csrftoken`. Change them only if they conflict with
+  another application on the same domain.  
+  Example: `hs_session`
+
+- **SESSION_COOKIE_AGE**  
+  How long, in seconds, a sign-in session lasts. Defaults to `86400` (1 day).  
+  Example: `86400`
+
+- **NOINDEX**  
+  If `True`, adds an `X-Robots-Tag: noindex` header to every response so search engines don't index the instance.
+  Useful for staging and demo instances. Defaults to `False`.  
+  Example: `True`
+
+#### Database Connections
+
+- **SSL_REQUIRED**  
+  If `True`, requires SSL for the database connection (`sslmode=require`). Defaults to `False`.  
+  Example: `True`
+
+- **DB_POOL_MIN_SIZE** / **DB_POOL_MAX_SIZE** / **DB_POOL_TIMEOUT**  
+  Size of each HydroServer process's database connection pool, and how many seconds a request waits for a free
+  connection. Default to `5`, `10`, and `60`. Make sure the total across all processes and replicas stays below your
+  database's connection limit.  
+  Example: `5` / `10` / `60`
+
+- **CONN_MAX_AGE** / **CONN_HEALTH_CHECKS**  
+  Django's persistent connection lifetime in seconds and whether to check connections before reuse. Default to `0` and
+  `True`.  
+  Example: `0` / `True`
+
+#### Rate Limiting
+
+- **API_RATE_LIMITS**  
+  JSON object setting request rate limits for the Data Management API, with `anonymous` and `authenticated` rates. Leave
+  unset to disable API rate limiting.  
+  Example: `{"anonymous": "20/s", "authenticated": "50/s"}`
+
+- **ACCOUNT_RATE_LIMITS**  
+  JSON object of [django-allauth rate limits](https://docs.allauth.org/en/latest/account/rate_limits.html) for account
+  actions such as sign-in, sign-up, and password reset. When `STRICT_SECURITY` is `True`, allauth's default limits apply
+  unless you override them here.  
+  Example: `{"login_failed": "10/m/ip,5/5m/key"}`
+
+#### OIDC Tokens and Service Accounts
+
+- **IDP_OIDC_ACCESS_TOKEN_EXPIRES_IN**  
+  Lifetime, in seconds, of access tokens issued by HydroServer's OIDC identity provider. Defaults to `3600` (1 hour).  
+  Example: `3600`
+
+- **IDP_OIDC_ROTATE_REFRESH_TOKEN**  
+  Whether a new refresh token is issued each time a refresh token is used. Defaults to `True`.  
+  Example: `True`
+
+- **SERVICE_ACCOUNT_EMAIL_DOMAIN**  
+  Domain used for the generated email address that identifies each service account. Defaults to `hydroserver.local`.  
+  Example: `hydroserver.your-domain.com`
+
+#### Task Runs and Logging
+
+- **TASK_RUN_RETENTION_DAYS**  
+  Number of days of Job Orchestration System task run history to keep. Older runs are deleted by a scheduled cleanup
+  task, which requires a Celery worker and scheduler and keeps running when `CELERY_ENABLED` is `False`. Defaults to
+  `7`.  
+  Example: `30`
+
+- **TASK_RUN_CLEANUP_CRONTAB**  
+  Crontab schedule (minute, hour, day of month, month, day of week) for the task run cleanup. Defaults to `0 3 * * *`
+  (daily at 03:00).  
+  Example: `0 3 * * *`
+
+- **LOG_FORMAT**  
+  `standard` for plain-text logs or `json` for structured JSON logs. Defaults to `standard`.  
+  Example: `json`
+
+#### Storing Secrets
 
 Store sensitive environment variables (database credentials, API keys, etc.) securely, using a secret manager such as 
 [AWS Systems Manager Parameter Store](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html), 
@@ -104,17 +270,43 @@ Avoid committing secrets to version control or hardcoding them into configuratio
 
 ### Serving Static and Media Files
 
-Django is not optimized for serving static or media files in production. Recommended approaches include:
+**Static files** (CSS, JavaScript, and images bundled with the application) are served directly by HydroServer, using 
+Django WhiteNoise, whenever `STATIC_STORAGE_BACKEND` is local. WhiteNoise applies gzip compression and necessary cache 
+headers automatically. For higher-traffic deployments, set **STATIC_HOST** to a CDN domain (e.g., AWS CloudFront) 
+pointed at your HydroServer instance as its origin; WhiteNoise's cache headers let the CDN serve cached static assets 
+without re-fetching from HydroServer on every request.
 
-- Using a reverse proxy (e.g., [**NGINX**](https://nginx.org/)) to serve static and media volumes.  
+**Media files** are only relevant if **MEDIA_STORAGE_ENABLED** is `True` — instances that only use external URL
+linked resources for their sites/datastreams can leave media storage unconfigured. Django is not optimized for
+storing or serving user-uploaded media files in production. Recommended approaches include:
+
+- Using a reverse proxy (e.g., [**NGINX**](https://nginx.org/)) to serve the media volume.  
 - Offloading storage and delivery to a cloud service such as [**Amazon S3**](https://docs.aws.amazon.com/s3/) or 
   [**Google Cloud Storage**](https://cloud.google.com/storage/docs), optionally integrated with a 
   **Content Delivery Network (CDN)** service such as
   [**AWS CloudFront**](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Introduction.html) or 
-  [**Google Cloud CDN**](https://cloud.google.com/cdn/docs) for improved performance.  
+  [**Google Cloud CDN**](https://cloud.google.com/cdn/docs) for improved performance.
 
 Since these approaches bypass HydroServer’s internal authorization system, you may need to add additional security 
 controls to protect private media files (for example, by using signed URLs).
+
+### Sign-In Provider Icons
+
+OpenID Connect sign-in buttons show the icon at `provider-icons/<provider ID>.png` in static storage, or text only if
+there's no file. Icons for `github`, `google`, `microsoft`, and `orcid` are included.
+
+To add or replace an icon, publish a small square PNG (about 64 × 64 pixels) to that path during deployment:
+
+| Static storage | Where to put icons |
+| --- | --- |
+| Cloud bucket (S3, Google Cloud Storage) | `provider-icons/` under the static location (e.g. `static/provider-icons/utahid.png`) |
+| Local, published image | A directory mounted at `/app/django/staticfiles/provider-icons`; restart after changes |
+| Local, custom image or development | `django/static/provider-icons/` |
+
+To use another path or format, set `"icon"` in the provider's **Settings**, e.g. `"icon": "provider-icons/cuahsi.svg"`.
+
+New icons can take up to five minutes to appear. `collectstatic --clear` deletes icons published to a bucket, and
+manifest (content-hashed) static storage isn't supported.
 
 ### Email Configuration
 
@@ -196,15 +388,26 @@ When deploying HydroServer in production, you should implement multiple layers o
 
 ### Enabling Celery for HydroServer
 
-HydroServer optionally supports Celery for scheduling background tasks. To run Celery, you must set up several 
-additional services, including at least one worker instance, a scheduler, and a broker such as
-[Redis](https://redis.io/docs/latest/).
+HydroServer's Job Orchestration System uses Celery to run data ingestion, data product, and quality monitoring tasks
+in the background. To use it, you must set up several additional services, including at least one worker instance, a
+scheduler, and a broker such as [Redis](https://redis.io/docs/latest/). The rest of HydroServer works without these
+services.
 
 The following HydroServer settings can be used to configure Celery:
 
 - **CELERY_ENABLED**  
-  Controls whether Celery scheduling is enabled. If not enabled, all data processing will be handled by HydroServer's
-  web server.
+  Controls whether the Job Orchestration System is enabled. Defaults to `True`. Set it to `False` if you don't run
+  the Celery services, or to turn off orchestration on an instance that does. When `False`:
+  - Users can't create new tasks or run existing tasks. The API returns `501 Not Implemented` for these requests, and
+    the Job Orchestration page in the Data Management App disables these buttons.
+  - Users can still view, edit, and delete existing tasks, and can create, edit, and delete data connections.
+  - The scheduler stops sending scheduled tasks, and workers skip any tasks they receive, including ones that were
+    queued before the setting changed. Data connection notification emails are not sent. The task run cleanup
+    (see [`TASK_RUN_RETENTION_DAYS`](#task-runs-and-logging)) keeps running if able.
+  - Task schedules are left unchanged, so they resume as they were when you set `CELERY_ENABLED` back to `True`.
+
+  Set `CELERY_ENABLED` to the same value on the web server, worker, and scheduler containers, and restart all of them
+  after changing it.  
   Example: `True` / `False`
 
 - **CELERY_BROKER_URL** 
@@ -228,8 +431,8 @@ celery -A hydroserver beat --loglevel=INFO
 ### HydroServer Management Commands
 
 After provisioning your infrastructure, but before starting HydroServer’s web server, you must run several management 
-commands to complete setup. In the demo deployments from the previous section, these steps are bundled into the 
-convenience command:
+commands to complete setup. In the demo deployments from the [deployment tutorials](/hosting-and-deployment/tutorials/),
+these steps are bundled into the convenience command:
 
 ```bash
 python manage.py run_demo
@@ -253,9 +456,9 @@ Copies HydroServer’s static files to the deployment location.
 Run this after upgrades to ensure new or updated static files are available.
 
 ```bash
-python manage.py setup_admin_user
+python manage.py createsuperuser
 ```
-Creates the initial admin account for your HydroServer instance.  
+Creates the initial admin account for your HydroServer instance (Django will prompt for an email and password).  
 Run once only. Additional admin accounts can be created later through the dashboard.
 
 ### Starting HydroServer with Gunicorn

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <v-card class="datastream-info-card" rounded="lg">
     <v-toolbar flat color="primary" density="comfortable">
       <v-icon icon="mdi-database-outline" class="ms-4 me-2" />
@@ -30,15 +30,15 @@
       </div>
       <div class="d-flex flex-wrap ga-2 mt-3">
         <v-chip
-          v-if="datastream.thing"
+          v-if="datastream.monitoringSite"
           size="small"
           color="primary"
           variant="tonal"
           prepend-icon="mdi-map-marker"
-          :title="`Filter table by site: ${datastream.thing.name}`"
+          :title="`Filter table by site: ${datastream.monitoringSite.name}`"
           @click="filterBySite"
         >
-          {{ datastream.thing.samplingFeatureCode || datastream.thing.name || '–' }}
+          {{ datastream.monitoringSite.code || datastream.monitoringSite.name || '–' }}
         </v-chip>
         <v-chip
           v-if="datastream.observedProperty"
@@ -57,7 +57,7 @@
           color="deep-purple"
           variant="tonal"
           prepend-icon="mdi-layers"
-          :title="`Filter table by processing level: ${datastream.processingLevel.definition}`"
+          :title="`Filter table by processing level: ${datastream.processingLevel.name}`"
           @click="filterByProcessingLevel"
         >
           {{ datastream.processingLevel.code || '–' }}
@@ -101,19 +101,19 @@
             <MetadataList :items="generalItems">
               <template #value="{ item }">
                 <template v-if="item.label === 'Tags'">
-                  <span v-if="!(item.value as any[])?.length" class="text-medium-emphasis">
+                  <span v-if="!Object.keys(item.value as Tags).length" class="text-medium-emphasis">
                     No tags
                   </span>
                   <div v-else class="d-flex flex-wrap ga-1 mt-1">
                     <v-chip
-                      v-for="(tag, i) in (item.value as Tag[])"
-                      :key="`${tag.key}-${i}`"
+                      v-for="[key, value] in Object.entries(item.value as Tags)"
+                      :key="key"
                       size="small"
                       color="blue-grey-lighten-4"
                       variant="flat"
                       class="tag-chip"
                     >
-                      <strong>{{ tag.key }}</strong>:&nbsp;{{ tag.value }}
+                      <strong>{{ key }}</strong>:&nbsp;{{ value }}
                     </v-chip>
                   </div>
                 </template>
@@ -137,15 +137,15 @@
           </v-expansion-panel-text>
         </v-expansion-panel>
 
-        <v-expansion-panel value="sensor">
+        <v-expansion-panel value="method">
           <v-expansion-panel-title>
             <template #default>
               <v-icon icon="mdi-gauge" color="primary" class="me-3" />
-              <span class="font-weight-medium">Sensor</span>
+              <span class="font-weight-medium">Method</span>
             </template>
           </v-expansion-panel-title>
           <v-expansion-panel-text>
-            <MetadataList :items="sensorItems" />
+            <MetadataList :items="methodItems" />
           </v-expansion-panel-text>
         </v-expansion-panel>
 
@@ -213,17 +213,15 @@
 <script setup lang="ts">
 import { useDataVisStore } from '@/store/dataVisualization'
 import { storeToRefs } from 'pinia'
-import { computed, onMounted, ref, h } from 'vue'
+import { computed, ref, h } from 'vue'
 import {
+  DATASTREAM_TYPE_LABELS,
   Datastream,
   type DatastreamExtended,
-  type Tag,
+  type Tags,
 } from '@hydroserver/client'
-import { useHydroServer } from '@/store/hydroserver'
 import { formatTimeWithZone } from '@/utils/time'
 import { downloadDatastreamCsv } from '@/utils/csvExport'
-
-const { hs } = storeToRefs(useHydroServer())
 
 const props = defineProps({
   datastream: {
@@ -234,22 +232,22 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 const {
-  selectedThings,
+  selectedMonitoringSites,
   selectedObservedPropertyNames,
   selectedProcessingLevelNames,
-  things,
+  monitoringSites,
 } = storeToRefs(useDataVisStore())
 const { plotDatastream, setPlottedDatastreams } = useDataVisStore()
 const downloading = ref(false)
-const tags = ref<Tag[]>([])
+const tags = computed<Tags>(() => props.datastream.tags ?? {})
 const expandedPanels = ref<string[]>(['general'])
 
 function filterBySite() {
-  const thing = props.datastream.thing
-  if (!thing) return
+  const monitoringSite = props.datastream.monitoringSite
+  if (!monitoringSite) return
   // Reuse the catalog reference so DatastreamFilters' v-checkbox equality works.
-  const resolved = things.value.find((t) => t.id === thing.id) ?? thing
-  selectedThings.value = [resolved]
+  const resolved = monitoringSites.value.find((t) => t.id === monitoringSite.id) ?? monitoringSite
+  selectedMonitoringSites.value = [resolved]
   emit('close')
 }
 
@@ -261,9 +259,9 @@ function filterByObservedProperty() {
 }
 
 function filterByProcessingLevel() {
-  const def = props.datastream.processingLevel?.definition
-  if (!def) return
-  selectedProcessingLevelNames.value = [def]
+  const name = props.datastream.processingLevel?.name
+  if (!name) return
+  selectedProcessingLevelNames.value = [name]
   emit('close')
 }
 
@@ -313,8 +311,7 @@ const generalItems = computed(() => [
   { label: 'Date Last Updated', value: formatTimeWithZone(d.value.phenomenonEndTime) },
   { label: 'Begin Date', value: formatTimeWithZone(d.value.phenomenonBeginTime) },
   { label: 'End Date', value: formatTimeWithZone(d.value.phenomenonEndTime) },
-  { label: 'Data Type', value: d.value.observationType },
-  { label: 'Value Type', value: d.value.resultType },
+  { label: 'Type', value: DATASTREAM_TYPE_LABELS[d.value.type] ?? d.value.type },
   { label: 'Sample Medium', value: d.value.sampledMedium },
   { label: 'No-data Value', value: d.value.noDataValue },
   { label: 'Id', value: d.value.id },
@@ -325,44 +322,48 @@ const generalItems = computed(() => [
   { label: 'Time Aggregation Interval Unit', value: d.value.timeAggregationIntervalUnit },
   { label: 'Tags', value: tags.value },
   { label: 'Is Private', value: d.value.isPrivate ? 'Yes' : 'No' },
-  { label: 'Is Visible', value: d.value.isVisible ? 'Yes' : 'No' },
+  { label: 'Data Download', value: d.value.isRestricted ? 'Restricted' : 'Allowed' },
 ])
 
 const locationItems = computed(() => {
-  const t = d.value.thing
+  const t = d.value.monitoringSite
   if (!t) return []
-  const l = t.location || ({} as any)
+  const l = t
   return [
     { label: 'Site Name', value: t.name },
-    { label: 'Site Code', value: t.samplingFeatureCode },
+    { label: 'Site Code', value: t.code },
     { label: 'Description', value: t.description },
-    { label: 'Site Type', value: t.siteType },
+    { label: 'Site Type', value: t.type },
     { label: 'Latitude', value: l.latitude },
     { label: 'Longitude', value: l.longitude },
-    { label: 'Elevation (m)', value: l.elevation_m },
+    { label: 'Elevation (m)', value: l.elevationM },
     { label: 'Elevation Datum', value: l.elevationDatum },
     { label: 'State/Province/Region', value: l.adminArea1 },
     { label: 'County/District', value: l.adminArea2 },
     { label: 'Country', value: l.country },
-    { label: 'Sampling Feature Type', value: t.samplingFeatureType },
     { label: 'Is Private', value: t.isPrivate ? 'Yes' : 'No' },
-    { label: 'Thing Id', value: t.id },
+    { label: 'MonitoringSite Id', value: t.id },
   ]
 })
 
-const sensorItems = computed(() => {
-  const s = d.value.sensor
-  if (!s) return []
+const methodItems = computed(() => {
+  const method = d.value.method
+  if (!method) return []
   return [
-    { label: 'Name', value: s.name },
-    { label: 'Description', value: s.description },
-    { label: 'Manufacturer', value: s.manufacturer },
-    { label: 'Model', value: s.model },
-    { label: 'Method Type', value: s.methodType },
-    { label: 'Method Code', value: s.methodCode },
-    { label: 'Method Link', value: s.methodLink },
-    { label: 'Encoding Type', value: s.encodingType },
-    { label: 'Model Link', value: s.modelLink },
+    { label: 'Name', value: method.name },
+    { label: 'Description', value: method.description },
+    { label: 'Type', value: method.type },
+    { label: 'Code', value: method.code },
+    { label: 'Definition', value: method.definition },
+    { label: 'Sensor model', value: method.sensorModel },
+    {
+      label: 'Sensor model manufacturer',
+      value: method.sensorModelManufacturer,
+    },
+    {
+      label: 'Sensor model definition',
+      value: method.sensorModelDefinition,
+    },
   ]
 })
 
@@ -393,27 +394,13 @@ const processingLevelItems = computed(() => {
   const pl = d.value.processingLevel
   if (!pl) return []
   return [
+    { label: 'Name', value: pl.name },
     { label: 'Code', value: pl.code },
+    { label: 'Description', value: pl.description },
     { label: 'Definition', value: pl.definition },
-    { label: 'Explanation', value: pl.explanation },
   ]
 })
 
-onMounted(async () => {
-  // Tags are not returned by expand_related; fetch separately.
-  const existing = (d.value as any).tags
-  if (Array.isArray(existing)) {
-    tags.value = existing
-    return
-  }
-  try {
-    const res = await hs.value.datastreams.getTags(d.value.id)
-    tags.value = res.ok && Array.isArray(res.data) ? res.data : []
-  } catch (error) {
-    console.error('Error fetching datastream tags', error)
-    tags.value = []
-  }
-})
 </script>
 
 <style scoped lang="scss">

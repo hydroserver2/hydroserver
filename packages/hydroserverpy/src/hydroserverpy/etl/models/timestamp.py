@@ -12,6 +12,10 @@ TimezoneType = Literal["utc", "offset", "iana"]
 
 _OFFSET_RE = re.compile(r"^[+-](\d{4}|\d{2}:\d{2})$")
 
+# A trailing ±HH[:MM] is only an offset when it follows a time component; otherwise it is the day
+# or month of a date-only value such as '2026-01-01'. Whitespace may separate the time and offset.
+_EMBEDDED_TZ_RE = r"[Zz]$|[T\s]\d{2}(?::?\d{2}){0,2}(?:[.,]\d+)?\s*[+-]\d{2}(?::?\d{2})?$"
+
 
 class Timezone(BaseModel):
     timezone_type: Optional[TimezoneType] = None
@@ -187,10 +191,13 @@ class Timestamp(Timezone):
                 )
 
             # ISO strings: regex detects embedded tz per element to support mixed-offset series
-            # (pandas cannot parse mixed tz/naive strings without coercing to NaT)
-            has_tz = series.str.contains(r"[Zz]$|[+-]\d{2}(?::?\d{2})?$", regex=True, na=False)
-            tz_aware = pd.to_datetime(series[has_tz], utc=True, errors="raise")
-            tz_naive_raw_series = pd.to_datetime(series[~has_tz], utc=False, errors="raise")
+            # (pandas cannot parse mixed tz/naive strings without coercing to NaT).
+            # format="ISO8601" accepts any valid ISO 8601 shape per element; without it, pandas
+            # infers a format from the first element and rejects valid variants such as a
+            # timestamp without fractional seconds following one with them.
+            has_tz = series.str.contains(_EMBEDDED_TZ_RE, regex=True, na=False)
+            tz_aware = pd.to_datetime(series[has_tz], utc=True, format="ISO8601", errors="raise")
+            tz_naive_raw_series = pd.to_datetime(series[~has_tz], utc=False, format="ISO8601", errors="raise")
 
         elif isinstance(first_timestamp, pd.Timestamp):
             has_tz = series.apply(lambda x: x.tzinfo is not None)

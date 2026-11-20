@@ -1,0 +1,153 @@
+import uuid
+
+from ninja import Router, Path, Query
+from django.db import transaction
+
+from interfaces.auth.security import session_auth, oidc_data_read_auth, oidc_data_write_auth, apikey_auth, basic_auth, anonymous_auth
+from interfaces.api.http.request import HydroServerHttpRequest
+from interfaces.api.services.sta import ObservedPropertyTypeAPIService
+from interfaces.api.schemas import PaginatedResponse, ItemResponse, CreatedResponse
+from interfaces.api.schemas.sta.vocabulary import (
+    VocabularyQueryParameters,
+    VocabularyItemQueryParameters,
+)
+from interfaces.api.schemas.sta.observed_property_type import (
+    ObservedPropertyTypeResponse,
+    ObservedPropertyTypePostBody,
+    ObservedPropertyTypePatchBody,
+)
+
+observed_property_type_router = Router(tags=["Observed Property Types"])
+observed_property_type_service = ObservedPropertyTypeAPIService()
+
+
+@observed_property_type_router.get(
+    "/items",
+    auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
+    response={
+        200: PaginatedResponse[ObservedPropertyTypeResponse],
+        400: str,
+        401: str,
+    },
+    by_alias=True,
+)
+def get_observed_property_types(
+    request: HydroServerHttpRequest,
+    query: Query[VocabularyQueryParameters],
+):
+    """
+    Get observed property types.
+    """
+
+    return 200, observed_property_type_service.list(
+        principal=request.principal,
+        offset=query.offset,
+        limit=query.limit,
+        sortby=query.sortby,
+        filtering=query.dict(exclude_unset=True),
+    )
+
+
+@observed_property_type_router.post(
+    "/items",
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
+    response={
+        201: CreatedResponse,
+        401: str,
+        403: str,
+        409: str,
+    },
+    by_alias=True,
+)
+@transaction.atomic
+def create_observed_property_type(
+    request: HydroServerHttpRequest,
+    data: ObservedPropertyTypePostBody,
+):
+    """
+    Create a new observed property type.
+    """
+
+    return 201, observed_property_type_service.create(
+        principal=request.principal,
+        data=data,
+    )
+
+
+@observed_property_type_router.get(
+    "/items/{observed_property_type_id}",
+    auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
+    response={
+        200: ItemResponse[ObservedPropertyTypeResponse],
+        400: str,
+        401: str,
+        403: str,
+    },
+    by_alias=True,
+    exclude_unset=True,
+)
+def get_observed_property_type(
+    request: HydroServerHttpRequest,
+    observed_property_type_id: Path[uuid.UUID],
+    query: Query[VocabularyItemQueryParameters],
+):
+    """
+    Get an observed property type.
+    """
+
+    return 200, observed_property_type_service.get(
+        principal=request.principal,
+        uid=observed_property_type_id,
+    )
+
+
+@observed_property_type_router.patch(
+    "/items/{observed_property_type_id}",
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
+    response={
+        204: None,
+        401: str,
+        403: str,
+        409: str,
+    },
+    by_alias=True,
+)
+@transaction.atomic
+def update_observed_property_type(
+    request: HydroServerHttpRequest,
+    observed_property_type_id: Path[uuid.UUID],
+    data: ObservedPropertyTypePatchBody,
+):
+    """
+    Update an observed property type.
+    """
+
+    observed_property_type_service.update(
+        principal=request.principal,
+        uid=observed_property_type_id,
+        data=data,
+    )
+    return 204, None
+
+
+@observed_property_type_router.delete(
+    "/items/{observed_property_type_id}",
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
+    response={
+        204: None,
+        401: str,
+        403: str,
+    },
+    by_alias=True,
+)
+@transaction.atomic
+def delete_observed_property_type(
+    request: HydroServerHttpRequest, observed_property_type_id: Path[uuid.UUID]
+):
+    """
+    Delete an observed property type.
+    """
+
+    return 204, observed_property_type_service.delete(
+        principal=request.principal, uid=observed_property_type_id
+    )

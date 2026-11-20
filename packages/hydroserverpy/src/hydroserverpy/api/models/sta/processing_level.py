@@ -9,12 +9,18 @@ if TYPE_CHECKING:
 
 
 class ProcessingLevel(HydroServerBaseModel):
-    code: str = Field(..., max_length=255)
-    definition: Optional[str] = None
-    explanation: Optional[str] = None
+    code: Optional[str] = Field(None, max_length=255)
+    name: str = Field(..., max_length=255)
+    description: str
+    definition: Optional[str] = Field(None, max_length=2000)
     workspace_id: Optional[uuid.UUID] = None
 
-    _editable_fields: ClassVar[set[str]] = {"code", "definition", "explanation"}
+    _editable_fields: ClassVar[set[str]] = {
+        "code",
+        "name",
+        "description",
+        "definition",
+    }
 
     def __init__(self, client: "HydroServer", **data):
         super().__init__(client=client, service=client.processinglevels, **data)
@@ -23,7 +29,7 @@ class ProcessingLevel(HydroServerBaseModel):
 
     @classmethod
     def get_route(cls):
-        return "processing-levels"
+        return "collections/processing-levels/items"
 
     @property
     def workspace(self) -> Optional["Workspace"]:

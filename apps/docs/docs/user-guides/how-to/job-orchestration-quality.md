@@ -2,7 +2,7 @@
 
 Data quality monitoring tasks can be set up within HydroServer's Job Orchestration System to automatically check existing HydroServer datastreams for values that may be unusual, incorrect, or outside an expected range. These tasks do not create a new datastream. Instead, they monitor the values within selected datastreams and notify a list of designated people when a data quality rule is triggered or violated by incoming data.
 
-To create a data quality monitoring task in the Job Orchestration System, in HydroServer click the main **Data management** link and select **Job Orchestration**. 
+To create a data quality monitoring task in the Job Orchestration System, click **Job orchestration** in HydroServer's main navigation. 
 
 **NOTE**: The Job Orchestration System organizes tasks by Workspace. Before attempting to create new tasks, ensure that you have selected the correct workspace at the top of the Job Orchestration System page.
 
@@ -16,7 +16,7 @@ In the "Create quality monitoring task" form, enter a clear task name and descri
 
 Next, configure the schedule for the task. In this example, the task is set to run every `1 Hour`, starting on `06/25/2026 at 06:43 PM` in the `America/Denver` time zone. The schedule controls how often HydroServer checks the selected datastream for values that do not meet the quality rule.
 
-Under **Quality Rules**, select the datastream that should be monitored. In this example, the rule is applied to `Discharge at BC_CONF_A with average daily discharge`. The rule type is set to `Range` because the goal is to check whether discharge values stay within an expected range. The rule type can also be changed using the dropdown menu depending on the type of quality check needed. Here, the minimum value is set to `0` and the maximum value is set to `50`, so any value below `0` or above `50` will be flagged for review and a notification will be sent to the list of email addresses. After all settings are complete, click **Create quality task**.
+Under **Quality Rules**, select the datastream that should be monitored. In this example, the rule is applied to `Discharge - Daily Mean (cfs)`. The rule type is set to `Range` because the goal is to check whether discharge values stay within an expected range. The rule type can also be changed using the dropdown menu depending on the type of quality check needed. Here, the minimum value is set to `0` and the maximum value is set to `50`, so any value below `0` or above `50` will be flagged for review and a notification will be sent to the list of email addresses. After all settings are complete, click **Create quality task**.
 
 The supported rule types include:
 

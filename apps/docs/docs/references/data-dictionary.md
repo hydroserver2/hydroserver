@@ -2,64 +2,56 @@
 
 This document describes the Django model fields that back HydroServer's core data model.
 
-Attribute names below use the persisted model field names in `snake_case`. Foreign keys are shown as the stored `*_id` values. The API uses camelCase aliases.
+Attribute names below use camelCase, matching the API and the [data model diagrams](/references/data-model.md). Foreign keys are shown as `*Id` attributes. In the database, each attribute is stored under its `snake_case` equivalent (for example, `monitoringSiteId` is the `monitoring_site_id` column).
 
 M = Mandatory
 O = Optional
 
+## Metadata field conventions
+
+Method, ObservedProperty, ProcessingLevel, Unit, and ResultQualifier share these conventions:
+
+| Field | Meaning | Requirement |
+| --- | --- | --- |
+| `name` | The label every frontend displays to identify the item. | Required; at most 255 characters. |
+| `description` | Free-text comments from the user. | Required text without a fixed length limit, except Unit has no description and ResultQualifier's is optional. |
+| `definition` | A URL defining or documenting the item, such as a vocabulary term, standard, or manual. | Optional URL; at most 2,000 characters. ResultQualifier has no definition. |
+| `code` | An external or organizational identifier. | Optional; at most 255 characters. Unit has no code because its definition serves this purpose. |
+
+Elsewhere in the data model, `link` is a person's or organization's website. A linked resource's `url` identifies an external link, and its `file` holds an uploaded file.
+
 ## Datastream
 
-A Datastream groups a collection of Observations measuring the same ObservedProperty and produced by the same Sensor. Each instance of a Datastream represents the properties for a time series of Observations.
+A Datastream groups a collection of Observations measuring the same ObservedProperty and produced by the same Method. Each instance of a Datastream represents the properties for a time series of Observations.
 
 | Required | Attribute                      | Definition                                                                                                         | Data Type |
 | -------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------ | --------- |
 | M        | id                             | A primary key unique identifier for the Datastream.                                                                | UUID      |
 | M        | name                           | A text name for the Datastream.                                                                                    | String    |
 | M        | description                    | A text description for the Datastream.                                                                             | Text      |
-| M        | sensor_id                      | A foreign key identifier for the Sensor or method used to create the Datastream.                                   | UUID      |
-| M        | thing_id                       | A foreign key identifier for the Thing on which or at which the Datastream was created.                            | UUID      |
-| M        | observed_property_id           | A foreign key identifier for the ObservedProperty associated with the Datastream.                                  | UUID      |
-| M        | unit_id                        | A foreign key identifier for the Unit used for Observations within the Datastream.                                 | UUID      |
-| M        | processing_level_id            | A foreign key identifier indicating the ProcessingLevel for the Datastream.                                        | UUID      |
-| M        | observation_type               | The type of Observation recorded in the Datastream.                                                                | String    |
-| M        | result_type                    | The type of result represented by the Datastream.                                                                  | String    |
+| M        | methodId                      | A foreign key identifier for the Method used to produce the Datastream.                                            | UUID      |
+| M        | monitoringSiteId              | A foreign key identifier for the MonitoringSite at which the Datastream was created.                               | UUID      |
+| M        | observedPropertyId           | A foreign key identifier for the ObservedProperty associated with the Datastream.                                  | UUID      |
+| M        | unitId                        | A foreign key identifier for the Unit used for Observations within the Datastream.                                 | UUID      |
+| M        | processingLevelId            | A foreign key identifier indicating the ProcessingLevel for the Datastream.                                        | UUID      |
+| M        | type                           | How the Datastream's Observations are arranged. One of `timeSeriesCoverage` (one Observation per time). Defaults to `timeSeriesCoverage`. Allowed values are defined by HydroServer, not by a controlled vocabulary table. | String    |
 | O        | status                         | A text value indicating the status of the Datastream.                                                              | String    |
-| O        | observed_area                  | The spatial extent associated with the Datastream. This field exists in the database but is currently unused.      | String    |
-| M        | sampled_medium                 | The environmental medium sampled by the Datastream.                                                                | String    |
-| O        | value_count                    | The number of Observations within the Datastream.                                                                  | Integer   |
-| M        | no_data_value                  | A numeric value used to indicate the absence of data.                                                              | Float     |
-| O        | intended_time_spacing          | A numeric value indicating the intended spacing between Observations.                                              | Float     |
-| O        | intended_time_spacing_unit     | A string indicating the unit for `intended_time_spacing`.                                                          | String    |
-| M        | aggregation_statistic          | A text string indicating the aggregation statistic for the Datastream.                                             | String    |
-| M        | time_aggregation_interval      | A numeric value indicating the time interval over which recorded Observations were aggregated.                     | Float     |
-| M        | time_aggregation_interval_unit | A string indicating the unit for `time_aggregation_interval`.                                                      | String    |
-| O        | phenomenon_begin_time          | The time at which the activity began that results in the Datastream's Observations.                                | Datetime  |
-| O        | phenomenon_end_time            | The time at which the activity ended that results in the Datastream's Observations.                                | Datetime  |
-| O        | result_begin_time              | The timestamp of the first Observation in the Datastream. This field remains in the model but is currently unused. | Datetime  |
-| O        | result_end_time                | The timestamp of the last Observation in the Datastream. This field remains in the model but is currently unused.  | Datetime  |
-| M        | is_private                     | An access control flag indicating whether the Datastream metadata and data are private by default.                 | Boolean   |
-| M        | is_visible                     | An access control flag indicating whether the Datastream should be shown in normal data-discovery responses.       | Boolean   |
-
-## Location
-
-The Location entity stores the location of a Thing. In the context of Things that are monitoring sites, this is the physical location of the monitoring site.
-
-| Required | Attribute       | Definition                                                                      | Data Type |
-| -------- | --------------- | ------------------------------------------------------------------------------- | --------- |
-| M        | id              | A primary key unique identifier for the Location.                               | UUID      |
-| M        | thing_id        | A foreign key identifier for the Thing to which the Location belongs.           | UUID      |
-| M        | name            | A text string name for the Location.                                            | String    |
-| M        | description     | A text string description for the Location.                                     | Text      |
-| M        | encoding_type   | The encoding type of the Location, usually `application/vnd.geo+json`.          | String    |
-| M        | latitude        | The latitude of the Location using WGS84 coordinates.                           | Decimal   |
-| M        | longitude       | The longitude of the Location using WGS84 coordinates.                          | Decimal   |
-| O        | elevation_m     | The elevation of the Location in meters.                                        | Decimal   |
-| O        | elevation_datum | A text string indicating the elevation datum used for the Location.             | String    |
-| O        | admin_area_1    | A text string indicating the first-level administrative area for the Location.  | String    |
-| O        | admin_area_2    | A text string indicating the second-level administrative area for the Location. | String    |
-| O        | country         | A two-character ISO country code for the Location.                              | String    |
-
-**NOTE**: The database allows a Thing to have multiple Location rows, but the current Data Management API treats `location` as a single nested object on a Thing.
+| O        | observedArea                  | The spatial extent associated with the Datastream. This field exists in the database but is currently unused.      | String    |
+| M        | sampledMedium                 | The environmental medium sampled by the Datastream.                                                                | String    |
+| O        | valueCount                    | The number of Observations within the Datastream.                                                                  | Integer   |
+| M        | noDataValue                  | A numeric value used to indicate the absence of data.                                                              | Float     |
+| O        | intendedTimeSpacing          | A numeric value indicating the intended spacing between Observations.                                              | Float     |
+| O        | intendedTimeSpacingUnit     | A string indicating the unit for `intendedTimeSpacing`.                                                          | String    |
+| M        | aggregationStatistic          | A text string indicating the aggregation statistic for the Datastream.                                             | String    |
+| M        | timeAggregationInterval      | A numeric value indicating the time interval over which recorded Observations were aggregated.                     | Float     |
+| M        | timeAggregationIntervalUnit | A string indicating the unit for `timeAggregationInterval`.                                                      | String    |
+| O        | phenomenonBeginTime          | The time at which the activity began that results in the Datastream's Observations.                                | Datetime  |
+| O        | phenomenonEndTime            | The time at which the activity ended that results in the Datastream's Observations.                                | Datetime  |
+| O        | resultBeginTime              | The timestamp of the first Observation in the Datastream. This field remains in the model but is currently unused. | Datetime  |
+| O        | resultEndTime                | The timestamp of the last Observation in the Datastream. This field remains in the model but is currently unused.  | Datetime  |
+| M        | isPrivate                     | An access control flag indicating whether the Datastream metadata and data are private by default.                 | Boolean   |
+| M        | isRestricted                  | An access control flag indicating whether data download and query are restricted for the Datastream. The Datastream and its metadata stay public, but its Observations are only available to workspace collaborators with permission to view them. Defaults to `false`. | Boolean   |
+| M        | tags                           | Custom key-value metadata for the Datastream, stored as a JSON object of non-empty string keys and values. Defaults to `{}`. | JSON      |
 
 ## Observation
 
@@ -68,14 +60,14 @@ An Observation is the act of measuring or otherwise determining the value of a p
 | Required | Attribute         | Definition                                                                                                               | Data Type    |
 | -------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------ |
 | M        | id                | A primary key unique identifier for the Observation.                                                                     | UUID         |
-| M        | datastream_id     | A foreign key identifier for the Datastream to which the Observation belongs.                                            | UUID         |
-| M        | phenomenon_time   | A datetime value indicating the time instant when the Observation happened.                                              | Datetime     |
+| M        | datastreamId     | A foreign key identifier for the Datastream to which the Observation belongs.                                            | UUID         |
+| M        | phenomenonTime   | A datetime value indicating the time instant when the Observation happened.                                              | Datetime     |
 | M        | result            | The numeric value of the Observation.                                                                                    | Float        |
-| O        | result_time       | The time that the Observation's result was generated, if different from `phenomenon_time`.                               | Datetime     |
-| O        | quality_code      | A text code indicating the quality of the Observation.                                                                   | String       |
-| O        | result_qualifiers | A many-to-many relationship to ResultQualifier. This is stored in a join table, not as an array column on `Observation`. | Many-to-many |
+| O        | resultTime       | The time that the Observation's result was generated, if different from `phenomenonTime`.                               | Datetime     |
+| O        | qualityCode      | A text code indicating the quality of the Observation.                                                                   | String       |
+| O        | resultQualifiers | A JSON array of ResultQualifier names. | JSON array |
 
-**NOTE**: `quality_code` is persisted in the database, but the current Data Management API does not include it in the main observation schema. The API also uses `resultQualifierCodes` rather than exposing the join table directly.
+**NOTE**: `qualityCode` is persisted in the database, but the current Data Management API does not include it in the main observation schema. The API exposes `resultQualifiers` in observation payloads and as the `resultQualifiers` filter on observation queries; their values are qualifier names, not optional external codes. The Python client uses `result_qualifiers` for the corresponding keyword argument and DataFrame column.
 
 ## ObservedProperty
 
@@ -84,12 +76,12 @@ An ObservedProperty specifies the phenomenon of an Observation, such as flow, te
 | Required | Attribute              | Definition                                                                                                                         | Data Type |
 | -------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | --------- |
 | M        | id                     | A primary key unique identifier for the ObservedProperty.                                                                          | UUID      |
-| O        | workspace_id           | A foreign key identifier for the Workspace that owns the ObservedProperty. If omitted, the ObservedProperty is shared system-wide. | UUID      |
-| M        | name                   | A descriptive name for the ObservedProperty.                                                                                       | String    |
-| M        | definition             | A text definition of the ObservedProperty or a URL pointing to a controlled definition.                                            | Text      |
-| M        | description            | A text description of the ObservedProperty.                                                                                        | Text      |
-| M        | observed_property_type | The type of ObservedProperty.                                                                                                      | String    |
-| M        | code                   | A brief text code identifying the ObservedProperty.                                                                                | String    |
+| O        | workspaceId           | A foreign key identifier for the Workspace that owns the ObservedProperty. If omitted, the ObservedProperty is shared system-wide. | UUID      |
+| M | name | The label displayed by every frontend. | String (255) |
+| O | definition | A URL defining or documenting the item. | URL (2,000) |
+| M | description | Free-text comments from the user. | Text |
+| M | type | The type of ObservedProperty. | String (255) |
+| O | code | An external or organizational identifier. | String (255) |
 
 ## Organization
 
@@ -102,32 +94,32 @@ An Organization is a body of people having a particular purpose, such as a busin
 | M        | name              | A descriptive name for the Organization.                | String     |
 | O        | description       | A text description of the Organization.                 | Text       |
 | O        | link              | A URL pointing to a website for the Organization.       | URL        |
-| M        | organization_type | A text string indicating the type of Organization.      | String     |
+| M        | organizationType | A text string indicating the type of Organization.      | String     |
 
 ## User
 
 Individual users who own workspaces, collaborate on data management, or manage account information in HydroServer.
 
-| Required | Attribute            | Definition                                                                                                                                                                                                | Data Type  |
-| -------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
-| M        | id                   | A primary key unique identifier for the User.                                                                                                                                                             | BigInteger |
-| M        | username             | The Django username field. HydroServer keeps this synchronized to the user's email address.                                                                                                               | String     |
-| M        | password             | The stored password hash.                                                                                                                                                                                 | String     |
-| O        | last_login           | The datetime when the User last logged in.                                                                                                                                                                | Datetime   |
-| M        | is_superuser         | A boolean value indicating whether the User bypasses explicit permission assignments.                                                                                                                     | Boolean    |
-| O        | first_name           | The User's first name.                                                                                                                                                                                    | String     |
-| O        | middle_name          | The User's middle name.                                                                                                                                                                                   | String     |
-| O        | last_name            | The User's last name.                                                                                                                                                                                     | String     |
-| M        | email                | The User's contact email address.                                                                                                                                                                         | String     |
-| M        | is_staff             | A boolean value indicating whether the User can access the Django admin site.                                                                                                                             | Boolean    |
-| M        | is_active            | A boolean value indicating whether the account is active.                                                                                                                                                 | Boolean    |
-| M        | date_joined          | The datetime when the User account was created.                                                                                                                                                           | Datetime   |
-| O        | phone                | The User's contact phone number.                                                                                                                                                                          | String     |
-| O        | address              | The User's physical mailing address.                                                                                                                                                                      | String     |
-| O        | link                 | A URL pointing to a website for the User.                                                                                                                                                                 | URL        |
-| M        | user_type            | A text string indicating the type of User.                                                                                                                                                                | String     |
-| O        | organization_id      | A one-to-one identifier for the Organization with which the User is affiliated. Each User may be affiliated with at most one Organization, and each Organization may be affiliated with at most one User. | BigInteger |
-| M        | is_ownership_allowed | A boolean value indicating whether the User may own workspaces.                                                                                                                                           | Boolean    |
+| Required | Attribute             | Definition                                                                                                                                                                                                | Data Type              |
+| -------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| M        | id                    | A primary key unique identifier for the User.                                                                                                                                                             | BigInteger             |
+| M        | username              | The Django username field. HydroServer keeps this synchronized to the user's email address.                                                                                                               | String                 |
+| M        | password              | The stored password hash.                                                                                                                                                                                 | String                 |
+| O        | lastLogin            | The datetime when the User last logged in.                                                                                                                                                                | Datetime               |
+| M        | isSuperuser          | A boolean value indicating whether the User bypasses explicit permission assignments.                                                                                                                     | Boolean                |
+| O        | firstName            | The User's first name.                                                                                                                                                                                    | String                 |
+| O        | middleName           | The User's middle name.                                                                                                                                                                                   | String                 |
+| O        | lastName             | The User's last name.                                                                                                                                                                                     | String                 |
+| M        | email                 | The User's contact email address.                                                                                                                                                                         | String                 |
+| M        | isStaff              | A boolean value indicating whether the User can access the Django admin site.                                                                                                                             | Boolean                |
+| M        | isActive             | A boolean value indicating whether the account is active.                                                                                                                                                 | Boolean                |
+| M        | dateJoined           | The datetime when the User account was created.                                                                                                                                                           | Datetime               |
+| O        | phone                 | The User's contact phone number.                                                                                                                                                                          | String                 |
+| O        | address               | The User's physical mailing address.                                                                                                                                                                      | String                 |
+| O        | link                  | A URL pointing to a website for the User.                                                                                                                                                                 | URL                    |
+| M        | userType             | A text string indicating the type of User.                                                                                                                                                                | String                 |
+| O        | organizationId       | A one-to-one identifier for the Organization with which the User is affiliated. Each User may be affiliated with at most one Organization, and each Organization may be affiliated with at most one User. | BigInteger             |
+| O        | ownedWorkspaceLimit | The maximum number of workspaces the User may own. `0` prevents ownership and `NULL` allows unlimited ownership.                                                                                          | Positive Small Integer |
 
 **NOTE**: `groups` and `user_permissions` are also persisted through Django auth many-to-many join tables, but they are not columns on the `User` row itself.
 
@@ -138,10 +130,11 @@ The degree of quality control or processing to which a Datastream has been subje
 | Required | Attribute    | Definition                                                                                                                       | Data Type |
 | -------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------- | --------- |
 | M        | id           | A primary key unique identifier for the ProcessingLevel.                                                                         | UUID      |
-| O        | workspace_id | A foreign key identifier for the Workspace that owns the ProcessingLevel. If omitted, the ProcessingLevel is shared system-wide. | UUID      |
-| M        | code         | A brief text code identifying the ProcessingLevel.                                                                               | String    |
-| O        | definition   | A text definition of the ProcessingLevel.                                                                                        | Text      |
-| O        | explanation  | A longer text explanation of the ProcessingLevel.                                                                                | Text      |
+| O        | workspaceId | A foreign key identifier for the Workspace that owns the ProcessingLevel. If omitted, the ProcessingLevel is shared system-wide. | UUID      |
+| O | code | An external or organizational identifier. | String (255) |
+| M | name | The label displayed by every frontend. | String (255) |
+| M | description | Free-text comments from the user. | Text |
+| O | definition | A URL defining or documenting the item. | URL (2,000) |
 
 ## ResultQualifier
 
@@ -150,73 +143,67 @@ Data qualifying comments added to individual data values to qualify their interp
 | Required | Attribute    | Definition                                                                                                                       | Data Type |
 | -------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------- | --------- |
 | M        | id           | A primary key unique identifier for the ResultQualifier.                                                                         | UUID      |
-| O        | workspace_id | A foreign key identifier for the Workspace that owns the ResultQualifier. If omitted, the ResultQualifier is shared system-wide. | UUID      |
-| M        | code         | A brief text code identifying the ResultQualifier.                                                                               | String    |
-| M        | description  | A longer text description or explanation of the ResultQualifier.                                                                 | Text      |
+| O        | workspaceId | A foreign key identifier for the Workspace that owns the ResultQualifier. If omitted, the ResultQualifier is shared system-wide. | UUID      |
+| M        | name         | A brief text name identifying the ResultQualifier.                                                                               | String    |
+| O        | description  | A longer text description or explanation of the ResultQualifier.                                                                 | Text      |
 
-**NOTE**: The database enforces a unique constraint on `(code, workspace_id)`, including the system-wide `NULL` workspace scope.
+**NOTE**: The database enforces a unique constraint on `(name, workspaceId)`, including the system-wide `NULL` workspace scope.
 
-## Sensor
+## Method
 
-A Sensor is an instrument, method, or procedure used to produce Observations for a Datastream.
+A Method describes how a Datastream's Observations are produced, whether by an instrument, technician, laboratory procedure, simulation, or computation.
 
-| Required | Attribute         | Definition                                                                                                     | Data Type |
-| -------- | ----------------- | -------------------------------------------------------------------------------------------------------------- | --------- |
-| M        | id                | A primary key unique identifier for the Sensor.                                                                | UUID      |
-| O        | workspace_id      | A foreign key identifier for the Workspace that owns the Sensor. If omitted, the Sensor is shared system-wide. | UUID      |
-| M        | name              | A descriptive name for the Sensor.                                                                             | String    |
-| M        | description       | A longer text description of the Sensor.                                                                       | Text      |
-| M        | encoding_type     | A string indicating how the Sensor information is encoded.                                                     | String    |
-| O        | method_code       | A brief text code identifying the Sensor or method.                                                            | String    |
-| M        | method_type       | A text string indicating the type of Sensor or method.                                                         | String    |
-| O        | method_link       | A URL pointing to documentation that defines or describes the Sensor or method.                                | String    |
-| O        | manufacturer      | The name of the Sensor manufacturer.                                                                           | String    |
-| O        | sensor_model      | The name of the Sensor model.                                                                                  | String    |
-| O        | sensor_model_link | A URL pointing to documentation for the Sensor model.                                                          | String    |
+| Required | Attribute                | Definition                                                                                                     | Data Type |
+| -------- | ------------------------ | -------------------------------------------------------------------------------------------------------------- | --------- |
+| M        | id                       | A primary key unique identifier for the Method.                                                                | UUID      |
+| O        | workspaceId             | A foreign key identifier for the Workspace that owns the Method. If omitted, the Method is shared system-wide. | UUID      |
+| M | name | The label displayed by every frontend. | String (255) |
+| O | code | An external or organizational identifier. | String (255) |
+| M | type | A controlled-vocabulary value identifying the kind of Method. | String (255) |
+| M | description | Free-text comments from the user. | Text |
+| O | definition | A URL defining or documenting the item. | URL (2,000) |
+| O        | sensorModel             | The model name when the Method represents an instrument.                                                       | String    |
+| O        | sensorModelManufacturer | The model manufacturer when the Method represents an instrument.                                               | String    |
+| O | sensorModelDefinition | A URL pointing to documentation for the sensor model. | URL (2,000) |
 
-**NOTE**: HydroServer uses the Sensor entity for both physical instruments and derived methods or procedures, such as transformations or rating-curve-derived values.
+The SensorThings API continues to expose these records as Sensor entities for standards compatibility.
 
-## Thing
+## MonitoringSite
 
-A Thing is an object of the physical world or information world that is capable of being identified and integrated into communication networks. In the context of HydroServer, a Thing is typically a monitoring station or site.
+A MonitoringSite stores a site and its single physical location in one row.
 
-| Required | Attribute             | Definition                                                                                                          | Data Type |
-| -------- | --------------------- | ------------------------------------------------------------------------------------------------------------------- | --------- |
-| M        | id                    | A primary key unique identifier for the Thing.                                                                      | UUID      |
-| M        | workspace_id          | A foreign key identifier for the Workspace that owns the Thing.                                                     | UUID      |
-| M        | name                  | A text string giving a name for the Thing.                                                                          | String    |
-| M        | description           | A text string giving a description for the Thing.                                                                   | Text      |
-| M        | sampling_feature_type | A text string specifying the type of sampling feature.                                                              | String    |
-| M        | sampling_feature_code | A text string specifying a shortened code identifying the Thing.                                                    | String    |
-| M        | site_type             | A text string specifying the type of site represented by the Thing.                                                 | String    |
-| M        | is_private            | An access control flag indicating whether the Thing is discoverable and whether its metadata is publicly available. | Boolean   |
-| O        | data_disclaimer       | A text string displayed with the Thing's data to specify any disclaimer.                                            | Text      |
+| Required | Attribute       | Definition                                                                                                                   | Data Type |
+| -------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------- | --------- |
+| M        | id              | A primary key unique identifier for the MonitoringSite.                                                                      | UUID      |
+| M        | workspaceId    | A foreign key identifier for the Workspace that owns the MonitoringSite.                                                     | UUID      |
+| M        | name            | A text name for the MonitoringSite.                                                                                          | String    |
+| M        | description     | A text description for the MonitoringSite.                                                                                   | Text      |
+| M        | code            | A shortened code identifying the MonitoringSite.                                                                             | String    |
+| M        | type            | The type of monitoring site.                                                                                                 | String    |
+| M        | latitude        | The site's latitude using WGS84 coordinates.                                                                                 | Decimal   |
+| M        | longitude       | The site's longitude using WGS84 coordinates.                                                                                | Decimal   |
+| O        | elevationM     | The site's elevation in meters.                                                                                              | Decimal   |
+| O        | elevationDatum | The elevation datum used for the site.                                                                                       | String    |
+| O        | adminArea1    | The first-level administrative area.                                                                                         | String    |
+| O        | adminArea2    | The second-level administrative area.                                                                                        | String    |
+| O        | country         | A two-character ISO country code.                                                                                            | String    |
+| M        | isPrivate      | Whether the MonitoringSite is discoverable and its metadata publicly available.                                             | Boolean   |
+| O        | dataDisclaimer | A disclaimer displayed with the MonitoringSite's data.                                                                      | Text      |
+| M        | tags            | Custom key-value metadata for the MonitoringSite, stored as a JSON object of non-empty string keys and values. Defaults to `{}`. | JSON      |
 
-## ThingTag
+## MonitoringSiteLinkedResource
 
-A key-value tag associated with a Thing.
+A linked resource associated with a MonitoringSite, pointing to either a hosted file (such as a site photo or document) or an external URL. The database enforces unique `(monitoringSiteId, name)` pairs, and a check constraint that exactly one of `file`/`url` is set.
 
-| Required | Attribute | Definition                                                       | Data Type  |
-| -------- | --------- | ---------------------------------------------------------------- | ---------- |
-| M        | id        | A primary key unique identifier for the ThingTag.                | BigInteger |
-| M        | thing_id  | A foreign key identifier for the Thing to which the tag belongs. | UUID       |
-| M        | key       | The tag key.                                                     | String     |
-| M        | value     | The tag value.                                                   | String     |
-
-## ThingFileAttachment
-
-A file attached to a Thing, such as a site photo, document, or supporting artifact.
-
-| Required | Attribute            | Definition                                                                   | Data Type  |
-| -------- | -------------------- | ---------------------------------------------------------------------------- | ---------- |
-| M        | id                   | A primary key unique identifier for the ThingFileAttachment.                 | BigInteger |
-| M        | thing_id             | A foreign key identifier for the Thing to which the file attachment belongs. | UUID       |
-| M        | name                 | The name of the attached file.                                               | String     |
-| O        | description          | A text description of the attached file.                                     | Text       |
-| M        | file_attachment      | The stored file object for the attachment.                                   | File       |
-| M        | file_attachment_type | A text string identifying the type of file attachment.                       | String     |
-
-**NOTE**: The database enforces a unique constraint on `(thing_id, name)`.
+| Required | Attribute    | Definition                                                                | Data Type |
+| -------- | ------------ | -------------------------------------------------------------------------- | --------- |
+| M        | id           | A primary key unique identifier for the MonitoringSiteLinkedResource.     | UUID      |
+| M        | monitoringSiteId | A foreign key identifier for the MonitoringSite to which the linked resource belongs. | UUID      |
+| M        | name         | The name of the linked resource.                                          | String    |
+| O        | description  | A text description of the linked resource.                               | Text      |
+| O        | file         | The stored file object, if the resource is hosted by HydroServer.        | File      |
+| O        | url          | The external URL, if the resource is not hosted by HydroServer.          | String    |
+| M        | type         | A text string identifying the type of linked resource.                   | String    |
 
 ## Unit
 
@@ -225,11 +212,11 @@ The unit of measure associated with the Observations within a Datastream.
 | Required | Attribute    | Definition                                                                                                 | Data Type |
 | -------- | ------------ | ---------------------------------------------------------------------------------------------------------- | --------- |
 | M        | id           | A primary key unique identifier for the Unit.                                                              | UUID      |
-| O        | workspace_id | A foreign key identifier for the Workspace that owns the Unit. If omitted, the Unit is shared system-wide. | UUID      |
-| M        | name         | A descriptive name for the Unit.                                                                           | String    |
+| O        | workspaceId | A foreign key identifier for the Workspace that owns the Unit. If omitted, the Unit is shared system-wide. | UUID      |
+| M | name | The label displayed by every frontend. | String (255) |
 | M        | symbol       | An abbreviation or symbol used for the Unit.                                                               | String    |
-| M        | definition   | A URL or text definition for the Unit.                                                                     | Text      |
-| M        | unit_type    | The type of Unit.                                                                                          | String    |
+| O | definition | A URL defining or documenting the item. | URL (2,000) |
+| M | type | The type of Unit. | String (255) |
 
 ## Workspace
 
@@ -239,111 +226,95 @@ A Workspace is the ownership and access-control boundary for most HydroServer-ma
 | -------- | ---------- | ------------------------------------------------------------------- | ---------- |
 | M        | id         | A primary key unique identifier for the Workspace.                  | UUID       |
 | M        | name       | A descriptive name for the Workspace.                               | String     |
-| M        | owner_id   | A foreign key identifier for the User who owns the Workspace.       | BigInteger |
-| M        | is_private | An access control flag indicating whether the Workspace is private. | Boolean    |
+| M        | ownerId   | A foreign key identifier for the User who owns the Workspace.       | BigInteger |
+| M        | isPrivate | An access control flag indicating whether the Workspace is private. | Boolean    |
 
-**NOTE**: The database enforces a unique constraint on `(name, owner_id)`.
+**NOTE**: The database enforces a unique constraint on `(name, ownerId)`.
 
 ## WorkspaceTransferConfirmation
 
 A pending transfer record used when ownership of a Workspace is being transferred to another User.
 
-| Required | Attribute    | Definition                                                                                                | Data Type  |
-| -------- | ------------ | --------------------------------------------------------------------------------------------------------- | ---------- |
-| M        | id           | A primary key unique identifier for the WorkspaceTransferConfirmation.                                    | BigInteger |
-| M        | workspace_id | A one-to-one foreign key identifier for the Workspace being transferred. Each Workspace may have at most one pending transfer. | UUID       |
-| M        | new_owner_id | A foreign key identifier for the new owner.                                                               | BigInteger |
-| M        | initiated    | The datetime when the transfer was initiated.                                                             | Datetime   |
-
-## WorkspaceDeleteConfirmation
-
-A pending confirmation record used when a Workspace deletion has been initiated.
-
-| Required | Attribute    | Definition                                                                                                       | Data Type  |
-| -------- | ------------ | ---------------------------------------------------------------------------------------------------------------- | ---------- |
-| M        | id           | A primary key unique identifier for the WorkspaceDeleteConfirmation.                                             | BigInteger |
-| M        | workspace_id | A one-to-one foreign key identifier for the Workspace to be deleted. Each Workspace may have at most one pending delete confirmation. | UUID       |
-| M        | initiated    | The datetime when deletion confirmation was initiated.                                                           | Datetime   |
+| Required | Attribute    | Definition                                                                                                                     | Data Type  |
+| -------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------ | ---------- |
+| M        | id           | A primary key unique identifier for the WorkspaceTransferConfirmation.                                                         | BigInteger |
+| M        | workspaceId | A one-to-one foreign key identifier for the Workspace being transferred. Each Workspace may have at most one pending transfer. | UUID       |
+| M        | newOwnerId | A foreign key identifier for the new owner.                                                                                    | BigInteger |
 
 ## Role
 
-A Role is a named collection of permissions that can be assigned to collaborators or API keys.
+A Role is a named collection of permissions that can be assigned to user or service-account collaborators.
 
-| Required | Attribute      | Definition                                                                                                 | Data Type |
-| -------- | -------------- | ---------------------------------------------------------------------------------------------------------- | --------- |
-| M        | id             | A primary key unique identifier for the Role.                                                              | UUID      |
-| O        | workspace_id   | A foreign key identifier for the Workspace that owns the Role. If omitted, the Role is shared system-wide. | UUID      |
-| M        | name           | A descriptive name for the Role.                                                                           | String    |
-| O        | description    | A text description of the Role.                                                                            | Text      |
-| M        | is_user_role   | A boolean value indicating whether the Role may be assigned to a User collaborator.                        | Boolean   |
-| M        | is_apikey_role | A boolean value indicating whether the Role may be assigned to an API key.                                 | Boolean   |
+| Required | Attribute    | Definition                                                                                                 | Data Type |
+| -------- | ------------ | ---------------------------------------------------------------------------------------------------------- | --------- |
+| M        | id           | A primary key unique identifier for the Role.                                                              | UUID      |
+| O        | workspaceId | A foreign key identifier for the Workspace that owns the Role. If omitted, the Role is shared system-wide. | UUID      |
+| M        | name         | A descriptive name for the Role.                                                                           | String    |
+| O        | description  | A text description of the Role.                                                                            | Text      |
 
 ## Permission
 
-A Permission associates a Role with an allowed action on a resource type.
+A Permission associates a Role with the actions it may perform on a resource type.
 
-| Required | Attribute       | Definition                                                                                                                                                                                                              | Data Type  |
-| -------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
-| M        | id              | A primary key unique identifier for the Permission.                                                                                                                                                                     | BigInteger |
-| M        | role_id         | A foreign key identifier for the Role to which the Permission belongs.                                                                                                                                                  | UUID       |
-| M        | permission_type | The permitted action: `*`, `view`, `create`, `edit`, or `delete`.                                                                                                                                                       | String     |
-| M        | resource_type   | The resource type to which the Permission applies. One of `*`, `APIKey`, `Role`, `Collaborator`, `Thing`, `Datastream`, `Observation`, `Sensor`, `ObservedProperty`, `ProcessingLevel`, `Unit`, `ResultQualifier`, `ETL`, `DataProduct`, or `DataMonitoring`. | String     |
+| Required | Attribute     | Definition                                                                                                                                                                                                                                                                                                                  | Data Type  |
+| -------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| M        | id            | A primary key unique identifier for the Permission.                                                                                                                                                                                                                                                                         | BigInteger |
+| M        | roleId       | A foreign key identifier for the Role to which the Permission belongs.                                                                                                                                                                                                                                                      | UUID       |
+| M        | resourceType | The resource type to which the Permission applies. One of `*`, `Workspace`, `Role`, `ServiceAccount`, `Collaborator`, `MonitoringSite`, `ObservedProperty`, `ProcessingLevel`, `ResultQualifier`, `Method`, `Unit`, `Datastream`, `Observation`, `DataConnection`, `EtlTask`, `RatingCurve`, `DataProductTask`, or `MonitoringTask`. | String     |
+| M        | canView      | Whether the Role may view this resource type.                                                                                                                                                                                                                                                                               | Boolean    |
+| M        | canCreate    | Whether the Role may create this resource type.                                                                                                                                                                                                                                                                             | Boolean    |
+| M        | canEdit      | Whether the Role may edit this resource type.                                                                                                                                                                                                                                                                               | Boolean    |
+| M        | canDelete    | Whether the Role may delete this resource type.                                                                                                                                                                                                                                                                             | Boolean    |
 
 ## Collaborator
 
-A Collaborator associates a User with a Workspace through a Role.
+A Collaborator associates either a User or a ServiceAccount with a Workspace through a Role.
 
-| Required | Attribute    | Definition                                                          | Data Type  |
-| -------- | ------------ | ------------------------------------------------------------------- | ---------- |
-| M        | id           | A primary key unique identifier for the Collaborator.               | BigInteger |
-| M        | workspace_id | A foreign key identifier for the Workspace.                         | UUID       |
-| M        | user_id      | A foreign key identifier for the collaborating User.                | BigInteger |
-| M        | role_id      | A foreign key identifier for the Role assigned to the Collaborator. | UUID       |
+| Required | Attribute          | Definition                                                          | Data Type  |
+| -------- | ------------------ | ------------------------------------------------------------------- | ---------- |
+| M        | id                 | A primary key unique identifier for the Collaborator.               | BigInteger |
+| M        | workspaceId       | A foreign key identifier for the Workspace.                         | UUID       |
+| O        | userId            | A foreign key identifier for the collaborating User.                | BigInteger |
+| O        | serviceAccountId | A foreign key identifier for the collaborating ServiceAccount.      | UUID       |
+| M        | roleId            | A foreign key identifier for the Role assigned to the Collaborator. | UUID       |
 
-**NOTE**: The database enforces a unique constraint on `(user_id, workspace_id)`.
+**NOTE**: Exactly one of `userId` and `serviceAccountId` must be set. The database allows each User or ServiceAccount to appear at most once per Workspace.
 
-## APIKey
+## ServiceAccount
 
-An APIKey grants non-interactive access to a Workspace using an assigned Role.
+A ServiceAccount grants non-interactive access through a generated API key. It belongs to a Workspace and receives permissions through Collaborator records.
 
-| Required | Attribute    | Definition                                                               | Data Type |
-| -------- | ------------ | ------------------------------------------------------------------------ | --------- |
-| M        | id           | A primary key unique identifier for the APIKey.                          | UUID      |
-| M        | workspace_id | A foreign key identifier for the Workspace to which the API key belongs. | UUID      |
-| M        | role_id      | A foreign key identifier for the Role assigned to the API key.           | UUID      |
-| M        | name         | A descriptive name for the API key.                                      | String    |
-| O        | description  | A text description of the API key.                                       | Text      |
-| M        | created_at   | The datetime when the API key was created.                               | Datetime  |
-| O        | expires_at   | The datetime when the API key expires.                                   | Datetime  |
-| O        | last_used    | The datetime when the API key was last used.                             | Datetime  |
-| M        | is_active    | A boolean value indicating whether the API key is active.                | Boolean   |
-| M        | hashed_key   | The stored hashed representation of the API key secret.                  | String    |
+| Required | Attribute      | Definition                                                                  | Data Type |
+| -------- | -------------- | --------------------------------------------------------------------------- | --------- |
+| M        | id             | A primary key unique identifier for the ServiceAccount.                     | UUID      |
+| M        | email          | The generated unique email-like identifier used in collaborator operations. | String    |
+| M        | name           | A descriptive name for the ServiceAccount.                                  | String    |
+| O        | description    | A text description of the ServiceAccount.                                   | Text      |
+| O        | workspaceId   | The Workspace where the ServiceAccount was created.                         | UUID      |
+| M        | createdAt     | The datetime when the ServiceAccount was created.                           | Datetime  |
+| O        | lastUsedAt   | The datetime when the ServiceAccount last authenticated.                    | Datetime  |
+| M        | isActive      | Whether the ServiceAccount may authenticate.                                | Boolean   |
+| O        | deactivatedAt | The datetime when the ServiceAccount was deactivated.                       | Datetime  |
+| M        | keyPrefix     | The unique public prefix of the generated API key.                          | String    |
+| M        | keyHash       | The stored hash of the API key secret.                                      | String    |
+| O        | keyCreatedAt | The datetime when the current API key was generated.                        | Datetime  |
+| O        | keyExpiresAt | The datetime when the current API key expires.                              | Datetime  |
 
-## DatastreamTag
+## DatastreamLinkedResource
 
-A key-value tag associated with a Datastream.
+A linked resource associated with a Datastream, pointing to either a hosted file or an external URL.
 
-| Required | Attribute     | Definition                                                            | Data Type  |
-| -------- | ------------- | --------------------------------------------------------------------- | ---------- |
-| M        | id            | A primary key unique identifier for the DatastreamTag.                | BigInteger |
-| M        | datastream_id | A foreign key identifier for the Datastream to which the tag belongs. | UUID       |
-| M        | key           | The tag key.                                                          | String     |
-| M        | value         | The tag value.                                                        | String     |
+| Required | Attribute     | Definition                                                                        | Data Type |
+| -------- | ------------- |-----------------------------------------------------------------------------------| --------- |
+| M        | id            | A primary key unique identifier for the DatastreamLinkedResource.                 | UUID      |
+| M        | datastreamId | A foreign key identifier for the Datastream to which the linked resource belongs. | UUID      |
+| M        | name          | The name of the linked resource.                                                  | String    |
+| O        | description   | A text description of the linked resource.                                        | Text      |
+| O        | file          | The stored file object, if the resource is hosted by HydroServer.                 | File      |
+| O        | url           | The external URL, if the resource is not hosted by HydroServer.                   | String    |
+| M        | type          | A text string identifying the type of linked resource.                            | String    |
 
-## DatastreamFileAttachment
-
-A file attached to a Datastream.
-
-| Required | Attribute            | Definition                                                                        | Data Type  |
-| -------- | -------------------- | --------------------------------------------------------------------------------- | ---------- |
-| M        | id                   | A primary key unique identifier for the DatastreamFileAttachment.                 | BigInteger |
-| M        | datastream_id        | A foreign key identifier for the Datastream to which the file attachment belongs. | UUID       |
-| M        | name                 | The name of the attached file.                                                    | String     |
-| O        | description          | A text description of the attached file.                                          | Text       |
-| M        | file_attachment      | The stored file object for the attachment.                                        | File       |
-| M        | file_attachment_type | A text string identifying the type of file attachment.                            | String     |
-
-**NOTE**: The database enforces a unique constraint on `(datastream_id, name)`.
+**NOTE**: The database enforces a unique constraint on `(datastreamId, name)`, and a check constraint that exactly one of `file`/`url` is set.
 
 # Orchestration
 
@@ -358,8 +329,8 @@ A Task defines an automated HydroServer workflow. It holds the schedule and run 
 | M        | id               | A primary key unique identifier for the Task. Domain task subclasses share this identifier.                                              | UUID       |
 | M        | name             | A descriptive name for the Task.                                                                                                         | String     |
 | O        | description      | A text description for the Task.                                                                                                         | Text       |
-| O        | periodic_task_id | A one-to-one identifier for the associated scheduler record in `django_celery_beat`. Each Task maps to at most one periodic task record. | BigInteger |
-| O        | next_run_at      | The datetime when the Task is expected to run next.                                                                                      | Datetime   |
+| O        | periodicTaskId | A one-to-one identifier for the associated scheduler record in `django_celery_beat`. Each Task maps to at most one periodic task record. | BigInteger |
+| O        | nextRunAt      | The datetime when the Task is expected to run next.                                                                                      | Datetime   |
 
 ## TaskRun
 
@@ -368,11 +339,11 @@ A TaskRun stores the execution history for a Task.
 | Required | Attribute   | Definition                                                                          | Data Type |
 | -------- | ----------- | ----------------------------------------------------------------------------------- | --------- |
 | M        | id          | A primary key unique identifier for the TaskRun.                                    | UUID      |
-| M        | task_id     | A foreign key identifier for the Task to which the run belongs.                     | UUID      |
+| M        | taskId     | A foreign key identifier for the Task to which the run belongs.                     | UUID      |
 | M        | status      | A text string indicating the run status: `PENDING`, `STARTED`, `SUCCESS`, or `FAILURE`. | String    |
 | O        | message     | A text string describing the outcome or error message for the run.                  | Text      |
-| M        | started_at  | The datetime when the TaskRun started. Automatically populated on creation.         | Datetime  |
-| O        | finished_at | The datetime when the TaskRun finished.                                             | Datetime  |
+| M        | startedAt  | The datetime when the TaskRun started. Automatically populated on creation.         | Datetime  |
+| O        | finishedAt | The datetime when the TaskRun finished.                                             | Datetime  |
 | O        | result      | A JSON object storing execution result details.                                     | JSON      |
 
 # ETL
@@ -388,26 +359,24 @@ A DataConnection describes a single external data source: where to fetch payload
 | M        | id                | A primary key unique identifier for the DataConnection.                                                     | UUID      |
 | M        | name              | A descriptive name for the DataConnection.                                                                  | String    |
 | O        | description       | A text description for the DataConnection.                                                                  | Text      |
-| M        | workspace_id      | A foreign key identifier for the Workspace that owns the DataConnection.                                    | UUID      |
-| M        | source_url        | The URL template fetched by the extractor. May contain placeholder variables resolved at run time.          | Text      |
-| O        | auth_header_name  | The name of an HTTP header used to authenticate against the source URL (e.g. `Authorization`).              | String    |
-| O        | auth_header_value | The value sent with the auth header, such as an API token. Stored as plain text.                            | Text      |
-| M        | timestamp_key     | The field name or column key that identifies the timestamp in the source payload.                           | String    |
-| O        | timestamp_format  | An optional format string used to parse non-ISO timestamps from the source payload.                         | String    |
-| O        | timezone_type     | The kind of timezone interpretation applied to the timestamps: `utc`, `offset`, or `iana`.                  | String    |
-| O        | timezone          | The timezone value (an IANA name or an offset) used when `timezone_type` is `offset` or `iana`.             | String    |
+| M        | workspaceId      | A foreign key identifier for the Workspace that owns the DataConnection.                                    | UUID      |
+| M        | sourceUrl        | The URL template fetched by the extractor. May contain placeholder variables resolved at run time.          | Text      |
+| O        | authHeaderName  | The name of an HTTP header used to authenticate against the source URL (e.g. `Authorization`).              | String    |
+| O        | authHeaderValue | The value sent with the auth header, such as an API token. Stored as plain text.                            | Text      |
+| O        | timezoneType     | The kind of timezone interpretation applied to the timestamps: `utc`, `offset`, or `iana`.                  | String    |
+| O        | timezone          | The timezone value (an IANA name or an offset) used when `timezoneType` is `offset` or `iana`.             | String    |
 
 ## PlaceholderVariable
 
-A PlaceholderVariable defines a named substitution that is resolved into the DataConnection's `source_url` at run time.
+A PlaceholderVariable defines a named substitution that is resolved into the DataConnection's `sourceUrl` at run time.
 
 | Required | Attribute          | Definition                                                                                                  | Data Type |
 | -------- | ------------------ | ----------------------------------------------------------------------------------------------------------- | --------- |
 | M        | id                 | A primary key unique identifier for the PlaceholderVariable.                                                | UUID      |
-| M        | data_connection_id | A foreign key identifier for the DataConnection to which the placeholder belongs.                           | UUID      |
-| M        | name               | The placeholder name as it appears in the `source_url` template.                                            | String    |
-| M        | variable_type      | The type of value substituted at run time: `run_time`, `latest_observation_timestamp`, or `per_task`.       | String    |
-| O        | timestamp_format   | An optional format string used to render the substituted value when the value is a timestamp.               | String    |
+| M        | dataConnectionId | A foreign key identifier for the DataConnection to which the placeholder belongs.                           | UUID      |
+| M        | name               | The placeholder name as it appears in the `sourceUrl` template.                                            | String    |
+| M        | variableType      | The type of value substituted at run time: `run_time`, `latest_observation_timestamp`, `window_start`, `window_end`, or `per_task`. | String    |
+| O        | timestampFormat   | An optional format string used to render the substituted value when the value is a timestamp.               | String    |
 
 ## Payload
 
@@ -416,21 +385,31 @@ A Payload describes how the response body returned by the extractor should be pa
 | Required | Attribute          | Definition                                                                                              | Data Type |
 | -------- | ------------------ | ------------------------------------------------------------------------------------------------------- | --------- |
 | M        | id                 | A primary key unique identifier for the Payload.                                                        | UUID      |
-| M        | data_connection_id | A one-to-one foreign key identifier for the DataConnection to which the Payload belongs.                | UUID      |
-| M        | payload_type       | The payload encoding: `CSV` or `JSON`.                                                                  | String    |
-| O        | header_row         | For CSV payloads, the row index containing column headers.                                              | Integer   |
-| O        | data_start_row     | For CSV payloads, the row index where data begins.                                                      | Integer   |
+| M        | dataConnectionId | A one-to-one foreign key identifier for the DataConnection to which the Payload belongs.                | UUID      |
+| M        | payloadType       | The payload encoding: `CSV` or `JSON`.                                                                  | String    |
+| O        | headerRow         | For CSV payloads, the row index containing column headers.                                              | Integer   |
+| O        | dataStartRow     | For CSV payloads, the row index where data begins.                                                      | Integer   |
 | O        | delimiter          | For CSV payloads, the field delimiter: `,`, `\t`, `;`, `\|`, or ` `.                                    | String    |
 | O        | jmespath           | For JSON payloads, a JMESPath expression used to select observation records out of the response body.  | Text      |
+| M        | timestampKey      | The field name or column key that identifies the timestamp in the source payload.                       | String    |
+| O        | timestampFormat   | An optional format string used to parse non-ISO timestamps from the source payload.                     | String    |
+| O        | dataIngestionWindowStartAnchor | The reference point for the start of the data ingestion window: `latest_observation_timestamp`, `run_time`, or `fixed_timestamp`. If omitted, the window has no start. | String |
+| O        | dataIngestionWindowStartLookback | An amount of time subtracted from the start anchor. Not used with `fixed_timestamp`.          | Integer   |
+| O        | dataIngestionWindowStartLookbackUnit | The unit for `dataIngestionWindowStartLookback`: `minutes`, `hours`, or `days`.     | String    |
+| O        | dataIngestionWindowStartTimestamp | The window start datetime, required when the start anchor is `fixed_timestamp`.              | Datetime  |
+| O        | dataIngestionWindowEndAnchor | The reference point for the end of the data ingestion window, with the same choices as the start anchor. If omitted, the window has no end. | String |
+| O        | dataIngestionWindowEndLookback | An amount of time subtracted from the end anchor. Not used with `fixed_timestamp`.              | Integer   |
+| O        | dataIngestionWindowEndLookbackUnit | The unit for `dataIngestionWindowEndLookback`: `minutes`, `hours`, or `days`.         | String    |
+| O        | dataIngestionWindowEndTimestamp | The window end datetime, required when the end anchor is `fixed_timestamp`.                    | Datetime  |
 
 ## DataConnectionNotification
 
-A DataConnectionNotification records the configuration for the periodic data freshness notification associated with a DataConnection.
+A DataConnectionNotification records the configuration for the periodic task run summary email associated with a DataConnection.
 
 | Required | Attribute          | Definition                                                                                                                                              | Data Type  |
 | -------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
-| M        | data_connection_id | The primary key for the DataConnectionNotification — a one-to-one foreign key to DataConnection. Each DataConnection has at most one notification row. | UUID       |
-| O        | periodic_task_id   | A one-to-one identifier for the associated scheduler record in `django_celery_beat`.                                                                    | BigInteger |
+| M        | dataConnectionId | The primary key for the DataConnectionNotification — a one-to-one foreign key to DataConnection. Each DataConnection has at most one notification row. | UUID       |
+| O        | periodicTaskId   | A one-to-one identifier for the associated scheduler record in `django_celery_beat`.                                                                    | BigInteger |
 
 ## DataConnectionNotificationRecipient
 
@@ -439,10 +418,10 @@ A notification email recipient associated with a DataConnectionNotification.
 | Required | Attribute       | Definition                                                                       | Data Type |
 | -------- | --------------- | -------------------------------------------------------------------------------- | --------- |
 | M        | id              | A primary key unique identifier for the DataConnectionNotificationRecipient.     | UUID      |
-| M        | notification_id | A foreign key identifier for the DataConnectionNotification.                     | UUID      |
+| M        | notificationId | A foreign key identifier for the DataConnectionNotification.                     | UUID      |
 | M        | email           | An email address that receives notifications for the parent DataConnection.      | Email     |
 
-**NOTE**: The database enforces a unique constraint on `(notification_id, email)`.
+**NOTE**: The database enforces a unique constraint on `(notificationId, email)`.
 
 ## EtlTask
 
@@ -451,8 +430,8 @@ An EtlTask extends `Task` with the ETL-specific configuration that links the run
 | Required | Attribute          | Definition                                                                                                | Data Type |
 | -------- | ------------------ | --------------------------------------------------------------------------------------------------------- | --------- |
 | M        | id                 | A primary key unique identifier for the EtlTask. Inherited from the parent `Task` row as `task_ptr_id`. | UUID      |
-| M        | data_connection_id | A foreign key identifier for the DataConnection used by the EtlTask.                                      | UUID      |
-| M        | task_variables     | A JSON object storing runtime variables substituted into the DataConnection placeholders for this Task.   | JSON      |
+| M        | dataConnectionId | A foreign key identifier for the DataConnection used by the EtlTask.                                      | UUID      |
+| M        | taskVariables     | A JSON object storing runtime variables substituted into the DataConnection placeholders for this Task.   | JSON      |
 
 ## EtlMapping
 
@@ -461,9 +440,9 @@ An EtlMapping associates a source identifier produced by the DataConnection with
 | Required | Attribute             | Definition                                                                  | Data Type |
 | -------- | --------------------- | --------------------------------------------------------------------------- | --------- |
 | M        | id                    | A primary key unique identifier for the EtlMapping.                         | UUID      |
-| M        | etl_task_id           | A foreign key identifier for the EtlTask to which the mapping belongs.      | UUID      |
-| M        | source_identifier     | A text identifier representing an incoming source field or column.          | String    |
-| M        | target_datastream_id  | A foreign key identifier for the Datastream that receives the mapped values. | UUID      |
+| M        | etlTaskId           | A foreign key identifier for the EtlTask to which the mapping belongs.      | UUID      |
+| M        | sourceIdentifier     | A text identifier representing an incoming source field or column.          | String    |
+| M        | targetDatastreamId  | A foreign key identifier for the Datastream that receives the mapped values. | UUID      |
 
 # Data Products
 
@@ -471,12 +450,12 @@ The Data Products app models derived Datastreams produced by transformations suc
 
 ## DataProductTask
 
-A DataProductTask extends `Task` with the data-product context — the Thing under which the derived Datastreams are organized.
+A DataProductTask extends `Task` with the data-product context — the MonitoringSite under which the derived Datastreams are organized.
 
 | Required | Attribute | Definition                                                                                                       | Data Type |
 | -------- | --------- | ---------------------------------------------------------------------------------------------------------------- | --------- |
 | M        | id        | A primary key unique identifier for the DataProductTask. Inherited from the parent `Task` row as `task_ptr_id`. | UUID      |
-| M        | thing_id  | A foreign key identifier for the Thing that owns the derived Datastreams produced by this task.                  | UUID      |
+| M        | monitoringSiteId  | A foreign key identifier for the MonitoringSite that owns the derived Datastreams produced by this task.                  | UUID      |
 
 ## DataProductTransformation
 
@@ -485,19 +464,19 @@ A DataProductTransformation describes how a single derived (output) Datastream i
 | Required | Attribute              | Definition                                                                                                                          | Data Type |
 | -------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | --------- |
 | M        | id                     | A primary key unique identifier for the DataProductTransformation.                                                                  | UUID      |
-| M        | task_id                | A foreign key identifier for the DataProductTask to which the transformation belongs.                                               | UUID      |
-| M        | output_datastream_id   | A one-to-one foreign key identifier for the Datastream that receives the transformation output.                                     | UUID      |
-| M        | transformation_type    | The type of transformation: `rating_curve`, `derivation`, or `aggregation`.                                                          | String    |
-| O        | rating_curve_id        | A foreign key identifier for the RatingCurve used when `transformation_type` is `rating_curve`.                                     | UUID      |
-| O        | formula                | A formula (expression) string used when `transformation_type` is `derivation`, referencing one or more input variable names.        | Text      |
-| O        | stop_on_gaps        | For `derivation` transformations, whether a run stops at timestamps not shared by all inputs (vs. skipping them). Inputs holding their no-data value always produce the output's no-data value. | Boolean   |
-| O        | stop_on_error          | For `derivation` transformations, whether a run stops when the formula produces a non-finite result (vs. filling and continuing).    | Boolean   |
-| O        | output_interval_units  | The interval unit for `aggregation` outputs: `minutes`, `hours`, `days`, `weeks`, or `months`.                                      | String    |
-| O        | output_interval        | The positive interval count corresponding to `output_interval_units`.                                                               | Integer   |
-| O        | timezone_type          | For interval-aligned aggregations, the timezone interpretation: `utc`, `offset`, or `iana`.                                         | String    |
-| O        | timezone               | The timezone value (an IANA name or an offset) used when `timezone_type` is `offset` or `iana`.                                     | String    |
-| O        | aggregation_method     | For `aggregation` transformations, the aggregation function: `mean`, `sum`, `min`, `max`, `first`, or `last`.                       | String    |
-| O        | min_values             | For `aggregation` transformations, the minimum number of input observations required per window.                                    | Integer   |
+| M        | taskId                | A foreign key identifier for the DataProductTask to which the transformation belongs.                                               | UUID      |
+| M        | outputDatastreamId   | A one-to-one foreign key identifier for the Datastream that receives the transformation output.                                     | UUID      |
+| M        | transformationType    | The type of transformation: `rating_curve`, `derivation`, or `aggregation`.                                                          | String    |
+| O        | ratingCurveId        | A foreign key identifier for the RatingCurve used when `transformationType` is `rating_curve`.                                     | UUID      |
+| O        | formula                | A formula (expression) string used when `transformationType` is `derivation`, referencing one or more input variable names.        | Text      |
+| O        | stopOnGaps        | For `derivation` transformations, whether a run stops at timestamps not shared by all inputs (vs. skipping them). Inputs holding their no-data value always produce the output's no-data value. | Boolean   |
+| O        | stopOnError          | For `derivation` transformations, whether a run stops when the formula produces a non-finite result (vs. filling and continuing).    | Boolean   |
+| O        | outputIntervalUnits  | The interval unit for `aggregation` outputs: `minutes`, `hours`, `days`, `weeks`, or `months`.                                      | String    |
+| O        | outputInterval        | The positive interval count corresponding to `outputIntervalUnits`.                                                               | Integer   |
+| O        | timezoneType          | For interval-aligned aggregations, the timezone interpretation: `utc`, `offset`, or `iana`.                                         | String    |
+| O        | timezone               | The timezone value (an IANA name or an offset) used when `timezoneType` is `offset` or `iana`.                                     | String    |
+| O        | aggregationMethod     | For `aggregation` transformations, the aggregation function: `mean`, `sum`, `min`, `max`, `first`, `last`, or `time_weighted_mean`. | String    |
+| O        | minValues             | For `aggregation` transformations, the minimum number of input observations required per window.                                    | Integer   |
 
 ## DataProductTransformationInput
 
@@ -506,11 +485,11 @@ A DataProductTransformationInput records a single input Datastream consumed by a
 | Required | Attribute         | Definition                                                                                                  | Data Type |
 | -------- | ----------------- | ----------------------------------------------------------------------------------------------------------- | --------- |
 | M        | id                | A primary key unique identifier for the DataProductTransformationInput.                                     | UUID      |
-| M        | transformation_id | A foreign key identifier for the DataProductTransformation that consumes the input.                         | UUID      |
-| M        | datastream_id     | A foreign key identifier for the input Datastream.                                                          | UUID      |
-| O        | variable_name     | The variable name used in the transformation `formula` to reference this input.                             | String    |
+| M        | transformationId | A foreign key identifier for the DataProductTransformation that consumes the input.                         | UUID      |
+| M        | datastreamId     | A foreign key identifier for the input Datastream.                                                          | UUID      |
+| O        | variableName     | The variable name used in the transformation `formula` to reference this input.                             | String    |
 
-**NOTE**: The database enforces a unique constraint on `(transformation_id, variable_name)` when `variable_name` is not null.
+**NOTE**: The database enforces a unique constraint on `(transformationId, variableName)` when `variableName` is not null.
 
 ## RatingCurve
 
@@ -519,10 +498,10 @@ A RatingCurve defines a mapping from input values to output values, used by `rat
 | Required | Attribute      | Definition                                                                          | Data Type |
 | -------- | -------------- | ----------------------------------------------------------------------------------- | --------- |
 | M        | id             | A primary key unique identifier for the RatingCurve.                                | UUID      |
-| M        | thing_id       | A foreign key identifier for the Thing to which the RatingCurve belongs.            | UUID      |
+| M        | monitoringSiteId       | A foreign key identifier for the MonitoringSite to which the RatingCurve belongs.            | UUID      |
 | M        | name           | A descriptive name for the RatingCurve.                                             | String    |
 | O        | description    | A text description for the RatingCurve.                                             | Text      |
-| M        | fitting_method | The method used to fit the curve: `linear` or `power_law`.                          | String    |
+| M        | fittingMethod | The method used to fit the curve: `linear` or `power_law`.                          | String    |
 
 ## RatingCurvePoint
 
@@ -531,9 +510,9 @@ A RatingCurvePoint defines a single (input, output) sample used to fit a RatingC
 | Required | Attribute       | Definition                                                              | Data Type |
 | -------- | --------------- | ----------------------------------------------------------------------- | --------- |
 | M        | id              | A primary key unique identifier for the RatingCurvePoint.               | UUID      |
-| M        | rating_curve_id | A foreign key identifier for the RatingCurve to which the point belongs. | UUID      |
-| M        | input_value     | The input value of the point (e.g. stage).                              | Float     |
-| M        | output_value    | The output value of the point (e.g. discharge).                         | Float     |
+| M        | ratingCurveId | A foreign key identifier for the RatingCurve to which the point belongs. | UUID      |
+| M        | inputValue     | The input value of the point (e.g. stage).                              | Float     |
+| M        | outputValue    | The output value of the point (e.g. discharge).                         | Float     |
 
 # Data Monitoring
 
@@ -541,12 +520,12 @@ The Data Monitoring app models scheduled checks that evaluate Datastreams agains
 
 ## MonitoringTask
 
-A MonitoringTask extends `Task` with the data-monitoring context — the Thing whose Datastreams are evaluated.
+A MonitoringTask extends `Task` with the data-monitoring context — the MonitoringSite whose Datastreams are evaluated.
 
 | Required | Attribute | Definition                                                                                                  | Data Type |
 | -------- | --------- | ----------------------------------------------------------------------------------------------------------- | --------- |
 | M        | id        | A primary key unique identifier for the MonitoringTask. Inherited from the parent `Task` row as `task_ptr_id`. | UUID   |
-| M        | thing_id  | A foreign key identifier for the Thing whose Datastreams are monitored by this task.                        | UUID      |
+| M        | monitoringSiteId  | A foreign key identifier for the MonitoringSite whose Datastreams are monitored by this task.                        | UUID      |
 
 ## MonitoringRule
 
@@ -555,16 +534,16 @@ A MonitoringRule defines a single quality-control check applied to a Datastream 
 | Required | Attribute             | Definition                                                                                              | Data Type |
 | --------- | --------------------- | ------------------------------------------------------------------------------------------------------- | --------- |
 | M        | id                    | A primary key unique identifier for the MonitoringRule.                                                 | UUID      |
-| M        | task_id               | A foreign key identifier for the MonitoringTask to which the rule belongs.                              | UUID      |
-| M        | datastream_id         | A foreign key identifier for the Datastream evaluated by the rule.                                      | UUID      |
-| M        | rule_type             | The type of rule: `range`, `rate_of_change`, `persistence`, or `missing_data`.                          | String    |
-| O        | last_checked_at       | The datetime when the rule was last evaluated.                                                          | Datetime  |
-| O        | min_value             | For `range` rules, the lower bound of the allowed range.                                                | Float     |
-| O        | max_value             | For `range` rules, the upper bound of the allowed range.                                                | Float     |
-| O        | window_interval       | For window-based rules, the positive number of `window_interval_units` evaluated by the rule.           | Integer   |
-| O        | window_interval_units | For window-based rules, the unit of the evaluation window: `minutes`, `hours`, or `days`.               | String    |
+| M        | taskId               | A foreign key identifier for the MonitoringTask to which the rule belongs.                              | UUID      |
+| M        | datastreamId         | A foreign key identifier for the Datastream evaluated by the rule.                                      | UUID      |
+| M        | ruleType             | The type of rule: `range`, `rate_of_change`, `persistence`, or `missing_data`.                          | String    |
+| O        | lastCheckedAt       | The datetime when the rule was last evaluated.                                                          | Datetime  |
+| O        | minValue             | For `range` rules, the lower bound of the allowed range.                                                | Float     |
+| O        | maxValue             | For `range` rules, the upper bound of the allowed range.                                                | Float     |
+| O        | windowInterval       | For window-based rules, the positive number of `windowIntervalUnits` evaluated by the rule.           | Integer   |
+| O        | windowIntervalUnits | For window-based rules, the unit of the evaluation window: `minutes`, `hours`, or `days`.               | String    |
 
-**NOTE**: The database enforces a unique constraint on `(task_id, datastream_id, rule_type)`.
+**NOTE**: The database enforces a unique constraint on `(taskId, datastreamId, ruleType)`.
 
 ## MonitoringNotificationRecipient
 
@@ -573,31 +552,29 @@ A notification email recipient associated with a MonitoringTask.
 | Required | Attribute | Definition                                                          | Data Type |
 | -------- | --------- | ------------------------------------------------------------------- | --------- |
 | M        | id        | A primary key unique identifier for the MonitoringNotificationRecipient. | UUID |
-| M        | task_id   | A foreign key identifier for the MonitoringTask.                    | UUID      |
+| M        | taskId   | A foreign key identifier for the MonitoringTask.                    | UUID      |
 | M        | email     | An email address that receives notifications for the MonitoringTask. | Email     |
 
-**NOTE**: The database enforces a unique constraint on `(task_id, email)`.
+**NOTE**: The database enforces a unique constraint on `(taskId, email)`.
 
 # Reference Data
 
 ## Controlled Vocabulary Tables
 
-HydroServer also includes simple lookup tables that primarily store controlled vocabulary terms used by the main entities.
+HydroServer also stores the controlled vocabulary terms used by the main entities in the following tables. `UserType` and `OrganizationType` are simple lookup tables. The rest are resources managed through the Data Management API, each with its own collection (for example, `monitoring-site-types`), and administrators can also manage them in the [administrator dashboard](/hosting-and-deployment/how-to/using-the-administrator-dashboard.md#controlled-vocabularies).
 
-| Table                   | Attributes             | Data Type                   |
-| ----------------------- | ---------------------- | --------------------------- |
-| `UserType`              | `id`, `name`, `public` | BigInteger, String, Boolean |
-| `OrganizationType`      | `id`, `name`, `public` | BigInteger, String, Boolean |
-| `SiteType`              | `id`, `name`           | BigInteger, String          |
-| `SamplingFeatureType`   | `id`, `name`           | BigInteger, String          |
-| `FileAttachmentType`    | `id`, `name`           | BigInteger, String          |
-| `VariableType`          | `id`, `name`           | BigInteger, String          |
-| `SensorEncodingType`    | `id`, `name`           | BigInteger, String          |
-| `MethodType`            | `id`, `name`           | BigInteger, String          |
-| `UnitType`              | `id`, `name`           | BigInteger, String          |
-| `DatastreamAggregation` | `id`, `name`           | BigInteger, String          |
-| `DatastreamStatus`      | `id`, `name`           | BigInteger, String          |
-| `SampledMedium`         | `id`, `name`           | BigInteger, String          |
+| Table                  | Attributes                  | Data Type                   |
+| ---------------------- | --------------------------- | --------------------------- |
+| `UserType`             | `id`, `name`, `public`      | BigInteger, String, Boolean |
+| `OrganizationType`     | `id`, `name`, `public`      | BigInteger, String, Boolean |
+| `MonitoringSiteType`   | `id`, `name`, `description` | UUID, String, Text          |
+| `LinkedResourceType`   | `id`, `name`, `description` | UUID, String, Text          |
+| `ObservedPropertyType` | `id`, `name`, `description` | UUID, String, Text          |
+| `MethodType`           | `id`, `name`, `description` | UUID, String, Text          |
+| `UnitType`             | `id`, `name`, `description` | UUID, String, Text          |
+| `AggregationStatistic` | `id`, `name`, `description` | UUID, String, Text          |
+| `DatastreamStatus`     | `id`, `name`, `description` | UUID, String, Text          |
+| `SampledMedium`        | `id`, `name`, `description` | UUID, String, Text          |
 
 ## SensorThings Conceptual Entities
 
@@ -605,14 +582,14 @@ The current HydroServer SensorThings implementation still exposes SensorThings c
 
 ### FeatureOfInterest
 
-HydroServer currently derives FeatureOfInterest behavior from the Thing and Location context used by SensorThings responses rather than storing FeatureOfInterest as a first-class HydroServer model.
+HydroServer currently derives FeatureOfInterest behavior from the MonitoringSite context used by SensorThings responses rather than storing FeatureOfInterest as a first-class HydroServer model.
 
 | Required | Attribute   | Definition                                                                           | Data Type |
 | -------- | ----------- | ------------------------------------------------------------------------------------ | --------- |
 | M        | id          | A primary key unique identifier for the FeatureOfInterest in SensorThings responses. | UUID      |
 | M        | name        | A text string giving the name of the feature.                                        | String    |
 | M        | description | A text string providing a description of the feature.                                | String    |
-| M        | encoding    | A text string describing the encoding in which the feature is expressed.             | String    |
+| M        | encodingType | A text string describing the encoding in which the feature is expressed.            | String    |
 | M        | feature     | A GeoJSON encoding of the geometry of the feature.                                   | Object    |
 
 ### HistoricalLocation
@@ -621,6 +598,6 @@ HydroServer currently exposes HistoricalLocation through SensorThings but does n
 
 | Required | Attribute   | Definition                                                                            | Data Type |
 | -------- | ----------- | ------------------------------------------------------------------------------------- | --------- |
-| M        | thing_id    | A foreign key identifier for the Thing for which the HistoricalLocation is specified. | UUID      |
-| M        | time        | The time when the Thing is known to be at the Location.                               | Datetime  |
-| M        | location_id | A foreign key identifier for the Location.                                            | UUID      |
+| M        | thingId    | A foreign key identifier for the SensorThings Thing for which the HistoricalLocation is specified. | UUID      |
+| M        | time        | The time when the Thing is known to be at the Location.                                           | Datetime  |
+| M        | locationId | A foreign key identifier for the Location.                                            | UUID      |

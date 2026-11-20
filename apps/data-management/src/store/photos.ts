@@ -1,53 +1,85 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import hs, { ApiResponse, FileAttachment } from '@hydroserver/client'
+import { Snackbar } from '@/utils/notifications'
+import hs, { ApiResponse, LinkedResource } from '@hydroserver/client'
 
 export const usePhotosStore = defineStore('photos', () => {
-  const photos = ref<FileAttachment[]>([])
+  const photos = ref<LinkedResource[]>([])
   const newPhotos = ref<File[]>([])
+  const newLinks = ref<string[]>([])
   const photosToDelete = ref<string[]>([])
   const loading = ref(false)
 
   const resetPendingPhotos = () => {
     newPhotos.value = []
+    newLinks.value = []
     photosToDelete.value = []
   }
 
-  const uploadNewPhotos = async (thingId: string) => {
-    if (!newPhotos.value.length) return
+  const uploadNewPhotos = async (monitoringSiteId: string) => {
+    if (!newPhotos.value.length && !newLinks.value.length) return
 
-    const promises = newPhotos.value.map(async (file) => {
+    const filePromises = newPhotos.value.map((file) => {
       const data = new FormData()
+      data.append('name', file.name)
+      data.append('type', 'Photo')
       data.append('file', file)
-      data.append('file_attachment_type', 'Photo')
-      return await hs.things.uploadAttachments(thingId, data)
+      return hs.monitoringSites.createLinkedResource(monitoringSiteId, data)
     })
 
-    const newPhotoResponses: ApiResponse<FileAttachment>[] =
-      await Promise.all(promises)
-    const photoData = newPhotoResponses.flatMap((res) =>
-      res.ok ? [res.data] : []
-    )
+    const linkPromises = newLinks.value.map((link) => {
+      const data = new FormData()
+      data.append('name', link)
+      data.append('type', 'Photo')
+      data.append('link', link)
+      return hs.monitoringSites.createLinkedResource(monitoringSiteId, data)
+    })
+
+    const responses: ApiResponse<LinkedResource>[] = await Promise.all([
+      ...filePromises,
+      ...linkPromises,
+    ])
+
+    const photoData: LinkedResource[] = []
+    responses.forEach((res) => {
+      if (res.ok) {
+        photoData.push(res.data)
+      } else {
+        console.error('Error uploading photo', res)
+        Snackbar.error(res.message || 'Unable to upload photo.')
+      }
+    })
     photos.value = [...photos.value, ...photoData]
   }
 
-  const deleteSelectedPhotos = async (thingId: string) => {
+  const deleteSelectedPhotos = async (monitoringSiteId: string) => {
     if (!photosToDelete.value.length) return
-    await Promise.all(
-      photosToDelete.value.map((p) => hs.things.deleteAttachment(thingId, p))
+    const responses = await Promise.all(
+      photosToDelete.value.map((id) =>
+        hs.monitoringSites.deleteLinkedResource(monitoringSiteId, id)
+      )
     )
-    photos.value = photos.value.filter(
-      (p) => !photosToDelete.value.includes(p.name)
-    )
+    const deletedIds: string[] = []
+    responses.forEach((res, i) => {
+      const id = photosToDelete.value[i]
+      if (res.ok) {
+        deletedIds.push(id)
+      } else {
+        console.error('Error deleting photo', res)
+        Snackbar.error(res.message || 'Unable to delete photo.')
+      }
+    })
+    photos.value = photos.value.filter((p) => !deletedIds.includes(p.id))
   }
 
-  const updatePhotos = async (thingId: string) => {
+  const updatePhotos = async (monitoringSiteId: string) => {
     try {
       loading.value = true
-      await uploadNewPhotos(thingId)
-      await deleteSelectedPhotos(thingId)
+      await uploadNewPhotos(monitoringSiteId)
+      await deleteSelectedPhotos(monitoringSiteId)
     } catch (error) {
       console.error('Error updating photos', error)
+      Snackbar.error('Unable to update photos.')
     } finally {
       loading.value = false
       resetPendingPhotos()
@@ -57,6 +89,7 @@ export const usePhotosStore = defineStore('photos', () => {
   return {
     photos,
     newPhotos,
+    newLinks,
     photosToDelete,
     loading,
     resetPendingPhotos,

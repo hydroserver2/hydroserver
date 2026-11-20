@@ -1,6 +1,6 @@
-import { useHydroServer } from '@/store/hydroserver';
-import { Datastream } from '@hydroserver/client';
-import { storeToRefs } from 'pinia';
+import { useHydroServer } from '@/store/hydroserver'
+import { Datastream, ObservationProfile } from '@hydroserver/client'
+import { storeToRefs } from 'pinia'
 
 export const fetchObservationsSync = async (
   datastream: Datastream,
@@ -13,26 +13,27 @@ export const fetchObservationsSync = async (
     return { datetimes: [], dataValues: [] }
   }
 
-  const pageSize = 50_000
-  const datetimes: number[] = []
-  const dataValues: number[] = []
-  // Page until a short page: the datastream's value count can be out of date.
-  for (let page = 1; ; page++) {
-    const result = await hs.value.datastreams.getObservations(id, {
-      page_size: pageSize,
-      phenomenon_time_min: startTime?.toISOString() ?? phenomenonBeginTime,
-      phenomenon_time_max: endTime?.toISOString() ?? phenomenonEndTime,
-      page,
-      order_by: ['phenomenonTime'],
-      format: 'column',
-    })
-    if (!result.ok) throw new Error(result.message || 'Could not load observations.')
+  // getObservations follows pages until a short one, so an out-of-date value
+  // count on the datastream can't cut the series short.
+  const result = await hs.value.datastreams.getObservations(id, {
+    limit: 50_000,
+    datetime: `${startTime?.toISOString() ?? phenomenonBeginTime}/${
+      endTime?.toISOString() ?? phenomenonEndTime
+    }`,
+    sortby: ['phenomenonTime'],
+    profile: [ObservationProfile.Column],
+    properties: ['phenomenonTime', 'result'],
+  })
+  if (!result.ok) throw new Error(result.message || 'Could not load observations.')
 
-    const cols = result.data as { result: number[]; phenomenonTime: string[] }
-    for (let i = 0; i < cols.result.length; i++) {
-      datetimes.push(new Date(cols.phenomenonTime[i]!).getTime())
-      dataValues.push(cols.result[i]!)
-    }
-    if (cols.result.length < pageSize) return { datetimes, dataValues }
+  const [group] = result.data as unknown as {
+    columns: { result: number[]; phenomenonTime: string[] }
+  }[]
+  const cols = group?.columns
+  if (!cols?.result?.length) return { datetimes: [], dataValues: [] }
+
+  return {
+    datetimes: cols.phenomenonTime.map((d) => new Date(d).getTime()),
+    dataValues: cols.result,
   }
 }

@@ -1,10 +1,11 @@
 <template>
   <v-card>
-    <v-toolbar :color="workspaceId ? 'brown' : 'deep-orange-darken-4'">
+    <v-toolbar flat color="primary">
       <v-card-title>
-        {{ isEdit ? 'Edit' : 'Add' }} Result Qualifier
+        {{ isEdit ? 'Edit' : 'Add' }} result qualifier
       </v-card-title>
     </v-toolbar>
+    <v-divider />
 
     <v-form
       @submit.prevent="onSubmit"
@@ -14,23 +15,23 @@
     >
       <v-card-text>
         <v-text-field
-          v-model="item.code"
-          label="Code *"
-          :rules="rules.requiredCode"
+          v-model="item.name"
+          class="required-label"
+          label="Name"
+          :rules="rules.requiredAndMaxLength255"
         ></v-text-field>
 
         <v-textarea
           v-model="item.description"
           label="Description"
-          :rules="rules.maxLength(2000)"
         ></v-textarea>
 
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn-cancel @click="$emit('close')">Cancel</v-btn-cancel>
-          <v-btn-primary type="submit">{{
+          <v-btn-dialog-action type="submit">{{
             isEdit ? 'Update' : 'Save'
-          }}</v-btn-primary>
+          }}</v-btn-dialog-action>
         </v-card-actions>
       </v-card-text>
     </v-form>

@@ -27,7 +27,7 @@
               v-for="option in dateOptions"
               :key="option.id"
               :value="option.id"
-              class="min-h-[24px] rounded px-2 text-[0.75rem]"
+              class="min-h-[24px] rounded px-2 hs-text-sm"
               size="small"
               label
             >
@@ -42,7 +42,7 @@
             <DatePickerField
               :active="isCustomRangeActive"
               :model-value="beginDate"
-              placeholder="Begin Date"
+              placeholder="Begin date"
               class="w-full"
               @update:model-value="setDateRange({ begin: $event })"
             />
@@ -51,7 +51,7 @@
             <DatePickerField
               :active="isCustomRangeActive"
               :model-value="endDate"
-              placeholder="End Date"
+              placeholder="End date"
               class="w-full"
               @update:model-value="setDateRange({ end: $event })"
             />
@@ -383,7 +383,7 @@ type Query = {
 
 const getDatastreamQueryParams = (datastream: Datastream) => {
   let query: Query = {
-    sites: datastream.thingId,
+    sites: datastream.monitoringSiteId,
     datastreams: datastream.id,
   }
 

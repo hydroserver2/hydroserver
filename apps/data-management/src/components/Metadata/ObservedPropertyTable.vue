@@ -1,16 +1,70 @@
 <template>
-  <v-data-table-virtual
-    :headers="headers"
-    :items="sortedItems"
-    :search="search"
-    :style="{ 'max-height': `400px` }"
-    fixed-header
+  <MetadataItemTable
+    :items="items"
+    :loading="isLoading"
+    :has-more="hasMore"
+    :error="error"
+    kind="observedProperty"
+    :default-scope="workspaceId ? 'workspace' : 'system'"
+    :show-scope="scope === 'all'"
+    @load-more="loadMore"
+    @retry="retry"
   >
-    <template v-slot:item.actions="{ item }" v-if="canEdit">
-      <v-icon :icon="mdiPencil" @click="openDialog(item, 'edit')" />
-      <v-icon :icon="mdiTrashCanOutline" @click="openDialog(item, 'delete')" />
+    <template #actions="{ item }">
+      <PermissionTooltip
+        :has-permission="
+          canEdit && (item._scope !== 'system' || canManageSystem)
+        "
+        message="You don't have permission to edit this metadata item."
+      >
+        <template #default>
+          <v-btn-icon
+            :icon="mdiPencil"
+            class="hs-table-icon-action"
+            size="small"
+            :data-testid="`edit-metadata-${item.id}`"
+            aria-label="Edit metadata item"
+            @click="openDialog(item, 'edit')"
+          />
+        </template>
+        <template #denied>
+          <v-btn-icon
+            :icon="mdiPencilOffOutline"
+            class="hs-table-icon-action"
+            size="small"
+            disabled
+            aria-label="Edit metadata item unavailable"
+          />
+        </template>
+      </PermissionTooltip>
+      <PermissionTooltip
+        :has-permission="
+          canDelete && (item._scope !== 'system' || canManageSystem)
+        "
+        message="You don't have permission to delete this metadata item."
+      >
+        <template #default>
+          <v-btn-icon
+            :icon="mdiTrashCanOutline"
+            class="hs-table-icon-action hs-table-icon-action--danger"
+            size="small"
+            :data-testid="`delete-metadata-${item.id}`"
+            aria-label="Delete metadata item"
+            @click="openDialog(item, 'delete')"
+          />
+        </template>
+        <template #denied>
+          <v-btn-icon
+            :icon="mdiDeleteOffOutline"
+            class="hs-table-icon-action hs-table-icon-action--danger"
+            size="small"
+            disabled
+            aria-label="Delete metadata item unavailable"
+          />
+        </template>
+      </PermissionTooltip>
     </template>
-  </v-data-table-virtual>
+  </MetadataItemTable>
 
   <v-dialog v-model="openEdit" width="60rem">
     <ObservedPropertyFormCard
@@ -18,7 +72,9 @@
       @close="openEdit = false"
       @updated="onUpdate"
       v-bind="{
-        ...(workspaceId ? { 'workspace-id': workspaceId } : {}),
+        ...(workspaceId && item._scope !== 'system'
+          ? { 'workspace-id': workspaceId }
+          : {}),
       }"
     />
   </v-dialog>
@@ -27,11 +83,13 @@
     <DeleteMetadataCard
       itemName="observedProperty"
       :itemID="item.id"
-      parameter-name="observed_property_id"
+      parameter-name="observedPropertyId"
       @delete="onDelete"
       @close="openDelete = false"
       v-bind="{
-        ...(workspaceId ? { 'workspace-id': workspaceId } : {}),
+        ...(workspaceId && item._scope !== 'system'
+          ? { 'workspace-id': workspaceId }
+          : {}),
       }"
     />
   </v-dialog>
@@ -40,41 +98,50 @@
 <script setup lang="ts">
 import ObservedPropertyFormCard from '@/components/Metadata/ObservedPropertyFormCard.vue'
 import DeleteMetadataCard from '@/components/Metadata/DeleteMetadataCard.vue'
+import MetadataItemTable from '@/components/Metadata/MetadataItemTable.vue'
 import hs, { ObservedProperty } from '@hydroserver/client'
-import { useTableLogic } from '@/composables/useTableLogic'
-import { computed, toRef } from 'vue'
-import { useSystemTableLogic } from '@/composables/useSystemTableLogic'
-import { mdiTrashCanOutline, mdiPencil } from '@mdi/js'
+import { toRef } from 'vue'
+import { useMetadataTableLogic } from '@/composables/useMetadataTableLogic'
+import {
+  mdiDeleteOffOutline,
+  mdiPencil,
+  mdiPencilOffOutline,
+  mdiTrashCanOutline,
+} from '@mdi/js'
+import PermissionTooltip from '@/components/PermissionTooltip.vue'
 
-const props = defineProps<{
-  search: string | undefined
-  workspaceId?: string
-  canEdit: Boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    search: string | undefined
+    workspaceId?: string
+    canEdit: boolean
+    canDelete: boolean
+    canManageSystem?: boolean
+    scope?: 'workspace' | 'system' | 'all'
+    active?: boolean
+  }>(),
+  { active: true }
+)
 
-const { item, items, openEdit, openDelete, openDialog, onUpdate, onDelete } =
-  props.workspaceId
-    ? useTableLogic(
-        async (wsId: string) =>
-          await hs.observedProperties.listAllItems({ workspace_id: [wsId] }),
-        hs.observedProperties.delete,
-        ObservedProperty,
-        toRef(props, 'workspaceId')
-      )
-    : useSystemTableLogic(
-        () => hs.observedProperties.listAllItems({ workspace_id: ['null'] }),
-        (id: string) => hs.observedProperties.delete(id),
-        ObservedProperty
-      )
-
-const headers = [
-  { title: 'Name', key: 'name' },
-  { title: 'Type', key: 'type' },
-  { title: 'Code', key: 'code' },
-  { title: 'Actions', key: 'actions', sortable: false, align: 'end' },
-] as const
-
-const sortedItems = computed(() =>
-  items.value.sort((a, b) => a.name.localeCompare(b.name))
+const {
+  item,
+  items,
+  isLoading,
+  hasMore,
+  error,
+  loadMore,
+  retry,
+  openEdit,
+  openDelete,
+  openDialog,
+  onUpdate,
+  onDelete,
+} = useMetadataTableLogic(
+  hs.observedProperties,
+  ObservedProperty,
+  toRef(props, 'workspaceId'),
+  toRef(() => props.scope ?? 'workspace'),
+  toRef(props, 'search'),
+  toRef(props, 'active')
 )
 </script>

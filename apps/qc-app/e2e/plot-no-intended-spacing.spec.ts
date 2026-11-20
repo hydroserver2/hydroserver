@@ -22,6 +22,12 @@ import {
   datastreams,
   managedDatastream,
   MANAGED_DATASTREAM_ID,
+  workspaces,
+  monitoringSites,
+  methods,
+  observedProperties,
+  processingLevels,
+  units,
 } from './support/fixtures'
 import { setupEditView } from './support/app'
 
@@ -70,27 +76,42 @@ async function patchDatastreamFixture(route: Route): Promise<void> {
   if (request.method() !== 'GET') return route.fallback()
   const origin = request.headers()['origin'] ?? '*'
   const path = new URL(request.url()).pathname
-  // Mirror the CORS + pagination headers `installMocks` sets so the
-  // HydroServer client treats our patched responses exactly the same
-  // as the base mocks. Dropping `Access-Control-Expose-Headers` made
-  // some clients trip on missing `X-Total-Pages`.
+  // Mirror the CORS headers `installMocks` sets so the HydroServer client
+  // treats our patched responses exactly the same as the base mocks.
   const headers: Record<string, string> = {
     'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Allow-Methods': 'GET,POST,PATCH,DELETE,OPTIONS',
     'Access-Control-Allow-Headers': '*',
-    'Access-Control-Expose-Headers': 'X-Total-Pages,X-Total-Count',
-    'X-Total-Pages': '1',
+    'Access-Control-Expose-Headers': 'X-Checksum',
   }
-  if (/\/api\/data\/datastreams$/.test(path)) {
+  const included = {
+    workspaces,
+    monitoringSites,
+    methods,
+    observedProperties,
+    processingLevels,
+    units,
+  }
+  if (/\/api\/ogc\/collections\/datastreams\/items$/.test(path)) {
+    const patched = catalog.map(withoutIntendedSpacing)
     return route.fulfill({
       status: 200,
       contentType: 'application/json',
       headers,
-      body: JSON.stringify({ data: catalog.map(withoutIntendedSpacing) }),
+      body: JSON.stringify({
+        data: patched,
+        meta: {
+          offset: 0,
+          limit: patched.length + 1,
+          numberMatched: patched.length,
+          numberReturned: patched.length,
+        },
+        included,
+      }),
     })
   }
-  const single = path.match(/\/api\/data\/datastreams\/([^/]+)$/)
+  const single = path.match(/\/api\/ogc\/collections\/datastreams\/items\/([^/]+)$/)
   if (single) {
     const id = single[1]
     const ds = catalog.find((d) => d.id === id) ?? catalog[0]!
@@ -98,7 +119,7 @@ async function patchDatastreamFixture(route: Route): Promise<void> {
       status: 200,
       contentType: 'application/json',
       headers,
-      body: JSON.stringify({ data: withoutIntendedSpacing(ds) }),
+      body: JSON.stringify({ data: withoutIntendedSpacing(ds), included }),
     })
   }
   return route.fallback()
@@ -112,7 +133,7 @@ test.describe('plot: datastream without intendedTimeSpacing', () => {
     // wins for both the list and single-get endpoints. The sub-path
     // `/observations` is left to fall through.
     await page.route(
-      /\/api\/data\/datastreams(\/[^/]+)?(\?.*)?$/,
+      /\/api\/ogc\/collections\/datastreams\/items(\/[^/]+)?(\?.*)?$/,
       patchDatastreamFixture
     )
   })

@@ -3,10 +3,8 @@ name: CI
 on:
   push:
     branches:
-      - "**"
+      - main
   pull_request:
-  release:
-    types: [created]
 
 permissions:
   contents: read
@@ -57,7 +55,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.14"
           cache: pip
 
       - name: Install API dependencies
@@ -187,6 +185,7 @@ jobs:
           - "3.11"
           - "3.12"
           - "3.13"
+          - "3.14"
 
     steps:
       - name: Checkout repository
@@ -210,7 +209,7 @@ jobs:
         run: python -m pytest --import-mode=append tests/
 
   api:
-    name: API Service
+    name: API Service 80% Coverage
     runs-on: ubuntu-latest
 
     services:
@@ -250,15 +249,14 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.14"
           cache: pip
 
       - name: Install API dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r django/requirements.txt
+          pip install -r django/requirements-test.txt
           pip install -e packages/hydroserverpy
-          pip install pytest pytest-django pytest-cov
 
       - name: Run API test suite
         working-directory: django
@@ -266,7 +264,7 @@ jobs:
           DATABASE_URL: postgresql://hsdbadmin:admin@127.0.0.1:5432/hydroserver
           CELERY_BROKER_URL: redis://127.0.0.1:6379/0
           SMTP_URL: smtp://127.0.0.1:1025
-        run: python -m pytest
+        run: python -m pytest --cov=. --cov-report=term-missing
 
   e2e-data-management:
     name: Data Management E2E
@@ -307,7 +305,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.14"
           cache: pip
 
       - name: Set up Node.js
@@ -322,7 +320,7 @@ jobs:
       - name: Install API dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r django/requirements.txt
+          pip install -r django/requirements-test.txt
           pip install -e packages/hydroserverpy
 
       - name: Install TypeScript client dependencies

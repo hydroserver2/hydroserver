@@ -18,7 +18,7 @@ const source = {
   id: 'src',
   name: 'Logan River Temp',
   valueCount: 1000,
-  processingLevel: { definition: 'Raw' },
+  processingLevel: { name: 'Raw' },
 } as any
 
 const options = [
@@ -28,7 +28,7 @@ const options = [
       id: 'mgd-1',
       name: 'Logan River Temp (QC)',
       valueCount: 900,
-      processingLevel: { definition: 'Quality controlled' },
+      processingLevel: { name: 'Quality controlled' },
     },
     sessions: [{ id: 's-1', status: 'in_progress' }],
   },

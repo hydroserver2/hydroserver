@@ -15,9 +15,9 @@ class DataConnectionService(HydroServerBaseService):
 
     def list(
         self,
-        page: int = ...,
-        page_size: int = ...,
-        order_by: List[str] = ...,
+        offset: int = ...,
+        limit: int = ...,
+        sortby: List[str] = ...,
         workspace: Optional[Union[UUID, str]] = ...,
         payload_type: str = ...,
         fetch_all: bool = False,
@@ -25,9 +25,9 @@ class DataConnectionService(HydroServerBaseService):
         """Fetch a collection of ETL data connections."""
 
         return super().list(
-            page=page,
-            page_size=page_size,
-            order_by=order_by,
+            offset=offset,
+            limit=limit,
+            sortby=sortby,
             fetch_all=fetch_all,
             workspace_id=normalize_uuid(workspace),
             payload_type=payload_type,
@@ -102,17 +102,17 @@ class DataConnectionService(HydroServerBaseService):
         source_url: str,
         timestamp_key: str,
         payload_type: Literal["CSV", "JSON"],
-        description: Optional[str] = None,
-        timestamp_format: Optional[str] = None,
-        timezone_type: Optional[Literal["offset", "iana"]] = None,
-        timezone: Optional[str] = None,
-        auth_header_name: Optional[str] = None,
-        auth_header_value: Optional[str] = None,
+        description: Optional[str] = ...,
+        timestamp_format: Optional[str] = ...,
+        timezone_type: Optional[Literal["offset", "iana"]] = ...,
+        timezone: Optional[str] = ...,
+        auth_header_name: Optional[str] = ...,
+        auth_header_value: Optional[str] = ...,
         header_row: Optional[int] = None,
         data_start_row: Optional[int] = None,
         delimiter: Optional[str] = None,
         jmespath: Optional[str] = None,
-        placeholder_variables: Optional[List[dict]] = None,
+        placeholder_variables: Optional[List[dict]] = ...,
         notification: Optional[dict] = ...,
     ) -> DataConnection:
         """Update an ETL data connection."""
@@ -142,11 +142,10 @@ class DataConnectionService(HydroServerBaseService):
             "authHeaderName": auth_header_name,
             "authHeaderValue": auth_header_value,
             "payload": payload,
-            "placeholderVariables": self._serialize_placeholder_variables(
-                placeholder_variables or []
-            ),
         }
 
+        if placeholder_variables is not ...:
+            body["placeholderVariables"] = self._serialize_placeholder_variables(placeholder_variables or [])
         if notification is not ...:
             body["notification"] = notification
 

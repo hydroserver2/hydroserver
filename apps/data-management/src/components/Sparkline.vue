@@ -1,16 +1,29 @@
 <template>
   <v-progress-linear v-if="loading" color="secondary" indeterminate />
-  <div v-else-if="!loading && canShowSparkline">
+  <div v-else-if="!loading && canShowSparkline" class="sparkline">
     <div class="w-[300px] max-w-full max-[600px]:w-full">
-      <div class="sparkline-subtitle mb-1 font-weight-light opacity-70">
+      <div
+        v-if="!compact"
+        class="sparkline-subtitle mb-1 hs-text-sm font-weight-light opacity-70"
+      >
         Sparkline is showing most recent {{ validObservations.length }}
         values
       </div>
       <div
-        class="h-[100px] w-full cursor-pointer"
+        class="sparkline-plot h-[100px] w-full cursor-pointer"
         :style="sparklineContainerStyle"
         @click="handleEmit"
       >
+        <span
+          v-for="(point, index) in sparklinePaths.dots"
+          :key="`dot-${index}`"
+          class="sparkline-dot"
+          :style="{
+            left: `clamp(1.5px, ${point.x}%, calc(100% - 1.5px))`,
+            top: `clamp(1.5px, ${point.y}%, calc(100% - 1.5px))`,
+            backgroundColor: sparklineColors.line,
+          }"
+        />
         <svg
           v-if="sparklinePaths.line.length"
           class="h-full w-full"
@@ -61,6 +74,10 @@ const props = defineProps({
     required: true,
   },
   unitName: String,
+  compact: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 type LatestValuePayload = { text: string; showUnit: boolean; isBad: boolean }
@@ -124,10 +141,10 @@ const sparklineSegments = computed<SparklineSegment[]>(() => {
 
 const buildSparklinePaths = (
   segments: SparklineSegment[]
-): { line: string[]; area: string[] } => {
+): { line: string[]; area: string[]; dots: SparklinePoint[] } => {
   const points = segments.flat()
   if (!points.length) {
-    return { line: [], area: [] }
+    return { line: [], area: [], dots: [] }
   }
 
   let xMin = points[0].x
@@ -164,9 +181,16 @@ const buildSparklinePaths = (
 
   const linePaths: string[] = []
   const areaPaths: string[] = []
+  const dots: SparklinePoint[] = []
 
   segments.forEach((segment) => {
     if (!segment.length) return
+    if (segment.length === 1) {
+      dots.push({
+        x: (scaleX(segment[0].x) / SPARKLINE_WIDTH) * 100,
+        y: (scaleY(segment[0].y) / SPARKLINE_HEIGHT) * 100,
+      })
+    }
     const line = segment
       .map((point, index) => {
         const x = scaleX(point.x)
@@ -185,7 +209,7 @@ const buildSparklinePaths = (
     areaPaths.push(area)
   })
 
-  return { line: linePaths, area: areaPaths }
+  return { line: linePaths, area: areaPaths, dots }
 }
 
 const sparklinePaths = computed(() =>
@@ -271,10 +295,10 @@ const sparklineColors = computed(() =>
 )
 
 const sparklineContainerStyle = computed(() => ({
-  height: '100px',
+  height: props.compact ? 'var(--hs-space-32)' : '100px',
   width: '100%',
-  border: `2px solid ${sparklineColors.value.border}`,
-  borderRadius: '4px',
+  border: props.compact ? 'none' : `2px solid ${sparklineColors.value.border}`,
+  borderRadius: props.compact ? '0' : '4px',
   overflow: 'hidden',
 }))
 
@@ -328,8 +352,8 @@ const fetchSparklineObservations = async (ds: Datastream) => {
       spacingMs >= 86_400_000
         ? 30 // daily data should display 30 values
         : spacingMs >= 3_600_000
-        ? 50 // hourly data should display 50 values
-        : 200 // sub-hourly data should display 200 values
+          ? 50 // hourly data should display 50 values
+          : 200 // sub-hourly data should display 200 values
 
     const observationCount = timeIntervalCount - 1
     const totalDurationMs = spacingMs * observationCount
@@ -382,8 +406,19 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.sparkline-plot {
+  position: relative;
+}
+
+.sparkline-dot {
+  position: absolute;
+  width: calc(var(--hs-space-6) / 2);
+  height: calc(var(--hs-space-6) / 2);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
 .sparkline-subtitle {
-  font-size: 0.9rem;
   line-height: 1.25;
 }
 </style>

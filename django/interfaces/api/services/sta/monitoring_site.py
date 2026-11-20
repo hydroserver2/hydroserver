@@ -1,0 +1,614 @@
+import uuid
+
+from collections import defaultdict
+from typing import Optional, Literal, get_args
+from django.contrib.auth import get_user_model
+from django.db import IntegrityError, transaction
+from django.db.models import Count, QuerySet, FloatField, Subquery, OuterRef, IntegerField
+from django.db.models.functions import Cast, Coalesce
+from django.utils import timezone
+
+from core.iam.models import ServiceAccount
+from core.iam.permissions.anonymous import AnonymousPrincipal
+from interfaces.api.http.errors import BadRequestError, ConflictError, NotFoundError, PermissionDeniedError
+from interfaces.api.service import APIService
+from core.sta.cache import (
+    get_public_monitoring_site_markers_cache,
+    set_public_monitoring_site_markers_cache,
+)
+from core.sta.models import (
+    MonitoringSite,
+    MonitoringSiteLinkedResource,
+)
+from interfaces.api.schemas import (
+    BoundingBox,
+    TimeInterval,
+    MonitoringSiteResponse,
+    MonitoringSitePostBody,
+    MonitoringSitePatchBody,
+    LinkedResourcePostBody,
+)
+from interfaces.api.schemas.sta.monitoring_site import (
+    MonitoringSiteFields,
+    MonitoringSiteSortByFields,
+    MONITORING_SITE_INCLUDE_RELATIONS,
+)
+from processing.orchestration.attention import attention_filter, latest_run_status_subquery
+from processing.products.models import DataProductTask
+from processing.monitoring.models import MonitoringTask
+
+User = get_user_model()
+
+
+class MonitoringSiteAPIService(APIService):
+    MARKER_PUBLIC_FILTER = {
+        "workspace__is_private": False,
+        "is_private": False,
+    }
+
+    INCLUDE_RELATIONS = MONITORING_SITE_INCLUDE_RELATIONS
+
+    def get_monitoring_site_for_action(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        uid: uuid.UUID,
+        action: Literal["view", "edit", "delete"],
+        select_related: Optional[list[str]] = None,
+        prefetch_related: Optional[list[str]] = None,
+    ):
+        queryset = MonitoringSite.objects.filter(pk=uid).prefetch_related(
+            "monitoring_site_linked_resources"
+        )
+        if select_related:
+            queryset = queryset.select_related(*select_related)
+        if prefetch_related:
+            queryset = queryset.prefetch_related(*prefetch_related)
+
+        queryset = principal.annotate_permissions(queryset)
+
+        try:
+            monitoring_site = queryset.get()
+        except MonitoringSite.DoesNotExist:
+            raise NotFoundError("MonitoringSite does not exist")
+
+        if not principal.can_view(monitoring_site):
+            raise NotFoundError("MonitoringSite does not exist")
+
+        if action != "view" and not getattr(principal, f"can_{action}")(monitoring_site):
+            raise PermissionDeniedError(f"You do not have permission to {action} this MonitoringSite")
+
+        return monitoring_site
+
+    @classmethod
+    def _include_query_hints(
+        cls, requested_includes: set[str]
+    ) -> tuple[list[str], list[str]]:
+        select_paths = cls.resolve_select_related_paths(
+            requested_includes, cls.INCLUDE_RELATIONS
+        )
+
+        if "workspace" in requested_includes:
+            select_paths.append("workspace__owner")
+
+        return select_paths, []
+
+    @staticmethod
+    def apply_tag_filter(queryset, tags: list[str]):
+        if not tags:
+            return queryset
+
+        for tag in tags:
+            if ":" not in tag:
+                raise BadRequestError(f"Invalid tag format: '{tag}'. Must be 'key:value'.")
+
+            key, value = tag.split(":", 1)
+            queryset = queryset.filter(tags__contains={key: value})
+
+        return queryset
+
+    @staticmethod
+    def apply_marker_filters(queryset: QuerySet, filtering: Optional[dict] = None) -> QuerySet:
+        filtering = filtering or {}
+
+        if "workspace_id" in filtering:
+            queryset = APIService.apply_filters(
+                queryset, "workspace_id", filtering["workspace_id"]
+            )
+
+        if "type" in filtering:
+            queryset = APIService.apply_filters(
+                queryset, "type", filtering["type"]
+            )
+
+        return queryset
+
+    @staticmethod
+    def serialize_marker_rows(marker_rows) -> list[dict]:
+        return [
+            {
+                "id": str(marker["id"]),
+                "workspace_id": str(marker["workspace_id"]),
+                "name": marker["name"],
+                "type": marker["type"],
+                "is_private": marker["is_private"],
+                "latitude": marker["latitude_value"],
+                "longitude": marker["longitude_value"],
+            }
+            for marker in marker_rows
+        ]
+
+    @staticmethod
+    def get_marker_values(queryset: QuerySet):
+        return queryset.annotate(
+            latitude_value=Cast("latitude", FloatField()),
+            longitude_value=Cast("longitude", FloatField()),
+        ).values(
+            "id",
+            "workspace_id",
+            "name",
+            "type",
+            "is_private",
+            "latitude_value",
+            "longitude_value",
+        )
+
+    @classmethod
+    def get_site_summary_values(cls, queryset: QuerySet):
+        return queryset.annotate(
+            latitude_value=Cast("latitude", FloatField()),
+            longitude_value=Cast("longitude", FloatField()),
+        ).values(
+            "id",
+            "workspace_id",
+            "name",
+            "code",
+            "type",
+            "is_private",
+            "latitude_value",
+            "longitude_value",
+            "tags",
+        )
+
+    @staticmethod
+    def serialize_site_summary_rows(site_rows) -> list[dict]:
+        return [
+            {
+                "id": str(site["id"]),
+                "workspace_id": str(site["workspace_id"]),
+                "name": site["name"],
+                "code": site["code"],
+                "type": site["type"],
+                "is_private": site["is_private"],
+                "latitude": site["latitude_value"],
+                "longitude": site["longitude_value"],
+                "tags": site["tags"] or {},
+            }
+            for site in site_rows
+        ]
+
+    @classmethod
+    def filter_cached_markers(
+        cls,
+        markers: list[dict],
+        filtering: Optional[dict] = None,
+        bbox: Optional[BoundingBox] = None,
+    ) -> list[dict]:
+        filtering = filtering or {}
+        filtered_markers = markers
+
+        if filtering.get("workspace_id"):
+            workspace_ids = {str(workspace_id) for workspace_id in filtering["workspace_id"]}
+            filtered_markers = [
+                marker
+                for marker in filtered_markers
+                if marker["workspace_id"] in workspace_ids
+            ]
+
+        if filtering.get("type"):
+            site_types = set(filtering["type"])
+            filtered_markers = [
+                marker
+                for marker in filtered_markers
+                if marker["type"] in site_types
+            ]
+
+        if bbox is not None:
+            filtered_markers = [
+                marker
+                for marker in filtered_markers
+                if bbox.contains(marker["longitude"], marker["latitude"])
+            ]
+
+        return filtered_markers
+
+    def get_public_markers(
+        self, filtering: Optional[dict] = None, bbox: Optional[BoundingBox] = None
+    ) -> list[dict]:
+        public_markers = get_public_monitoring_site_markers_cache()
+
+        if public_markers is None:
+            public_marker_queryset = self.get_marker_values(
+                MonitoringSite.objects.filter(**self.MARKER_PUBLIC_FILTER).order_by("id")
+            )
+            public_markers = self.serialize_marker_rows(public_marker_queryset)
+            set_public_monitoring_site_markers_cache(public_markers)
+
+        return self.filter_cached_markers(public_markers, filtering=filtering, bbox=bbox)
+
+    def get_private_markers(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        filtering: Optional[dict] = None,
+        bbox: Optional[BoundingBox] = None,
+    ) -> list[dict]:
+        if not principal.is_authenticated:
+            return []
+
+        private_marker_queryset = principal.filter_by_permission(
+            MonitoringSite.objects, "can_view"
+        ).exclude(**self.MARKER_PUBLIC_FILTER)
+        private_marker_queryset = self.apply_marker_filters(
+            private_marker_queryset,
+            filtering=filtering,
+        )
+        private_marker_queryset = self.apply_bbox(private_marker_queryset, bbox)
+
+        return self.serialize_marker_rows(
+            self.get_marker_values(private_marker_queryset.order_by("id").distinct())
+        )
+
+    def list_markers(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        filtering: Optional[dict] = None,
+        bbox: Optional[BoundingBox] = None,
+    ):
+        public_markers = self.get_public_markers(filtering=filtering, bbox=bbox)
+        private_markers = self.get_private_markers(
+            principal=principal, filtering=filtering, bbox=bbox
+        )
+        markers = public_markers + private_markers
+        markers.sort(key=lambda marker: marker["id"])
+
+        return markers
+
+    def list_site_summaries(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        filtering: Optional[dict] = None,
+    ) -> list[dict]:
+        site_queryset = principal.filter_by_permission(MonitoringSite.objects, "can_view")
+        site_queryset = self.apply_marker_filters(site_queryset, filtering=filtering)
+        site_rows = list(
+            self.get_site_summary_values(
+                site_queryset.order_by("id").distinct()
+            )
+        )
+
+        return self.serialize_site_summary_rows(site_rows)
+
+    @staticmethod
+    def list_task_summaries(
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        workspace_id: Optional[list] = None,
+        type: Optional[list] = None,
+    ) -> QuerySet:
+
+        now = timezone.now()
+
+        def task_count(task_model, attention_only=False):
+            """
+            Correlated per-monitoring_site count subquery.
+
+            Using a subquery (rather than joining the relation into the outer
+            query and using Count(distinct=True)) avoids a cartesian product
+            between the data_product_tasks and monitoring_tasks relations, which
+            would otherwise make this query explode on monitoring_sites with many tasks.
+            """
+
+            tasks = task_model.objects.filter(monitoring_site_id=OuterRef("pk"))
+            if attention_only:
+                tasks = (
+                    tasks
+                    .annotate(latest_run_status=latest_run_status_subquery())
+                    .filter(attention_filter(now))
+                )
+
+            return Coalesce(
+                Subquery(
+                    tasks
+                    .values("monitoring_site_id")
+                    .annotate(count=Count("pk"))
+                    .values("count"),
+                    output_field=IntegerField(),
+                ),
+                0,
+            )
+
+        queryset = principal.filter_by_permission(MonitoringSite.objects, "can_view")
+
+        if workspace_id:
+            queryset = queryset.filter(workspace_id__in=workspace_id)
+        if type:
+            queryset = queryset.filter(type__in=type)
+
+        return queryset.annotate(
+            product_task_count=task_count(DataProductTask),
+            product_task_attention_count=task_count(DataProductTask, attention_only=True),
+            monitoring_task_count=task_count(MonitoringTask),
+            monitoring_task_attention_count=task_count(MonitoringTask, attention_only=True),
+        ).order_by("name")
+
+    def list(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
+        sortby: Optional[list[str]] = None,
+        filtering: Optional[dict] = None,
+        include: Optional[list[str]] = None,
+        bbox: Optional[BoundingBox] = None,
+        datetime_interval: Optional[TimeInterval] = None,
+    ):
+        requested_includes = self.resolve_include_set(include)
+        queryset = MonitoringSite.objects
+
+        for field in [
+            "workspace_id",
+            "admin_area_1",
+            "admin_area_2",
+            "country",
+            "type",
+            "is_private",
+        ]:
+            if field in filtering:
+                if field == "is_private":
+                    queryset = self.apply_filters(
+                        queryset, f"is_private", filtering[field]
+                    )
+                    queryset = self.apply_filters(
+                        queryset, f"workspace__is_private", filtering[field]
+                    )
+                else:
+                    queryset = self.apply_filters(queryset, field, filtering[field])
+
+        queryset = self.apply_bbox(queryset, bbox)
+        queryset = self.apply_visible_datastream_datetime(
+            principal, queryset, datetime_interval, "monitoring_site_id"
+        )
+        queryset = self.apply_tag_filter(queryset, filtering.get("tag"))
+        queryset, has_search = self.apply_search(queryset, filtering.get("q"))
+        queryset = self.apply_sorting(
+            queryset,
+            sortby,
+            list(get_args(MonitoringSiteSortByFields)),
+            {
+                "elevationDatum": "elevation_datum",
+                "adminArea1": "admin_area_1",
+                "adminArea2": "admin_area_2",
+            },
+            rank=has_search,
+        )
+
+        queryset = queryset.prefetch_related("monitoring_site_linked_resources")
+
+        if requested_includes:
+            select_paths, prefetch_paths = self._include_query_hints(requested_includes)
+            queryset = queryset.select_related(*select_paths)
+            if prefetch_paths:
+                queryset = queryset.prefetch_related(*prefetch_paths)
+
+        queryset = principal.filter_by_permission(queryset, "can_view").distinct()
+        queryset, meta = self.apply_pagination(queryset, offset, limit)
+        monitoring_sites = list(queryset.all())
+
+        return {
+            "data": [
+                MonitoringSiteResponse.model_validate(ms) for ms in monitoring_sites
+            ],
+            "meta": meta,
+            "included": self.resolve_includes(
+                monitoring_sites, requested_includes, self.INCLUDE_RELATIONS
+            ),
+        }
+
+    def get(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        uid: uuid.UUID,
+        include: Optional[list[str]] = None,
+    ):
+        requested_includes = self.resolve_include_set(include)
+        select_paths, prefetch_paths = self._include_query_hints(requested_includes)
+
+        monitoring_site = self.get_monitoring_site_for_action(
+            principal=principal,
+            uid=uid,
+            action="view",
+            select_related=select_paths,
+            prefetch_related=prefetch_paths,
+        )
+
+        return {
+            "data": MonitoringSiteResponse.model_validate(monitoring_site),
+            "included": self.resolve_includes(
+                [monitoring_site], requested_includes, self.INCLUDE_RELATIONS
+            ),
+        }
+
+    def create(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        data: MonitoringSitePostBody,
+    ):
+        workspace, _ = self.get_workspace(
+            principal=principal, workspace_id=data.workspace_id
+        )
+
+        if not principal.can_create("MonitoringSite", workspace=workspace):
+            raise PermissionDeniedError("You do not have permission to create this MonitoringSite")
+
+        monitoring_site = MonitoringSite(
+            pk=data.id,
+            workspace=workspace,
+            tags=data.tags,
+            **data.dict(include=set(MonitoringSiteFields.model_fields.keys())),
+        )
+        monitoring_site.full_clean()
+
+        try:
+            monitoring_site.save()
+        except IntegrityError:
+            raise ConflictError("The operation could not be completed due to a resource conflict.")
+
+        return {"id": monitoring_site.id}
+
+    @transaction.atomic
+    def update(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        uid: uuid.UUID,
+        data: MonitoringSitePatchBody,
+    ):
+        monitoring_site = self.get_monitoring_site_for_action(principal=principal, uid=uid, action="edit")
+        monitoring_site_data = data.dict(
+            include=set(MonitoringSitePatchBody.model_fields.keys()), exclude_unset=True
+        )
+
+        # Scalar-only edits must not save stale tags over another update.
+        monitoring_site = MonitoringSite.objects.select_for_update().get(pk=monitoring_site.pk)
+
+        self.apply_merge_patch(monitoring_site, monitoring_site_data)
+
+        monitoring_site.full_clean()
+        monitoring_site.save()
+
+    def delete(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID):
+        monitoring_site = self.get_monitoring_site_for_action(
+            principal=principal, uid=uid, action="delete"
+        )
+        monitoring_site.delete()
+
+        return "MonitoringSite deleted"
+
+    @staticmethod
+    def get_tag_keys(
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        workspace_id: Optional[uuid.UUID],
+        monitoring_site_id: Optional[uuid.UUID],
+    ):
+        queryset = principal.filter_by_permission(MonitoringSite.objects, "can_view")
+
+        if workspace_id:
+            queryset = queryset.filter(workspace_id=workspace_id)
+
+        if monitoring_site_id:
+            queryset = queryset.filter(id=monitoring_site_id)
+
+        tag_keys: dict[str, set[str]] = defaultdict(set)
+        for tags in queryset.values_list("tags", flat=True):
+            if not isinstance(tags, dict):
+                continue
+            for key, value in tags.items():
+                if isinstance(key, str) and isinstance(value, str):
+                    tag_keys[key].add(value)
+
+        return {key: sorted(values) for key, values in tag_keys.items()}
+
+    def get_linked_resources(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        uid: uuid.UUID,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
+        filtering: Optional[dict] = None,
+    ):
+        monitoring_site = self.get_monitoring_site_for_action(
+            principal=principal, uid=uid, action="view"
+        )
+
+        queryset = monitoring_site.monitoring_site_linked_resources
+
+        if filtering.get("type"):
+            queryset = self.apply_filters(queryset, "type", filtering["type"])
+
+        queryset = self.apply_sorting(queryset, [], [], default_sortby=("name",))
+        queryset, meta = self.apply_pagination(queryset, offset, limit)
+
+        return {"data": list(queryset), "meta": meta}
+
+    def get_linked_resource(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        uid: uuid.UUID,
+        linked_resource_id: uuid.UUID,
+    ):
+        monitoring_site = self.get_monitoring_site_for_action(
+            principal=principal, uid=uid, action="view"
+        )
+
+        return self.get_linked_resource_by_id(
+            linked_resource_model=MonitoringSiteLinkedResource,
+            parent_field="monitoring_site",
+            parent=monitoring_site,
+            linked_resource_id=linked_resource_id,
+        )
+
+    def add_linked_resource(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        uid: uuid.UUID,
+        file,
+        link: Optional[str],
+        data: LinkedResourcePostBody,
+    ):
+        monitoring_site = self.get_monitoring_site_for_action(
+            principal=principal, uid=uid, action="edit"
+        )
+
+        return self.create_linked_resource(
+            linked_resource_model=MonitoringSiteLinkedResource,
+            parent_field="monitoring_site",
+            parent=monitoring_site,
+            file=file,
+            link=link,
+            data=data,
+        )
+
+    def update_linked_resource(
+        self,
+        principal: User | ServiceAccount | AnonymousPrincipal,
+        uid: uuid.UUID,
+        linked_resource_id: uuid.UUID,
+        name: Optional[str],
+        description: Optional[str],
+        type: Optional[str],
+        file,
+        link: Optional[str],
+    ):
+        monitoring_site = self.get_monitoring_site_for_action(principal=principal, uid=uid, action="edit")
+
+        return self.update_linked_resource_fields(
+            linked_resource_model=MonitoringSiteLinkedResource,
+            parent_field="monitoring_site",
+            parent=monitoring_site,
+            linked_resource_id=linked_resource_id,
+            name=name,
+            description=description,
+            type=type,
+            file=file,
+            link=link,
+        )
+
+    def remove_linked_resource(
+        self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID, linked_resource_id: uuid.UUID
+    ):
+        monitoring_site = self.get_monitoring_site_for_action(principal=principal, uid=uid, action="edit")
+
+        self.delete_linked_resource(
+            linked_resource_model=MonitoringSiteLinkedResource,
+            parent_field="monitoring_site",
+            parent=monitoring_site,
+            linked_resource_id=linked_resource_id,
+        )
+

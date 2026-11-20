@@ -1,72 +1,88 @@
 <template>
-  <v-row align="center">
-    <v-col cols="auto" class="pr-0">
-      <v-card-title class="text-h6">
-        Transfer workspace ownership
-      </v-card-title>
-    </v-col>
-    <v-col class="pl-0">
-      <v-icon
-        :icon="mdiHelpCircleOutline"
-        @click="showTransferHelp = !showTransferHelp"
-        color="grey"
-        small
-      />
-    </v-col>
-  </v-row>
-  <v-card-text v-if="showTransferHelp">
-    This action will irreversibly de-elevate your permission level to
-    collaborator and elevate the chosen user's permission level to owner once
-    the chosen user has accepted the transfer request. Permissions unique to the
-    owner are:
-    <ul class="ml-5">
-      <li>Rename a workspace</li>
-      <li>Delete a workspace</li>
-      <li>Make a workspace public or private</li>
-    </ul>
-  </v-card-text>
+  <h2 class="hs-subheading ownership-title">Transfer workspace ownership</h2>
 
-  <template v-if="showPendingTransferText">
-    <v-card-text style="color: #2196f3">
-      <p>
-        An ownership transfer is pending to
-        {{ workspace.pendingTransferTo?.name }}
-      </p>
-      <v-btn-cancel class="mt-4" @click="onCancelTransfer">
-        Cancel transfer
-      </v-btn-cancel>
-    </v-card-text>
-  </template>
-  <template v-else>
-    <v-card-text>
-      <v-text-field
-        v-model="newOwnerEmail"
-        label="New owner's email"
-        required
-      />
-      <p v-if="showTransferConfirmation" style="color: red" class="pb-4">
-        WARNING: Once transfer has been accepted by the chosen user, you will no
-        longer have access to this workspace.
-      </p>
-      <v-btn-primary
-        v-if="showTransferConfirmation"
-        @click="onTransferOwnership"
-      >
-        Confirm
-      </v-btn-primary>
-      <v-btn-primary v-else @click="showTransferConfirmation = true"
-        >Submit</v-btn-primary
-      >
-    </v-card-text>
-  </template>
+  <v-card-text>
+    <div class="ownership-card hs-table-card">
+      <template v-if="showPendingTransferText">
+        <small class="ownership-pending">
+          <v-icon :icon="mdiTransitTransfer" size="18" color="primary" />
+          <span>
+            An ownership transfer is pending to
+            <strong>{{ workspace.pendingTransferTo?.name }}</strong>
+          </span>
+        </small>
+        <v-btn-cancel
+          class="mt-4"
+          :loading="isCancelling"
+          :disabled="isCancelling"
+          @click="onCancelTransfer"
+        >
+          Cancel transfer
+        </v-btn-cancel>
+      </template>
+
+      <template v-else>
+        <p class="ownership-copy">
+          <small>
+            Transfer is irreversible once accepted: the new owner gains the
+            ownership rights for this workspace, and its permissions will then
+            determine who can
+            <strong>rename</strong>, <strong>delete</strong>, and
+            <strong>change the privacy</strong> of this workspace. The previous
+            owner may lose access unless added as a collaborator. Instance
+            admins retain management access.
+          </small>
+        </p>
+
+        <v-form v-model="emailFormValid" class="ownership-form">
+          <v-text-field
+            v-model="newOwnerEmail"
+            label="New owner's email"
+            placeholder="collaborator@organization.org"
+            density="comfortable"
+            :rules="rules.email"
+            hide-details="auto"
+          />
+          <v-btn-primary
+            v-if="showTransferConfirmation"
+            :loading="isTransferring"
+            :disabled="!emailFormValid || isTransferring"
+            @click="onTransferOwnership"
+          >
+            Confirm transfer
+          </v-btn-primary>
+          <v-btn
+            v-else
+            :prepend-icon="mdiTransitTransfer"
+            :disabled="!emailFormValid"
+            @click="showTransferConfirmation = true"
+          >
+            Begin transfer
+          </v-btn>
+        </v-form>
+
+        <v-alert
+          v-if="showTransferConfirmation"
+          type="warning"
+          variant="tonal"
+          density="compact"
+          class="mt-4"
+        >
+          Once accepted, ownership moves to the new owner. The previous owner
+          may lose access unless added as a collaborator.
+        </v-alert>
+      </template>
+    </div>
+  </v-card-text>
 </template>
 
 <script setup lang="ts">
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import hs, { Workspace } from '@hydroserver/client'
 import { Snackbar } from '@/utils/notifications'
+import { rules } from '@/utils/rules'
 import { computed, ref } from 'vue'
-import { mdiHelpCircleOutline } from '@mdi/js'
+import { mdiTransitTransfer } from '@mdi/js'
 
 const permissionsStore = useWorkspacePermissions()
 
@@ -75,43 +91,107 @@ const props = defineProps({
 })
 const emits = defineEmits(['needs-refresh'])
 
-const showTransferHelp = ref(false)
-
 const showPendingTransferText = computed(
   () =>
     props.workspace.pendingTransferTo?.email &&
-    permissionsStore.isOwner(props.workspace)
+    (permissionsStore.isOwner(props.workspace) || permissionsStore.isAdmin())
 )
 
 const newOwnerEmail = ref('')
+const emailFormValid = ref(false)
 const showTransferConfirmation = ref(false)
+const isTransferring = ref(false)
+const isCancelling = ref(false)
 
 async function onTransferOwnership() {
-  if (!newOwnerEmail.value) return
+  if (!newOwnerEmail.value || !emailFormValid.value || isTransferring.value)
+    return
 
-  const res = await hs.workspaces.transferOwnership(
-    props.workspace!.id,
-    newOwnerEmail.value
-  )
+  isTransferring.value = true
+  try {
+    const res = await hs.workspaces.transferOwnership(
+      props.workspace!.id,
+      newOwnerEmail.value
+    )
 
-  if (res.ok) {
-    emits('needs-refresh')
-    Snackbar.success('Workspace transfer initiated.')
-  } else {
-    console.error('Error transferring workspace.', res)
-    Snackbar.error(res.message)
+    if (res.ok) {
+      emits('needs-refresh')
+      Snackbar.success('Workspace transfer initiated.')
+      newOwnerEmail.value = ''
+      showTransferConfirmation.value = false
+    } else {
+      // Keep what they typed so they can fix it rather than starting over -
+      // most commonly this means the email doesn't match an existing account.
+      console.error('Error transferring workspace.', res)
+      Snackbar.error(res.message || 'Unable to start the workspace transfer.')
+      showTransferConfirmation.value = false
+    }
+  } catch (error) {
+    console.error('Error transferring workspace.', error)
+    Snackbar.error('Unable to start the workspace transfer.')
+  } finally {
+    isTransferring.value = false
   }
-
-  newOwnerEmail.value = ''
-  showTransferConfirmation.value = false
 }
 
 async function onCancelTransfer() {
-  const res = await hs.workspaces.rejectOwnershipTransfer(props.workspace!.id)
+  if (isCancelling.value) return
+  isCancelling.value = true
+  try {
+    const res = await hs.workspaces.rejectOwnershipTransfer(props.workspace!.id)
 
-  if (res.ok) {
-    emits('needs-refresh')
-    Snackbar.success('Workspace transfer cancelled.')
-  } else console.error('Error cancelling workspace transfer.', res)
+    if (res.ok) {
+      emits('needs-refresh')
+      Snackbar.success('Workspace transfer cancelled.')
+    } else {
+      console.error('Error cancelling workspace transfer.', res)
+      Snackbar.error(res.message || 'Unable to cancel the workspace transfer.')
+    }
+  } catch (error) {
+    console.error('Error cancelling workspace transfer.', error)
+    Snackbar.error('Unable to cancel the workspace transfer.')
+  } finally {
+    isCancelling.value = false
+  }
 }
 </script>
+
+<style scoped>
+.ownership-title {
+  margin-bottom: var(--hs-space-4);
+}
+.ownership-card {
+  padding: var(--hs-space-20);
+}
+.ownership-copy {
+  color: var(--hs-text-secondary);
+  line-height: 1.6;
+  margin-bottom: var(--hs-space-16);
+  max-width: 560px;
+}
+.ownership-copy strong {
+  color: var(--hs-text-primary);
+}
+.ownership-form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--hs-space-12);
+  align-items: center;
+  max-width: 560px;
+}
+.ownership-pending {
+  display: flex;
+  align-items: center;
+  gap: var(--hs-space-8);
+  color: var(--hs-text-primary);
+}
+
+@media (max-width: 600px) {
+  .ownership-card {
+    padding: var(--hs-space-16);
+  }
+  .ownership-form {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

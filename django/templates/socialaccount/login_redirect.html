@@ -1,0 +1,26 @@
+{% extends "allauth/layouts/entrance.html" %}
+{% load allauth i18n %}
+{% block head_title %}
+    {% blocktrans with provider_name=provider %}
+        Continue to {{ provider_name }}
+    {% endblocktrans %}
+{% endblock %}
+{% block extra_head %}
+    <meta
+        http-equiv="refresh"
+        content="0;URL='{{ redirect_to }}'"
+    />
+{% endblock %}
+{% block content %}
+    {% element h1 %}
+        {% blocktrans with provider_name=provider %}
+            Taking you to {{ provider_name }}
+        {% endblocktrans %}
+    {% endelement %}
+    {% element p %}
+        {% trans "You'll continue securely with your provider." %}
+    {% endelement %}
+    {% element button href=redirect_to tags="prominent,login" %}
+        {% trans "Continue now" %}
+    {% endelement %}
+{% endblock %}

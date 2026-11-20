@@ -175,12 +175,16 @@ export default defineConfig({
                 link: "/user-guides/how-to/exporting-and-downloading-data",
               },
               {
-                text: "Archiving Data to HydroShare",
-                link: "/user-guides/how-to/archiving-data-to-hydroshare",
-              },
-              {
                 text: "Using the Python Client",
                 link: "/user-guides/how-to/using-the-python-client",
+              },
+              {
+                text: "Using the Data Management API",
+                link: "/user-guides/how-to/using-the-data-management-api",
+              },
+              {
+                text: "Migrating Apps and Scripts from v1 to v2",
+                link: "/user-guides/how-to/migrating-apps-and-scripts-from-v1-to-v2",
               },
               {
                 text: "Configuring Python ETL Pipelines",
@@ -231,6 +235,10 @@ export default defineConfig({
                 text: "Using the TypeScript Client",
                 link: "/developing-and-contributing/how-to/using-the-typescript-client",
               },
+              {
+                text: "Using OIDC Scopes",
+                link: "/developing-and-contributing/how-to/using-oidc-scopes",
+              },
             ],
           },
         ],
@@ -271,6 +279,14 @@ export default defineConfig({
               {
                 text: "Using the Django Admin Dashboard",
                 link: "/hosting-and-deployment/how-to/using-the-administrator-dashboard",
+              },
+              {
+                text: "Building the Docker Image from Source",
+                link: "/hosting-and-deployment/how-to/building-the-docker-image-from-source",
+              },
+              {
+                text: "Migrating from HydroServer v1 to v2",
+                link: "/hosting-and-deployment/how-to/migrating-from-v1-to-v2",
               },
             ],
           },

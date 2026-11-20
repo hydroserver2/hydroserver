@@ -1,4 +1,4 @@
-import { Loader } from '@googlemaps/js-api-loader'
+import { importLibrary, setOptions } from '@googlemaps/js-api-loader'
 
 interface GoogleGeocodeResponse {
   status: string
@@ -10,25 +10,23 @@ interface GoogleGeocodeResponse {
   }>
 }
 
-let googleMapsPromise: Promise<typeof google.maps.Map> | null = null
+const importElevationLibrary = () => importLibrary('elevation')
+let googleMapsPromise: ReturnType<typeof importElevationLibrary> | null = null
 
-function loadGoogleMapsApi(): Promise<typeof google.maps.Map> {
+function loadGoogleMapsApi() {
   if (googleMapsPromise) return googleMapsPromise
-  const loader = new Loader({
-    apiKey: import.meta.env.VITE_APP_GOOGLE_MAPS_API_KEY,
-    version: 'weekly',
+  setOptions({
+    key: import.meta.env.VITE_APP_GOOGLE_MAPS_API_KEY,
+    v: 'weekly',
     libraries: ['places'],
   })
-  googleMapsPromise = (async () => {
-    const { Map } = await loader.importLibrary('maps')
-    return Map
-  })()
+  googleMapsPromise = importElevationLibrary()
   return googleMapsPromise
 }
 
 export async function getElevationGoogle(latitude: number, longitude: number) {
-  const Map = await loadGoogleMapsApi()
-  const elevator = new google.maps.ElevationService()
+  const { ElevationService } = await loadGoogleMapsApi()
+  const elevator = new ElevationService()
   const { results } = await elevator.getElevationForLocations({
     locations: [{ lat: latitude, lng: longitude }],
   })

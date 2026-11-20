@@ -6,18 +6,18 @@ const ds = (overrides: Record<string, any> = {}) =>
     id: 'ds-1',
     name: 'Stream',
     valueCount: 1234,
-    processingLevel: { definition: 'Quality controlled' },
+    processingLevel: { name: 'Quality controlled' },
     ...overrides,
   }) as any
 
 const session = (status: string) => ({ id: 's', status }) as any
 
 describe('datastreamSummary', () => {
-  it('leads with the processing level definition', () => {
+  it('leads with the processing level name', () => {
     expect(datastreamSummary(ds())).toContain('Level: Quality controlled')
   })
 
-  it('falls back to the processing level code when there is no definition', () => {
+  it('falls back to the processing level code when there is no name', () => {
     expect(datastreamSummary(ds({ processingLevel: { code: 'L1' } }))).toContain(
       'Level: L1'
     )

@@ -11,66 +11,65 @@ if TYPE_CHECKING:
     from hydroserverpy import HydroServer
     from hydroserverpy.api.models import (
         Workspace,
-        Thing,
-        Sensor,
+        MonitoringSite,
+        Method,
         ObservedProperty,
         Unit,
         ProcessingLevel,
+        ObservationCollection,
     )
 
 
 class Datastream(HydroServerBaseModel):
     name: str = Field(..., max_length=255)
     description: str
-    observation_type: str = Field(..., max_length=255)
+    type: Literal["timeSeriesCoverage"] = "timeSeriesCoverage"
     sampled_medium: str = Field(..., max_length=255)
     no_data_value: float
     aggregation_statistic: str = Field(..., max_length=255)
     time_aggregation_interval: float
     status: Optional[str] = Field(None, max_length=255)
-    result_type: str = Field(..., max_length=255)
     value_count: Optional[int] = Field(None, ge=0)
     phenomenon_begin_time: Optional[datetime] = None
     phenomenon_end_time: Optional[datetime] = None
     result_begin_time: Optional[datetime] = None
     result_end_time: Optional[datetime] = None
     is_private: bool = False
-    is_visible: bool = True
+    is_restricted: bool = False
     time_aggregation_interval_unit: Literal["seconds", "minutes", "hours", "days"]
     intended_time_spacing: Optional[float] = None
     intended_time_spacing_unit: Optional[
         Literal["seconds", "minutes", "hours", "days"]
     ] = None
-    thing_id: uuid.UUID
+    monitoring_site_id: uuid.UUID
     workspace_id: uuid.UUID
-    sensor_id: uuid.UUID
+    method_id: uuid.UUID
     observed_property_id: uuid.UUID
     processing_level_id: uuid.UUID
     unit_id: uuid.UUID
     tags: Dict[str, str]
-    file_attachments: Dict[str, Dict[str, str]]
+    linked_resources: Dict[str, Dict[str, str]]
 
     _editable_fields: ClassVar[set[str]] = {
-        "name", "description", "observation_type", "sampled_medium", "no_data_value", "aggregation_statistic",
-        "time_aggregation_interval", "status", "result_type", "value_count", "phenomenon_begin_time",
-        "phenomenon_end_time", "result_begin_time", "result_end_time", "is_private", "is_visible",
-        "time_aggregation_interval_unit", "intended_time_spacing", "intended_time_spacing_unit", "thing_id",
-        "sensor_id", "observed_property_id", "processing_level_id", "unit_id"
+        "name", "description", "type", "sampled_medium", "no_data_value", "aggregation_statistic",
+        "time_aggregation_interval", "status", "is_private", "is_restricted",
+        "time_aggregation_interval_unit", "intended_time_spacing", "intended_time_spacing_unit", "monitoring_site_id",
+        "method_id", "observed_property_id", "processing_level_id", "unit_id"
     }
 
     def __init__(self, client: "HydroServer", **data):
         super().__init__(client=client, service=client.datastreams, **data)
 
         self._workspace = None
-        self._thing = None
+        self._monitoring_site = None
         self._observed_property = None
         self._unit = None
         self._processing_level = None
-        self._sensor = None
+        self._method = None
 
     @classmethod
     def get_route(cls):
-        return "datastreams"
+        return "collections/datastreams/items"
 
     @property
     def workspace(self) -> "Workspace":
@@ -82,38 +81,38 @@ class Datastream(HydroServerBaseModel):
         return self._workspace
 
     @property
-    def thing(self) -> "Thing":
-        """The thing this datastream belongs to."""
+    def monitoring_site(self) -> "MonitoringSite":
+        """The monitoring_site this datastream belongs to."""
 
-        if self._thing is None:
-            self._thing = self.client.things.get(uid=self.thing_id)
+        if self._monitoring_site is None:
+            self._monitoring_site = self.client.monitoring_sites.get(uid=self.monitoring_site_id)
 
-        return self._thing
+        return self._monitoring_site
 
-    @thing.setter
-    def thing(self, thing: Union["Thing", UUID, str] = ...):
-        if not thing:
-            raise ValueError("Thing of datastream cannot be None.")
-        if normalize_uuid(thing) != str(self.thing_id):
-            self.thing_id = normalize_uuid(thing)
-            self._thing = None
+    @monitoring_site.setter
+    def monitoring_site(self, monitoring_site: Union["MonitoringSite", UUID, str] = ...):
+        if not monitoring_site:
+            raise ValueError("MonitoringSite of datastream cannot be None.")
+        if normalize_uuid(monitoring_site) != str(self.monitoring_site_id):
+            self.monitoring_site_id = normalize_uuid(monitoring_site)
+            self._monitoring_site = None
 
     @property
-    def sensor(self) -> "Sensor":
-        """The sensor of this datastream."""
+    def method(self) -> "Method":
+        """The method of this datastream."""
 
-        if self._sensor is None:
-            self._sensor = self.client.sensors.get(uid=self.sensor_id)
+        if self._method is None:
+            self._method = self.client.methods.get(uid=self.method_id)
 
-        return self._sensor
+        return self._method
 
-    @sensor.setter
-    def sensor(self, sensor: Union["Sensor", UUID, str] = ...):
-        if not sensor:
-            raise ValueError("Sensor of datastream cannot be None.")
-        if normalize_uuid(sensor) != str(self.sensor_id):
-            self.sensor_id = normalize_uuid(sensor)
-            self._sensor = None
+    @method.setter
+    def method(self, method: Union["Method", UUID, str] = ...):
+        if not method:
+            raise ValueError("Method of datastream cannot be None.")
+        if normalize_uuid(method) != str(self.method_id):
+            self.method_id = normalize_uuid(method)
+            self._method = None
 
     @property
     def observed_property(self) -> "ObservedProperty":
@@ -168,38 +167,42 @@ class Datastream(HydroServerBaseModel):
 
     def get_observations(
         self,
-        page: int = ...,
-        page_size: int = 100000,
-        order_by: List[str] = ...,
+        offset: int = ...,
+        limit: int = 100000,
+        sortby: List[str] = ...,
         phenomenon_time_max: datetime = ...,
         phenomenon_time_min: datetime = ...,
-        result_qualifier_code: str = ...,
+        result_qualifiers: str = ...,
         fetch_all: bool = False,
-    ) -> pd.DataFrame:
+    ) -> "ObservationCollection":
         """Retrieve the observations for this datastream."""
 
         return self.client.datastreams.get_observations(
             uid=self.uid,
-            page=page,
-            page_size=page_size,
-            order_by=order_by,
+            offset=offset,
+            limit=limit,
+            sortby=sortby,
             phenomenon_time_max=phenomenon_time_max,
             phenomenon_time_min=phenomenon_time_min,
-            result_qualifier_code=result_qualifier_code,
+            result_qualifiers=result_qualifiers,
             fetch_all=fetch_all
         )
 
     def load_observations(
         self,
         observations: pd.DataFrame,
-        mode: str = "insert"
+        mode: str = "insert",
+        phenomenon_time_start: Optional[datetime] = None,
+        phenomenon_time_end: Optional[datetime] = None,
     ) -> None:
         """Load a DataFrame of observations to the datastream."""
 
         return self.client.datastreams.load_observations(
             uid=self.uid,
             observations=observations,
-            mode=mode
+            mode=mode,
+            phenomenon_time_start=phenomenon_time_start,
+            phenomenon_time_end=phenomenon_time_end,
         )
 
     def delete_observations(
@@ -215,71 +218,65 @@ class Datastream(HydroServerBaseModel):
             phenomenon_time_end=phenomenon_time_end,
         )
 
-    # TODO: Find a better long-term solution for this issue.
     def sync_phenomenon_end_time(self):
-        """Ensures the phenomenon_end_time field matches the actual end time of the observations."""
+        """
+        Reloads phenomenon_end_time and the datastream's other observation statistics, which
+        HydroServer maintains whenever observations are written.
+        """
 
-        path = f"/{self.client.base_route}/{self.get_route()}/{str(self.uid)}/observations"
-        response = self.client.request(
-            "get", path, params={"page_size": 1, "order_by": "-phenomenonTime"}
+        self.refresh()
 
-        ).json()
-
-        if len(response) > 0:
-            self.phenomenon_end_time = datetime.fromisoformat(response[0]["phenomenonTime"])
-        else:
-            self.phenomenon_end_time = None
-
-        self.save()
-
-    @field_validator("tags", mode="before")
-    def transform_tags(cls, v):
-        if isinstance(v, list):
-            return {item["key"]: item["value"] for item in v if "key" in item and "value" in item}
-        return v
-
-    @field_validator("file_attachments", mode="before")
-    def transform_file_attachments(cls, v):
+    @field_validator("linked_resources", mode="before")
+    def transform_linked_resources(cls, v):
         if isinstance(v, list):
             return {
                 item["name"]: {
+                    "id": item["id"],
                     "link": item["link"],
-                    "file_attachment_type": item["fileAttachmentType"],
+                    "type": item["type"],
                 } for item in v if "name" in item and "link" in item
             }
         return v
 
-    def add_tag(self, key: str, value: str):
-        """Add a tag to this datastream."""
+    def set_tag(self, key: str, value: str):
+        """Create or update a tag on this datastream."""
 
-        self.client.datastreams.add_tag(uid=self.uid, key=key, value=value)
-        self.tags[key] = value
-
-    def update_tag(self, key: str, value: str):
-        """Edit a tag of this datastream."""
-
-        self.client.datastreams.update_tag(uid=self.uid, key=key, value=value)
+        self.client.datastreams.set_tag(uid=self.uid, key=key, value=value)
         self.tags[key] = value
 
     def delete_tag(self, key: str):
         """Delete a tag of this datastream."""
 
-        self.client.datastreams.delete_tag(uid=self.uid, key=key, value=self.tags[key])
-        del self.tags[key]
+        self.client.datastreams.delete_tag(uid=self.uid, key=key)
+        self.tags.pop(key, None)
 
-    def add_file_attachment(self, file: IO[bytes], file_attachment_type: str):
-        """Add a file attachment for this datastream."""
+    def add_linked_resource(
+        self,
+        name: str,
+        type: str,
+        file: Optional[IO[bytes]] = None,
+        url: Optional[str] = None,
+        description: Optional[str] = None,
+    ):
+        """
+        Add a linked resource to this datastream. Exactly one of `file`/`url` must be given —
+        whichever one is provided determines whether the resource is hosted by HydroServer or
+        an external link.
+        """
 
-        file_attachment = self.client.datastreams.add_file_attachment(
-            uid=self.uid, file=file, file_attachment_type=file_attachment_type
+        linked_resource = self.client.datastreams.add_linked_resource(
+            uid=self.uid, name=name, type=type, file=file, url=url,
+            description=description,
         )
-        self.file_attachments[file_attachment["name"]] = {
-            "link": file_attachment["link"],
-            "file_attachment_type": file_attachment_type,
+        self.linked_resources[linked_resource["name"]] = {
+            "id": linked_resource["id"],
+            "link": linked_resource["link"],
+            "type": type,
         }
 
-    def delete_file_attachment(self, name: str):
-        """Delete a file attachment of this datastream."""
+    def delete_linked_resource(self, name: str):
+        """Delete a linked resource of this datastream."""
 
-        self.client.datastreams.delete_file_attachment(uid=self.uid, name=name)
-        del self.file_attachments[name]
+        linked_resource_id = self.linked_resources[name]["id"]
+        self.client.datastreams.delete_linked_resource(uid=self.uid, linked_resource_id=linked_resource_id)
+        del self.linked_resources[name]

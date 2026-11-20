@@ -5,12 +5,13 @@ from django.db.models import Min, Max, Count, F, Sum
 from django.db.utils import IntegrityError, DatabaseError, DataError
 from psycopg.errors import UniqueViolation
 from sensorthings.types import Absent
+from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.sta.models import Observation, Datastream
 from sensorthings.versions.v1_1.dto import EntityResultSetDTO, CollectionDTO, ObservationDTO
-from core.sta.services.datastream import DatastreamService
+from interfaces.api.services.sta.datastream import DatastreamAPIService
 from .utils import SensorThingsUtils
 
-datastream_service = DatastreamService()
+datastream_service = DatastreamAPIService()
 
 
 class ObservationMixin(SensorThingsUtils):
@@ -18,10 +19,9 @@ class ObservationMixin(SensorThingsUtils):
     def get_observations(self, filters=None, orderby=None, group_by=None, select=None,
                          top=100, skip=0, count=False, context=None):
         needs_result_quality = select is None or "result_quality" in select
+        principal = context.principal if context else AnonymousPrincipal()
 
-        observations = Observation.objects.visible(
-            principal=context.principal if context else None
-        )
+        observations = principal.filter_by_permission(Observation.objects, "can_view")
 
         if filters:
             observations = self.apply_filters(observations, Observation, filters)
@@ -48,6 +48,7 @@ class ObservationMixin(SensorThingsUtils):
             observations = observations.filter(datastream_id__in=group_by[1])
             obs_counts = dict(
                 observations
+                .order_by()
                 .values(group_by[0])
                 .annotate(total=Count("id"))
                 .values_list(group_by[0], "total")
@@ -64,8 +65,8 @@ class ObservationMixin(SensorThingsUtils):
             }
         else:
             if count and not filters:
-                entity_count = Datastream.objects.visible(
-                    principal=context.principal if context else None
+                entity_count = principal.filter_by_permission(
+                    Datastream.objects, "can_view", resource_type=Observation
                 ).aggregate(total=Sum("value_count"))["total"] or 0
             elif count:
                 entity_count = observations.count() if count else None
@@ -114,6 +115,8 @@ class ObservationMixin(SensorThingsUtils):
 
         by_datastream = {}
         for dto in payload:
+            if isinstance(dto.phenomenon_time, str) and "/" in dto.phenomenon_time:
+                raise HttpError(400, "Observation phenomenonTime intervals are not supported.")
             by_datastream.setdefault(dto.datastream_id, []).append(dto)
 
         new_ids = []
@@ -125,9 +128,8 @@ class ObservationMixin(SensorThingsUtils):
                 action="view",
             )
 
-            if not Observation.can_principal_create(
-                principal=principal,
-                workspace=datastream.thing.workspace,
+            if not principal.can_create(
+                "Observation", workspace=datastream.monitoring_site.workspace
             ):
                 raise HttpError(
                     403, "You do not have permission to create observations on this datastream."

@@ -10,7 +10,7 @@ import type {
   TaskRow,
 } from '@/components/Orchestration/workbench/orchestrationTabs'
 
-export type OrchestrationView = TabId | 'workspaces'
+export type OrchestrationView = TabId
 
 export type OrchestrationTaskDetailType =
   | 'ingestion'
@@ -36,7 +36,6 @@ const VALID_VIEWS = new Set<OrchestrationView>([
   'ingestion',
   'aggregation',
   'quality',
-  'workspaces',
 ])
 
 const VALID_DETAIL_TYPES = new Set<OrchestrationTaskDetailType>([
@@ -121,8 +120,8 @@ const withoutSelectedGroup = (query: LocationQuery) => {
   delete nextQuery.dataConnectionId
   delete nextQuery.site_id
   delete nextQuery.siteId
-  delete nextQuery.thing_id
-  delete nextQuery.thingId
+  delete nextQuery.monitoring_site_id
+  delete nextQuery.monitoringSiteId
   return nextQuery
 }
 
@@ -166,8 +165,8 @@ export function useOrchestrationRouteState() {
     () =>
       firstString(route.query.site_id) ??
       firstString(route.query.siteId) ??
-      firstString(route.query.thing_id) ??
-      firstString(route.query.thingId)
+      firstString(route.query.monitoring_site_id) ??
+      firstString(route.query.monitoringSiteId)
   )
 
   const hasTaskDetails = computed(

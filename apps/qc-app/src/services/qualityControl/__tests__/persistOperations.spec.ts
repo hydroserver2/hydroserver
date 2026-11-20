@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import type { QcHistoryOperation } from '@uwrl/qc-utils'
-import { makeQcFake } from './qcServiceFake'
+import { createHistory, createSession, makeQcFake } from './qcServiceFake'
 import {
   persistSessionOperations,
 } from '../persistOperations'
@@ -19,13 +19,11 @@ const WIN = {
 }
 
 const sessionWith = async (qc: ReturnType<typeof makeQcFake>) => {
-  const h = unwrap(
-    await qc.histories.create({
-      managedDatastreamId: 'm-1',
-      sourceDatastreamId: 's-1',
-    })
-  )
-  const s = unwrap(await qc.sessions.create(h.id, WIN))
+  const h = await createHistory(qc, {
+    managedDatastreamId: 'm-1',
+    sourceDatastreamId: 's-1',
+  })
+  const s = await createSession(qc, h.id, WIN)
   return { historyId: h.id, sessionId: s.id }
 }
 

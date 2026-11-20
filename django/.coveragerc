@@ -1,0 +1,7 @@
+[run]
+omit =
+    */migrations/*
+
+[report]
+skip_empty = True
+fail_under = 80

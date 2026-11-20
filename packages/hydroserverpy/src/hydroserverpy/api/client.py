@@ -1,18 +1,19 @@
 import requests
 import json
-from typing import Optional, Tuple
+from typing import Callable, Optional, Tuple, Union
 from hydroserverpy.api.services import (
     WorkspaceService,
     RoleService,
-    ThingService,
+    MonitoringSiteService,
     ObservedPropertyService,
     UnitService,
     ProcessingLevelService,
     ResultQualifierService,
-    SensorService,
+    MethodService,
     DatastreamService,
     DataConnectionService,
     TaskService,
+    EtlMappingService,
     MonitoringTaskService,
     MonitoringRuleService,
     RatingCurveService,
@@ -25,49 +26,70 @@ class HydroServer:
     def __init__(
         self,
         host: str,
-        auth_route: str = "/api/auth",
-        base_route: str = "/api/data",
+        base_route: str = "/api/ogc",
         email: Optional[str] = None,
         password: Optional[str] = None,
         apikey: Optional[str] = None,
+        access_token: Optional[Union[str, Callable[[], Optional[str]]]] = None,
     ):
         self.host = host.strip("/")
         self.base_route = base_route
-        self.auth = (
-            (
-                email or "__key__",
-                password or apikey,
+        if (email is None) ^ (password is None):
+            raise ValueError("Both email and password must be provided together.")
+        if access_token is not None and (apikey is not None or email is not None):
+            raise ValueError(
+                "Provide only one of access_token, apikey, or email and password."
             )
-            if (email and password) or apikey
-            else None
-        )
 
-        self._auth_url = f"{self.host}{auth_route}/app/session"
+        self.auth: Optional[Tuple[str, str]] = None
+        self.apikey = apikey
+        if email and password:
+            self.auth = (email, password)
+
+        self._access_token = access_token
 
         self._session = None
         self._timeout = 60
-        self._auth_header = None
 
         self._init_session()
 
-    def login(self, email: str, password: str) -> None:
-        """Provide your HydroServer credentials to log in to your account."""
+    @staticmethod
+    def _encode_query_value(value):
+        """
+        Encodes booleans as the lowercase 'true' and 'false' the API requires; requests would
+        otherwise send str(value), i.e. 'True' and 'False'.
+        """
 
-        self._init_session(auth=(email, password))
+        if isinstance(value, bool):
+            return "true" if value else "false"
+        if isinstance(value, (list, tuple)):
+            return [HydroServer._encode_query_value(item) for item in value]
 
-    def logout(self) -> None:
-        """End your HydroServer session."""
-
-        self._session.delete(self._auth_url, timeout=self._timeout)
+        return value
 
     def request(self, method, path, *args, **kwargs) -> requests.Response:
         """Sends a request to HydroServer's API."""
 
+        if isinstance(kwargs.get("params"), dict):
+            kwargs["params"] = {
+                key: self._encode_query_value(value) for key, value in kwargs["params"].items()
+            }
+
+        caller_headers = kwargs.pop("headers", None) or {}
+
         for attempt in range(2):
+            headers = dict(caller_headers)
+            access_token = self._resolve_access_token()
+            if access_token and not any(
+                key.lower() == "authorization" for key in headers
+            ):
+                headers["Authorization"] = f"Bearer {access_token}"
+
             try:
                 response = getattr(self._session, method)(
                     f"{self.host}/{path.strip('/')}",
                     timeout=self._timeout,
+                    headers=headers,
                     *args,
                     **kwargs,
                 )
@@ -88,35 +110,23 @@ class HydroServer:
 
             return response
 
+    def _resolve_access_token(self) -> Optional[str]:
+        if callable(self._access_token):
+            return self._access_token()
+        return self._access_token
+
     def _init_session(self, auth: Optional[Tuple[str, str]] = None) -> None:
         if self._session is not None:
-            self.logout()
             self._session.close()
 
         self._session = requests.Session()
 
         auth = auth or self.auth
 
-        if auth and auth[0] == "__key__":
-            self._session.headers.update({"X-API-Key": auth[1]})
+        if self.apikey:
+            self._session.headers.update({"X-API-Key": self.apikey})
         elif auth:
-            self._session.headers.update(
-                {"Authorization": f"Bearer {self._authenticate(auth[0], auth[1])}"}
-            )
-
-    def _authenticate(self, email: str, password: str) -> None:
-        response = self._session.post(
-            self._auth_url,
-            json={"email": email, "password": password},
-            timeout=self._timeout,
-        )
-        response.raise_for_status()
-        session_token = response.json().get("meta", {}).get("session_token")
-
-        if not session_token:
-            raise ValueError("Authentication failed: No access token returned.")
-
-        return session_token
+            self._session.auth = auth
 
     @staticmethod
     def _raise_for_hs_status(response):
@@ -124,13 +134,13 @@ class HydroServer:
             response.raise_for_status()
         except requests.HTTPError as e:
             try:
-                http_error_msg = (
-                    f"{response.status_code} Client Error: "
-                    f"{str(json.loads(response.content).get('detail'))}"
-                )
+                body = json.loads(response.content)
+                error_detail = body.get("message") or body.get("detail") or response.text
+                http_error_msg = f"{response.status_code} Client Error: {error_detail}"
             except (
                     ValueError,
                     TypeError,
+                    AttributeError,
             ):
                 http_error_msg = e
             if 400 <= response.status_code < 500:
@@ -151,10 +161,10 @@ class HydroServer:
         return RoleService(self)
 
     @property
-    def things(self):
-        """Utilities for managing HydroServer things."""
+    def monitoring_sites(self):
+        """Utilities for managing HydroServer monitoring_sites."""
 
-        return ThingService(self)
+        return MonitoringSiteService(self)
 
     @property
     def observedproperties(self):
@@ -181,10 +191,10 @@ class HydroServer:
         return ResultQualifierService(self)
 
     @property
-    def sensors(self):
-        """Utilities for managing HydroServer sensors."""
+    def methods(self):
+        """Utilities for managing HydroServer methods."""
 
-        return SensorService(self)
+        return MethodService(self)
 
     @property
     def datastreams(self):
@@ -203,6 +213,12 @@ class HydroServer:
         """Utilities for managing HydroServer ETL tasks."""
 
         return TaskService(self)
+
+    @property
+    def etlmappings(self):
+        """Utilities for managing HydroServer ETL mappings."""
+
+        return EtlMappingService(self)
 
     @property
     def monitoringtasks(self):

@@ -1,11 +1,11 @@
 <template>
   <v-card-title>
-    <div class="d-flex justify-space-between w-100">Summary Statistics</div>
+    <div class="d-flex justify-space-between w-100">Summary statistics</div>
   </v-card-title>
   <v-divider />
 
   <div class="summary-table-wrapper">
-    <v-data-table density="compact" class="elevation-1">
+    <v-data-table density="compact" class="summary-table">
       <tbody>
         <tr v-for="header in summaryStatsHeaders" :key="header.key">
           <td>{{ header.title }}</td>
@@ -42,15 +42,15 @@ const summaryStatsHeaders = [
   { title: 'Name', key: 'name' },
   { title: 'Maximum', key: 'maximum' },
   { title: 'Minimum', key: 'minimum' },
-  { title: 'Arithmetic Mean', key: 'arithmeticMean' },
-  { title: 'Standard Deviation', key: 'standardDeviation' },
+  { title: 'Arithmetic mean', key: 'arithmeticMean' },
+  { title: 'Standard deviation', key: 'standardDeviation' },
   { title: 'Observations', key: 'observations' },
-  { title: 'Coefficient of Variation', key: 'coefficientOfVariation' },
-  { title: '10% Quantile', key: 'quantile10' },
-  { title: '25% Quantile', key: 'quantile25' },
+  { title: 'Coefficient of variation', key: 'coefficientOfVariation' },
+  { title: '10% quantile', key: 'quantile10' },
+  { title: '25% quantile', key: 'quantile25' },
   { title: 'Median', key: 'median' },
-  { title: '75% Quantile', key: 'quantile75' },
-  { title: '90% Quantile', key: 'quantile90' },
+  { title: '75% quantile', key: 'quantile75' },
+  { title: '90% quantile', key: 'quantile90' },
 ]
 </script>
 
@@ -61,12 +61,17 @@ const summaryStatsHeaders = [
 }
 
 table th + th {
-  border-left: 1px solid #dddddd;
+  border-left: 1px solid var(--hs-border);
 }
 table td + td {
-  border-left: 1px solid #dddddd;
+  border-left: 1px solid var(--hs-border);
 }
 table tr:last-child td {
-  border-bottom: 1px solid #dddddd;
+  border-bottom: 1px solid var(--hs-border);
+}
+
+.summary-table {
+  color: var(--hs-text-primary);
+  background: var(--hs-surface);
 }
 </style>

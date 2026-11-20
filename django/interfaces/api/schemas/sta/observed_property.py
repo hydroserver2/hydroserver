@@ -1,69 +1,129 @@
 import uuid
-from typing import Optional, Literal, TYPE_CHECKING
+
+from typing import Optional, Literal, Annotated
+from pydantic import BeforeValidator, WithJsonSchema
+from pydantic.alias_generators import to_camel
 from ninja import Schema, Field, Query
+
+from core.sta.models import ObservedPropertyType
 from interfaces.api.schemas import (
     BaseGetResponse,
     BasePostBody,
     BasePatchBody,
+    BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
+    WorkspaceResponse,
+    split_comma_separated,
+    comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
-
-if TYPE_CHECKING:
-    from interfaces.api.schemas import WorkspaceSummaryResponse
+from interfaces.api.schemas.sta.vocabulary import VocabularyResponse
+from interfaces.api.schemas.base import ItemId, NewItemId
 
 
 class ObservedPropertyFields(Schema):
     name: str = Field(..., max_length=255)
-    definition: str
+    definition: Optional[str] = Field(None, max_length=2000)
     description: str
-    observed_property_type: str = Field(..., max_length=255, alias="type")
-    code: str = Field(..., max_length=255)
+    type: str = Field(..., max_length=255)
+    code: Optional[str] = Field(None, max_length=255)
 
 
-_order_by_fields = (
+OBSERVED_PROPERTY_INCLUDE_RELATIONS = {
+    "workspace": {
+        "path": "workspace",
+        "bucket": "workspaces",
+        "response_schema": WorkspaceResponse,
+    },
+    "type": {
+        "bucket": "observedPropertyTypes",
+        "response_schema": VocabularyResponse,
+        "vocabulary_model": ObservedPropertyType,
+        "value_field": "type",
+    },
+}
+ObservedPropertyIncludeRelation = Literal[*OBSERVED_PROPERTY_INCLUDE_RELATIONS.keys()]
+
+_sortby_fields = (
     "name",
     "type",
     "code",
 )
-
-ObservedPropertyOrderByFields = Literal[
-    *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
+ObservedPropertySortByFields = Literal[
+    *_sortby_fields, *[f"-{f}" for f in _sortby_fields]
 ]
 
+_property_fields = (
+    "id", "workspaceId", *(to_camel(name) for name in ObservedPropertyFields.model_fields)
+)
+ObservedPropertyPropertyName = Literal[*_property_fields]
 
-class ObservedPropertyQueryParameters(CollectionQueryParameters):
-    expand_related: Optional[bool] = None
-    order_by: Optional[list[ObservedPropertyOrderByFields]] = Query(
-        [], description="Select one or more fields to order the response by."
+
+class ObservedPropertyFilterFields(Schema):
+    properties: Annotated[
+        Optional[list[ObservedPropertyPropertyName]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(ObservedPropertyPropertyName)),
+    ] = Query(
+        None,
+        description="Comma-separated list of properties to include in the response. "
+        "All properties are returned if omitted.",
+    )
+    include: Annotated[
+        Optional[list[ObservedPropertyIncludeRelation]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(ObservedPropertyIncludeRelation)),
+    ] = Query(
+        None,
+        description="Comma-separated list of related resources to include in the response.",
+    )
+
+
+class ObservedPropertyItemQueryParameters(ObservedPropertyFilterFields, BaseQueryParameters):
+    pass
+
+
+class ObservedPropertyQueryParameters(ObservedPropertyFilterFields, CollectionQueryParameters, ExtentQueryParameters):
+    sortby: Annotated[
+        Optional[list[ObservedPropertySortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(ObservedPropertySortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
+    q: Optional[str] = Query(
+        None,
+        description="Full-text search query. Comma-separated terms are combined with OR; "
+        "whitespace-separated words within a term are combined with AND.",
     )
     workspace_id: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter observed properties by workspace ID."
+        [],
+        description="Observed properties that belong to this workspace. Matches `id` in `workspaces`. `null` "
+        "matches observed properties shared by every workspace.",
     )
-    datastreams__thing_id: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter observed properties by thing ID.", alias="thing_id"
+    datastreams__monitoring_site_id: list[uuid.UUID | Literal["null"]] = Query(
+        [],
+        description="Observed properties used by datastreams at this monitoring site. Matches `id` in "
+        "`monitoring-sites`. `null` matches observed properties that no datastream uses.",
+        alias="monitoringSiteId",
     )
     datastreams__id: list[uuid.UUID | Literal["null"]] = Query(
         [],
-        description="Filter observed properties by datastream ID.",
-        alias="datastream_id",
+        description="Observed properties used by this datastream. Matches `id` in `datastreams`. `null` "
+        "matches observed properties that no datastream uses.",
+        alias="datastreamId",
     )
-    observed_property_type: list[str] = Query(
-        [], description="Filter observed properties by type", alias="type"
+    type: list[str] = Query(
+        [],
+        description="Observed properties of this type. Matches `name` in `observed-property-types`.",
     )
 
 
-class ObservedPropertySummaryResponse(BaseGetResponse, ObservedPropertyFields):
-    id: uuid.UUID
+class ObservedPropertyResponse(BaseGetResponse, ObservedPropertyFields, ItemId):
     workspace_id: Optional[uuid.UUID] = None
 
 
-class ObservedPropertyDetailResponse(BaseGetResponse, ObservedPropertyFields):
-    id: uuid.UUID
-    workspace: Optional["WorkspaceSummaryResponse"]
-
-
-class ObservedPropertyPostBody(BasePostBody, ObservedPropertyFields):
-    id: Optional[uuid.UUID] = None
+class ObservedPropertyPostBody(BasePostBody, ObservedPropertyFields, NewItemId):
     workspace_id: Optional[uuid.UUID]
 
 

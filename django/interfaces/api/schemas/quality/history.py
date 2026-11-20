@@ -1,17 +1,105 @@
 import uuid
-from typing import Optional
-from ninja import Query
+
+from typing import Optional, Literal, Annotated
+from pydantic import BeforeValidator, WithJsonSchema
+from ninja import Query, Schema
+
 from core.types import ISODatetime
 from interfaces.api.schemas import (
     BaseGetResponse,
     BasePostBody,
+    BaseQueryParameters,
     CollectionQueryParameters,
-    DatastreamSummaryResponse,
+    ExtentQueryParameters,
+    DatastreamResponse,
+    split_comma_separated,
+    comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
+from interfaces.api.schemas.base import ItemId
 
 
-class QualityControlHistorySummaryResponse(BaseGetResponse):
-    id: uuid.UUID
+QUALITY_CONTROL_HISTORY_INCLUDE_RELATIONS = {
+    "managedDatastream": {
+        "path": "managed_datastream",
+        "bucket": "managedDatastreams",
+        "response_schema": DatastreamResponse,
+    },
+    "sourceDatastream": {
+        "path": "source_datastream",
+        "bucket": "sourceDatastreams",
+        "response_schema": DatastreamResponse,
+    },
+}
+QualityControlHistoryIncludeRelation = Literal[
+    *QUALITY_CONTROL_HISTORY_INCLUDE_RELATIONS.keys()
+]
+
+_sortby_fields = ("id", "createdAt", "phenomenonTimeStart", "phenomenonTimeEnd")
+QualityControlHistorySortByFields = Literal[
+    *_sortby_fields, *[f"-{f}" for f in _sortby_fields]
+]
+
+_property_fields = (
+    "id",
+    "managedDatastreamId",
+    "sourceDatastreamId",
+    "createdAt",
+    "phenomenonTimeStart",
+    "phenomenonTimeEnd",
+    "sourceChecksum",
+    "managedChecksum",
+)
+QualityControlHistoryPropertyName = Literal[*_property_fields]
+
+
+class QualityControlHistoryFilterFields(Schema):
+    properties: Annotated[
+        Optional[list[QualityControlHistoryPropertyName]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(QualityControlHistoryPropertyName)),
+    ] = Query(
+        None,
+        description="Comma-separated list of properties to include in the response. "
+        "All properties are returned if omitted.",
+    )
+    include: Annotated[
+        Optional[list[QualityControlHistoryIncludeRelation]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(QualityControlHistoryIncludeRelation)),
+    ] = Query(
+        None,
+        description="Comma-separated list of related resources to include in the response.",
+    )
+
+
+class QualityControlHistoryItemQueryParameters(
+    QualityControlHistoryFilterFields, BaseQueryParameters
+):
+    pass
+
+
+class QualityControlHistoryQueryParameters(
+    QualityControlHistoryFilterFields, CollectionQueryParameters, ExtentQueryParameters
+):
+    sortby: Annotated[
+        Optional[list[QualityControlHistorySortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(QualityControlHistorySortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
+    managed_datastream_id: list[uuid.UUID] = Query(
+        [],
+        description="The history whose managed datastream is this datastream. Matches `id` in `datastreams`.",
+    )
+    source_datastream_id: list[uuid.UUID | Literal["null"]] = Query(
+        [],
+        description="Histories whose source datastream is this datastream. Matches `id` in `datastreams`. "
+        "`null` matches histories without a source datastream.",
+    )
+
+
+class QualityControlHistoryResponse(BaseGetResponse, ItemId):
     managed_datastream_id: uuid.UUID
     source_datastream_id: uuid.UUID
     created_at: ISODatetime
@@ -19,27 +107,6 @@ class QualityControlHistorySummaryResponse(BaseGetResponse):
     phenomenon_time_end: Optional[ISODatetime] = None
     source_checksum: Optional[str] = None
     managed_checksum: Optional[str] = None
-
-
-class QualityControlHistoryDetailResponse(BaseGetResponse):
-    id: uuid.UUID
-    managed_datastream: DatastreamSummaryResponse
-    source_datastream: DatastreamSummaryResponse
-    created_at: ISODatetime
-    phenomenon_time_start: Optional[ISODatetime] = None
-    phenomenon_time_end: Optional[ISODatetime] = None
-    source_checksum: Optional[str] = None
-    managed_checksum: Optional[str] = None
-
-
-class QualityControlHistoryQueryParameters(CollectionQueryParameters):
-    expand_related: Optional[bool] = None
-    managed_datastream_id: list[uuid.UUID] = Query(
-        [], description="Filter histories by managed datastream ID."
-    )
-    source_datastream_id: list[uuid.UUID] = Query(
-        [], description="Filter histories by source datastream ID."
-    )
 
 
 class QualityControlHistoryPostBody(BasePostBody):

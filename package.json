@@ -3,6 +3,7 @@
   "private": true,
   "workspaces": [
     "apps/qc-app",
+    "packages/design-system",
     "packages/qc-utils"
   ],
   "scripts": {

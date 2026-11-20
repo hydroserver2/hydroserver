@@ -61,8 +61,8 @@ export interface SiteTypeIconRule {
 
 export const fallbackSiteTypeIcon = mdiMapMarkerOutline
 
-const normalizeSiteType = (siteType: string) =>
-  siteType
+const normalizeSiteType = (type: string) =>
+  type
     .toLowerCase()
     .replace(/[^\p{L}\p{N}]+/gu, ' ')
     .trim()
@@ -84,10 +84,10 @@ export const buildSiteTypeIconRules = (
     .sort((a, b) => b.keyword.length - a.keyword.length)
 
 export const getSiteTypeIcon = (
-  siteType: string,
+  type: string,
   rules: SiteTypeIconRule[]
 ): string => {
-  const normalizedSiteType = normalizeSiteType(siteType)
+  const normalizedSiteType = normalizeSiteType(type)
   const exactMatch = rules.find(({ keyword }) => keyword === normalizedSiteType)
   if (exactMatch) return exactMatch.icon
 

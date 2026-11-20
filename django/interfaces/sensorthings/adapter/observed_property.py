@@ -1,6 +1,7 @@
 from ninja.errors import HttpError
 from django.db.utils import DataError, DatabaseError
 from sensorthings.types import Absent
+from core.iam.permissions.anonymous import AnonymousPrincipal
 from core.sta.models import ObservedProperty
 from sensorthings.versions.v1_1.dto import EntityResultSetDTO, CollectionDTO, ObservedPropertyDTO
 from .utils import SensorThingsUtils
@@ -11,13 +12,12 @@ class ObservedPropertyMixin(SensorThingsUtils):
     def get_observed_properties(self, filters=None, orderby=None, group_by=None,
                                 select=None, top=100, skip=0, count=False, context=None):
         needs_properties = select is None or "properties" in select
+        principal = context.principal if context else AnonymousPrincipal()
 
         observed_properties = ObservedProperty.objects
         if needs_properties:
             observed_properties = observed_properties.select_related("workspace")
-        observed_properties = observed_properties.visible(
-            principal=context.principal if context else None
-        )
+        observed_properties = principal.filter_by_permission(observed_properties, "can_view")
 
         if filters:
             observed_properties = self.apply_filters(
@@ -51,16 +51,17 @@ class ObservedPropertyMixin(SensorThingsUtils):
                     id=self.select_field(select, "id", observed_property.id),
                     name=self.select_field(select, "name", observed_property.name),
                     description=self.select_field(select, "description", observed_property.description),
-                    definition=self.select_field(select, "definition", observed_property.definition),
+                    definition=self.select_field(
+                        select, "definition", observed_property.definition or ""
+                    ),
                     properties=(
                         {
                             "variable_code": observed_property.code,
-                            "variable_type": observed_property.observed_property_type,
+                            "variable_type": observed_property.type,
                             "workspace": (
                                 {
                                     "id": observed_property.workspace.id,
                                     "name": observed_property.workspace.name,
-                                    "link": observed_property.workspace.link,
                                     "is_private": observed_property.workspace.is_private,
                                 }
                                 if observed_property.workspace else None

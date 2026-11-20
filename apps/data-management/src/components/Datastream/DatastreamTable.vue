@@ -1,425 +1,259 @@
 <template>
-  <h6 class="text-h6" style="color: #b71c1c">
-    {{ thing!.dataDisclaimer }}
-  </h6>
+  <section
+    ref="datastreamSectionRef"
+    class="site-datastreams"
+    aria-labelledby="site-datastreams-heading"
+  >
+    <p
+      v-if="monitoringSite?.dataDisclaimer"
+      class="site-datastreams__disclaimer hs-text-md"
+    >
+      {{ monitoringSite.dataDisclaimer }}
+    </p>
 
-  <v-card ref="datastreamSectionRef">
-    <div class="datastream-toolbar">
-      <div class="datastream-toolbar__left">
-        <h5 class="text-h6 datastream-toolbar__title">
-          Datastreams available at this site
-        </h5>
-        <v-text-field
-          v-model="search"
-          clearable
-          :prepend-inner-icon="mdiMagnify"
-          label="Search"
-          hide-details
-          density="compact"
-          variant="underlined"
-          rounded="xl"
-          class="datastream-search ml-2"
-        />
+    <div class="hs-table-tools site-datastreams__tools">
+      <div class="site-datastreams__tools-primary">
+        <div class="site-datastreams__heading">
+          <h2 id="site-datastreams-heading" class="hs-subheading">
+            Datastreams
+          </h2>
+          <span class="hs-text-sm site-datastreams__count">
+            {{ tableDatastreams.length }} available
+          </span>
+        </div>
+
+        <div class="hs-table-actions">
+          <v-btn
+            size="small"
+            variant="text"
+            :prepend-icon="mdiChartLine"
+            :to="{
+              name: 'VisualizeData',
+              query: { sites: monitoringSite!.id },
+            }"
+          >
+            Visualize
+          </v-btn>
+          <v-btn
+            size="small"
+            variant="text"
+            :aria-pressed="showDatastreamIds"
+            @click="showDatastreamIds = !showDatastreamIds"
+          >
+            {{ showDatastreamIds ? 'Display less' : 'Display more' }}
+          </v-btn>
+          <v-btn-page-action
+            v-if="
+              hasPermission(
+                PermissionResource.Datastream,
+                PermissionAction.Create,
+                workspace
+              )
+            "
+            size="small"
+            data-testid="add-datastream-button"
+            @click="openCreate = true"
+          >
+            Add datastream
+          </v-btn-page-action>
+        </div>
       </div>
-      <div class="datastream-toolbar__actions">
-        <v-btn
-          color="white"
-          variant="outlined"
-          :prependIcon="mdiChartLine"
-          :to="{ name: 'VisualizeData', query: { sites: thing!.id } }"
-          >View on Data Visualization Page</v-btn
-        >
-        <v-btn-add
-          v-if="
-            hasPermission(
-              PermissionResource.Datastream,
-              PermissionAction.Create,
-              workspace
-            )
-          "
-          color="white"
-          :prependIcon="mdiPlus"
-          data-testid="add-datastream-button"
-          @click="openCreate = true"
-          >Add new datastream</v-btn-add
-        >
-      </div>
+
+      <HsQuerySearchInput
+        :model-value="search"
+        placeholder="Search datastreams…"
+        aria-label="Search datastreams"
+        :qualifiers="searchQualifiers"
+        @update:model-value="updateSearch"
+        @clear="clearSearch"
+      />
     </div>
 
-    <div v-if="isMobile" class="datastream-mobile-list">
-      <v-card
-        v-for="item in tableDatastreams"
-        :key="item.id"
-        class="datastream-card"
-        :class="{
-          'datastream-card--highlighted': isTargetDatastream(item.id),
-        }"
-        :data-datastream-id="item.id"
-        variant="outlined"
-      >
-        <div class="datastream-card__content">
-          <div class="datastream-card__title">
-            {{ item.name || item.OPName }}
-          </div>
-          <div
-            v-if="
-              !hasPermission(
-                PermissionResource.Datastream,
-                PermissionAction.View,
-                workspace
-              ) && !item.isVisible
-            "
-            class="text-body-2"
-          >
-            Data is private for this datastream
-          </div>
-          <div v-else>
-            <Sparkline
-              class="mt-1"
-              :datastream="item"
-              @openChart="openCharts[item.id] = true"
-              @latest-value="(value) => handleLatestValueUpdate(item.id, value)"
-              :unitName="item.unitName"
-            />
-            <div
-              v-if="Number(item.valueCount) > 0"
-              class="mt-1 text-base leading-[1.3]"
-              :class="latestStatusClass(item)"
+    <div class="hs-table-card site-datastreams__table-card">
+      <div class="site-datastreams__table-controls">
+        <div class="site-datastreams__filter-header-content">
+          <div class="site-datastreams__filters">
+            <HsTableFilterMenu
+              v-for="filter in filterDefinitions"
+              :key="filter.key"
+              v-model:search="filterSearches[filter.key]"
+              :title="`Filter by ${filter.label}`"
+              :label="filter.label"
+              :section-label="filter.sectionLabel"
+              :options="filter.options"
+              :selected="parsedSearch.filters[filter.key]"
+              case-insensitive
+              :empty-text="`No ${filter.label.toLowerCase()} found`"
+              @toggle="toggleFilter(filter.key, $event)"
             >
-              <strong class="mr-2 font-semibold">Latest observation:</strong>
-              <span class="font-semibold">{{ item.endDate }}</span>
-            </div>
-            <div
-              v-if="shouldShowLatestValue(item.id)"
-              class="mt-1 text-base leading-[1.3]"
-              :class="latestStatusClass(item)"
-            >
-              <strong class="mr-2 font-semibold">Latest value:</strong>
-              <span class="font-semibold">{{ latestValueDisplay(item) }}</span>
-            </div>
+              <template #activator="{ props: menuProps }">
+                <v-btn
+                  v-bind="menuProps"
+                  variant="text"
+                  size="small"
+                  class="site-datastreams__filter-button"
+                  :class="{
+                    'site-datastreams__filter-button--active': filter.selectedCount > 0,
+                  }"
+                  :append-icon="mdiChevronDown"
+                  :aria-label="`Filter by ${filter.label.toLowerCase()}`"
+                >
+                  {{ filter.label }}
+                  <span
+                    v-if="filter.selectedCount"
+                    class="site-datastreams__filter-count"
+                  >
+                    {{ filter.selectedCount }}
+                  </span>
+                </v-btn>
+              </template>
+            </HsTableFilterMenu>
           </div>
 
-          <v-dialog v-model="openCharts[item.id]" width="80rem">
-            <DatastreamPopupPlot
-              :datastream="item"
-              @close="openCharts[item.id] = false"
-            />
-          </v-dialog>
-
-          <div class="datastream-info-list">
-            <p class="datastream-line">
-              <strong class="mr-2">Identifier:</strong>
-              <span class="datastream-id">
-                {{ item.id }}
-                <v-tooltip text="Copy ID">
-                  <template #activator="{ props }">
-                    <v-btn
-                      v-bind="props"
-                      icon
-                      size="default"
-                      variant="text"
-                      class="datastream-copy-btn"
-                      @click.stop="copyDatastreamId(item.id)"
-                    >
-                      <v-icon :icon="mdiContentCopy" size="small" />
-                    </v-btn>
-                  </template>
-                </v-tooltip>
-              </span>
-            </p>
-            <p class="datastream-line">
-              <strong class="mr-2">Sampled medium:</strong>
-              <span>{{ item.sampledMedium }}</span>
-            </p>
-            <p class="datastream-line">
-              <strong class="mr-2">Method:</strong>
-              <span>{{ item.sensorName }}</span>
-            </p>
-            <p class="datastream-line">
-              <strong class="mr-2">No data value:</strong>
-              <span>{{ item.noDataValue }}</span>
-            </p>
-            <p class="datastream-line">
-              <strong class="mr-2">Begin date:</strong>
-              <span>{{ item.beginDate }}</span>
-            </p>
-            <p class="datastream-line">
-              <strong class="mr-2">End date:</strong>
-              <span>{{ item.endDate }}</span>
-            </p>
-            <p class="datastream-line">
-              <strong class="mr-2">Number of observations:</strong>
-              <span>{{ item.valueCount }}</span>
-            </p>
-          </div>
-          <div
-            v-if="canViewOrchestrationInfo && linkedTasksLoaded"
-            class="datastream-task-link"
-            :class="datastreamTaskLinkClass(item.id)"
-          >
-            <v-icon
-              :class="[
-                'datastream-task-link__icon',
-                linkedTasksForDatastream(item.id).length === 1
-                  ? linkedTasksForDatastream(item.id)[0].iconClass
-                  : '',
-              ]"
-              :icon="
-                !linkedTasksForDatastream(item.id).length
-                  ? mdiLinkOff
-                  : linkedTasksForDatastream(item.id).length > 1
-                  ? mdiAlertOctagon
-                  : linkedTasksForDatastream(item.id)[0].icon
-              "
-              size="20"
-            />
-            <div class="datastream-task-link__body">
-              <div class="datastream-task-link__meta">
-                <span class="datastream-task-link__label">
-                  {{
-                    linkedTasksForDatastream(item.id).length > 1
-                      ? 'Multiple task targets'
-                      : linkedTasksForDatastream(item.id).length === 1
-                      ? linkedTasksForDatastream(item.id)[0].label
-                      : 'No task connected'
-                  }}
-                </span>
-                <template v-if="linkedTasksForDatastream(item.id).length === 1">
-                  <RouterLink
-                    class="datastream-task-link__name"
-                    :to="linkedTasksForDatastream(item.id)[0].route"
-                  >
-                    {{ linkedTasksForDatastream(item.id)[0].displayName }}
-                  </RouterLink>
-                  <span
-                    class="datastream-task-link__status"
-                    :title="
-                      displayedTaskStatus(linkedTasksForDatastream(item.id)[0])
-                    "
-                  >
-                    <span
-                      class="datastream-task-link__dot"
-                      :style="{
-                        backgroundColor: taskStatusColor(
-                          linkedTasksForDatastream(item.id)[0]
-                        ),
-                      }"
-                    />
-                    <span class="datastream-task-link__last-ran">
-                      {{ lastRanLabel(linkedTasksForDatastream(item.id)[0]) }}
-                    </span>
-                  </span>
-                </template>
-                <span v-else class="datastream-task-link__conflict-text">
-                  {{
-                    linkedTasksForDatastream(item.id).length > 1
-                      ? `${
-                          linkedTasksForDatastream(item.id).length
-                        } tasks are feeding this datastream.`
-                      : ''
-                  }}
-                </span>
-              </div>
-              <div
-                v-if="linkedTasksForDatastream(item.id).length > 1"
-                class="datastream-task-link__tasks"
-              >
-                <RouterLink
-                  v-for="task in linkedTasksForDatastream(item.id)"
-                  :key="task.id"
-                  :to="task.route"
-                >
-                  {{ task.displayName }}
-                </RouterLink>
-              </div>
-            </div>
-            <v-btn
-              v-if="linkedTasksForDatastream(item.id).length === 1"
-              size="small"
-              variant="text"
-              color="primary"
-              :append-icon="mdiChevronRight"
-              :to="linkedTasksForDatastream(item.id)[0].route"
-            >
-              Manage task
-            </v-btn>
-            <div
-              v-if="monitoringTasksForDatastream(item.id).length"
-              class="datastream-task-link__monitoring"
-            >
-              <v-icon
-                :icon="mdiShieldCheckOutline"
-                size="20"
-                class="datastream-task-link__monitoring-icon"
-              />
-              <div class="datastream-task-link__monitoring-body">
-                <span class="datastream-task-link__label">
-                  Quality monitoring
-                </span>
-                <span
-                  v-for="task in monitoringTasksForDatastream(item.id)"
-                  :key="task.id"
-                  class="datastream-task-link__monitoring-task"
-                >
-                  <RouterLink
-                    class="datastream-task-link__name"
-                    :to="task.route"
-                  >
-                    {{ task.displayName }}
-                  </RouterLink>
-                  <span
-                    class="datastream-task-link__quality-outcome"
-                    :class="monitoringOutcomeClass(task)"
-                  >
-                    {{ monitoringOutcomeLabel(task) }}
-                  </span>
-                  <span
-                    class="datastream-task-link__status"
-                    :title="monitoringLastRunStatus(task)"
-                  >
-                    <span
-                      class="datastream-task-link__dot"
-                      :style="{
-                        backgroundColor: monitoringLastRunColor(task),
-                      }"
-                    />
-                    <span class="datastream-task-link__last-ran">
-                      {{ lastRanLabel(task) }}
-                    </span>
-                  </span>
-                </span>
-              </div>
+          <v-menu location="bottom end" attach="body">
+            <template #activator="{ props: menuProps }">
               <v-btn
-                v-if="monitoringTasksForDatastream(item.id).length === 1"
-                size="small"
+                v-bind="menuProps"
                 variant="text"
-                color="primary"
-                :append-icon="mdiChevronRight"
-                :to="monitoringTasksForDatastream(item.id)[0].route"
+                size="small"
+                :prepend-icon="mdiSort"
+                :append-icon="mdiChevronDown"
+                class="site-datastreams__sort-button"
               >
-                Manage monitoring
+                {{ sortButtonLabel }}
               </v-btn>
-            </div>
-          </div>
-          <div
-            v-else-if="showTaskSkeleton"
-            class="datastream-task-link datastream-task-link--loading"
-            aria-label="Loading task information"
-          >
-            <span class="datastream-task-link__loading-icon" />
-            <div class="datastream-task-link__body">
-              <span
-                class="datastream-task-link__loading-bar datastream-task-link__loading-bar--label"
-              />
-              <span
-                class="datastream-task-link__loading-bar datastream-task-link__loading-bar--name"
-              />
-            </div>
-          </div>
+            </template>
+            <v-list class="site-datastreams__sort-menu" density="comfortable">
+              <div class="site-datastreams__sort-menu-title">Sort by</div>
+              <v-list-item
+                v-for="option in sortOptions"
+                :key="option.key"
+                @click="setSortKey(option.key)"
+              >
+                <template #prepend>
+                  <v-icon
+                    :icon="mdiCheck"
+                    :class="{
+                      'site-datastreams__sort-check--hidden':
+                        activeSort.key !== option.key,
+                    }"
+                  />
+                </template>
+                <v-list-item-title>{{ option.label }}</v-list-item-title>
+              </v-list-item>
+              <v-divider class="my-1" />
+              <div class="site-datastreams__sort-menu-title">Order</div>
+              <v-list-item
+                v-for="option in sortOrderOptions"
+                :key="option.order"
+                @click="setSortOrder(option.order)"
+              >
+                <template #prepend>
+                  <v-icon :icon="option.icon" />
+                </template>
+                <v-list-item-title>{{ option.label }}</v-list-item-title>
+                <template #append>
+                  <v-icon
+                    :icon="mdiCheck"
+                    :class="{
+                      'site-datastreams__sort-check--hidden':
+                        activeSort.order !== option.order,
+                    }"
+                  />
+                </template>
+              </v-list-item>
+            </v-list>
+          </v-menu>
         </div>
-        <div class="datastream-card__actions">
-          <div class="datastream-card__icons">
-            <v-tooltip
-              bottom
-              :openDelay="500"
-              content-class="pa-0 ma-0 bg-transparent"
-              v-if="
-                hasPermission(
-                  PermissionResource.Datastream,
-                  PermissionAction.Edit,
-                  workspace
-                )
-              "
-            >
-              <template #activator="{ props: tp }">
-                <v-icon
-                  v-bind="tp"
-                  :icon="item.isVisible ? mdiFileEyeOutline : mdiFileRemove"
-                  :color="item.isVisible ? 'green' : 'red-darken-2'"
-                  :data-testid="`data-visibility-toggle-${item.id}`"
-                  small
-                  @click="toggleDataVisibility(item)"
-                />
-              </template>
-
-              <VisibilityTooltipCard
-                title="Observations are currently"
-                :items="[
-                  {
-                    label: 'Clicking this will',
-                    value: item.isVisible
-                      ? 'Hide data for this datastream from guests of your site while keeping the datastream metadata publicly visible.'
-                      : 'Make the observations and metadata for this datastream visible to guests of your site.',
-                  },
-                ]"
-                :is-visible="item.isVisible"
-              />
-            </v-tooltip>
-
-            <v-tooltip
-              bottom
-              :openDelay="500"
-              v-if="
-                hasPermission(
-                  PermissionResource.Datastream,
-                  PermissionAction.Edit,
-                  workspace
-                )
-              "
-              content-class="pa-0 ma-0 bg-transparent"
-            >
-              <template v-slot:activator="{ props }">
-                <v-icon
-                  :icon="item.isPrivate ? mdiLock : mdiLockOpenVariant"
-                  :color="item.isPrivate ? 'red-darken-2' : 'green'"
-                  :data-testid="`datastream-privacy-toggle-${item.id}`"
-                  small
-                  v-bind="props"
-                  @click="toggleVisibility(item)"
-                />
-              </template>
-
-              <VisibilityTooltipCard
-                title="Datastream is currently"
-                :items="[
-                  {
-                    label: 'Clicking this will',
-                    value: item.isPrivate
-                      ? 'Make this datastream and all its metadata and observations publicly visible.'
-                      : 'Hide this datastream from guests of your site along with all its metadata and observations.',
-                  },
-                ]"
-                :is-visible="!item.isPrivate"
-              />
-            </v-tooltip>
-
-            <v-tooltip
-              v-if="
-                !hasPermission(
-                  PermissionResource.Datastream,
-                  PermissionAction.View,
-                  workspace
-                ) && !item.isVisible
-              "
-              bottom
-              :openDelay="100"
-            >
-              <template v-slot:activator="{ props }">
-                <v-icon v-bind="props" :icon="mdiLock" color="red-darken-2" />
-              </template>
-              <span>The data for this datastream is private </span>
-            </v-tooltip>
-
-            <v-menu v-else>
-              <template v-slot:activator="{ props }">
-                <v-icon
-                  v-bind="props"
-                  :icon="mdiDotsVertical"
-                  :data-testid="`datastream-actions-${item.id}`"
-                />
-              </template>
-              <v-list>
-                <v-list-item
+      </div>
+      <table class="site-datastreams__table hs-text-sm">
+        <tbody>
+          <tr
+            v-for="(item, index) in renderedDatastreams"
+            :key="item.id"
+            :class="{
+              'site-datastreams__row--highlighted': isTargetDatastream(item.id),
+            }"
+            :data-datastream-id="item.id"
+            :data-load-more-trigger="
+              isLoadMoreTrigger(index) ? 'true' : undefined
+            "
+          >
+            <td class="site-datastreams__name-cell" data-label="Datastream">
+              <div class="site-datastreams__name-row">
+                <div
+                  class="site-datastreams__name"
+                  :title="datastreamName(item)"
+                >
+                  {{ datastreamName(item) }}
+                </div>
+                <div class="site-datastreams__id">
+                  <span
+                    v-if="showDatastreamIds"
+                    class="hs-font-data hs-text-sm"
+                    :title="item.id"
+                  >
+                    {{ item.id }}
+                  </span>
+                  <HsCopyButton
+                    :value="item.id"
+                    :label="datastreamName(item)"
+                    :data-testid="`copy-datastream-id-${item.id}`"
+                    @copied="
+                      Snackbar.success('Datastream UUID copied to clipboard')
+                    "
+                    @error="Snackbar.error('Failed to copy datastream UUID')"
+                  />
+                </div>
+              </div>
+              <div class="site-datastreams__observation-line">
+                <div
+                  v-if="!canViewData(item)"
+                  class="site-datastreams__private-data"
+                >
+                  <v-icon :icon="mdiLock" size="16" />
+                  Data download restricted
+                </div>
+                <div v-else class="site-datastreams__observations">
+                  <Sparkline
+                    class="site-datastreams__sparkline"
+                    :datastream="item"
+                    :unit-name="item.unitName"
+                    compact
+                    @open-chart="selectedChartDatastream = item"
+                    @latest-value="
+                      (value) => handleLatestValueUpdate(item.id, value)
+                    "
+                  />
+                  <div
+                    class="site-datastreams__latest"
+                    :class="latestStatusClass(item)"
+                  >
+                    <span
+                      v-if="shouldShowLatestValue(item.id)"
+                      class="site-datastreams__latest-item"
+                    >
+                      Latest <strong>{{ latestValueDisplay(item) }}</strong>
+                    </span>
+                    <span
+                      v-if="Number(item.valueCount) > 0"
+                      class="site-datastreams__latest-item"
+                    >
+                      {{ item.endDate }}
+                    </span>
+                    <span
+                      v-if="Number(item.valueCount) > 0"
+                      class="site-datastreams__latest-item site-datastreams__observation-count"
+                    >
+                      {{ formatObservationCount(item.valueCount) }} obs
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td class="site-datastreams__actions-cell" data-label="Actions">
+              <div class="site-datastreams__row-actions">
+                <v-tooltip
                   v-if="
                     hasPermission(
                       PermissionResource.Datastream,
@@ -427,558 +261,338 @@
                       workspace
                     )
                   "
-                  :prepend-icon="mdiPencil"
-                  title="Edit datastream metadata"
-                  :data-testid="`edit-datastream-${item.id}`"
-                  @click="openDialog(item, 'edit')"
-                />
-                <div
+                  bottom
+                  :open-delay="500"
+                  content-class="pa-0 ma-0 bg-transparent"
+                >
+                  <template #activator="{ props: tooltipProps }">
+                    <v-btn-icon
+                      v-bind="tooltipProps"
+                      :icon="item.isRestricted ? mdiFileRemove : mdiFileEyeOutline"
+                      size="small"
+                      :color="item.isRestricted ? 'error' : 'success'"
+                      :data-testid="`data-restriction-toggle-${item.id}`"
+                      :aria-label="`${item.isRestricted ? 'Allow' : 'Restrict'} data download`"
+                      @click="toggleDataRestriction(item)"
+                    />
+                  </template>
+                  <VisibilityTooltipCard
+                    title="Data download is currently"
+                    :items="[
+                      {
+                        label: 'Clicking this will',
+                        value: item.isRestricted
+                          ? 'Allow guests of your site to download and query data for this datastream.'
+                          : 'Restrict data download and query for this datastream. Its metadata, observation count, and time range stay public, but only you and collaborators with permission to view observations can get the data.',
+                      },
+                    ]"
+                    :is-visible="!item.isRestricted"
+                    :status-labels="['Allowed', 'Restricted']"
+                  />
+                </v-tooltip>
+
+                <v-tooltip
                   v-if="
                     hasPermission(
                       PermissionResource.Datastream,
-                      PermissionAction.Delete,
+                      PermissionAction.Edit,
                       workspace
                     )
                   "
+                  bottom
+                  :open-delay="500"
+                  content-class="pa-0 ma-0 bg-transparent"
                 >
-                  <v-list-item
-                    :prepend-icon="mdiTrashCanOutline"
-                    title="Delete datastream"
-                    :data-testid="`delete-datastream-${item.id}`"
-                    @click="openDialog(item, 'delete')"
-                  />
-                </div>
-                <v-list-item
-                  v-if="
-                    hasPermission(
-                      PermissionResource.Observation,
-                      PermissionAction.Delete,
-                      workspace
-                    )
-                  "
-                  :prepend-icon="mdiTrashCanOutline"
-                  title="Delete data from datastream"
-                  :data-testid="`delete-datastream-data-${item.id}`"
-                  @click="openObservationDialog(item)"
-                />
-                <v-list-item
-                  :prepend-icon="mdiChartLine"
-                  title="Visualize data"
-                  :data-testid="`visualize-datastream-${item.id}`"
-                  :to="{
-                    name: 'VisualizeData',
-                    query: { sites: item.thingId, datastreams: item.id },
-                  }"
-                />
-                <v-list-item
-                  v-if="canOpenQcEditor"
-                  :prepend-icon="mdiShieldCheckOutline"
-                  title="Open in QC editor"
-                  :data-testid="`qc-edit-datastream-${item.id}`"
-                  :href="qcEditHref(item.id)"
-                />
-                <v-list-item
-                  :prepend-icon="mdiDownload"
-                  title="Download data"
-                  :data-testid="`download-datastream-${item.id}`"
-                  @click="onDownload(item.id)"
-                />
-              </v-list>
-            </v-menu>
-          </div>
-          <v-btn
-            variant="outlined"
-            class="datastream-card__meta-btn"
-            :data-testid="`datastream-metadata-${item.id}`"
-            @click="openInfoCardFor(item)"
-          >
-            View Full Metadata
-          </v-btn>
-          <div v-if="downloading[item.id]" class="datastream-download mt-2">
-            <v-progress-circular
-              indeterminate
-              size="16"
-              width="2"
-              color="primary"
-            />
-            preparing file...
-          </div>
-        </div>
-      </v-card>
-    </div>
-
-    <div v-else class="datastream-list">
-      <div class="datastream-list__head">
-        <span>Observation information</span>
-        <span>Datastream information</span>
-        <span class="datastream-list__head-actions">Actions</span>
-      </div>
-
-      <div
-        v-for="item in tableDatastreams"
-        :key="item.id"
-        class="ds-card"
-        :class="{ 'ds-card--highlighted': isTargetDatastream(item.id) }"
-        :data-datastream-id="item.id"
-      >
-        <div class="ds-card__grid">
-          <div class="datastream-latest">
-            <div class="datastream-title">
-              {{ item.name || item.OPName }}
-            </div>
-            <div class="mt-1">
-              <div
-                v-if="
-                  !hasPermission(
-                    PermissionResource.Datastream,
-                    PermissionAction.View,
-                    workspace
-                  ) && !item.isVisible
-                "
-                class="text-body-2"
-              >
-                Data is private for this datastream
-              </div>
-              <div v-else>
-                <Sparkline
-                  class="mt-1"
-                  :datastream="item"
-                  @openChart="openCharts[item.id] = true"
-                  @latest-value="
-                    (value) => handleLatestValueUpdate(item.id, value)
-                  "
-                  :unitName="item.unitName"
-                />
-                <div
-                  v-if="Number(item.valueCount) > 0"
-                  class="mt-1 text-base leading-[1.3]"
-                  :class="latestStatusClass(item)"
-                >
-                  <strong class="mr-2 font-semibold"
-                    >Latest observation:</strong
-                  >
-                  <span class="font-semibold">{{ item.endDate }}</span>
-                </div>
-                <div
-                  v-if="shouldShowLatestValue(item.id)"
-                  class="mt-1 text-base leading-[1.3]"
-                  :class="latestStatusClass(item)"
-                >
-                  <strong class="mr-2 font-semibold">Latest value:</strong>
-                  <span class="font-semibold">{{
-                    latestValueDisplay(item)
-                  }}</span>
-                </div>
-              </div>
-            </div>
-
-            <v-dialog v-model="openCharts[item.id]" width="80rem">
-              <DatastreamPopupPlot
-                :datastream="item"
-                @close="openCharts[item.id] = false"
-              />
-            </v-dialog>
-          </div>
-          <div class="datastream-info-list">
-            <p class="datastream-line">
-              <strong class="mr-2">Identifier:</strong>
-              <span class="datastream-id">
-                {{ item.id }}
-                <v-tooltip text="Copy ID">
-                  <template #activator="{ props }">
-                    <v-btn
-                      v-bind="props"
-                      icon
+                  <template #activator="{ props: tooltipProps }">
+                    <v-btn-icon
+                      v-bind="tooltipProps"
+                      :icon="item.isPrivate ? mdiLock : mdiLockOpenVariant"
                       size="small"
-                      variant="text"
-                      @click.stop="copyDatastreamId(item.id)"
-                    >
-                      <v-icon :icon="mdiContentCopy" size="small" />
-                    </v-btn>
+                      :color="item.isPrivate ? 'error' : 'success'"
+                      :data-testid="`datastream-privacy-toggle-${item.id}`"
+                      :aria-label="`Make datastream ${item.isPrivate ? 'public' : 'private'}`"
+                      @click="toggleVisibility(item)"
+                    />
                   </template>
+                  <VisibilityTooltipCard
+                    title="Datastream is currently"
+                    :items="[
+                      {
+                        label: 'Clicking this will',
+                        value: item.isPrivate
+                          ? 'Make this datastream and all its metadata and observations publicly visible.'
+                          : 'Hide this datastream from guests of your site along with all its metadata and observations.',
+                      },
+                    ]"
+                    :is-visible="!item.isPrivate"
+                  />
                 </v-tooltip>
-              </span>
-            </p>
-            <p class="datastream-line">
-              <strong class="mr-2">Sampled medium:</strong>
-              <span>{{ item.sampledMedium }}</span>
-            </p>
-            <p class="datastream-line">
-              <strong class="mr-2">Method:</strong>
-              <span>{{ item.sensorName }}</span>
-            </p>
-            <p class="datastream-line">
-              <strong class="mr-2">No data value:</strong>
-              <span>{{ item.noDataValue }}</span>
-            </p>
-            <p class="datastream-line">
-              <strong class="mr-2">Begin date:</strong>
-              <span>{{ item.beginDate }}</span>
-            </p>
-            <p class="datastream-line">
-              <strong class="mr-2">End date:</strong>
-              <span>{{ item.endDate }}</span>
-            </p>
-            <p class="datastream-line">
-              <strong class="mr-2">Number of observations:</strong>
-              <span>{{ item.valueCount }}</span>
-            </p>
-          </div>
-          <div class="datastream-actions">
-            <div class="datastream-actions__icons">
-              <v-tooltip
-                bottom
-                :openDelay="500"
-                content-class="pa-0 ma-0 bg-transparent"
-                v-if="
-                  hasPermission(
-                    PermissionResource.Datastream,
-                    PermissionAction.Edit,
-                    workspace
-                  )
-                "
-              >
-                <template #activator="{ props: tp }">
-                  <v-icon
-                    v-bind="tp"
-                    :icon="item.isVisible ? mdiFileEyeOutline : mdiFileRemove"
-                    :color="item.isVisible ? 'green' : 'red-darken-2'"
-                    :data-testid="`data-visibility-toggle-${item.id}`"
-                    small
-                    @click="toggleDataVisibility(item)"
-                  />
-                </template>
 
-                <VisibilityTooltipCard
-                  title="Observations are currently"
-                  :items="[
-                    {
-                      label: 'Clicking this will',
-                      value: item.isVisible
-                        ? 'Hide data for this datastream from guests of your site while keeping the datastream metadata publicly visible.'
-                        : 'Make the observations and metadata for this datastream visible to guests of your site.',
-                    },
-                  ]"
-                  :is-visible="item.isVisible"
-                />
-              </v-tooltip>
+                <v-tooltip
+                  v-if="
+                    !canViewData(item)
+                  "
+                  bottom
+                  :open-delay="100"
+                >
+                  <template #activator="{ props: tooltipProps }">
+                    <v-icon
+                      v-bind="tooltipProps"
+                      :icon="mdiLock"
+                      color="error"
+                    />
+                  </template>
+                  <span>
+                    Data download and query are restricted for this
+                    datastream.
+                  </span>
+                </v-tooltip>
 
-              <v-tooltip
-                bottom
-                :openDelay="500"
-                v-if="
-                  hasPermission(
-                    PermissionResource.Datastream,
-                    PermissionAction.Edit,
-                    workspace
-                  )
-                "
-                content-class="pa-0 ma-0 bg-transparent"
-              >
-                <template v-slot:activator="{ props }">
-                  <v-icon
-                    :icon="item.isPrivate ? mdiLock : mdiLockOpenVariant"
-                    :color="item.isPrivate ? 'red-darken-2' : 'green'"
-                    :data-testid="`datastream-privacy-toggle-${item.id}`"
-                    small
-                    v-bind="props"
-                    @click="toggleVisibility(item)"
-                  />
-                </template>
-
-                <VisibilityTooltipCard
-                  title="Datastream is currently"
-                  :items="[
-                    {
-                      label: 'Clicking this will',
-                      value: item.isPrivate
-                        ? 'Make this datastream and all its metadata and observations publicly visible.'
-                        : 'Hide this datastream from guests of your site along with all its metadata and observations.',
-                    },
-                  ]"
-                  :is-visible="!item.isPrivate"
-                />
-              </v-tooltip>
-
-              <v-tooltip
-                v-if="
-                  !hasPermission(
-                    PermissionResource.Datastream,
-                    PermissionAction.View,
-                    workspace
-                  ) && !item.isVisible
-                "
-                bottom
-                :openDelay="100"
-              >
-                <template v-slot:activator="{ props }">
-                  <v-icon v-bind="props" :icon="mdiLock" color="red-darken-2" />
-                </template>
-                <span>The data for this datastream is private </span>
-              </v-tooltip>
-
-              <v-menu v-else>
-                <template v-slot:activator="{ props }">
-                  <v-icon
-                    v-bind="props"
-                    :icon="mdiDotsVertical"
-                    :data-testid="`datastream-actions-${item.id}`"
-                  />
-                </template>
-                <v-list>
-                  <v-list-item
-                    v-if="
-                      hasPermission(
-                        PermissionResource.Datastream,
-                        PermissionAction.Edit,
-                        workspace
-                      )
-                    "
-                    :prepend-icon="mdiPencil"
-                    title="Edit datastream metadata"
-                    :data-testid="`edit-datastream-${item.id}`"
-                    @click="openDialog(item, 'edit')"
-                  />
-                  <div
-                    v-if="
-                      hasPermission(
-                        PermissionResource.Datastream,
-                        PermissionAction.Delete,
-                        workspace
-                      )
-                    "
-                  >
+                <v-menu v-else>
+                  <template #activator="{ props: menuProps }">
+                    <v-btn-icon
+                      v-bind="menuProps"
+                      :icon="mdiDotsVertical"
+                      size="small"
+                      :aria-label="`Actions for ${datastreamName(item)}`"
+                      :data-testid="`datastream-actions-${item.id}`"
+                    />
+                  </template>
+                  <v-list>
                     <v-list-item
+                      v-if="
+                        hasPermission(
+                          PermissionResource.Datastream,
+                          PermissionAction.Edit,
+                          workspace
+                        )
+                      "
+                      :prepend-icon="mdiPencil"
+                      title="Edit datastream metadata"
+                      :data-testid="`edit-datastream-${item.id}`"
+                      @click="openDialog(item, 'edit')"
+                    />
+                    <v-list-item
+                      v-if="
+                        hasPermission(
+                          PermissionResource.Datastream,
+                          PermissionAction.Delete,
+                          workspace
+                        )
+                      "
                       :prepend-icon="mdiTrashCanOutline"
                       title="Delete datastream"
                       :data-testid="`delete-datastream-${item.id}`"
                       @click="openDialog(item, 'delete')"
                     />
-                  </div>
-                  <v-list-item
-                    v-if="
-                      hasPermission(
-                        PermissionResource.Observation,
-                        PermissionAction.Delete,
-                        workspace
-                      )
-                    "
-                    :prepend-icon="mdiTrashCanOutline"
-                    title="Delete data from datastream"
-                    :data-testid="`delete-datastream-data-${item.id}`"
-                    @click="openObservationDialog(item)"
-                  />
-                  <v-list-item
-                    :prepend-icon="mdiChartLine"
-                    title="Visualize data"
-                    :data-testid="`visualize-datastream-${item.id}`"
-                    :to="{
-                      name: 'VisualizeData',
-                      query: { sites: item.thingId, datastreams: item.id },
-                    }"
-                  />
-                  <v-list-item
-                    v-if="canOpenQcEditor"
-                    :prepend-icon="mdiShieldCheckOutline"
-                    title="Open in QC editor"
-                    :data-testid="`qc-edit-datastream-${item.id}`"
-                    :href="qcEditHref(item.id)"
-                  />
-                  <v-list-item
-                    :prepend-icon="mdiDownload"
-                    title="Download data"
-                    :data-testid="`download-datastream-${item.id}`"
-                    @click="onDownload(item.id)"
-                  />
-                </v-list>
-              </v-menu>
-            </div>
-            <v-btn
-              variant="outlined"
-              class="mt-2 datastream-meta-btn"
-              :data-testid="`datastream-metadata-${item.id}`"
-              @click="openInfoCardFor(item)"
+                    <v-list-item
+                      v-if="
+                        hasPermission(
+                          PermissionResource.Observation,
+                          PermissionAction.Delete,
+                          workspace
+                        )
+                      "
+                      :prepend-icon="mdiTrashCanOutline"
+                      title="Delete data from datastream"
+                      :data-testid="`delete-datastream-data-${item.id}`"
+                      @click="openObservationDialog(item)"
+                    />
+                    <v-list-item
+                      :prepend-icon="mdiChartLine"
+                      title="Visualize data"
+                      :data-testid="`visualize-datastream-${item.id}`"
+                      :to="{
+                        name: 'VisualizeData',
+                        query: {
+                          sites: item.monitoringSiteId,
+                          datastreams: item.id,
+                        },
+                      }"
+                    />
+                    <v-list-item
+                      v-if="canOpenQcEditor"
+                      :prepend-icon="mdiShieldCheckOutline"
+                      title="Open in QC editor"
+                      :data-testid="`qc-edit-datastream-${item.id}`"
+                      :href="qcEditHref(item.id)"
+                    />
+                    <v-list-item
+                      :prepend-icon="mdiDownload"
+                      title="Download data"
+                      :data-testid="`download-datastream-${item.id}`"
+                      @click="onDownload(item.id)"
+                    />
+                  </v-list>
+                </v-menu>
+              </div>
+              <v-btn
+                size="small"
+                variant="outlined"
+                class="site-datastreams__metadata-button"
+                :data-testid="`datastream-metadata-${item.id}`"
+                @click="openInfoCardFor(item)"
+              >
+                View full metadata
+              </v-btn>
+              <div
+                v-if="downloading[item.id]"
+                class="site-datastreams__download"
+              >
+                <v-progress-circular
+                  indeterminate
+                  size="16"
+                  width="2"
+                  color="primary"
+                />
+                Preparing file…
+              </div>
+            </td>
+            <td
+              v-if="showTaskRow || showTaskSkeleton"
+              colspan="2"
+              class="site-datastreams__task-cell"
             >
-              View Full Metadata
-            </v-btn>
-            <div v-if="downloading[item.id]" class="datastream-download mt-2">
-              <v-progress-circular
-                indeterminate
-                size="16"
-                width="2"
-                color="primary"
-              />
-              preparing file...
-            </div>
-          </div>
-        </div>
-
-        <div
-          v-if="showTaskRow"
-          class="datastream-task-link datastream-task-link--card"
-          :class="datastreamTaskLinkClass(item.id)"
-        >
-          <v-icon
-            :class="[
-              'datastream-task-link__icon',
-              linkedTasksForDatastream(item.id).length === 1
-                ? linkedTasksForDatastream(item.id)[0].iconClass
-                : '',
-            ]"
-            :icon="
-              !linkedTasksForDatastream(item.id).length
-                ? mdiLinkOff
-                : linkedTasksForDatastream(item.id).length > 1
-                ? mdiAlertOctagon
-                : linkedTasksForDatastream(item.id)[0].icon
-            "
-            size="20"
-          />
-          <div class="datastream-task-link__body">
-            <div class="datastream-task-link__meta">
-              <span class="datastream-task-link__label">
-                {{
-                  linkedTasksForDatastream(item.id).length > 1
-                    ? 'Multiple task targets'
-                    : linkedTasksForDatastream(item.id).length === 1
-                    ? linkedTasksForDatastream(item.id)[0].label
-                    : 'No task connected'
-                }}
-              </span>
-              <template v-if="linkedTasksForDatastream(item.id).length === 1">
-                <RouterLink
-                  class="datastream-task-link__name"
+              <div
+                v-if="showTaskRow"
+                class="datastream-task-link datastream-task-link--card"
+                :class="datastreamTaskLinkClass(item.id)"
+              >
+                <v-icon
+                  :class="[
+                    'datastream-task-link__icon',
+                    linkedTasksForDatastream(item.id).length === 1
+                      ? linkedTasksForDatastream(item.id)[0].iconClass
+                      : '',
+                  ]"
+                  :icon="
+                    !linkedTasksForDatastream(item.id).length
+                      ? mdiLinkOff
+                      : linkedTasksForDatastream(item.id).length > 1
+                        ? mdiAlertOctagon
+                        : linkedTasksForDatastream(item.id)[0].icon
+                  "
+                  size="20"
+                />
+                <div class="datastream-task-link__body">
+                  <div class="datastream-task-link__meta">
+                    <span class="datastream-task-link__label hs-label">
+                      {{
+                        linkedTasksForDatastream(item.id).length > 1
+                          ? 'Multiple task targets'
+                          : linkedTasksForDatastream(item.id).length === 1
+                            ? linkedTasksForDatastream(item.id)[0].label
+                            : 'No task connected'
+                      }}
+                    </span>
+                    <template
+                      v-if="linkedTasksForDatastream(item.id).length === 1"
+                    >
+                      <RouterLink
+                        class="datastream-task-link__name hs-title"
+                        :to="linkedTasksForDatastream(item.id)[0].route"
+                      >
+                        {{ linkedTasksForDatastream(item.id)[0].displayName }}
+                      </RouterLink>
+                      <span
+                        class="datastream-task-link__status"
+                        :title="
+                          displayedTaskStatus(
+                            linkedTasksForDatastream(item.id)[0]
+                          )
+                        "
+                      >
+                        <span
+                          class="datastream-task-link__dot"
+                          :style="{
+                            backgroundColor: taskStatusColor(
+                              linkedTasksForDatastream(item.id)[0]
+                            ),
+                          }"
+                        />
+                        <small
+                          class="datastream-task-link__last-ran font-weight-medium"
+                        >
+                          {{
+                            lastRanLabel(linkedTasksForDatastream(item.id)[0])
+                          }}
+                        </small>
+                      </span>
+                    </template>
+                    <span
+                      v-else-if="linkedTasksForDatastream(item.id).length > 1"
+                      class="datastream-task-link__conflict-text font-weight-bold"
+                    >
+                      {{ linkedTasksForDatastream(item.id).length }} tasks are
+                      feeding this datastream.
+                    </span>
+                  </div>
+                  <div
+                    v-if="linkedTasksForDatastream(item.id).length > 1"
+                    class="datastream-task-link__tasks"
+                  >
+                    <RouterLink
+                      v-for="task in linkedTasksForDatastream(item.id)"
+                      :key="task.id"
+                      :to="task.route"
+                      class="font-weight-bold"
+                    >
+                      {{ task.displayName }}
+                    </RouterLink>
+                  </div>
+                </div>
+                <v-btn
+                  v-if="linkedTasksForDatastream(item.id).length === 1"
+                  size="small"
+                  variant="text"
+                  color="primary"
+                  :append-icon="mdiChevronRight"
                   :to="linkedTasksForDatastream(item.id)[0].route"
                 >
-                  {{ linkedTasksForDatastream(item.id)[0].displayName }}
-                </RouterLink>
-                <span
-                  class="datastream-task-link__status"
-                  :title="
-                    displayedTaskStatus(linkedTasksForDatastream(item.id)[0])
-                  "
-                >
-                  <span
-                    class="datastream-task-link__dot"
-                    :style="{
-                      backgroundColor: taskStatusColor(
-                        linkedTasksForDatastream(item.id)[0]
-                      ),
-                    }"
-                  />
-                  <span class="datastream-task-link__last-ran">
-                    {{ lastRanLabel(linkedTasksForDatastream(item.id)[0]) }}
-                  </span>
-                </span>
-              </template>
-              <span v-else class="datastream-task-link__conflict-text">
-                {{
-                  linkedTasksForDatastream(item.id).length > 1
-                    ? `${
-                        linkedTasksForDatastream(item.id).length
-                      } tasks are feeding this datastream.`
-                    : ''
-                }}
-              </span>
-            </div>
-            <div
-              v-if="linkedTasksForDatastream(item.id).length > 1"
-              class="datastream-task-link__tasks"
-            >
-              <RouterLink
-                v-for="task in linkedTasksForDatastream(item.id)"
-                :key="task.id"
-                :to="task.route"
+                  Manage task
+                </v-btn>
+              </div>
+              <div
+                v-else
+                class="datastream-task-link datastream-task-link--card datastream-task-link--loading"
+                aria-label="Loading task information"
               >
-                {{ task.displayName }}
-              </RouterLink>
-            </div>
-          </div>
-          <v-btn
-            v-if="linkedTasksForDatastream(item.id).length === 1"
-            size="small"
-            variant="text"
-            color="primary"
-            :append-icon="mdiChevronRight"
-            :to="linkedTasksForDatastream(item.id)[0].route"
-          >
-            Manage task
-          </v-btn>
-          <div
-            v-if="monitoringTasksForDatastream(item.id).length"
-            class="datastream-task-link__monitoring"
-          >
-            <v-icon
-              :icon="mdiShieldCheckOutline"
-              size="20"
-              class="datastream-task-link__monitoring-icon"
-            />
-            <div class="datastream-task-link__monitoring-body">
-              <span class="datastream-task-link__label">
-                Quality monitoring
-              </span>
-              <span
-                v-for="task in monitoringTasksForDatastream(item.id)"
-                :key="task.id"
-                class="datastream-task-link__monitoring-task"
-              >
-                <RouterLink class="datastream-task-link__name" :to="task.route">
-                  {{ task.displayName }}
-                </RouterLink>
-                <span
-                  class="datastream-task-link__quality-outcome"
-                  :class="monitoringOutcomeClass(task)"
-                >
-                  {{ monitoringOutcomeLabel(task) }}
-                </span>
-                <span
-                  class="datastream-task-link__status"
-                  :title="monitoringLastRunStatus(task)"
-                >
+                <span class="datastream-task-link__loading-icon" />
+                <div class="datastream-task-link__body">
                   <span
-                    class="datastream-task-link__dot"
-                    :style="{ backgroundColor: monitoringLastRunColor(task) }"
+                    class="datastream-task-link__loading-bar datastream-task-link__loading-bar--label"
                   />
-                  <span class="datastream-task-link__last-ran">
-                    {{ lastRanLabel(task) }}
-                  </span>
-                </span>
-              </span>
-            </div>
-            <v-btn
-              v-if="monitoringTasksForDatastream(item.id).length === 1"
-              size="small"
-              variant="text"
-              color="primary"
-              :append-icon="mdiChevronRight"
-              :to="monitoringTasksForDatastream(item.id)[0].route"
-            >
-              Manage monitoring
-            </v-btn>
-          </div>
-        </div>
-        <div
-          v-else-if="showTaskSkeleton"
-          class="datastream-task-link datastream-task-link--card datastream-task-link--loading"
-          aria-label="Loading task information"
-        >
-          <span class="datastream-task-link__loading-icon" />
-          <div class="datastream-task-link__body">
-            <span
-              class="datastream-task-link__loading-bar datastream-task-link__loading-bar--label"
-            />
-            <span
-              class="datastream-task-link__loading-bar datastream-task-link__loading-bar--name"
-            />
-          </div>
-        </div>
-      </div>
+                  <span
+                    class="datastream-task-link__loading-bar datastream-task-link__loading-bar--name"
+                  />
+                </div>
+              </div>
+            </td>
+          </tr>
+          <tr v-if="!renderedDatastreams.length">
+            <td colspan="2" class="site-datastreams__empty">
+              No datastreams match the current filters.
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
-  </v-card>
+
+    <v-dialog
+      v-if="selectedChartDatastream"
+      v-model="isChartOpen"
+      width="80rem"
+    >
+      <DatastreamPopupPlot
+        :datastream="selectedChartDatastream"
+        @close="isChartOpen = false"
+      />
+    </v-dialog>
+  </section>
 
   <v-dialog v-model="openCreate" width="80rem">
     <DatastreamForm
-      :thing="thing!"
+      :monitoringSite="monitoringSite!"
       :workspace="workspace"
       @close="openCreate = false"
       @created="onCreated"
@@ -987,7 +601,7 @@
 
   <v-dialog v-model="openEdit" width="80rem">
     <DatastreamForm
-      :thing="thing!"
+      :monitoringSite="monitoringSite!"
       :workspace="workspace"
       :datastream="item"
       @close="openEdit = false"
@@ -1014,11 +628,11 @@
   <v-dialog
     v-model="openInfoCard"
     width="50rem"
-    v-if="selectedDatastream && thing"
+    v-if="selectedDatastream && monitoringSite"
   >
     <DatastreamTableInfoCard
       :datastream="selectedDatastream"
-      :thing="thing"
+      :monitoringSite="monitoringSite"
       @close="openInfoCard = false"
     />
   </v-dialog>
@@ -1040,15 +654,24 @@ import {
 } from 'vue'
 import { useMetadata } from '@/composables/useMetadata'
 import { storeToRefs } from 'pinia'
-import { useThingStore } from '@/store/thing'
+import { useMonitoringSiteStore } from '@/store/monitoringSite'
 import { useWorkspaceStore } from '@/store/workspaces'
 import { Datastream, Workspace, type StatusType } from '@hydroserver/client'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import { useTableLogic } from '@/composables/useTableLogic'
 import { Snackbar } from '@/utils/notifications'
+import { HsTableFilterMenu, HsCopyButton } from '@hydroserver/design-system/vue'
 import { downloadDatastreamCsv } from '@/utils/csvExport'
 import { formatTime } from '@/utils/time'
 import { buildQcEditUrl } from '@/utils/qcLinks'
+import {
+  parseDatastreamQuery,
+  serializeDatastreamQuery,
+  type DatastreamQueryFilters,
+  type DatastreamSort,
+  type DatastreamSortKey,
+  type DatastreamSortOrder,
+} from '@/utils/datastreamSearch'
 import {
   countDistinctMonitoringViolationRules,
   getMonitoringRulesViolated,
@@ -1059,15 +682,24 @@ import {
 import DatastreamTableInfoCard from './DatastreamTableInfoCard.vue'
 import ObservationsDeleteCard from '../Observation/ObservationsDeleteCard.vue'
 import VisibilityTooltipCard from '@/components/Datastream/VisibilityTooltipCard.vue'
-import hs, { PermissionAction, PermissionResource } from '@hydroserver/client'
-import { useDisplay } from 'vuetify/lib/framework.mjs'
+import hs, {
+  PermissionAction,
+  PermissionResource,
+  type EtlMapping,
+  type DataProductTransformation,
+  type MonitoringRule,
+} from '@hydroserver/client'
+import { HsQuerySearchInput } from '@hydroserver/design-system/vue'
 import {
   mdiAlertOctagon,
+  mdiArrowDown,
+  mdiArrowUp,
   mdiCallMerge,
   mdiChartBellCurve,
   mdiChartLine,
+  mdiCheck,
+  mdiChevronDown,
   mdiChevronRight,
-  mdiContentCopy,
   mdiTrashCanOutline,
   mdiDotsVertical,
   mdiDownload,
@@ -1079,9 +711,9 @@ import {
   mdiLockOpenVariant,
   mdiMagnify,
   mdiPencil,
-  mdiPlus,
   mdiShieldCheckOutline,
   mdiSigma,
+  mdiSort,
 } from '@mdi/js'
 
 const props = defineProps({
@@ -1092,7 +724,6 @@ const props = defineProps({
 type LinkedDatastreamTask = {
   id: string
   name: string
-  dataConnectionName: string | null
   displayName: string
   label: string
   icon: string
@@ -1114,18 +745,32 @@ type LinkedMonitoringTask = LinkedDatastreamTask & {
   lastRunStatus: StatusType
 }
 
-const { thing } = storeToRefs(useThingStore())
+type SiteDatastreamFilterKey =
+  'observed-property' | 'unit' | 'method' | 'processing-level'
+type FilterOption = { value: string; label: string }
+type FilterDefinition = {
+  key: SiteDatastreamFilterKey
+  label: string
+  sectionLabel: string
+  options: FilterOption[]
+  selectedCount: number
+}
+
+const { monitoringSite } = storeToRefs(useMonitoringSiteStore())
 const openCreate = ref(false)
+const showDatastreamIds = ref(false)
 const workspaceRef = toRef(props, 'workspace')
-const thingIdRef = computed(() => thing.value!.id)
+const monitoringSiteIdRef = computed(() => monitoringSite.value!.id)
 const downloading = reactive<Record<string, boolean>>({})
-const search = ref()
+const search = ref('')
 const datastreamSectionRef = ref<any>(null)
 const highlightedDatastreamId = ref('')
 const DATASTREAM_HIGHLIGHT_DURATION_MS = 2500
+const DATASTREAM_RENDER_BATCH_SIZE = 10
+const DATASTREAM_PRELOAD_AHEAD_COUNT = 10
+const renderedDatastreamCount = ref(DATASTREAM_RENDER_BATCH_SIZE)
 let highlightTimeout: number | undefined
-const { smAndDown } = useDisplay()
-const isMobile = computed(() => smAndDown.value)
+let loadMoreObserver: IntersectionObserver | undefined
 
 const openObservationsDelete = ref(false)
 function openObservationDialog(selectedItem: any) {
@@ -1181,23 +826,34 @@ const onCreated = async () => {
 
 const { item, items, openEdit, openDelete, openDialog, onUpdate, onDelete } =
   useTableLogic(
-    async (thingId: string) =>
-      await hs.datastreams.listAllItems({ thing_id: [thingId] }),
+    async (monitoringSiteId: string) =>
+      await hs.datastreams.listAllItems({
+        monitoringSiteId: [monitoringSiteId],
+      }),
     hs.datastreams.delete,
     Datastream,
-    thingIdRef
+    monitoringSiteIdRef
   )
 
-const { sensors, units, observedProperties, processingLevels, fetchMetadata } =
+const { methods, units, observedProperties, processingLevels, fetchMetadata } =
   useMetadata(toRef(props, 'workspace'))
 
-const openCharts = reactive<Record<string, boolean>>({})
+const selectedChartDatastream = ref<Datastream | null>(null)
+const isChartOpen = computed({
+  get: () => Boolean(selectedChartDatastream.value),
+  set: (isOpen) => {
+    if (!isOpen) selectedChartDatastream.value = null
+  },
+})
 const latestValues = reactive<
   Record<string, { text: string; showUnit: boolean; isBad: boolean }>
 >({})
 const rawEtlTasks = ref<any[]>([])
 const rawDataProductTasks = ref<any[]>([])
 const rawMonitoringTasks = ref<any[]>([])
+const etlMappingsByTaskId = ref<Record<string, EtlMapping[]>>({})
+const transformationsByTaskId = ref<Record<string, DataProductTransformation[]>>({})
+const rulesByTaskId = ref<Record<string, MonitoringRule[]>>({})
 const linkedTasksLoaded = ref(false)
 const linkedTasksErrored = ref(false)
 let linkedTasksRequestId = 0
@@ -1224,15 +880,17 @@ const latestValueDisplay = (datastream: { id: string; unitName?: string }) => {
 }
 
 const latestStatusClass = (datastream: Datastream) => {
-  if (isDatastreamStale(datastream)) return 'text-[#9e9e9e]'
+  if (isDatastreamStale(datastream)) return 'site-datastreams__latest--stale'
   const latestValue = latestValueFor(datastream.id)
-  if (latestValue.isBad) return 'text-[#c86060]'
-  return 'text-[#2e7d32]'
+  if (latestValue.isBad) return 'site-datastreams__latest--error'
+  return 'site-datastreams__latest--success'
 }
 
 const visibleDatastreams = computed(() => {
   const unitsById = new Map(units.value.map((u) => [u.id, u]))
-  const sensorsById = new Map(sensors.value.map((s) => [s.id, s]))
+  const methodsById = new Map(
+    methods.value.map((method) => [method.id, method])
+  )
   const opsById = new Map(observedProperties.value.map((o) => [o.id, o]))
   const processingLevelsById = new Map(
     processingLevels.value.map((p) => [p.id, p])
@@ -1250,16 +908,16 @@ const visibleDatastreams = computed(() => {
     )
     .map((d) => {
       const unit = unitsById.get(d.unitId)
-      const sensor = sensorsById.get(d.sensorId)
+      const method = methodsById.get(d.methodId)
       const op = opsById.get(d.observedPropertyId)
       const pl = processingLevelsById.get(d.processingLevelId)
 
       const mapped = {
         ...d,
-        OPName: op ? `${op.name} (${op.code})` : '',
-        processingLevelCode: pl?.code ?? '',
-        processingLevelName: pl?.definition ?? '',
-        sensorName: sensor?.name ?? '',
+        OPName: op?.name ?? '',
+        observedPropertyName: op?.name ?? '',
+        processingLevelName: pl?.name ?? '',
+        methodName: method?.name ?? '',
         unitName: unit?.name ?? '',
         searchText: ',',
         beginDate: formatTime(d.phenomenonBeginTime),
@@ -1274,7 +932,7 @@ const visibleDatastreams = computed(() => {
         mapped.id,
         mapped.processingLevelName,
         mapped.sampledMedium,
-        mapped.sensorName,
+        mapped.methodName,
         mapped.noDataValue,
         mapped.aggregationStatistic,
         mapped.unitName,
@@ -1293,20 +951,297 @@ const visibleDatastreams = computed(() => {
     })
 })
 
+const parsedSearch = computed(() =>
+  parseDatastreamQuery(search.value, searchQualifiers.value)
+)
 const normalizedSearch = computed(() =>
-  (search.value ?? '').toString().trim().toLowerCase()
+  parsedSearch.value.text.toLocaleLowerCase()
+)
+const filterSearches = reactive<Record<SiteDatastreamFilterKey, string>>({
+  'observed-property': '',
+  unit: '',
+  method: '',
+  'processing-level': '',
+})
+const uniqueSorted = (values: Array<string | null | undefined>) =>
+  [...new Set(values.filter((value): value is string => Boolean(value)))].sort(
+    (a, b) => a.localeCompare(b)
+  )
+const option = (value: string): FilterOption => ({ value, label: value })
+const filterOptions = computed<Omit<FilterDefinition, 'selectedCount'>[]>(
+  () => [
+    {
+      key: 'observed-property',
+      label: 'Observed property',
+      sectionLabel: 'Observed properties',
+      options: uniqueSorted(
+        visibleDatastreams.value.map((item) => item.observedPropertyName)
+      ).map(option),
+    },
+    {
+      key: 'unit',
+      label: 'Unit',
+      sectionLabel: 'Units',
+      options: uniqueSorted(
+        visibleDatastreams.value.map((item) => item.unitName)
+      ).map(option),
+    },
+    {
+      key: 'method',
+      label: 'Method',
+      sectionLabel: 'Methods',
+      options: uniqueSorted(
+        visibleDatastreams.value.map((item) => item.methodName)
+      ).map(option),
+    },
+    {
+      key: 'processing-level',
+      label: 'Processing level',
+      sectionLabel: 'Processing levels',
+      options: uniqueSorted(
+        visibleDatastreams.value.map((item) => item.processingLevelName)
+      ).map(option),
+    },
+  ]
+)
+const filterDefinitions = computed<FilterDefinition[]>(() =>
+  filterOptions.value.map((filter) => ({
+    ...filter,
+    selectedCount: parsedSearch.value.filters[filter.key].length,
+  }))
+)
+const searchQualifiers = computed(() => [
+  ...filterOptions.value.map((filter) => ({
+    key: filter.key,
+    label: filter.label,
+    values: filter.options.map((item) => item.value),
+  })),
+  {
+    key: 'sort',
+    label: 'Sort',
+    values: [
+      'name-asc',
+      'name-desc',
+      'updated-asc',
+      'updated-desc',
+      'observations-asc',
+      'observations-desc',
+    ],
+  },
+])
+const defaultSort: DatastreamSort = { key: 'name', order: 'asc' }
+const activeSort = computed(() => parsedSearch.value.sort ?? defaultSort)
+const sortOptions = [
+  { key: 'name' as const, label: 'Datastream name' },
+  { key: 'updated' as const, label: 'Last updated' },
+  { key: 'observations' as const, label: 'Observation count' },
+]
+const sortButtonLabel = computed(
+  () =>
+    sortOptions.find((option) => option.key === activeSort.value.key)?.label ??
+    'Sort'
+)
+const sortOrderOptions = computed(() =>
+  activeSort.value.key === 'name'
+    ? [
+        { order: 'asc' as const, label: 'A–Z', icon: mdiArrowUp },
+        { order: 'desc' as const, label: 'Z–A', icon: mdiArrowDown },
+      ]
+    : activeSort.value.key === 'updated'
+      ? [
+          { order: 'asc' as const, label: 'Oldest', icon: mdiArrowUp },
+          { order: 'desc' as const, label: 'Newest', icon: mdiArrowDown },
+        ]
+      : [
+          {
+            order: 'asc' as const,
+            label: 'Least observations',
+            icon: mdiArrowUp,
+          },
+          {
+            order: 'desc' as const,
+            label: 'Most observations',
+            icon: mdiArrowDown,
+          },
+        ]
+)
+const matchesFilter = (values: string[], candidate: string) =>
+  !values.length ||
+  values.some(
+    (value) => value.toLocaleLowerCase() === candidate.toLocaleLowerCase()
+  )
+const compareText = (left: string, right: string) =>
+  left.localeCompare(right, undefined, { numeric: true, sensitivity: 'base' })
+const compareNumbers = (
+  left: number | string | null | undefined,
+  right: number | string | null | undefined
+) => {
+  const leftNumber = Number(left)
+  const rightNumber = Number(right)
+  if (!Number.isFinite(leftNumber) && !Number.isFinite(rightNumber)) return 0
+  if (!Number.isFinite(leftNumber)) return 1
+  if (!Number.isFinite(rightNumber)) return -1
+  return leftNumber - rightNumber
+}
+const compareDatastreams = (
+  left: (typeof visibleDatastreams.value)[number],
+  right: (typeof visibleDatastreams.value)[number]
+) => {
+  const { key, order } = activeSort.value
+  const multiplier = order === 'asc' ? 1 : -1
+  if (key === 'name') {
+    return compareText(datastreamName(left), datastreamName(right)) * multiplier
+  }
+  const comparison =
+    key === 'updated'
+      ? compareNumbers(
+          left.phenomenonEndTime
+            ? new Date(left.phenomenonEndTime).getTime()
+            : null,
+          right.phenomenonEndTime
+            ? new Date(right.phenomenonEndTime).getTime()
+            : null
+        )
+      : compareNumbers(left.valueCount, right.valueCount)
+  return comparison
+    ? comparison * multiplier
+    : compareText(datastreamName(left), datastreamName(right))
+}
+const tableDatastreams = computed(() => {
+  const { filters } = parsedSearch.value
+  return visibleDatastreams.value
+    .filter(
+      (item) =>
+        matchesFilter(
+          filters['observed-property'],
+          item.observedPropertyName
+        ) &&
+        matchesFilter(filters.unit, item.unitName) &&
+        matchesFilter(filters.method, item.methodName) &&
+        matchesFilter(filters['processing-level'], item.processingLevelName) &&
+        (!normalizedSearch.value ||
+          item.searchText.includes(normalizedSearch.value))
+    )
+    .sort(compareDatastreams)
+})
+
+function updateSearch(value: string) {
+  search.value = value
+}
+function clearSearch() {
+  search.value = ''
+}
+function updateSearchFilters(filters: DatastreamQueryFilters) {
+  search.value = serializeDatastreamQuery(
+    filters,
+    parsedSearch.value.text,
+    parsedSearch.value.sort
+  )
+}
+function toggleFilter(key: SiteDatastreamFilterKey, value: string) {
+  const filters = structuredClone(
+    parsedSearch.value.filters
+  ) as DatastreamQueryFilters
+  const index = filters[key].findIndex(
+    (item) => item.toLocaleLowerCase() === value.toLocaleLowerCase()
+  )
+  if (index >= 0) filters[key].splice(index, 1)
+  else filters[key].push(value)
+  updateSearchFilters(filters)
+}
+function updateSort(sort: DatastreamSort) {
+  search.value = serializeDatastreamQuery(
+    parsedSearch.value.filters,
+    parsedSearch.value.text,
+    sort
+  )
+}
+function setSortKey(key: DatastreamSortKey) {
+  updateSort({
+    key,
+    order:
+      activeSort.value.key === key
+        ? activeSort.value.order
+        : key === 'name'
+          ? 'asc'
+          : 'desc',
+  })
+}
+function setSortOrder(order: DatastreamSortOrder) {
+  updateSort({ key: activeSort.value.key, order })
+}
+function datastreamName(datastream: Datastream) {
+  return datastream.name?.trim() || 'Unnamed datastream'
+}
+function formatObservationCount(value: number | string | null | undefined) {
+  const count = Number(value)
+  return Number.isFinite(count) ? count.toLocaleString() : '—'
+}
+function canViewData(datastream: Datastream) {
+  return (
+    !datastream.isRestricted ||
+    hasPermission(
+      PermissionResource.Observation,
+      PermissionAction.View,
+      props.workspace
+    )
+  )
+}
+
+const renderedDatastreams = computed(() =>
+  tableDatastreams.value.slice(0, renderedDatastreamCount.value)
 )
 
-const tableDatastreams = computed(() => {
-  const sorted = [...visibleDatastreams.value].sort((a, b) =>
-    (a.name || a.OPName || '').localeCompare(b.name || b.OPName || '')
-  )
+const hasMoreDatastreams = computed(
+  () => renderedDatastreams.value.length < tableDatastreams.value.length
+)
 
-  if (!normalizedSearch.value) return sorted
-  return sorted.filter((item) =>
-    (item.searchText || '').includes(normalizedSearch.value)
+const loadMoreTriggerIndex = computed(() => {
+  if (!hasMoreDatastreams.value) return -1
+  return Math.max(
+    0,
+    renderedDatastreams.value.length - DATASTREAM_PRELOAD_AHEAD_COUNT
   )
 })
+
+function isLoadMoreTrigger(index: number) {
+  return index === loadMoreTriggerIndex.value
+}
+
+function loadMoreDatastreams() {
+  if (!hasMoreDatastreams.value) return
+  loadMoreObserver?.disconnect()
+  renderedDatastreamCount.value = Math.min(
+    renderedDatastreamCount.value + DATASTREAM_RENDER_BATCH_SIZE,
+    tableDatastreams.value.length
+  )
+}
+
+async function observeLoadMoreTrigger() {
+  await nextTick()
+  loadMoreObserver?.disconnect()
+  if (!hasMoreDatastreams.value) return
+
+  const trigger = datastreamSectionElement()?.querySelector<HTMLElement>(
+    '[data-load-more-trigger="true"]'
+  )
+  if (!trigger) return
+
+  if (!window.IntersectionObserver) {
+    renderedDatastreamCount.value = tableDatastreams.value.length
+    return
+  }
+
+  loadMoreObserver ??= new IntersectionObserver(
+    (entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        loadMoreDatastreams()
+      }
+    },
+    { root: null, threshold: 0 }
+  )
+  loadMoreObserver.observe(trigger)
+}
 
 const deepLinkedDatastreamId = computed(() => props.targetDatastreamId.trim())
 
@@ -1361,6 +1296,14 @@ async function scrollToTargetDatastream() {
 
   if (targetDatastreamIndex.value === -1 && normalizedSearch.value) {
     search.value = ''
+    await nextTick()
+  }
+
+  if (targetDatastreamIndex.value >= renderedDatastreamCount.value) {
+    renderedDatastreamCount.value = Math.min(
+      targetDatastreamIndex.value + DATASTREAM_PRELOAD_AHEAD_COUNT + 1,
+      tableDatastreams.value.length
+    )
     await nextTick()
   }
 
@@ -1511,8 +1454,8 @@ const routeForIngestionTask = (task: any) => {
     workspace_id: props.workspace.id,
     task_id: String(task.id),
   }
-  const dataConnectionId = task.dataConnection?.id ?? task.dataConnectionId
-  if (dataConnectionId) query.data_connection_id = String(dataConnectionId)
+  if (task.dataConnectionId)
+    query.data_connection_id = String(task.dataConnectionId)
 
   return {
     name: 'OrchestrationIngestionDetails',
@@ -1522,15 +1465,14 @@ const routeForIngestionTask = (task: any) => {
 }
 
 const dataProductRouteName = (task: any) => {
-  if (task.aggregationTransformations?.length) {
-    return 'OrchestrationAggregationDetails'
-  }
-  if (task.derivationTransformations?.length) {
-    return 'OrchestrationDerivationDetails'
-  }
-  if (task.ratingCurveTransformations?.length) {
-    return 'OrchestrationRatingCurveDetails'
-  }
+  const types = new Set(
+    (transformationsByTaskId.value[task.id] ?? []).map(
+      (t) => t.transformationType
+    )
+  )
+  if (types.has('aggregation')) return 'OrchestrationAggregationDetails'
+  if (types.has('derivation')) return 'OrchestrationDerivationDetails'
+  if (types.has('rating_curve')) return 'OrchestrationRatingCurveDetails'
   return 'OrchestrationAggregationDetails'
 }
 
@@ -1539,7 +1481,7 @@ const siteScopedRoute = (task: any, name: string, view: string) => {
     workspace_id: props.workspace.id,
     task_id: String(task.id),
   }
-  const siteId = task.thing?.id ?? task.thingId ?? thing.value?.id
+  const siteId = task.monitoringSiteId ?? monitoringSite.value?.id
   if (siteId) query.site_id = String(siteId)
 
   return { name, params: { view }, query }
@@ -1550,17 +1492,6 @@ const routeForDataProductTask = (task: any) =>
 
 const routeForMonitoringTask = (task: any) =>
   siteScopedRoute(task, 'OrchestrationQualityDetails', 'quality')
-
-const outputDatastreamId = (transformation: any) =>
-  transformation?.outputDatastream?.id ?? transformation?.outputDatastreamId
-
-const targetDatastreamId = (mapping: any) =>
-  mapping?.targetDatastream?.id ?? mapping?.targetDatastreamId
-
-const monitoredDatastreamId = (monitoredDatastream: any) =>
-  monitoredDatastream?.datastream?.id ??
-  monitoredDatastream?.datastreamId ??
-  monitoredDatastream?.id
 
 const monitoringViolationCount = (
   task: any,
@@ -1600,15 +1531,8 @@ const truncateTaskInfoPart = (value: unknown, maxLength = 250) => {
   return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text
 }
 
-const dataConnectionNameForTask = (task: any) =>
-  task.dataConnection?.name ?? task.dataConnectionName ?? null
-
-const linkedTaskDisplayName = (task: any) => {
-  const taskName = truncateTaskInfoPart(task.name || task.id)
-  const dataConnectionName = dataConnectionNameForTask(task)
-  if (!dataConnectionName) return taskName
-  return `${truncateTaskInfoPart(dataConnectionName)} · ${taskName}`
-}
+const linkedTaskDisplayName = (task: any) =>
+  truncateTaskInfoPart(task.name || task.id)
 
 const addLinkedTask = (
   grouped: Record<string, LinkedDatastreamTask[]>,
@@ -1625,7 +1549,6 @@ const addLinkedTask = (
   grouped[datastreamId].push({
     id: String(task.id),
     name: task.name,
-    dataConnectionName: dataConnectionNameForTask(task),
     displayName: linkedTaskDisplayName(task),
     label: config.label,
     icon: config.icon,
@@ -1641,37 +1564,70 @@ const loadLinkedTasks = async () => {
   const requestId = ++linkedTasksRequestId
   linkedTasksLoaded.value = false
   linkedTasksErrored.value = false
-  const site = thing.value
+  const site = monitoringSite.value
   if (!canViewOrchestrationInfo.value || !site || !props.workspace?.id) {
     rawEtlTasks.value = []
     rawDataProductTasks.value = []
     rawMonitoringTasks.value = []
+    etlMappingsByTaskId.value = {}
+    transformationsByTaskId.value = {}
+    rulesByTaskId.value = {}
     return
   }
 
   try {
     const [etlTasks, dataProductTasks, monitoringTasks] = await Promise.all([
       hs.tasks.listAllItems({
-        thing_id: [site.id],
-        order_by: ['name'],
-        expand_related: true,
+        monitoringSiteId: [site.id],
+        sortby: ['name'],
       }),
       hs.dataProductTasks.listAllItems({
-        thing_id: [site.id],
-        order_by: ['name'],
-        expand_related: true,
+        monitoringSiteId: [site.id],
+        sortby: ['name'],
       }),
       hs.monitoringTasks.listAllItems({
-        thing_id: [site.id],
-        order_by: ['name'],
-        expand_related: true,
+        monitoringSiteId: [site.id],
+        sortby: ['name'],
       }),
     ])
     if (requestId !== linkedTasksRequestId) return
 
+    const etlTaskIds = etlTasks.map((t: any) => t.id)
+    const dataProductTaskIds = dataProductTasks.map((t: any) => t.id)
+    const monitoringTaskIds = monitoringTasks.map((t: any) => t.id)
+
+    const [mappings, transformations, rules] = await Promise.all([
+      etlTaskIds.length
+        ? hs.etlMappings.listAllItems({ etlTaskId: etlTaskIds } as any)
+        : Promise.resolve([]),
+      dataProductTaskIds.length
+        ? hs.dataProductTransformations.listAllItems({
+            taskId: dataProductTaskIds,
+          } as any)
+        : Promise.resolve([]),
+      monitoringTaskIds.length
+        ? hs.monitoringRules.listAllItems({ taskId: monitoringTaskIds } as any)
+        : Promise.resolve([]),
+    ])
+    if (requestId !== linkedTasksRequestId) return
+
+    const groupById = <T extends Record<string, any>>(
+      items: T[],
+      key: string
+    ): Record<string, T[]> => {
+      const grouped: Record<string, T[]> = {}
+      for (const item of items) {
+        ;(grouped[item[key]] ??= []).push(item)
+      }
+      return grouped
+    }
+
     rawEtlTasks.value = etlTasks ?? []
     rawDataProductTasks.value = dataProductTasks ?? []
     rawMonitoringTasks.value = monitoringTasks ?? []
+    etlMappingsByTaskId.value = groupById(mappings ?? [], 'etlTaskId')
+    transformationsByTaskId.value = groupById(transformations ?? [], 'taskId')
+    rulesByTaskId.value = groupById(rules ?? [], 'taskId')
     linkedTasksLoaded.value = true
   } catch (error) {
     if (requestId !== linkedTasksRequestId) return
@@ -1680,6 +1636,9 @@ const loadLinkedTasks = async () => {
     rawEtlTasks.value = []
     rawDataProductTasks.value = []
     rawMonitoringTasks.value = []
+    etlMappingsByTaskId.value = {}
+    transformationsByTaskId.value = {}
+    rulesByTaskId.value = {}
   }
 }
 
@@ -1692,8 +1651,8 @@ const linkedTasksByDatastreamId = computed<
   const seen = new Set<string>()
 
   for (const task of rawEtlTasks.value) {
-    for (const mapping of (task as any).mappings ?? []) {
-      const datastreamId = targetDatastreamId(mapping)
+    for (const mapping of etlMappingsByTaskId.value[task.id] ?? []) {
+      const datastreamId = mapping.targetDatastreamId
       if (!datastreamId || !datastreamIds.has(String(datastreamId))) continue
       addLinkedTask(grouped, seen, String(datastreamId), task, {
         label: 'Fed by',
@@ -1705,29 +1664,32 @@ const linkedTasksByDatastreamId = computed<
   }
 
   for (const task of rawDataProductTasks.value) {
+    const taskTransformations = transformationsByTaskId.value[task.id] ?? []
+    const transformationsOfType = (type: string) =>
+      taskTransformations.filter((t) => t.transformationType === type)
     const transformationGroups = [
       {
         label: 'Aggregated by',
         icon: mdiCallMerge,
         iconClass: 'datastream-task-link__icon--aggregation',
-        transformations: (task as any).aggregationTransformations ?? [],
+        transformations: transformationsOfType('aggregation'),
       },
       {
         label: 'Derived by',
         icon: mdiSigma,
         iconClass: 'datastream-task-link__icon--derived',
-        transformations: (task as any).derivationTransformations ?? [],
+        transformations: transformationsOfType('derivation'),
       },
       {
         label: 'Rating curve',
         icon: mdiChartBellCurve,
         iconClass: 'datastream-task-link__icon--rating-curve',
-        transformations: (task as any).ratingCurveTransformations ?? [],
+        transformations: transformationsOfType('rating_curve'),
       },
     ]
     for (const group of transformationGroups) {
       for (const transformation of group.transformations) {
-        const datastreamId = outputDatastreamId(transformation)
+        const datastreamId = transformation.outputDatastreamId
         if (!datastreamId || !datastreamIds.has(String(datastreamId))) continue
         addLinkedTask(grouped, seen, String(datastreamId), task, {
           label: group.label,
@@ -1751,10 +1713,17 @@ const monitoringTasksByDatastreamId = computed<
   const seenMonitoring = new Set<string>()
 
   for (const task of rawMonitoringTasks.value) {
-    const monitoredDatastreams = (task as any).monitoredDatastreams ?? []
-    for (const monitoredDatastream of monitoredDatastreams) {
-      const datastreamId = monitoredDatastreamId(monitoredDatastream)
-      if (!datastreamId || !datastreamIds.has(String(datastreamId))) continue
+    const rules = rulesByTaskId.value[task.id] ?? []
+    const rulesByDatastreamId = new Map<string, MonitoringRule[]>()
+    for (const rule of rules) {
+      if (!rule.datastreamId) continue
+      const bucket = rulesByDatastreamId.get(rule.datastreamId) ?? []
+      bucket.push(rule)
+      rulesByDatastreamId.set(rule.datastreamId, bucket)
+    }
+
+    for (const [datastreamId, datastreamRules] of rulesByDatastreamId) {
+      if (!datastreamIds.has(String(datastreamId))) continue
 
       const key = `${datastreamId}:${(task as any).id}`
       if (seenMonitoring.has(key)) continue
@@ -1763,7 +1732,6 @@ const monitoringTasksByDatastreamId = computed<
       groupedMonitoring[String(datastreamId)].push({
         id: String((task as any).id),
         name: (task as any).name,
-        dataConnectionName: null,
         displayName: truncateTaskInfoPart(
           (task as any).name || (task as any).id
         ),
@@ -1777,11 +1745,11 @@ const monitoringTasksByDatastreamId = computed<
           (task as any).latestRun?.finishedAt ??
           null,
         route: routeForMonitoringTask(task),
-        ruleCount: ((monitoredDatastream as any).rules ?? []).length,
+        ruleCount: datastreamRules.length,
         violationCount: monitoringViolationCount(
           task,
           String(datastreamId),
-          monitoredDatastreams.length
+          rulesByDatastreamId.size
         ),
         latestRunStatus: (task as any).latestRun?.status ?? null,
         lastRunStatus: getTaskRunStatusText((task as any).latestRun),
@@ -1793,7 +1761,7 @@ const monitoringTasksByDatastreamId = computed<
 })
 
 watch(
-  [() => props.workspace.id, canViewOrchestrationInfo, thingIdRef],
+  [() => props.workspace.id, canViewOrchestrationInfo, monitoringSiteIdRef],
   () => {
     void loadLinkedTasks()
   },
@@ -1804,7 +1772,6 @@ watch(
   [
     deepLinkedDatastreamId,
     () => tableDatastreams.value.map((datastream) => datastream.id).join(','),
-    isMobile,
   ],
   () => {
     void scrollToTargetDatastream()
@@ -1812,8 +1779,32 @@ watch(
   { immediate: true, flush: 'post' }
 )
 
+watch(
+  search,
+  () => {
+    renderedDatastreamCount.value = Math.min(
+      DATASTREAM_RENDER_BATCH_SIZE,
+      tableDatastreams.value.length
+    )
+  },
+  { flush: 'post' }
+)
+
+watch(
+  [renderedDatastreamCount, () => tableDatastreams.value.length],
+  () => {
+    renderedDatastreamCount.value = Math.min(
+      Math.max(renderedDatastreamCount.value, DATASTREAM_RENDER_BATCH_SIZE),
+      tableDatastreams.value.length
+    )
+    void observeLoadMoreTrigger()
+  },
+  { immediate: true, flush: 'post' }
+)
+
 onBeforeUnmount(() => {
   if (highlightTimeout) window.clearTimeout(highlightTimeout)
+  loadMoreObserver?.disconnect()
 })
 
 const onDownload = async (datastreamId: string) => {
@@ -1830,24 +1821,18 @@ const onDownload = async (datastreamId: string) => {
   }
 }
 
-async function toggleDataVisibility(computedDatastream: Datastream) {
+async function toggleDataRestriction(computedDatastream: Datastream) {
   // mutate the original
   const datastream = items.value.find((d) => d.id === computedDatastream.id)
   if (!datastream) return
 
-  const previousIsVisible = datastream.isVisible
-  const previousIsPrivate = datastream.isPrivate
-  datastream.isVisible = !datastream.isVisible
-  if (datastream.isVisible) datastream.isPrivate = false
+  const previousIsRestricted = datastream.isRestricted
+  datastream.isRestricted = !datastream.isRestricted
   const didPersist = await patchDatastream({
     id: datastream.id,
-    isPrivate: datastream.isPrivate,
-    isVisible: datastream.isVisible,
+    isRestricted: datastream.isRestricted,
   })
-  if (!didPersist) {
-    datastream.isVisible = previousIsVisible
-    datastream.isPrivate = previousIsPrivate
-  }
+  if (!didPersist) datastream.isRestricted = previousIsRestricted
 }
 
 async function toggleVisibility(computedDatastream: Datastream) {
@@ -1855,28 +1840,13 @@ async function toggleVisibility(computedDatastream: Datastream) {
   const datastream = items.value.find((d) => d.id === computedDatastream.id)
   if (!datastream) return
 
-  const previousIsVisible = datastream.isVisible
   const previousIsPrivate = datastream.isPrivate
   datastream.isPrivate = !datastream.isPrivate
-  datastream.isVisible = !datastream.isPrivate
   const didPersist = await patchDatastream({
     id: datastream.id,
     isPrivate: datastream.isPrivate,
-    isVisible: datastream.isVisible,
   })
-  if (!didPersist) {
-    datastream.isVisible = previousIsVisible
-    datastream.isPrivate = previousIsPrivate
-  }
-}
-
-const copyDatastreamId = async (id: string) => {
-  try {
-    await navigator.clipboard.writeText(id)
-    Snackbar.success('Datastream ID copied to clipboard')
-  } catch {
-    Snackbar.error('Failed to copy datastream ID')
-  }
+  if (!didPersist) datastream.isPrivate = previousIsPrivate
 }
 
 const patchDatastream = async <T extends { id: string }>(patchBody: T) => {
@@ -1904,7 +1874,7 @@ async function onObservationsDelete() {
 const loadDatastreams = async () => {
   try {
     items.value = await hs.datastreams.listAllItems({
-      thing_id: [thing.value!.id],
+      monitoringSiteId: [monitoringSite.value!.id],
     })
   } catch (e) {
     console.error('Error fetching datastreams', e)
@@ -1920,8 +1890,7 @@ const loadDatastreams = async () => {
   --datastream-list-inline: calc(0.75rem + 1px + 0.85rem);
   padding: 0 0 0.75rem;
   background: #fafbfc;
-  max-height: 100vh;
-  overflow-y: auto;
+  overflow: visible;
 }
 
 .datastream-list__head {
@@ -1934,8 +1903,6 @@ const loadDatastreams = async () => {
   padding: 0.5rem var(--datastream-list-inline);
   background: rgb(var(--v-theme-surface));
   border-bottom: 1px solid #e2e5e9;
-  font-size: 0.625rem;
-  font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: rgba(var(--v-theme-on-surface), 0.56);
@@ -2078,11 +2045,6 @@ const loadDatastreams = async () => {
   gap: 0.4rem;
 }
 
-.datastream-card__title {
-  font-weight: 600;
-  font-size: 1rem;
-}
-
 .datastream-card__icons {
   display: flex;
   align-items: center;
@@ -2101,8 +2063,6 @@ const loadDatastreams = async () => {
 }
 
 .datastream-title {
-  font-weight: 600;
-  font-size: 1rem;
   max-width: 360px;
   overflow-wrap: anywhere;
 }
@@ -2145,7 +2105,6 @@ const loadDatastreams = async () => {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.85rem;
 }
 
 .datastream-task-link {
@@ -2282,8 +2241,6 @@ const loadDatastreams = async () => {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  font-size: 0.625rem;
-  font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
   color: rgba(0, 0, 0, 0.42);
@@ -2291,8 +2248,6 @@ const loadDatastreams = async () => {
 
 .datastream-task-link__name {
   color: rgba(0, 0, 0, 0.87);
-  font-size: 0.8rem;
-  font-weight: 600;
   text-decoration: none;
 }
 
@@ -2316,14 +2271,8 @@ const loadDatastreams = async () => {
 }
 
 .datastream-task-link__last-ran {
-  font-size: 0.7rem;
-  font-weight: 500;
   white-space: nowrap;
   color: rgba(0, 0, 0, 0.42);
-}
-
-.datastream-task-link__conflict-text {
-  font-weight: 700;
 }
 
 .datastream-task-link__tasks {
@@ -2334,7 +2283,6 @@ const loadDatastreams = async () => {
 
 .datastream-task-link__tasks a {
   color: inherit;
-  font-weight: 700;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -2371,8 +2319,6 @@ const loadDatastreams = async () => {
 .datastream-task-link__quality-outcome {
   padding: 0.08rem 0.4rem;
   border-radius: 999px;
-  font-size: 0.7rem;
-  font-weight: 700;
   white-space: nowrap;
 }
 
@@ -2443,6 +2389,308 @@ const loadDatastreams = async () => {
   .datastream-info-list,
   .datastream-time-list {
     gap: 0.2rem;
+  }
+}
+/* Site details datastream table */
+.site-datastreams {
+  min-width: 0;
+}
+.site-datastreams__disclaimer {
+  margin: 0 0 var(--hs-space-8);
+  color: var(--hs-error);
+}
+.site-datastreams__tools {
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+.site-datastreams__tools-primary,
+.site-datastreams__heading,
+.site-datastreams__table-controls,
+.site-datastreams__filter-header-content,
+.site-datastreams__filters,
+.site-datastreams__row-actions,
+.site-datastreams__private-data,
+.site-datastreams__latest {
+  display: flex;
+  align-items: center;
+}
+.site-datastreams__tools-primary {
+  flex: 1 1 28rem;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--hs-space-12);
+}
+.site-datastreams__heading {
+  gap: var(--hs-space-8);
+  align-items: baseline;
+}
+.site-datastreams__heading h2 {
+  margin: 0;
+}
+.site-datastreams__count,
+.site-datastreams__latest,
+.site-datastreams__details dt,
+.site-datastreams__empty,
+.site-datastreams__private-data {
+  color: var(--hs-text-secondary);
+}
+.site-datastreams__tools :deep(.hs-query-search) {
+  flex: 1 0 100%;
+  width: 100%;
+  max-width: none;
+  margin-left: 0;
+}
+.site-datastreams__table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--hs-background);
+}
+.site-datastreams__table-controls {
+  padding: var(--hs-space-6) var(--hs-space-8);
+  background: var(--hs-surface-muted);
+  border-bottom: 1px solid var(--hs-border);
+}
+.site-datastreams__filter-header-content {
+  width: 100%;
+  justify-content: space-between;
+  gap: var(--hs-space-8);
+}
+.site-datastreams__filters {
+  flex-wrap: wrap;
+  gap: var(--hs-space-4);
+}
+.site-datastreams__filter-button,
+.site-datastreams__sort-button {
+  color: var(--hs-text-primary);
+  text-transform: none;
+}
+.site-datastreams__filter-button--active {
+  color: rgb(var(--v-theme-primary)) !important;
+}
+.site-datastreams__filter-count {
+  min-width: var(--hs-space-16);
+  padding-inline: var(--hs-space-4);
+  color: rgb(var(--v-theme-on-primary));
+  font-size: var(--hs-font-2xs);
+  line-height: var(--hs-space-16);
+  text-align: center;
+  background: rgb(var(--v-theme-primary));
+  border-radius: var(--hs-radius-pill);
+}
+.site-datastreams__table tbody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hs-space-8);
+  padding: var(--hs-space-8);
+}
+.site-datastreams__table tbody tr {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  background: var(--hs-surface);
+  border: 1px solid var(--hs-border);
+  border-radius: var(--hs-radius-md);
+}
+.site-datastreams__table tbody tr.site-datastreams__row--highlighted {
+  border-color: rgb(var(--v-theme-primary));
+  box-shadow: 0 0 0 var(--hs-space-2) rgb(var(--v-theme-primary) / 0.18);
+}
+.site-datastreams__table td {
+  padding: var(--hs-space-12);
+  vertical-align: top;
+}
+.site-datastreams__name-cell {
+  min-width: 28rem;
+}
+.site-datastreams__name-row {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: var(--hs-space-8);
+}
+.site-datastreams__name {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--hs-text-primary);
+  font-size: var(--hs-font-md);
+  font-weight: var(--hs-font-weight-semibold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.site-datastreams__id {
+  display: flex;
+  flex: 0 0 auto;
+  gap: var(--hs-space-4);
+  align-items: center;
+  min-width: 0;
+  color: var(--hs-text-muted);
+  font-size: var(--hs-font-2xs);
+}
+.site-datastreams__id span {
+  color: var(--hs-text-primary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.site-datastreams__observation-line {
+  margin-top: var(--hs-space-8);
+}
+.site-datastreams__observations {
+  display: flex;
+  gap: var(--hs-space-12);
+  align-items: center;
+}
+.site-datastreams__sparkline {
+  flex: 0 0 calc(5 * var(--hs-space-32));
+  min-width: 0;
+}
+.site-datastreams__latest {
+  flex-wrap: nowrap;
+  gap: var(--hs-space-8);
+  min-width: 0;
+  font-size: var(--hs-font-sm);
+  white-space: nowrap;
+}
+.site-datastreams__latest-item {
+  display: inline-flex;
+  gap: var(--hs-space-8);
+  align-items: center;
+}
+.site-datastreams__latest-item + .site-datastreams__latest-item::before {
+  width: var(--hs-space-4);
+  height: var(--hs-space-4);
+  content: '';
+  background: currentColor;
+  border-radius: 50%;
+}
+.site-datastreams__latest--stale {
+  color: var(--hs-text-muted);
+}
+.site-datastreams__latest--error {
+  color: var(--hs-error);
+}
+.site-datastreams__latest--success {
+  color: var(--hs-success);
+}
+.site-datastreams__observation-count {
+  color: var(--hs-text-secondary);
+}
+.site-datastreams__private-data {
+  gap: var(--hs-space-6);
+  min-height: var(--hs-space-32);
+}
+.site-datastreams__actions-cell {
+  width: 1%;
+  white-space: nowrap;
+  display: flex;
+  gap: var(--hs-space-8);
+  align-items: center;
+  justify-content: flex-end;
+}
+.site-datastreams__task-cell {
+  display: block;
+  width: 100%;
+  padding: 0 !important;
+}
+.site-datastreams__row-actions {
+  order: 2;
+  justify-content: flex-end;
+  gap: var(--hs-space-2);
+}
+.site-datastreams__metadata-button {
+  order: 1;
+  flex: none;
+  margin: 0;
+}
+.site-datastreams__download {
+  order: 3;
+  display: flex;
+  gap: var(--hs-space-6);
+  align-items: center;
+  margin: 0;
+  color: var(--hs-text-secondary);
+  font-size: var(--hs-font-2xs);
+}
+.site-datastreams__empty {
+  padding: var(--hs-space-16) !important;
+  text-align: center;
+}
+.site-datastreams__sort-menu {
+  min-width: 17rem;
+  max-height: 20rem;
+  padding-block: var(--hs-space-8);
+  overflow-y: auto;
+}
+.site-datastreams__sort-menu-title {
+  padding: var(--hs-space-8) var(--hs-space-16);
+  color: var(--hs-text-secondary);
+  font-size: var(--hs-font-sm);
+  font-weight: var(--hs-font-weight-semibold);
+}
+.site-datastreams__sort-check--hidden {
+  visibility: hidden;
+}
+@media (min-width: 60.0625rem) {
+  .site-datastreams__table tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+  }
+  .site-datastreams__name-cell {
+    display: block;
+    width: auto;
+    min-width: 0;
+  }
+  .site-datastreams__actions-cell {
+    position: static;
+    grid-column: 2;
+    grid-row: 1;
+    width: max-content;
+  }
+  .site-datastreams__task-cell {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 60rem) {
+  .site-datastreams__table,
+  .site-datastreams__table tbody,
+  .site-datastreams__table tr,
+  .site-datastreams__table td {
+    display: block;
+    width: 100%;
+  }
+  .site-datastreams__table tbody tr {
+    padding: 0;
+  }
+  .site-datastreams__table td {
+    padding: var(--hs-space-6) var(--hs-space-12);
+  }
+  .site-datastreams__name-cell {
+    padding-top: var(--hs-space-12) !important;
+    min-width: 0;
+  }
+  .site-datastreams__actions-cell {
+    position: static;
+    padding-bottom: var(--hs-space-12) !important;
+  }
+  .site-datastreams__task-cell {
+    padding: 0 !important;
+  }
+  .site-datastreams__row-actions {
+    justify-content: flex-start;
+  }
+}
+@media (max-width: 40rem) {
+  .site-datastreams__tools-primary,
+  .site-datastreams__filter-header-content {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .site-datastreams__sparkline {
+    flex-basis: calc(4 * var(--hs-space-32));
   }
 }
 </style>

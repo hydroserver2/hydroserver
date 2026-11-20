@@ -133,11 +133,11 @@ class TestHydroServerLoaderDataIngestionWindow:
             _dt("2026-01-01T00:00:00"), _dt("2026-01-02T00:00:00"), _dt("2026-01-03T00:00:00"),
         ]
 
-    def test_mode_is_insert_when_window_start_is_set(self):
+    def test_mode_is_replace_when_window_start_is_set(self):
         loader, client = _make_loader({"target-1": _make_datastream()})
         loader.load(_make_payload(), data_ingestion_window_start=_dt("2026-01-01T00:00:00"))
 
-        assert client.datastreams.load_observations.call_args.kwargs["mode"] == "insert"
+        assert client.datastreams.load_observations.call_args.kwargs["mode"] == "replace"
 
     def test_mode_is_append_when_window_start_is_not_set(self):
         loader, client = _make_loader({"target-1": _make_datastream()})
@@ -145,28 +145,19 @@ class TestHydroServerLoaderDataIngestionWindow:
 
         assert client.datastreams.load_observations.call_args.kwargs["mode"] == "append"
 
-    def test_replace_mode_issues_single_delete_over_full_range_before_inserting(self):
-        loader, client = _make_loader({"target-1": _make_datastream()}, chunk_size=1)
+    def test_replace_mode_gives_each_chunk_a_contiguous_range_without_separate_delete(self):
+        loader, client = _make_loader({"target-1": _make_datastream()}, chunk_size=2)
         loader.load(_make_payload(), data_ingestion_window_start=_dt("2026-01-01T00:00:00"))
 
-        client.datastreams.delete_observations.assert_called_once_with(
-            uid="target-1",
-            phenomenon_time_start=_dt("2026-01-01T00:00:00"),
-            phenomenon_time_end=_dt("2026-01-03T00:00:00"),
-        )
-        assert client.datastreams.load_observations.call_count == 3
-        assert all(
-            call.kwargs["mode"] == "insert" for call in client.datastreams.load_observations.call_args_list
-        )
-
-    def test_replace_mode_skips_inserts_when_delete_fails(self):
-        loader, client = _make_loader({"target-1": _make_datastream()})
-        client.datastreams.delete_observations.side_effect = Exception("boom")
-
-        result = loader.load(_make_payload(), data_ingestion_window_start=_dt("2026-01-01T00:00:00"))
-
-        assert result.target_results["target-1"].status == "failed"
-        client.datastreams.load_observations.assert_not_called()
+        ranges = [
+            (call.kwargs["phenomenon_time_start"], call.kwargs["phenomenon_time_end"])
+            for call in client.datastreams.load_observations.call_args_list
+        ]
+        assert ranges == [
+            (_dt("2026-01-01T00:00:00"), _dt("2026-01-02T23:59:59.999999")),
+            (_dt("2026-01-03T00:00:00"), _dt("2026-01-03T00:00:00")),
+        ]
+        client.datastreams.delete_observations.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
@@ -200,6 +191,45 @@ class TestHydroServerLoaderChunking:
 
         assert client.datastreams.load_observations.call_count == 2
         assert result.target_results["target-1"].values_loaded == 3
+
+    @pytest.mark.parametrize("window_start", [None, _dt("2026-01-01T00:00:00")])
+    def test_first_chunk_failure_is_reported_as_failed(self, window_start):
+        loader, client = _make_loader({"target-1": _make_datastream()}, chunk_size=2)
+        client.datastreams.load_observations.side_effect = Exception("503 Service Unavailable")
+
+        result = loader.load(_make_payload(), data_ingestion_window_start=window_start)
+
+        assert result.target_results["target-1"].status == "failed"
+        assert (result.failure_count, result.skipped_count) == (1, 0)
+
+    def test_later_chunk_failure_is_reported_as_failed_with_partial_count(self):
+        loader, client = _make_loader({"target-1": _make_datastream()}, chunk_size=2)
+        client.datastreams.load_observations.side_effect = [None, Exception("503 Service Unavailable")]
+
+        result = loader.load(_make_payload())
+
+        target = result.target_results["target-1"]
+        assert (target.status, target.values_loaded) == ("failed", 2)
+        assert result.failure_count == 1
+
+    def test_records_loaded_timestamp_range_across_chunks(self):
+        loader, client = _make_loader(
+            {"target-1": _make_datastream(), "target-2": _make_datastream(uid="target-2")}, chunk_size=2
+        )
+        payload = pd.concat([
+            _make_payload(),
+            _make_payload(target_id="target-2", timestamps=["2026-01-05T00:00:00Z"], values=[5.0]),
+        ])
+
+        result = loader.load(payload)
+
+        target = result.target_results["target-1"]
+        assert (target.earliest_timestamp, target.latest_timestamp) == (
+            _dt("2026-01-01T00:00:00"), _dt("2026-01-03T00:00:00")
+        )
+        assert (result.earliest_timestamp, result.latest_timestamp) == (
+            _dt("2026-01-01T00:00:00"), _dt("2026-01-05T00:00:00")
+        )
 
 
 # ---------------------------------------------------------------------------

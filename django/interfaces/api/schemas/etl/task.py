@@ -1,180 +1,162 @@
 import uuid
-from typing import Optional, Any, Literal
 
-from ninja import Query, Field
+from typing import Optional, Any, Literal, Annotated
+from pydantic import AliasPath, AliasChoices, BeforeValidator, WithJsonSchema
+from pydantic.alias_generators import to_camel
+from ninja import Query, Field, Schema
 
 from core.types import Unset, ISODatetime
 from interfaces.api.schemas import (
-    OrderByField,
     BaseGetResponse,
     BasePostBody,
     BasePatchBody,
+    BaseQueryParameters,
     CollectionQueryParameters,
-    DatastreamSummaryResponse,
+    ExtentQueryParameters,
+    DataConnectionResponse,
+    split_comma_separated,
+    comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
-from interfaces.api.schemas.orchestration.schedule import ScheduleResponse, SchedulePostBody, SchedulePatchBody
-from interfaces.api.schemas.orchestration.run import TaskRunResponse
-from interfaces.api.schemas.etl.data_connection import DataConnectionResponse
+from interfaces.api.schemas.orchestration.schedule import (
+    ScheduleResponse,
+    SchedulePostBody,
+    SchedulePatchBody,
+    resolve_schedule,
+)
+from interfaces.api.schemas.orchestration.run import TaskRunResponse, resolve_latest_run
+from interfaces.api.schemas.base import ItemId
 
 
-class EtlTaskOrderBy(OrderByField):
-    id = ("id", "id")
-    name = ("name", "name")
-    data_connection_id = ("dataConnectionId", "data_connection_id")
-    data_connection_name = ("dataConnectionName", "data_connection__name")
-    workspace_id = ("workspaceId", "data_connection__workspace_id")
-    workspace_name = ("workspaceName", "data_connection__workspace__name")
-    latest_run_status = ("latestRunStatus", "latest_run_status")
-    latest_run_started_at = ("latestRunStartedAt", "latest_run_started_at")
-    latest_run_finished_at = ("latestRunFinishedAt", "latest_run_finished_at")
+class EtlTaskFields(Schema):
+    name: str
+    description: Optional[str] = None
+    task_variables: dict[str, Any] = {}
 
 
-class EtlTaskQueryParameters(CollectionQueryParameters):
-    order_by: list[EtlTaskOrderBy] = Query(
-        [], description="Select one or more fields to order the response by."
+ETL_TASK_INCLUDE_RELATIONS = {
+    "dataConnection": {
+        "path": "data_connection",
+        "bucket": "dataConnections",
+        "response_schema": DataConnectionResponse,
+    },
+}
+EtlTaskIncludeRelation = Literal[*ETL_TASK_INCLUDE_RELATIONS.keys()]
+
+_sortby_fields = (
+    "id",
+    "name",
+    "dataConnectionId",
+    "dataConnectionName",
+    "workspaceId",
+    "workspaceName",
+    "latestRunStatus",
+    "latestRunStartedAt",
+    "latestRunFinishedAt",
+)
+EtlTaskSortByFields = Literal[*_sortby_fields, *[f"-{f}" for f in _sortby_fields]]
+
+_property_fields = (
+    "id",
+    "workspaceId",
+    "dataConnectionId",
+    "schedule",
+    "latestRun",
+    "mappingCount",
+    *(to_camel(name) for name in EtlTaskFields.model_fields),
+)
+EtlTaskPropertyName = Literal[*_property_fields]
+
+
+class EtlTaskFilterFields(Schema):
+    properties: Annotated[
+        Optional[list[EtlTaskPropertyName]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(EtlTaskPropertyName)),
+    ] = Query(
+        None,
+        description="Comma-separated list of properties to include in the response. "
+        "All properties are returned if omitted.",
     )
-    thing_id: list[uuid.UUID] = Query(
-        [], description="Filter ETL tasks by thing ID."
+    include: Annotated[
+        Optional[list[EtlTaskIncludeRelation]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(EtlTaskIncludeRelation)),
+    ] = Query(
+        None,
+        description="Comma-separated list of related resources to include in the response.",
+    )
+
+
+class EtlTaskItemQueryParameters(EtlTaskFilterFields, BaseQueryParameters):
+    pass
+
+
+class EtlTaskQueryParameters(EtlTaskFilterFields, CollectionQueryParameters, ExtentQueryParameters):
+    sortby: Annotated[
+        Optional[list[EtlTaskSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(EtlTaskSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
+    q: Optional[str] = Query(
+        None,
+        description="Full-text search query. Comma-separated terms are combined with OR; "
+        "whitespace-separated words within a term are combined with AND.",
+    )
+    monitoring_site_id: list[uuid.UUID] = Query(
+        [],
+        description="ETL tasks with a mapping that loads data into a datastream at this monitoring site. "
+        "Matches `id` in `monitoring-sites`.",
     )
     workspace_id: list[uuid.UUID] = Query(
-        [], description="Filter ETL tasks by workspace ID."
+        [], description="ETL tasks in this workspace. Matches `id` in `workspaces`."
     )
     data_connection_id: list[uuid.UUID] = Query(
-        [], description="Filter ETL tasks by data connection ID."
+        [], description="ETL tasks that use this data connection. Matches `id` in `etl-data-connections`."
     )
     latest_run_status: list[str | Literal["null"]] = Query(
-        [], description="Filter ETL tasks by their most recent run status."
+        [],
+        description="ETL tasks whose latest run has this status: `PENDING`, `STARTED`, `SUCCESS`, or "
+        "`FAILURE`. `null` matches tasks that have never run.",
     )
-    latest_run_started_at_min: ISODatetime | None = Query(
-        None, description="Filter tasks whose latest run started on or after this datetime."
+    min_latest_run_started_at: ISODatetime | None = Query(
+        None, description="ETL tasks whose latest run started at or after this RFC 3339 date-time."
     )
-    latest_run_started_at_max: ISODatetime | None = Query(
-        None, description="Filter tasks whose latest run started on or before this datetime."
+    max_latest_run_started_at: ISODatetime | None = Query(
+        None, description="ETL tasks whose latest run started at or before this RFC 3339 date-time."
     )
-    latest_run_finished_at_min: ISODatetime | None = Query(
-        None, description="Filter tasks whose latest run finished on or after this datetime."
+    min_latest_run_finished_at: ISODatetime | None = Query(
+        None, description="ETL tasks whose latest run finished at or after this RFC 3339 date-time."
     )
-    latest_run_finished_at_max: ISODatetime | None = Query(
-        None, description="Filter tasks whose latest run finished on or before this datetime."
+    max_latest_run_finished_at: ISODatetime | None = Query(
+        None, description="ETL tasks whose latest run finished at or before this RFC 3339 date-time."
     )
-    expand_related: Optional[bool] = None
 
 
-class EtlDataMappingResponse(BaseGetResponse):
-    source_identifier: str
-    target_datastream: DatastreamSummaryResponse
-
-
-class EtlDataMappingPostBody(BasePostBody):
-    source_identifier: str
-    target_datastream_id: uuid.UUID
-
-
-class EtlDataMappingPatchBody(BasePatchBody):
-    source_identifier: str
-    target_datastream_id: uuid.UUID
-
-
-def _resolve_schedule(obj):
-    if not hasattr(obj, "periodic_task"):
-        return getattr(obj, "schedule", None)
-
-    pt = obj.periodic_task
-    if not pt:
-        return None
-
-    ct = pt.crontab
-
-    return {
-        "enabled": pt.enabled,
-        "start_time": pt.start_time,
-        "crontab": f"{ct.minute} {ct.hour} {ct.day_of_month} {ct.month_of_year} {ct.day_of_week}" if ct else None,
-        "interval": pt.interval.every if pt.interval else None,
-        "interval_period": pt.interval.period if pt.interval else None,
-        "next_run_at": obj.next_run_at,
-    }
-
-
-def _resolve_latest_run(obj):
-    if not hasattr(obj, "latest_run_id"):
-        return getattr(obj, "latest_run", None)
-
-    if not getattr(obj, "latest_run_id", None):
-        return None
-
-    return {
-        "id": obj.latest_run_id,
-        "status": obj.latest_run_status,
-        "started_at": obj.latest_run_started_at,
-        "finished_at": obj.latest_run_finished_at,
-        "message": obj.latest_run_message,
-        "result": obj.latest_run_result,
-    }
-
-
-class EtlTaskSummaryResponse(BaseGetResponse):
-    id: uuid.UUID
-    name: str
-    description: Optional[str] = None
-    workspace_id: uuid.UUID
+class EtlTaskResponse(BaseGetResponse, EtlTaskFields, ItemId):
+    workspace_id: uuid.UUID = Field(
+        ..., validation_alias=AliasChoices("workspaceId", AliasPath("data_connection", "workspace_id"))
+    )
     data_connection_id: uuid.UUID
-    task_variables: dict[str, Any]
     schedule: ScheduleResponse | None = None
     latest_run: TaskRunResponse | None = None
-
-    @staticmethod
-    def resolve_workspace_id(obj):
-        if not hasattr(obj, "data_connection") or not hasattr(obj.data_connection, "workspace_id"):
-            return getattr(obj, "workspace_id", None)
-        return obj.data_connection.workspace_id
+    mapping_count: int = 0
 
     @staticmethod
     def resolve_schedule(obj):
-        return _resolve_schedule(obj)
+        return resolve_schedule(obj)
 
     @staticmethod
     def resolve_latest_run(obj):
-        return _resolve_latest_run(obj)
+        return resolve_latest_run(obj)
 
 
-class EtlTaskDetailResponse(BaseGetResponse):
-    id: uuid.UUID
-    name: str
-    description: Optional[str] = None
-    task_variables: dict[str, Any]
-    data_connection: DataConnectionResponse
-    schedule: ScheduleResponse | None = None
-    latest_run: TaskRunResponse | None = None
-    mappings: list[EtlDataMappingResponse]
-
-    @staticmethod
-    def resolve_schedule(obj):
-        return _resolve_schedule(obj)
-
-    @staticmethod
-    def resolve_latest_run(obj):
-        return _resolve_latest_run(obj)
-
-    @staticmethod
-    def resolve_mappings(obj):
-        if not hasattr(obj, "etl_mappings"):
-            return getattr(obj, "mappings", [])
-        return obj.etl_mappings.all()
-
-
-class EtlTaskPostBody(BasePostBody):
+class EtlTaskPostBody(BasePostBody, EtlTaskFields):
     uid: uuid.UUID | Unset = Field(Unset, alias="id")
-    name: str
-    description: Optional[str] = None
     data_connection_id: uuid.UUID
-    task_variables: dict[str, Any] = {}
     schedule: SchedulePostBody | None = None
-    mappings: list[EtlDataMappingPostBody] = []
 
 
-class EtlTaskPatchBody(BasePatchBody):
-    name: str
-    description: Optional[str] = None
-    task_variables: dict[str, Any]
+class EtlTaskPatchBody(BasePatchBody, EtlTaskFields):
     schedule: SchedulePatchBody | None = None
-    mappings: list[EtlDataMappingPatchBody]

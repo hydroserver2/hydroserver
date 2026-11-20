@@ -20,17 +20,17 @@
                 <strong>{{ item.label }}</strong
                 >:
                 <div class="tag-list-wrap">
-                  <span v-if="!item.value?.length">No tags</span>
+                  <span v-if="!Object.keys(item.value ?? {}).length">No tags</span>
                   <v-chip
-                    v-for="(tag, tagIndex) in item.value"
-                    :key="`${tag.key}:${tag.value}:${tagIndex}`"
+                    v-for="[key, value] in Object.entries(item.value ?? {})"
+                    :key="key"
                     class="tag-chip"
                     color="blue-grey-lighten-5"
                     size="small"
                     variant="flat"
                   >
-                    <strong>{{ tag.key }}</strong
-                    >: {{ tag.value }}
+                    <strong>{{ key }}</strong
+                    >: {{ value }}
                   </v-chip>
                 </div>
               </div>
@@ -58,7 +58,7 @@
     <v-expansion-panel title="Method">
       <v-expansion-panel-text>
         <v-list dense>
-          <v-list-item v-for="(item, index) in sensorItems" :key="index">
+          <v-list-item v-for="(item, index) in methodItems" :key="index">
             <strong>{{ item.label }}</strong
             >: {{ item.value }}
           </v-list-item>
@@ -66,7 +66,7 @@
       </v-expansion-panel-text>
     </v-expansion-panel>
 
-    <v-expansion-panel title="Observed Property">
+    <v-expansion-panel title="Observed property">
       <v-expansion-panel-text>
         <v-list dense>
           <v-list-item
@@ -92,7 +92,7 @@
     </v-expansion-panel>
 
     <v-expansion-panel
-      title="Processing Level"
+      title="Processing level"
       :class="{ 'mb-4': expandedPanels.includes(5) }"
       :rounded="expandedPanels.includes(5) ? 'md' : 0"
     >
@@ -114,7 +114,11 @@
 <script setup lang="ts">
 import { formatTimeWithZone } from '@/utils/time'
 import { onMounted, ref } from 'vue'
-import hs, { type Tag } from '@hydroserver/client'
+import hs, {
+  DATASTREAM_TYPE_LABELS,
+  type DatastreamType,
+  type Tags,
+} from '@hydroserver/client'
 
 const props = defineProps({
   datastreamId: { type: String, required: true },
@@ -126,7 +130,7 @@ const expandedPanels = ref<number[]>([])
 const datastream = ref<any>()
 const generalItems = ref<ListItemArray>([])
 const locationItems = ref<ListItemArray>([])
-const sensorItems = ref<ListItemArray>([])
+const methodItems = ref<ListItemArray>([])
 const observedPropertyItems = ref<ListItemArray>([])
 const unitItems = ref<ListItemArray>([])
 const processingLevelItems = ref<ListItemArray>([])
@@ -136,65 +140,55 @@ onMounted(async () => {
     expand_related: true,
   })
   const d = datastream.value!
-  let datastreamTags: Tag[] = Array.isArray(d.tags) ? d.tags : []
-
-  if (!Array.isArray(d.tags)) {
-    try {
-      const tagsResponse = await hs.datastreams.getTags(d.id)
-      datastreamTags =
-        tagsResponse.ok && Array.isArray(tagsResponse.data)
-          ? tagsResponse.data
-          : []
-    } catch (error) {
-      console.error('Error fetching datastream tags', error)
-    }
-  }
+  const datastreamTags: Tags = d.tags ?? {}
 
   generalItems.value = [
-    { label: 'Workspace Name', value: d.workspace.name },
+    { label: 'Workspace name', value: d.workspace.name },
     { label: 'Datastream name', value: d.name },
     { label: 'Description', value: d.description },
-    { label: 'Number Of Observations', value: d.valueCount },
+    { label: 'Number of observations', value: d.valueCount },
     {
-      label: 'Date Last Updated',
+      label: 'Date last updated',
       value: formatTimeWithZone(d.phenomenonEndTime),
     },
     {
-      label: 'Begin Date',
+      label: 'Begin date',
       value: formatTimeWithZone(d.phenomenonBeginTime),
     },
     {
-      label: 'End Date',
+      label: 'End date',
       value: formatTimeWithZone(d.phenomenonEndTime),
     },
-    { label: 'Data Type', value: d.observationType },
-    { label: 'Value Type', value: d.resultType },
-    { label: 'Sample Medium', value: d.sampledMedium },
-    { label: 'Nodata value', value: d.noDataValue },
-    { label: 'Id', value: d.id },
     {
-      label: 'Aggregation Statistic',
+      label: 'Type',
+      value: DATASTREAM_TYPE_LABELS[d.type as DatastreamType] ?? d.type,
+    },
+    { label: 'Sampled medium', value: d.sampledMedium },
+    { label: 'Nodata value', value: d.noDataValue },
+    { label: 'ID', value: d.id },
+    {
+      label: 'Aggregation statistic',
       value: d.aggregationStatistic,
     },
     {
-      label: 'Intended Time Spacing',
+      label: 'Intended time spacing',
       value: d.intendedTimeSpacing,
     },
     {
-      label: 'Intended Time Spacing Unit',
+      label: 'Intended time spacing unit',
       value: d.intendedTimeSpacingUnit,
     },
     {
-      label: 'Time Aggregation Interval',
+      label: 'Time aggregation interval',
       value: d.timeAggregationInterval,
     },
     {
-      label: 'Time Aggregation Interval Unit',
+      label: 'Time aggregation interval unit',
       value: d.timeAggregationIntervalUnit,
     },
     { label: 'Tags', value: datastreamTags },
-    { label: 'Is Private', value: d.isPrivate ? 'Yes' : 'No' },
-    { label: 'Is Visible', value: d.isVisible ? 'Yes' : 'No' },
+    { label: 'Is private', value: d.isPrivate ? 'Yes' : 'No' },
+    { label: 'Data download', value: d.isRestricted ? 'Restricted' : 'Allowed' },
   ]
 
   const op = d.observedProperty
@@ -206,24 +200,23 @@ onMounted(async () => {
     { label: 'Code', value: op.code },
   ]
 
-  let t = d.thing
-  let l = t.location
+  let t = d.monitoringSite
+  let l = t
   locationItems.value = [
     { label: 'Site name', value: t.name },
-    { label: 'Site code', value: t.samplingFeatureCode },
+    { label: 'Site code', value: t.code },
     { label: 'Description', value: t.description },
-    { label: 'Site type', value: t.siteType },
+    { label: 'Site type', value: t.type },
     { label: 'Latitude', value: l.latitude },
     { label: 'Longitude', value: l.longitude },
-    { label: 'Elevation (m)', value: l.elevation_m },
+    { label: 'Elevation (m)', value: l.elevationM },
     { label: 'Elevation datum', value: l.elevationDatum },
-    { label: 'State/Province/Region', value: l.adminArea1 },
-    { label: 'County/District', value: l.adminArea2 },
+    { label: 'State/province/region', value: l.adminArea1 },
+    { label: 'County/district', value: l.adminArea2 },
     { label: 'Country', value: l.country },
 
-    { label: 'Sampling feature type', value: t.samplingFeatureType },
     { label: 'Is private', value: t.isPrivate ? 'Yes' : 'No' },
-    { label: 'Thing id', value: t.id },
+    { label: 'Monitoring site ID', value: t.id },
   ]
 
   let u = d.unit
@@ -234,24 +227,27 @@ onMounted(async () => {
     { label: 'Type', value: u.type },
   ]
 
-  const s = d.sensor
-  sensorItems.value = [
-    { label: 'Name', value: s.name },
-    { label: 'Description', value: s.description },
-    { label: 'Manufacturer', value: s.manufacturer },
-    { label: 'Model', value: s.model },
-    { label: 'Method Type', value: s.methodType },
-    { label: 'Method Code', value: s.methodCode },
-    { label: 'Method Link', value: s.methodLink },
-    { label: 'Encoding Type', value: s.encodingType },
-    { label: 'Model Link', value: s.modelLink },
+  const method = d.method
+  methodItems.value = [
+    { label: 'Name', value: method.name },
+    { label: 'Description', value: method.description },
+    { label: 'Type', value: method.type },
+    { label: 'Code', value: method.code },
+    { label: 'Definition', value: method.definition },
+    {
+      label: 'Sensor model manufacturer',
+      value: method.sensorModelManufacturer,
+    },
+    { label: 'Sensor model', value: method.sensorModel },
+    { label: 'Sensor model definition', value: method.sensorModelDefinition },
   ]
 
   const pl = d.processingLevel
   processingLevelItems.value = [
+    { label: 'Name', value: pl.name },
     { label: 'Code', value: pl.code },
+    { label: 'Description', value: pl.description },
     { label: 'Definition', value: pl.definition },
-    { label: 'Explanation', value: pl.explanation },
   ]
 })
 </script>

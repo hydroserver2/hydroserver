@@ -1,8 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { ref } from 'vue'
-import { makeQcFake } from '@/services/qualityControl/__tests__/qcServiceFake'
-import { unwrap } from '@/services/qualityControl/unwrap'
+import { createHistory, createSession, makeQcFake } from '@/services/qualityControl/__tests__/qcServiceFake'
 
 const hs = ref<any>(null)
 vi.mock('@/store/hydroserver', () => ({ useHydroServer: () => ({ hs }) }))
@@ -81,8 +80,8 @@ beforeEach(async () => {
     qualityControlSessions: qc.sessions,
     qualityControlOperations: qc.operations,
   }
-  historyId = unwrap(
-    await qc.histories.create({ managedDatastreamId: 'm-1', sourceDatastreamId: 's-1' })
+  historyId = (
+    await createHistory(qc, { managedDatastreamId: 'm-1', sourceDatastreamId: 's-1' })
   ).id
   // Managed datastream empty, source has data.
   fetchDetachedRecord.mockImplementation(async (ds: any) =>
@@ -91,7 +90,7 @@ beforeEach(async () => {
 })
 
 const startSession = () =>
-  qc.sessions.create(historyId, {
+  createSession(qc, historyId, {
     phenomenonTimeStart: '2025-01-01T00:00:00Z',
     phenomenonTimeEnd: '2025-02-01T00:00:00Z',
   })
@@ -105,7 +104,7 @@ describe('useWorkingCopiesStore', () => {
   })
 
   it('builds the working copy from the session window and replays its operations', async () => {
-    const session = unwrap(await startSession())
+    const session = await startSession()
     await qc.operations.create(historyId, session.id, [
       { operationType: 'SELECTION' as any, order: 0 },
     ])
@@ -136,7 +135,7 @@ describe('useWorkingCopiesStore', () => {
   })
 
   it('drops a cached copy once its session is no longer in progress', async () => {
-    const session = unwrap(await startSession())
+    const session = await startSession()
     const { useWorkingCopiesStore } = await import('@/store/workingCopies')
     const store = useWorkingCopiesStore()
     await store.load(managed, source, historyId)
@@ -148,7 +147,7 @@ describe('useWorkingCopiesStore', () => {
   })
 
   it('rebuild always reconstructs, even for a cached session', async () => {
-    const session = unwrap(await startSession())
+    const session = await startSession()
     const { useWorkingCopiesStore } = await import('@/store/workingCopies')
     const store = useWorkingCopiesStore()
     const first = await store.load(managed, source, historyId)
@@ -234,7 +233,7 @@ describe('useWorkingCopiesStore', () => {
   })
 
   it('invalidate() during an in-flight rebuild() resolves it to null and leaves nothing cached', async () => {
-    const session = unwrap(await startSession())
+    const session = await startSession()
     const { gate, started } = gateFetch()
     const { useWorkingCopiesStore } = await import('@/store/workingCopies')
     const store = useWorkingCopiesStore()
@@ -249,7 +248,7 @@ describe('useWorkingCopiesStore', () => {
   })
 
   it('set() during an in-flight rebuild() resolves it to the set record', async () => {
-    const session = unwrap(await startSession())
+    const session = await startSession()
     const { gate, started } = gateFetch()
     const { useWorkingCopiesStore } = await import('@/store/workingCopies')
     const store = useWorkingCopiesStore()
@@ -272,7 +271,7 @@ describe('useWorkingCopiesStore', () => {
   })
 
   it('a second rebuild() supersedes the first, which resolves to the same cached copy regardless of which fetch finishes first', async () => {
-    const session = unwrap(await startSession())
+    const session = await startSession()
     const gate1 = gateOneApplyHistory()
     const gate2 = gateOneApplyHistory()
     const { useWorkingCopiesStore } = await import('@/store/workingCopies')
@@ -295,7 +294,7 @@ describe('useWorkingCopiesStore', () => {
   })
 
   it('load() during an in-flight rebuild() joins it, so both resolve to the same cached copy', async () => {
-    const session = unwrap(await startSession())
+    const session = await startSession()
     const { gate, started } = gateFetch()
     const { useWorkingCopiesStore } = await import('@/store/workingCopies')
     const store = useWorkingCopiesStore()
@@ -313,7 +312,7 @@ describe('useWorkingCopiesStore', () => {
   })
 
   it('a load() still listing sessions when a rebuild() starts joins that rebuild', async () => {
-    const session = unwrap(await startSession())
+    const session = await startSession()
     const { useWorkingCopiesStore } = await import('@/store/workingCopies')
     const store = useWorkingCopiesStore()
 
@@ -360,7 +359,7 @@ describe('useWorkingCopiesStore', () => {
   })
 
   it('clear() during an in-flight rebuild() resolves it to null and caches nothing', async () => {
-    const session = unwrap(await startSession())
+    const session = await startSession()
     const { gate, started } = gateFetch()
     const { useWorkingCopiesStore } = await import('@/store/workingCopies')
     const store = useWorkingCopiesStore()

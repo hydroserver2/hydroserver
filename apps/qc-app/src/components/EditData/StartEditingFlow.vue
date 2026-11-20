@@ -19,7 +19,7 @@
         :key="chooserSource.id"
         :source="chooserSource"
         :processing-levels="processingLevels"
-        :sensors="sensors"
+        :methods="methods"
         :statuses="statuses"
         :default-processing-level-id="qcPreferences.processingLevelId"
         :on-create-processing-level="onCreateProcessingLevel"
@@ -73,7 +73,10 @@ import {
   type ManagedDatastreamOption,
 } from '@/composables/useManagedDatastreams'
 import { useDatastreamMetadata } from '@/composables/useDatastreamMetadata'
-import { useProcessingLevels } from '@/composables/useProcessingLevels'
+import {
+  useProcessingLevels,
+  type NewProcessingLevelInput,
+} from '@/composables/useProcessingLevels'
 import { useWorkspacePermissions } from '@/composables/useWorkspacePermissions'
 import type { TimeWindow } from '@/utils/timeRangePresets'
 import { DrawerType, type View } from '@/store/userInterface'
@@ -104,7 +107,7 @@ const { loadForSource, deleteManaged, deleteSession } =
   useManagedDatastreams()
 const { create: createManaged } = useCreateManagedDatastream()
 const { createProcessingLevel } = useProcessingLevels()
-const { sensors, statuses, load: loadDatastreamMetadata } =
+const { methods, statuses, load: loadDatastreamMetadata } =
   useDatastreamMetadata()
 const { canCreateDatastream, roleName } = useWorkspacePermissions()
 const { enterEdit, startSessionOver, leaveEdit, closeEditor } = useEditEntry()
@@ -281,11 +284,7 @@ function onCreateCancel() {
   if (chooserOptions.value.length) showChooser.value = true
 }
 
-async function onCreateProcessingLevel(input: {
-  code: string
-  definition?: string
-  explanation?: string
-}) {
+async function onCreateProcessingLevel(input: NewProcessingLevelInput) {
   try {
     const level = await createProcessingLevel(input)
     // Add to the catalog so it shows in the picker and is immediately valid.

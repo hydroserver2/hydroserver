@@ -1,0 +1,153 @@
+import uuid
+
+from ninja import Router, Path, Query
+from django.db import transaction
+
+from interfaces.auth.security import session_auth, oidc_data_read_auth, oidc_data_write_auth, apikey_auth, basic_auth, anonymous_auth
+from interfaces.api.http.request import HydroServerHttpRequest
+from interfaces.api.services.sta import UnitTypeAPIService
+from interfaces.api.schemas import PaginatedResponse, ItemResponse, CreatedResponse
+from interfaces.api.schemas.sta.vocabulary import (
+    VocabularyQueryParameters,
+    VocabularyItemQueryParameters,
+)
+from interfaces.api.schemas.sta.unit_type import (
+    UnitTypeResponse,
+    UnitTypePostBody,
+    UnitTypePatchBody,
+)
+
+unit_type_router = Router(tags=["Unit Types"])
+unit_type_service = UnitTypeAPIService()
+
+
+@unit_type_router.get(
+    "/items",
+    auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
+    response={
+        200: PaginatedResponse[UnitTypeResponse],
+        400: str,
+        401: str,
+    },
+    by_alias=True,
+)
+def get_unit_types(
+    request: HydroServerHttpRequest,
+    query: Query[VocabularyQueryParameters],
+):
+    """
+    Get unit types.
+    """
+
+    return 200, unit_type_service.list(
+        principal=request.principal,
+        offset=query.offset,
+        limit=query.limit,
+        sortby=query.sortby,
+        filtering=query.dict(exclude_unset=True),
+    )
+
+
+@unit_type_router.post(
+    "/items",
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
+    response={
+        201: CreatedResponse,
+        401: str,
+        403: str,
+        409: str,
+    },
+    by_alias=True,
+)
+@transaction.atomic
+def create_unit_type(
+    request: HydroServerHttpRequest,
+    data: UnitTypePostBody,
+):
+    """
+    Create a new unit type.
+    """
+
+    return 201, unit_type_service.create(
+        principal=request.principal,
+        data=data,
+    )
+
+
+@unit_type_router.get(
+    "/items/{unit_type_id}",
+    auth=[session_auth, oidc_data_read_auth, apikey_auth, basic_auth, anonymous_auth],
+    response={
+        200: ItemResponse[UnitTypeResponse],
+        400: str,
+        401: str,
+        403: str,
+    },
+    by_alias=True,
+    exclude_unset=True,
+)
+def get_unit_type(
+    request: HydroServerHttpRequest,
+    unit_type_id: Path[uuid.UUID],
+    query: Query[VocabularyItemQueryParameters],
+):
+    """
+    Get a unit type.
+    """
+
+    return 200, unit_type_service.get(
+        principal=request.principal,
+        uid=unit_type_id,
+    )
+
+
+@unit_type_router.patch(
+    "/items/{unit_type_id}",
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
+    response={
+        204: None,
+        401: str,
+        403: str,
+        409: str,
+    },
+    by_alias=True,
+)
+@transaction.atomic
+def update_unit_type(
+    request: HydroServerHttpRequest,
+    unit_type_id: Path[uuid.UUID],
+    data: UnitTypePatchBody,
+):
+    """
+    Update a unit type.
+    """
+
+    unit_type_service.update(
+        principal=request.principal,
+        uid=unit_type_id,
+        data=data,
+    )
+    return 204, None
+
+
+@unit_type_router.delete(
+    "/items/{unit_type_id}",
+    auth=[session_auth, oidc_data_write_auth, apikey_auth, basic_auth],
+    response={
+        204: None,
+        401: str,
+        403: str,
+    },
+    by_alias=True,
+)
+@transaction.atomic
+def delete_unit_type(
+    request: HydroServerHttpRequest, unit_type_id: Path[uuid.UUID]
+):
+    """
+    Delete a unit type.
+    """
+
+    return 204, unit_type_service.delete(
+        principal=request.principal, uid=unit_type_id
+    )

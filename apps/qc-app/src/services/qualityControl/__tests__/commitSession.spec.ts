@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { makeQcFake } from './qcServiceFake'
+import { createHistory, createSession, makeQcFake } from './qcServiceFake'
 import { commitQcSession } from '../commitSession'
 import { unwrap } from '../unwrap'
 
@@ -10,13 +10,11 @@ const WIN = {
 
 const setup = async () => {
   const qc = makeQcFake()
-  const h = unwrap(
-    await qc.histories.create({
-      managedDatastreamId: 'm-1',
-      sourceDatastreamId: 's-1',
-    })
-  )
-  const session = unwrap(await qc.sessions.create(h.id, WIN))
+  const h = await createHistory(qc, {
+    managedDatastreamId: 'm-1',
+    sourceDatastreamId: 's-1',
+  })
+  const session = await createSession(qc, h.id, WIN)
   return { qc, historyId: h.id, session }
 }
 

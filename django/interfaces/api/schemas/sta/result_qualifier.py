@@ -1,59 +1,104 @@
 import uuid
-from typing import Optional, Literal, TYPE_CHECKING
+
+from typing import Optional, Literal, Annotated
+from pydantic import BeforeValidator, WithJsonSchema
+from pydantic.alias_generators import to_camel
 from ninja import Schema, Field, Query
+
 from interfaces.api.schemas import (
     BaseGetResponse,
     BasePostBody,
     BasePatchBody,
+    BaseQueryParameters,
     CollectionQueryParameters,
+    ExtentQueryParameters,
+    WorkspaceResponse,
+    split_comma_separated,
+    comma_array_schema,
+    split_sortby,
+    sortby_array_schema,
 )
-
-if TYPE_CHECKING:
-    from interfaces.api.schemas import WorkspaceSummaryResponse
+from interfaces.api.schemas.base import ItemId, NewItemId
 
 
 class ResultQualifierFields(Schema):
-    code: str = Field(..., max_length=255)
-    description: str
+    name: str = Field(..., max_length=255)
+    description: str | None = None
 
 
-_order_by_fields = ("code",)
+RESULT_QUALIFIER_INCLUDE_RELATIONS = {
+    "workspace": {
+        "path": "workspace",
+        "bucket": "workspaces",
+        "response_schema": WorkspaceResponse,
+    },
+}
+ResultQualifierIncludeRelation = Literal[*RESULT_QUALIFIER_INCLUDE_RELATIONS.keys()]
 
-ResultQualifierOrderByFields = Literal[
-    *_order_by_fields, *[f"-{f}" for f in _order_by_fields]
+_sortby_fields = ("name",)
+ResultQualifierSortByFields = Literal[
+    *_sortby_fields, *[f"-{f}" for f in _sortby_fields]
 ]
 
+_property_fields = (
+    "id",
+    "workspaceId",
+    *(to_camel(name) for name in ResultQualifierFields.model_fields),
+)
+ResultQualifierPropertyName = Literal[*_property_fields]
 
-class ResultQualifierQueryParameters(CollectionQueryParameters):
-    expand_related: Optional[bool] = None
-    order_by: Optional[list[ResultQualifierOrderByFields]] = Query(
-        [], description="Select one or more fields to order the response by."
+
+class ResultQualifierFilterFields(Schema):
+    properties: Annotated[
+        Optional[list[ResultQualifierPropertyName]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(ResultQualifierPropertyName)),
+    ] = Query(
+        None,
+        description="Comma-separated list of properties to include in the response. "
+        "All properties are returned if omitted.",
+    )
+    include: Annotated[
+        Optional[list[ResultQualifierIncludeRelation]],
+        BeforeValidator(split_comma_separated),
+        WithJsonSchema(comma_array_schema(ResultQualifierIncludeRelation)),
+    ] = Query(
+        None,
+        description="Comma-separated list of related resources to include in the response.",
+    )
+
+
+class ResultQualifierItemQueryParameters(
+    ResultQualifierFilterFields, BaseQueryParameters
+):
+    pass
+
+
+class ResultQualifierQueryParameters(
+    ResultQualifierFilterFields, CollectionQueryParameters, ExtentQueryParameters
+):
+    sortby: Annotated[
+        Optional[list[ResultQualifierSortByFields]],
+        BeforeValidator(split_sortby),
+        WithJsonSchema(sortby_array_schema(ResultQualifierSortByFields)),
+    ] = Query([], description="Select one or more fields to sort the response by.")
+    q: Optional[str] = Query(
+        None,
+        description="Full-text search query. Comma-separated terms are combined with OR; "
+        "whitespace-separated words within a term are combined with AND.",
     )
     workspace_id: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter sensors by workspace ID."
-    )
-    observations__datastream__thing_id: list[uuid.UUID | Literal["null"]] = Query(
-        [], description="Filter result qualifiers by thing ID.", alias="thing_id"
-    )
-    observations__datastream_id: list[uuid.UUID | Literal["null"]] = Query(
         [],
-        description="Filter result qualifiers by datastream ID.",
-        alias="datastream_id",
+        description="Result qualifiers that belong to this workspace. Matches `id` in `workspaces`. `null` "
+        "matches result qualifiers shared by every workspace.",
     )
 
 
-class ResultQualifierSummaryResponse(BaseGetResponse, ResultQualifierFields):
-    id: uuid.UUID
+class ResultQualifierResponse(BaseGetResponse, ResultQualifierFields, ItemId):
     workspace_id: Optional[uuid.UUID]
 
 
-class ResultQualifierDetailResponse(BaseGetResponse, ResultQualifierFields):
-    id: uuid.UUID
-    workspace: Optional["WorkspaceSummaryResponse"]
-
-
-class ResultQualifierPostBody(BasePostBody, ResultQualifierFields):
-    id: Optional[uuid.UUID] = None
+class ResultQualifierPostBody(BasePostBody, ResultQualifierFields, NewItemId):
     workspace_id: Optional[uuid.UUID] = None
 
 

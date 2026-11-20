@@ -75,7 +75,7 @@ always be recovered by a hard refresh.
                 │   same-origin /api via Data Management   │
                 │                                          │
                 │  Django + django-ninja  ·  Postgres      │
-                │  Workspaces · Things · Datastreams       │
+                │  Workspaces · Sites · Datastreams        │
                 │  Observations (bulk read / replace)      │
                 │  QC histories · sessions · operations    │
                 │  Result qualifiers · Auth (AllAuth)      │
@@ -99,14 +99,17 @@ src/
 │  ├─ EditData/                 One panel per edit op (FillGaps, ChangeValues, Interpolate, …),
 │  │                            EditHistory and its session list, the Start editing chooser,
 │  │                            the session window and leave dialogs, and the operation registry.
-│  └─ base/                     Generic Vuetify wrappers (FullScreenLoader, Notifications).
+│  └─ base/                     Generic Vuetify wrappers (FullScreenLoader, Notifications,
+│                               SessionExpiredNotice).
 ├─ composables/
 │  ├─ useDataSelection.ts       Bridges Plotly's selectedpoints into the Pinia store.
 │  ├─ useFilterDispatch.ts      Shared "open panel → dispatch op → highlight result" flow.
+│  ├─ useFilterWithinSelection.ts  Filters that search only the selected points.
 │  ├─ useEditEntry.ts           Entering and leaving the editor.
 │  ├─ useEditSession.ts         Open, save and commit a QC session.
 │  ├─ useLeaveSession.ts        The one question asked before any exit.
 │  ├─ useManagedDatastreams.ts  The chooser's managed datastreams, and deleting them.
+│  ├─ useWorkspaceCatalog.ts    The Select view's lists for a workspace, every page.
 │  ├─ useHistorySnapshots.ts    History snapshots plotted as comparison lines.
 │  ├─ useWorkspacePermissions.ts Role checks that gate editing, Save and Commit.
 │  ├─ useQcHistory.ts           Download the QC history (qc-utils' serializeHistory).
@@ -181,7 +184,7 @@ seconds). Put the preference in `qcPreferences` (or a store like
                 ▼
  ┌──────────────────────────────────────┐
  │ Panel collects args                  │
- │ (e.g. { 'Greater than': 100 })       │
+ │ (e.g. { filters: [...], match })     │
  └──────────────┬───────────────────────┘
                 ▼
  ┌──────────────────────────────────────┐
@@ -287,7 +290,7 @@ silently breaks the worker fast-path. Don't.
 ## QC history / session service
 
 Editing is persisted as a session DAG through the HydroServer QC API
-(`/api/data/quality-control/histories/{id}/sessions/{id}/operations`).
+(`/api/ogc/collections/quality-control-histories/items/{id}/sessions/{id}/operations`).
 
 The API client itself lives in **`@hydroserver/client`**, split across three
 SDK services on the `hs` instance: `qualityControlHistories`,
@@ -295,8 +298,10 @@ SDK services on the `hs` instance: `qualityControlHistories`,
 are normal SDK services built on the shared `apiMethods` layer, so they inherit
 the session auth (CSRF cookie -> `X-CSRFToken`, `credentials: 'include'`) and
 the `ApiResponse` return shape: methods never throw on HTTP errors. Bodies are
-camelCase (`by_alias`); query parameters are snake_case (`expand_related`,
-`range_start`, `managed_datastream_id`, `ancestor_of`, ...).
+camelCase (`by_alias`), and so are query parameters (`rangeStart`,
+`managedDatastreamId`, `ancestorOf`, ...). A session's operations come from
+their own endpoint: `withOperations` loads them for each session the editor
+reads, and fails rather than show a session without them.
 
 `src/services/qualityControl/` holds only the **app-side orchestration** that
 composes those services with `@uwrl/qc-utils` and the datastream/observation
@@ -386,7 +391,7 @@ Two contract notes worth keeping in mind:
   The managed datastream carries every commit, so it cannot be the base for a
   historical view: replaying an older session's operations on top of it would
   reproduce the final state. `reconstructCommittedSession` instead fetches the
-  ancestor closure (`ancestor_of`), loads the raw source once over the chain's
+  ancestor closure (`ancestorOf`), loads the raw source once over the chain's
   windows, and replays the chain in **commit order** (`committedAt`, falling
   back to `createdAt`): committing is what writes observations into the
   managed datastream, so it is commit order, not authoring order, that decides

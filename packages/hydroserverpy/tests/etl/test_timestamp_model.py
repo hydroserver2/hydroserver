@@ -199,6 +199,19 @@ class TestParseSeriesUtc:
         with pytest.raises(Exception):
             utc_iso_timestamp.parse_series_to_utc(series)
 
+    @pytest.mark.parametrize("values", [
+        ["2026-10-29T13:01:28.397000", "2026-10-07T02:37:41"],
+        ["2026-10-07T02:37:41", "2026-10-29T13:01:28.397000"],
+    ])
+    def test_mixed_fractional_and_whole_seconds(self, utc_iso_timestamp, values):
+        """
+        Regression test: pandas infers a format from the first element unless told
+        the series is ISO 8601, so a timestamp without fractional seconds next to
+        one with them was rejected as unreadable.
+        """
+        result = utc_iso_timestamp.parse_series_to_utc(pd.Series(values))
+        assert result.tolist() == [pd.Timestamp(value, tz="UTC") for value in values]
+
     def test_whitespace_is_stripped(self, utc_iso_timestamp):
         series = pd.Series(["  2024-01-01T12:00:00  ", "\t2024-06-01T00:00:00\n"])
         result = utc_iso_timestamp.parse_series_to_utc(series)
@@ -280,6 +293,33 @@ class TestParseSeriesHourOnlyOffset:
         assert result.dt.tz == timezone.utc
         assert result.iloc[0] == pd.Timestamp("2024-01-01 19:00:00", tz="UTC")
         assert result.iloc[1] == pd.Timestamp("2024-01-01 06:30:00", tz="UTC")
+
+
+# ---------------------------------------------------------------------------
+# parse_series_to_utc – date-only ISO strings
+# ---------------------------------------------------------------------------
+
+class TestParseSeriesDateOnly:
+
+    @pytest.mark.parametrize("value", ["2024-01-01", "2024-01"])
+    @pytest.mark.parametrize("timestamp_fixture", ["iana_timestamp", "offset_timestamp"])
+    def test_date_only_strings_are_localized_to_configured_timezone(self, value, timestamp_fixture, request):
+        ts = request.getfixturevalue(timestamp_fixture)
+        expected_hour = 5 if timestamp_fixture == "iana_timestamp" else 7
+        result = ts.parse_series_to_utc(pd.Series([value]))
+        assert result.iloc[0] == pd.Timestamp(f"2024-01-01 {expected_hour:02d}:00:00", tz="UTC")
+
+    @pytest.mark.parametrize("value", [
+        "2024-01-01T00-07",
+        "2024-01-01 00:00:00-07:00",
+        "2024-01-01T000000-0700",
+        "2024-01-01 00:00:00 -07:00",
+        "2024-01-01T00:00:00 -0700",
+        "2024-01-01T00:00:00.000 -07:00",
+    ])
+    def test_offsets_after_time_component_are_preserved(self, value, iana_timestamp):
+        result = iana_timestamp.parse_series_to_utc(pd.Series([value]))
+        assert result.iloc[0] == pd.Timestamp("2024-01-01 07:00:00", tz="UTC")
 
 
 # ---------------------------------------------------------------------------

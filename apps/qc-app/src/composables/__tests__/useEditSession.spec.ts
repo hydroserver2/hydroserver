@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ref, toRaw } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
-import { makeQcFake } from '@/services/qualityControl/__tests__/qcServiceFake'
+import { createHistory, createSession, makeQcFake } from '@/services/qualityControl/__tests__/qcServiceFake'
 import { unwrap } from '@/services/qualityControl/unwrap'
 
 const qcDatastream = ref<any>(null)
@@ -18,9 +18,10 @@ vi.mock('@/store/dataVisualization', () => ({
 }))
 
 const selectedSeries = ref<any>(null)
+const previewIndex = ref<number | null>(null)
 const redraw = vi.fn()
 vi.mock('@/store/plotly', () => ({
-  usePlotlyStore: () => ({ selectedSeries, redraw }),
+  usePlotlyStore: () => ({ selectedSeries, previewIndex, redraw }),
 }))
 
 const getItem = vi.fn()
@@ -29,8 +30,9 @@ const getObservationsChecksum = vi.fn()
 const hs = ref<any>({
   datastreams: { getItem, createObservations, getObservationsChecksum },
 })
+const sessionExpired = ref(false)
 vi.mock('@/store/hydroserver', () => ({
-  useHydroServer: () => ({ hs }),
+  useHydroServer: () => ({ hs, sessionExpired }),
 }))
 
 const fetchDetachedRecord = vi.fn()
@@ -136,6 +138,7 @@ beforeEach(() => {
   wireHs()
   qcDatastream.value = { id: 'm-1' }
   selectedSeries.value = { data: makeRecord() }
+  previewIndex.value = null
   getItem.mockResolvedValue({ id: 's-1', name: 'Source' })
   createObservations.mockResolvedValue({ ok: true, status: 201, data: null })
   // The source is unchanged unless a test says otherwise.
@@ -177,13 +180,11 @@ describe('useEditSession', () => {
   })
 
   it('beginEditing resumes an in-progress session from the shared working copy', async () => {
-    const h = unwrap(
-      await qc.histories.create({
-        managedDatastreamId: 'm-1',
-        sourceDatastreamId: 's-1',
-      })
-    )
-    const created = unwrap(await qc.sessions.create(h.id, WIN))
+    const h = await createHistory(qc, {
+      managedDatastreamId: 'm-1',
+      sourceDatastreamId: 's-1',
+    })
+    const created = await createSession(qc, h.id, WIN)
     // The working copy resume should wire into the series, shared with the
     // Select-view plot via the workingCopies store.
     const sharedRecord = makeRecord([{ method: 'VALUE_THRESHOLD', args: [] }])
@@ -210,13 +211,11 @@ describe('useEditSession', () => {
   })
 
   it('resumes an in-progress session even before the edit series exists', async () => {
-    const h = unwrap(
-      await qc.histories.create({
-        managedDatastreamId: 'm-1',
-        sourceDatastreamId: 's-1',
-      })
-    )
-    const created = unwrap(await qc.sessions.create(h.id, WIN))
+    const h = await createHistory(qc, {
+      managedDatastreamId: 'm-1',
+      sourceDatastreamId: 's-1',
+    })
+    const created = await createSession(qc, h.id, WIN)
     // No edit series yet: `qcDatastream` isn't guaranteed to have a graph
     // series before a record arrives, so resume must not depend on one.
     selectedSeries.value = undefined
@@ -236,12 +235,10 @@ describe('useEditSession', () => {
   })
 
   it('beginEditing rejects when the working copy is superseded mid-resume, without asking to start a session', async () => {
-    const h = unwrap(
-      await qc.histories.create({
-        managedDatastreamId: 'm-1',
-        sourceDatastreamId: 's-1',
-      })
-    )
+    const h = await createHistory(qc, {
+      managedDatastreamId: 'm-1',
+      sourceDatastreamId: 's-1',
+    })
     await qc.sessions.create(h.id, WIN)
     // Superseded while resuming (e.g. the session was deleted, or the
     // workspace was reset), so nothing replayed is cached.
@@ -261,12 +258,10 @@ describe('useEditSession', () => {
   })
 
   it('beginEditing rejects when the edit target is cleared while the resume is in flight, without calling setEditRecord', async () => {
-    const h = unwrap(
-      await qc.histories.create({
-        managedDatastreamId: 'm-1',
-        sourceDatastreamId: 's-1',
-      })
-    )
+    const h = await createHistory(qc, {
+      managedDatastreamId: 'm-1',
+      sourceDatastreamId: 's-1',
+    })
     await qc.sessions.create(h.id, WIN)
     // Simulates leaving the editor mid-resume: it clears the edit target but
     // not the session store, so the awaited rebuild resolves into a stale
@@ -298,12 +293,10 @@ describe('useEditSession', () => {
   }
 
   it('beginEditing rejects without writing the session store when the target changes during the source fetch', async () => {
-    const h = unwrap(
-      await qc.histories.create({
-        managedDatastreamId: 'm-1',
-        sourceDatastreamId: 's-1',
-      })
-    )
+    const h = await createHistory(qc, {
+      managedDatastreamId: 'm-1',
+      sourceDatastreamId: 's-1',
+    })
     await qc.sessions.create(h.id, WIN)
     getItem.mockImplementationOnce(async () => {
       takeOver()
@@ -325,12 +318,10 @@ describe('useEditSession', () => {
   })
 
   it('beginEditing rejects without writing the session store when the target changes while sessions load', async () => {
-    const h = unwrap(
-      await qc.histories.create({
-        managedDatastreamId: 'm-1',
-        sourceDatastreamId: 's-1',
-      })
-    )
+    const h = await createHistory(qc, {
+      managedDatastreamId: 'm-1',
+      sourceDatastreamId: 's-1',
+    })
     await qc.sessions.create(h.id, WIN)
     const list = qc.sessions.list.bind(qc.sessions)
     vi.spyOn(qc.sessions, 'list').mockImplementationOnce(async (...args) => {
@@ -355,13 +346,11 @@ describe('useEditSession', () => {
   })
 
   it('startSession bases a committed window on the managed datastream', async () => {
-    const h = unwrap(
-      await qc.histories.create({
-        managedDatastreamId: 'm-1',
-        sourceDatastreamId: 's-1',
-      })
-    )
-    const earlier = unwrap(await qc.sessions.create(h.id, WIN))
+    const h = await createHistory(qc, {
+      managedDatastreamId: 'm-1',
+      sourceDatastreamId: 's-1',
+    })
+    const earlier = await createSession(qc, h.id, WIN)
     await qc.sessions.commit(h.id, earlier.id)
     const managedBase = makeRecord()
     fetchDetachedRecord.mockResolvedValue(managedBase)
@@ -423,6 +412,19 @@ describe('useEditSession', () => {
     ])
   })
 
+  it('a successful save clears the expired-login notice', async () => {
+    await seedHistory()
+    const { useEditSession } = await import('@/composables/useEditSession')
+    const session = useEditSession()
+    await session.beginEditing()
+    await session.startSession(WIN)
+    sessionExpired.value = true
+
+    await session.saveDraft()
+
+    expect(sessionExpired.value).toBe(false)
+  })
+
   it('commit checks the source window has not changed', async () => {
     await seedHistory()
     selectedSeries.value = { data: makeRecord([{ method: 'VALUE_THRESHOLD', args: [] }]) }
@@ -437,6 +439,23 @@ describe('useEditSession', () => {
       new Date(WIN.phenomenonTimeStart),
       new Date(WIN.phenomenonTimeEnd)
     )
+  })
+
+  it('commit refuses while an earlier history step is previewed', async () => {
+    await seedHistory()
+    selectedSeries.value = { data: makeRecord([{ method: 'VALUE_THRESHOLD', args: [] }]) }
+    const { useEditSession } = await import('@/composables/useEditSession')
+    const session = useEditSession()
+    await session.beginEditing()
+    await session.startSession(WIN)
+    const saveOps = vi.spyOn(qc.operations, 'create')
+    previewIndex.value = 0
+
+    await expect(session.commit()).rejects.toThrow(/previewing an earlier step/i)
+
+    expect(saveOps).not.toHaveBeenCalled()
+    expect(createObservations).not.toHaveBeenCalled()
+    expect(useQcSessionStore().inProgressSession).not.toBeNull()
   })
 
   it('commit stops when the source window changed since the session started', async () => {
@@ -502,8 +521,8 @@ describe('useEditSession', () => {
       expect.objectContaining({ fields: ['phenomenonTime', 'result'] }),
       {
         mode: 'replace',
-        phenomenon_time_start: new Date(WIN.phenomenonTimeStart).toISOString(),
-        phenomenon_time_end: new Date(WIN.phenomenonTimeEnd).toISOString(),
+        phenomenonTimeStart: new Date(WIN.phenomenonTimeStart).toISOString(),
+        phenomenonTimeEnd: new Date(WIN.phenomenonTimeEnd).toISOString(),
       }
     )
     const store = useQcSessionStore()
@@ -631,12 +650,10 @@ describe('useEditSession', () => {
   })
 
   it('resuming a session starts with no unsaved changes', async () => {
-    const h = unwrap(
-      await qc.histories.create({
-        managedDatastreamId: 'm-1',
-        sourceDatastreamId: 's-1',
-      })
-    )
+    const h = await createHistory(qc, {
+      managedDatastreamId: 'm-1',
+      sourceDatastreamId: 's-1',
+    })
     await qc.sessions.create(h.id, WIN)
     fetchDetachedRecord.mockResolvedValue(
       makeRecord([{ method: 'VALUE_THRESHOLD', args: [] }])
@@ -735,18 +752,16 @@ describe('useEditSession', () => {
   })
 
   it('startSession over an existing in-progress session replays its saved operations as the saved baseline', async () => {
-    const h = unwrap(
-      await qc.histories.create({
-        managedDatastreamId: 'm-1',
-        sourceDatastreamId: 's-1',
-      })
-    )
+    const h = await createHistory(qc, {
+      managedDatastreamId: 'm-1',
+      sourceDatastreamId: 's-1',
+    })
     const { useEditSession } = await import('@/composables/useEditSession')
     const session = useEditSession()
     expect(await session.beginEditing()).toBe('needs-session')
 
     // Someone else starts the session and saves a draft first.
-    const existing = unwrap(await qc.sessions.create(h.id, WIN))
+    const existing = await createSession(qc, h.id, WIN)
     await qc.operations.create(h.id, existing.id, [
       { operationType: 'SELECTION' as any, arguments: [[0]], order: 0 },
       { operationType: 'DELETE_POINTS' as any, arguments: [], order: 1 },
@@ -784,18 +799,16 @@ describe('useEditSession', () => {
   })
 
   it('startSession rejects when resuming an existing session is superseded, without editing a bare base', async () => {
-    const h = unwrap(
-      await qc.histories.create({
-        managedDatastreamId: 'm-1',
-        sourceDatastreamId: 's-1',
-      })
-    )
+    const h = await createHistory(qc, {
+      managedDatastreamId: 'm-1',
+      sourceDatastreamId: 's-1',
+    })
     const { useEditSession, ResumeSupersededError } = await import(
       '@/composables/useEditSession'
     )
     const session = useEditSession()
     await session.beginEditing()
-    const existing = unwrap(await qc.sessions.create(h.id, WIN))
+    const existing = await createSession(qc, h.id, WIN)
     await qc.operations.create(h.id, existing.id, [
       { operationType: 'SELECTION' as any, arguments: [[0]], order: 0 },
       { operationType: 'DELETE_POINTS' as any, arguments: [], order: 1 },
@@ -898,13 +911,11 @@ describe('useEditSession.discardUnsavedEdits', () => {
 
 describe('useEditSession.viewSession', () => {
   it('loads a committed session and marks the editor read-only', async () => {
-    const h = unwrap(
-      await qc.histories.create({
-        managedDatastreamId: 'm-1',
-        sourceDatastreamId: 's-1',
-      })
-    )
-    const committed = unwrap(await qc.sessions.create(h.id, WIN))
+    const h = await createHistory(qc, {
+      managedDatastreamId: 'm-1',
+      sourceDatastreamId: 's-1',
+    })
+    const committed = await createSession(qc, h.id, WIN)
     await qc.operations.create(h.id, committed.id, [
       { operationType: 'SELECTION' as any, order: 0 },
     ])
@@ -932,13 +943,11 @@ describe('useEditSession.viewSession', () => {
   })
 
   it('moves the selection before loading, so the spinner sits on the new session', async () => {
-    const h = unwrap(
-      await qc.histories.create({
-        managedDatastreamId: 'm-1',
-        sourceDatastreamId: 's-1',
-      })
-    )
-    const committed = unwrap(await qc.sessions.create(h.id, WIN))
+    const h = await createHistory(qc, {
+      managedDatastreamId: 'm-1',
+      sourceDatastreamId: 's-1',
+    })
+    const committed = await createSession(qc, h.id, WIN)
     await qc.sessions.commit(h.id, committed.id)
     await qc.sessions.create(h.id, WIN)
 
@@ -964,15 +973,13 @@ describe('useEditSession.viewSession', () => {
   })
 
   it('restores the previous selection when loading a session fails', async () => {
-    const h = unwrap(
-      await qc.histories.create({
-        managedDatastreamId: 'm-1',
-        sourceDatastreamId: 's-1',
-      })
-    )
-    const committed = unwrap(await qc.sessions.create(h.id, WIN))
+    const h = await createHistory(qc, {
+      managedDatastreamId: 'm-1',
+      sourceDatastreamId: 's-1',
+    })
+    const committed = await createSession(qc, h.id, WIN)
     await qc.sessions.commit(h.id, committed.id)
-    const inProgress = unwrap(await qc.sessions.create(h.id, WIN))
+    const inProgress = await createSession(qc, h.id, WIN)
 
     const store = useQcSessionStore()
     const { useEditSession } = await import('@/composables/useEditSession')
@@ -988,15 +995,13 @@ describe('useEditSession.viewSession', () => {
   })
 
   it('does not report editable over a committed snapshot when the return-to-current rebuild is invalidated', async () => {
-    const h = unwrap(
-      await qc.histories.create({
-        managedDatastreamId: 'm-1',
-        sourceDatastreamId: 's-1',
-      })
-    )
-    const committed = unwrap(await qc.sessions.create(h.id, WIN))
+    const h = await createHistory(qc, {
+      managedDatastreamId: 'm-1',
+      sourceDatastreamId: 's-1',
+    })
+    const committed = await createSession(qc, h.id, WIN)
     await qc.sessions.commit(h.id, committed.id)
-    const inProgress = unwrap(await qc.sessions.create(h.id, WIN))
+    const inProgress = await createSession(qc, h.id, WIN)
 
     const store = useQcSessionStore()
     const { useEditSession } = await import('@/composables/useEditSession')
@@ -1028,15 +1033,13 @@ describe('useEditSession.viewSession', () => {
   })
 
   it('rejects when the edit target changes while a committed session loads, without calling setEditRecord', async () => {
-    const h = unwrap(
-      await qc.histories.create({
-        managedDatastreamId: 'm-1',
-        sourceDatastreamId: 's-1',
-      })
-    )
-    const committed = unwrap(await qc.sessions.create(h.id, WIN))
+    const h = await createHistory(qc, {
+      managedDatastreamId: 'm-1',
+      sourceDatastreamId: 's-1',
+    })
+    const committed = await createSession(qc, h.id, WIN)
     await qc.sessions.commit(h.id, committed.id)
-    const inProgress = unwrap(await qc.sessions.create(h.id, WIN))
+    const inProgress = await createSession(qc, h.id, WIN)
 
     const store = useQcSessionStore()
     const { useEditSession, ResumeSupersededError } = await import(
@@ -1068,13 +1071,11 @@ describe('useEditSession.viewSession', () => {
   })
 
   it('rejects when the edit target is gone even though the session store still has state', async () => {
-    const h = unwrap(
-      await qc.histories.create({
-        managedDatastreamId: 'm-1',
-        sourceDatastreamId: 's-1',
-      })
-    )
-    const committed = unwrap(await qc.sessions.create(h.id, WIN))
+    const h = await createHistory(qc, {
+      managedDatastreamId: 'm-1',
+      sourceDatastreamId: 's-1',
+    })
+    const committed = await createSession(qc, h.id, WIN)
     await qc.sessions.commit(h.id, committed.id)
     await qc.sessions.create(h.id, WIN)
 

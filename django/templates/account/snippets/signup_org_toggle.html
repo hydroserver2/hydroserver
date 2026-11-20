@@ -1,0 +1,15 @@
+<script>
+    const organizationCheckbox = document.getElementById('id_has_organization');
+    const organizationFields = document.getElementById('org-fields');
+
+    function toggleOrganizationFields() {
+        const hasOrganization = organizationCheckbox.checked;
+        organizationFields.hidden = !hasOrganization;
+        organizationFields.disabled = !hasOrganization;
+    }
+
+    if (organizationCheckbox && organizationFields) {
+        organizationCheckbox.addEventListener('change', toggleOrganizationFields);
+        toggleOrganizationFields();
+    }
+</script>

@@ -1,0 +1,86 @@
+{% extends "allauth/layouts/manage.html" %}
+{% load i18n %}
+{% block head_title %}{% trans "Edit profile" %}{% endblock %}
+{% block card_header %}{% endblock %}
+{% block content %}
+<h1 class="hs-heading auth-page-heading">{% trans "Edit profile" %}</h1>
+
+<form method="post" class="hs-form">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+        <div class="hs-alert hs-alert--error">
+            {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+    {% endif %}
+
+    <section class="auth-section">
+        <div class="auth-definition-list">
+            {% for field in form %}
+                {% if field.name in "first_name,middle_name,last_name,phone,address,link,user_type" %}
+                    <div class="hs-field">
+                        <fieldset class="hs-field__control">
+                            <legend id="{{ field.id_for_label }}-label" class="hs-field__legend">
+                                <label for="{{ field.id_for_label }}">{{ field.label }}</label>{% if field.field.required %}<span class="hs-field__required" aria-hidden="true"> *</span>{% endif %}
+                            </legend>
+                        {% if field.name == "user_type" %}
+                            <select name="{{ field.html_name }}" id="{{ field.id_for_label }}" aria-labelledby="{{ field.id_for_label }}-label" class="hs-field__select" {% if field.field.required %}required{% endif %}>
+                                {% for value, label in field.field.choices %}
+                                    <option value="{{ value }}" {% if field.value == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        {% elif field.name == "phone" %}
+                            {{ field }}
+                        {% else %}
+                            <input type="{{ field.field.widget.input_type|default:'text' }}" name="{{ field.html_name }}" id="{{ field.id_for_label }}" aria-labelledby="{{ field.id_for_label }}-label" value="{{ field.value|default:'' }}" {% if field.field.max_length %}maxlength="{{ field.field.max_length }}"{% endif %} {% if field.field.required %}required{% endif %} class="hs-field__input">
+                        {% endif %}
+                        </fieldset>
+                        {% if field.errors %}<p class="hs-field__error">{{ field.errors.0 }}</p>{% endif %}
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="auth-section">
+        <label for="id_has_organization" class="hs-checkbox-label">
+            <input type="checkbox" name="has_organization" id="id_has_organization" {% if has_organization %}checked{% endif %} class="hs-checkbox" aria-controls="org-fields" onchange="document.getElementById('org-fields').hidden = !this.checked">
+            {% trans "Organization affiliation" %}
+        </label>
+        <div id="org-fields" class="auth-organization-fields" {% if not has_organization %}hidden{% endif %}>
+            <div class="auth-definition-list">
+                {% for field in form %}
+                    {% if field.name in "org_name,org_code,org_type,org_link,org_description" %}
+                        <div class="hs-field">
+                            <fieldset class="hs-field__control">
+                                <legend id="{{ field.id_for_label }}-label" class="hs-field__legend">{{ field.label }}</legend>
+                            {% if field.name == "org_type" %}
+                                <select name="{{ field.html_name }}" id="{{ field.id_for_label }}" aria-labelledby="{{ field.id_for_label }}-label" class="hs-field__select">
+                                    {% for value, label in field.field.choices %}
+                                        <option value="{{ value }}" {% if field.value == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            {% elif field.name == "org_description" %}
+                                <textarea name="{{ field.html_name }}" id="{{ field.id_for_label }}" aria-labelledby="{{ field.id_for_label }}-label" rows="3" class="hs-field__textarea">{{ field.value|default:'' }}</textarea>
+                            {% else %}
+                                <input type="{{ field.field.widget.input_type|default:'text' }}" name="{{ field.html_name }}" id="{{ field.id_for_label }}" aria-labelledby="{{ field.id_for_label }}-label" value="{{ field.value|default:'' }}" class="hs-field__input">
+                            {% endif %}
+                            </fieldset>
+                            {% if field.errors %}<p class="hs-field__error">{{ field.errors.0 }}</p>{% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <div class="hs-actions hs-actions--end">
+        <a href="{% url 'account_profile' %}" class="hs-button hs-button--cancel">{% trans "Cancel" %}</a>
+        <button type="submit" class="hs-button hs-button--dialog-action">{% trans "Save changes" %}</button>
+    </div>
+</form>
+{% endblock %}
+{% block extra_body %}
+    {{ block.super }}
+    {{ form.media }}
+{% endblock %}

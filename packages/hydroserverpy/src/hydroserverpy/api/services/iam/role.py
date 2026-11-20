@@ -17,22 +17,26 @@ class RoleService(HydroServerBaseService):
 
     def list(
         self,
-        page: int = ...,
-        page_size: int = ...,
-        order_by: List[str] = ...,
-        workspace: Optional[Union["Workspace", UUID, str]] = ...,
-        is_user_role: bool = ...,
-        is_apikey_role: bool = ...,
+        offset: int = ...,
+        limit: int = ...,
+        sortby: List[str] = ...,
+        workspace: Optional[Union["Workspace", UUID, str, List[Optional[Union["Workspace", UUID, str]]]]] = ...,
         fetch_all: bool = False,
     ) -> List["Role"]:
-        """Fetch a collection of HydroServer roles."""
+        """
+        Fetch a collection of HydroServer roles. Pass a list to match several workspaces;
+        None in the list matches system roles that belong to no workspace.
+        """
+
+        if isinstance(workspace, (list, tuple)):
+            workspace_id = ["null" if w is None else normalize_uuid(w) for w in workspace]
+        else:
+            workspace_id = normalize_uuid(workspace)
 
         return super().list(
-            page=page,
-            page_size=page_size,
-            order_by=order_by,
+            offset=offset,
+            limit=limit,
+            sortby=sortby,
             fetch_all=fetch_all,
-            workspace_id=normalize_uuid(workspace),
-            is_user_role=is_user_role,
-            is_apikey_role=is_apikey_role,
+            workspace_id=workspace_id,
         )
