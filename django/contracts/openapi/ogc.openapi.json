@@ -2285,6 +2285,8 @@
                 "observedProperty",
                 "processingLevel",
                 "unit",
+                "zUnit",
+                "zReference",
                 "sampledMedium",
                 "aggregationStatistic",
                 "status"
@@ -2303,6 +2305,7 @@
                 "name",
                 "description",
                 "type",
+                "zReference",
                 "sampledMedium",
                 "noDataValue",
                 "aggregationStatistic",
@@ -2318,11 +2321,14 @@
                 "phenomenonEndTime",
                 "resultBeginTime",
                 "resultEndTime",
+                "zMin",
+                "zMax",
                 "monitoringSiteId",
                 "methodId",
                 "observedPropertyId",
                 "processingLevelId",
                 "unitId",
+                "zUnitId",
                 "tags",
                 "linkedResources"
               ],
@@ -2457,7 +2463,10 @@
             "type": "string"
           },
           "type": {
-            "const": "timeSeriesCoverage",
+            "enum": [
+              "timeSeriesCoverage",
+              "profileCoverage"
+            ],
             "title": "Type",
             "type": "string"
           },
@@ -2465,6 +2474,30 @@
             "format": "uuid",
             "title": "Unitid",
             "type": "string"
+          },
+          "zReference": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zreference"
+          },
+          "zUnitId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zunitid"
           }
         },
         "title": "DatastreamPatchBody",
@@ -2601,8 +2634,11 @@
             "type": "string"
           },
           "type": {
-            "const": "timeSeriesCoverage",
             "default": "timeSeriesCoverage",
+            "enum": [
+              "timeSeriesCoverage",
+              "profileCoverage"
+            ],
             "title": "Type",
             "type": "string"
           },
@@ -2610,6 +2646,30 @@
             "format": "uuid",
             "title": "Unitid",
             "type": "string"
+          },
+          "zReference": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zreference"
+          },
+          "zUnitId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zunitid"
           }
         },
         "required": [
@@ -2802,8 +2862,11 @@
             "type": "string"
           },
           "type": {
-            "const": "timeSeriesCoverage",
             "default": "timeSeriesCoverage",
+            "enum": [
+              "timeSeriesCoverage",
+              "profileCoverage"
+            ],
             "title": "Type",
             "type": "string"
           },
@@ -2828,6 +2891,52 @@
             "format": "uuid",
             "title": "Workspaceid",
             "type": "string"
+          },
+          "zMax": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zmax"
+          },
+          "zMin": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zmin"
+          },
+          "zReference": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zreference"
+          },
+          "zUnitId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zunitid"
           }
         },
         "required": [
@@ -2882,6 +2991,8 @@
                 "observedProperty",
                 "processingLevel",
                 "unit",
+                "zUnit",
+                "zReference",
                 "sampledMedium",
                 "aggregationStatistic",
                 "status"
@@ -2974,6 +3085,7 @@
                 "name",
                 "description",
                 "type",
+                "zReference",
                 "sampledMedium",
                 "noDataValue",
                 "aggregationStatistic",
@@ -2989,11 +3101,14 @@
                 "phenomenonEndTime",
                 "resultBeginTime",
                 "resultEndTime",
+                "zMin",
+                "zMax",
                 "monitoringSiteId",
                 "methodId",
                 "observedPropertyId",
                 "processingLevelId",
                 "unitId",
+                "zUnitId",
                 "tags",
                 "linkedResources"
               ],
@@ -3040,6 +3155,7 @@
               "enum": [
                 "name",
                 "type",
+                "zReference",
                 "sampledMedium",
                 "status",
                 "isPrivate",
@@ -3052,6 +3168,7 @@
                 "resultEndTime",
                 "-name",
                 "-type",
+                "-zReference",
                 "-sampledMedium",
                 "-status",
                 "-isPrivate",
@@ -3064,6 +3181,7 @@
                 "-resultEndTime",
                 "+name",
                 "+type",
+                "+zReference",
                 "+sampledMedium",
                 "+status",
                 "+isPrivate",
@@ -3110,7 +3228,10 @@
             "default": [],
             "description": "Datastreams of this type.",
             "items": {
-              "const": "timeSeriesCoverage",
+              "enum": [
+                "timeSeriesCoverage",
+                "profileCoverage"
+              ],
               "type": "string"
             },
             "title": "Type",
@@ -3158,6 +3279,25 @@
               "type": "string"
             },
             "title": "Workspaceid",
+            "type": "array"
+          },
+          "zReference": {
+            "default": [],
+            "description": "Profile coverage datastreams measuring z from this datum. Matches `name` in `z-references`.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Zreference",
+            "type": "array"
+          },
+          "zUnitId": {
+            "default": [],
+            "description": "Profile coverage datastreams with z in this unit. Matches `id` in `units`.",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Zunitid",
             "type": "array"
           }
         },
@@ -3343,8 +3483,11 @@
             "type": "string"
           },
           "type": {
-            "const": "timeSeriesCoverage",
             "default": "timeSeriesCoverage",
+            "enum": [
+              "timeSeriesCoverage",
+              "profileCoverage"
+            ],
             "title": "Type",
             "type": "string"
           },
@@ -3369,6 +3512,52 @@
             "format": "uuid",
             "title": "Workspaceid",
             "type": "string"
+          },
+          "zMax": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zmax"
+          },
+          "zMin": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zmin"
+          },
+          "zReference": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zreference"
+          },
+          "zUnitId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zunitid"
           }
         },
         "required": [
@@ -6278,6 +6467,41 @@
           "data"
         ],
         "title": "ItemResponse[WorkspaceResponse]",
+        "type": "object"
+      },
+      "ItemResponse_ZReferenceResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ZReferenceResponse"
+          },
+          "included": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "ItemResponse[ZReferenceResponse]",
         "type": "object"
       },
       "JSONPayloadPostBody": {
@@ -9423,6 +9647,21 @@
             },
             "title": "Resultqualifiers",
             "type": "array"
+          },
+          "z": {
+            "default": [],
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Z",
+            "type": "array"
           }
         },
         "required": [
@@ -9496,6 +9735,7 @@
             "items": {
               "enum": [
                 "phenomenonTime",
+                "z",
                 "result",
                 "resultQualifiers"
               ],
@@ -9651,6 +9891,18 @@
               }
             ],
             "title": "Resultqualifiers"
+          },
+          "z": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Z"
           }
         },
         "title": "ObservationColumns",
@@ -9679,6 +9931,7 @@
                 "workspaceId",
                 "datastreamId",
                 "phenomenonTime",
+                "z",
                 "result",
                 "resultQualifiers"
               ],
@@ -9734,6 +9987,17 @@
             },
             "title": "Resultqualifiers",
             "type": "array"
+          },
+          "z": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Z"
           }
         },
         "required": [
@@ -9772,6 +10036,17 @@
             "format": "uuid",
             "title": "Workspaceid",
             "type": "string"
+          },
+          "z": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Z"
           }
         },
         "required": [
@@ -9837,6 +10112,30 @@
             "title": "Limit",
             "type": "integer"
           },
+          "maxZ": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Observations with a z at or below this value.",
+            "title": "Maxz"
+          },
+          "minZ": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Observations with a z at or above this value.",
+            "title": "Minz"
+          },
           "offset": {
             "anyOf": [
               {
@@ -9859,6 +10158,7 @@
                 "workspaceId",
                 "datastreamId",
                 "phenomenonTime",
+                "z",
                 "result",
                 "resultQualifiers"
               ],
@@ -9882,10 +10182,13 @@
             "items": {
               "enum": [
                 "phenomenonTime",
+                "z",
                 "datastreamId",
                 "-phenomenonTime",
+                "-z",
                 "-datastreamId",
                 "+phenomenonTime",
+                "+z",
                 "+datastreamId"
               ],
               "type": "string"
@@ -9931,6 +10234,17 @@
             "format": "uuid",
             "title": "Workspaceid",
             "type": "string"
+          },
+          "z": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Z"
           }
         },
         "required": [
@@ -9955,6 +10269,7 @@
               "enum": [
                 "id",
                 "phenomenonTime",
+                "z",
                 "result",
                 "resultQualifiers"
               ],
@@ -11984,6 +12299,49 @@
         "title": "PaginatedResponse[WorkspaceResponse]",
         "type": "object"
       },
+      "PaginatedResponse_ZReferenceResponse_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ZReferenceResponse"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "included": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {},
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included"
+          },
+          "links": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[ZReferenceResponse]",
+        "type": "object"
+      },
       "PaginationMeta": {
         "properties": {
           "limit": {
@@ -12153,6 +12511,7 @@
               "SampledMedium",
               "AggregationStatistic",
               "DatastreamStatus",
+              "ZReference",
               "Datastream",
               "Observation",
               "DataConnection",
@@ -15878,6 +16237,14 @@
             "title": "Timeaggregationintervalunit",
             "type": "string"
           },
+          "type": {
+            "enum": [
+              "timeSeriesCoverage",
+              "profileCoverage"
+            ],
+            "title": "Type",
+            "type": "string"
+          },
           "unitId": {
             "format": "uuid",
             "title": "Unitid",
@@ -15904,6 +16271,42 @@
               }
             ],
             "title": "Valuecount"
+          },
+          "zReference": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zreference"
+          },
+          "zUnitId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zunitid"
+          },
+          "zUnitSymbol": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zunitsymbol"
           }
         },
         "required": [
@@ -15917,6 +16320,7 @@
           "unitId",
           "unitName",
           "unitSymbol",
+          "type",
           "noDataValue",
           "aggregationStatistic",
           "timeAggregationInterval",
@@ -16457,6 +16861,98 @@
           "newOwner"
         ],
         "title": "WorkspaceTransferBody",
+        "type": "object"
+      },
+      "ZReferencePatchBody": {
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "title": "ZReferencePatchBody",
+        "type": "object"
+      },
+      "ZReferencePostBody": {
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The new item's identifier. Generated if omitted.",
+            "title": "Id"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "ZReferencePostBody",
+        "type": "object"
+      },
+      "ZReferenceResponse": {
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "id": {
+            "description": "The item's unique identifier.",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "ZReferenceResponse",
         "type": "object"
       }
     },
@@ -20402,6 +20898,7 @@
                   "name",
                   "description",
                   "type",
+                  "zReference",
                   "sampledMedium",
                   "noDataValue",
                   "aggregationStatistic",
@@ -20417,11 +20914,14 @@
                   "phenomenonEndTime",
                   "resultBeginTime",
                   "resultEndTime",
+                  "zMin",
+                  "zMax",
                   "monitoringSiteId",
                   "methodId",
                   "observedPropertyId",
                   "processingLevelId",
                   "unitId",
+                  "zUnitId",
                   "tags",
                   "linkedResources"
                 ],
@@ -20448,6 +20948,8 @@
                   "observedProperty",
                   "processingLevel",
                   "unit",
+                  "zUnit",
+                  "zReference",
                   "sampledMedium",
                   "aggregationStatistic",
                   "status"
@@ -20506,6 +21008,7 @@
                 "enum": [
                   "name",
                   "type",
+                  "zReference",
                   "sampledMedium",
                   "status",
                   "isPrivate",
@@ -20518,6 +21021,7 @@
                   "resultEndTime",
                   "-name",
                   "-type",
+                  "-zReference",
                   "-sampledMedium",
                   "-status",
                   "-isPrivate",
@@ -20530,6 +21034,7 @@
                   "-resultEndTime",
                   "+name",
                   "+type",
+                  "+zReference",
                   "+sampledMedium",
                   "+status",
                   "+isPrivate",
@@ -20663,6 +21168,37 @@
             }
           },
           {
+            "description": "Profile coverage datastreams with z in this unit. Matches `id` in `units`.",
+            "in": "query",
+            "name": "zUnitId",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Profile coverage datastreams with z in this unit. Matches `id` in `units`.",
+              "items": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "title": "Zunitid",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Profile coverage datastreams measuring z from this datum. Matches `name` in `z-references`.",
+            "in": "query",
+            "name": "zReference",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Profile coverage datastreams measuring z from this datum. Matches `name` in `z-references`.",
+              "items": {
+                "type": "string"
+              },
+              "title": "Zreference",
+              "type": "array"
+            }
+          },
+          {
             "description": "Not supported yet. Any value returns no datastreams.",
             "in": "query",
             "name": "resultQualifier",
@@ -20687,7 +21223,10 @@
               "default": [],
               "description": "Datastreams of this type.",
               "items": {
-                "const": "timeSeriesCoverage",
+                "enum": [
+                  "timeSeriesCoverage",
+                  "profileCoverage"
+                ],
                 "type": "string"
               },
               "title": "Type",
@@ -21044,6 +21583,7 @@
                   "name",
                   "description",
                   "type",
+                  "zReference",
                   "sampledMedium",
                   "noDataValue",
                   "aggregationStatistic",
@@ -21059,11 +21599,14 @@
                   "phenomenonEndTime",
                   "resultBeginTime",
                   "resultEndTime",
+                  "zMin",
+                  "zMax",
                   "monitoringSiteId",
                   "methodId",
                   "observedPropertyId",
                   "processingLevelId",
                   "unitId",
+                  "zUnitId",
                   "tags",
                   "linkedResources"
                 ],
@@ -21090,6 +21633,8 @@
                   "observedProperty",
                   "processingLevel",
                   "unit",
+                  "zUnit",
+                  "zReference",
                   "sampledMedium",
                   "aggregationStatistic",
                   "status"
@@ -31315,6 +31860,7 @@
                   "workspaceId",
                   "datastreamId",
                   "phenomenonTime",
+                  "z",
                   "result",
                   "resultQualifiers"
                 ],
@@ -31408,10 +31954,13 @@
               "items": {
                 "enum": [
                   "phenomenonTime",
+                  "z",
                   "datastreamId",
                   "-phenomenonTime",
+                  "-z",
                   "-datastreamId",
                   "+phenomenonTime",
+                  "+z",
                   "+datastreamId"
                 ],
                 "type": "string"
@@ -31434,6 +31983,42 @@
               },
               "title": "Resultqualifiers",
               "type": "array"
+            }
+          },
+          {
+            "description": "Observations with a z at or above this value.",
+            "in": "query",
+            "name": "minZ",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Observations with a z at or above this value.",
+              "title": "Minz"
+            }
+          },
+          {
+            "description": "Observations with a z at or below this value.",
+            "in": "query",
+            "name": "maxZ",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Observations with a z at or below this value.",
+              "title": "Maxz"
             }
           },
           {
@@ -31740,6 +32325,7 @@
                   "workspaceId",
                   "datastreamId",
                   "phenomenonTime",
+                  "z",
                   "result",
                   "resultQualifiers"
                 ],
@@ -40586,6 +41172,570 @@
         ]
       }
     },
+    "/api/ogc/collections/z-references/items": {
+      "get": {
+        "description": "Get z references.",
+        "operationId": "interfaces_api_views_sta_z_reference_get_z_references",
+        "parameters": [
+          {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "explode": false,
+            "in": "query",
+            "name": "bbox",
+            "required": false,
+            "schema": {
+              "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+              "items": {
+                "type": "number"
+              },
+              "oneOf": [
+                {
+                  "maxItems": 4,
+                  "minItems": 4
+                },
+                {
+                  "maxItems": 6,
+                  "minItems": 6
+                }
+              ],
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "explode": false,
+            "in": "query",
+            "name": "datetime",
+            "required": false,
+            "schema": {
+              "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
+            "in": "query",
+            "name": "properties",
+            "required": false,
+            "schema": {
+              "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+              "items": {
+                "enum": [
+                  "id",
+                  "name",
+                  "description"
+                ],
+                "type": "string"
+              },
+              "title": "Properties",
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Comma-separated list of related resources to include in the response.",
+            "in": "query",
+            "name": "include",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Comma-separated list of related resources to include in the response.",
+              "title": "Include"
+            }
+          },
+          {
+            "description": "Number of items to skip.",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
+            }
+          },
+          {
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Select one or more fields to sort the response by.",
+            "explode": false,
+            "in": "query",
+            "name": "sortby",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Select one or more fields to sort the response by.",
+              "items": {
+                "enum": [
+                  "name",
+                  "-name",
+                  "+name"
+                ],
+                "type": "string"
+              },
+              "title": "Sortby",
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.",
+              "title": "Q"
+            }
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse_ZReferenceResponse_"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Z References",
+        "tags": [
+          "Z References"
+        ]
+      },
+      "post": {
+        "description": "Create a new z reference.",
+        "operationId": "interfaces_api_views_sta_z_reference_create_z_reference",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ZReferencePostBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Create Z Reference",
+        "tags": [
+          "Z References"
+        ]
+      }
+    },
+    "/api/ogc/collections/z-references/items/{z_reference_id}": {
+      "delete": {
+        "description": "Delete a z reference.",
+        "operationId": "interfaces_api_views_sta_z_reference_delete_z_reference",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "z_reference_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Z Reference Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Delete Z Reference",
+        "tags": [
+          "Z References"
+        ]
+      },
+      "get": {
+        "description": "Get a z reference.",
+        "operationId": "interfaces_api_views_sta_z_reference_get_z_reference",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "z_reference_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Z Reference Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
+            "in": "query",
+            "name": "properties",
+            "required": false,
+            "schema": {
+              "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+              "items": {
+                "enum": [
+                  "id",
+                  "name",
+                  "description"
+                ],
+                "type": "string"
+              },
+              "title": "Properties",
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemResponse_ZReferenceResponse_"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Z Reference",
+        "tags": [
+          "Z References"
+        ]
+      },
+      "patch": {
+        "description": "Update a z reference.",
+        "operationId": "interfaces_api_views_sta_z_reference_update_z_reference",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "z_reference_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Z Reference Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ZReferencePatchBody"
+              }
+            },
+            "application/merge-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ZReferencePatchBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Update Z Reference",
+        "tags": [
+          "Z References"
+        ]
+      }
+    },
     "/api/ogc/collections/{collection_id}": {
       "get": {
         "description": "Get a collection's description and links.",
@@ -40729,7 +41879,7 @@
       "name": "Linked Resource Types"
     },
     {
-      "description": "Time series of observations of one observed property at a monitoring site.",
+      "description": "Time series or vertical profiles of observations of one observed property at a monitoring site.",
       "externalDocs": {
         "description": "HydroServer documentation",
         "url": "https://hydroserver.org/introduction/key-concepts/datastreams"
@@ -40743,6 +41893,14 @@
         "url": "https://hydroserver.org/references/data-dictionary#controlled-vocabulary-tables"
       },
       "name": "Datastream Statuses"
+    },
+    {
+      "description": "Controlled vocabulary of vertical datums that profile coverage datastreams measure z from.",
+      "externalDocs": {
+        "description": "HydroServer documentation",
+        "url": "https://hydroserver.org/references/data-dictionary#controlled-vocabulary-tables"
+      },
+      "name": "Z References"
     },
     {
       "description": "Controlled vocabulary of statistics used to aggregate datastream results.",
