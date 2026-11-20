@@ -8,12 +8,16 @@
         cols="12"
         class="d-flex align-center flex-wrap justify-space-between gap-2 max-[600px]:flex-col max-[600px]:items-start"
       >
-        <h1 class="site-details-title hs-heading ma-0">{{ monitoringSite.name }}</h1>
+        <h1 class="site-details-title hs-heading ma-0">
+          {{ monitoringSite.name }}
+        </h1>
 
         <div
           class="flex items-center flex-wrap gap-2 max-[600px]:w-full max-[600px]:flex-col max-[600px]:items-stretch"
         >
-          <HydroShareArchivalButton v-if="canEditMonitoringSite && hydroShareConnected" />
+          <HydroShareArchivalButton
+            v-if="canEditMonitoringSite && hydroShareConnected"
+          />
 
           <v-btn
             v-if="canEditMonitoringSite"
@@ -72,7 +76,10 @@
 
           <v-btn
             v-if="
-              hasPermission(PermissionResource.MonitoringSite, PermissionAction.Delete)
+              hasPermission(
+                PermissionResource.MonitoringSite,
+                PermissionAction.Delete
+              )
             "
             color="red-darken-3"
             data-testid="delete-site-button"
@@ -82,7 +89,11 @@
           </v-btn>
         </div>
 
-        <v-dialog v-model="isDeleteModalOpen" v-if="monitoringSite" width="40rem">
+        <v-dialog
+          v-model="isDeleteModalOpen"
+          v-if="monitoringSite"
+          width="40rem"
+        >
           <SiteDeleteModal
             :monitoringSite="monitoringSite"
             @switch-to-access-control="switchToAccessControlModal"
@@ -117,9 +128,13 @@
           />
 
           <v-card class="site-details-card" flat>
-            <h2 class="site-details-card__title hs-text-md">Site information</h2>
+            <h2 class="site-details-card__title hs-text-md">
+              Site information
+            </h2>
             <dl class="site-details-facts hs-text-sm" data-testid="site-facts">
-              <div class="site-details-facts__row site-details-facts__row--stacked">
+              <div
+                class="site-details-facts__row site-details-facts__row--stacked"
+              >
                 <dt>Site UUID</dt>
                 <dd class="site-details-facts__uuid">
                   <span class="hs-font-data">{{ monitoringSite.id }}</span>
@@ -168,7 +183,7 @@
             data-testid="site-data-disclaimer"
           >
             <h2 class="site-details-card__title hs-text-md">Data disclaimer</h2>
-            <p class="site-details-disclaimer hs-text-sm">
+            <p class="site-details-disclaimer hs-text-md">
               {{ monitoringSite.dataDisclaimer }}
             </p>
           </v-card>
@@ -404,7 +419,7 @@ const route = useRoute()
 const monitoringSiteId = route.params.id.toString()
 const targetDatastreamId = computed(() => {
   const param = route.query.datastream
-  return Array.isArray(param) ? param[0] ?? '' : `${param ?? ''}`
+  return Array.isArray(param) ? (param[0] ?? '') : `${param ?? ''}`
 })
 
 const siteTabs = ['datastreams', 'photos', 'rating-curves'] as const
@@ -417,7 +432,9 @@ const activeTab = computed<SiteTab>({
     if (targetDatastreamId.value) return 'datastreams'
     const param = route.query.tab
     const value = Array.isArray(param) ? param[0] : param
-    return siteTabs.includes(value as SiteTab) ? (value as SiteTab) : 'datastreams'
+    return siteTabs.includes(value as SiteTab)
+      ? (value as SiteTab)
+      : 'datastreams'
   },
   set(tab) {
     const { tab: _currentTab, datastream: _datastream, ...query } = route.query
@@ -437,8 +454,10 @@ const orchestrationIngestionRoute = computed(() => ({
 const { photos } = storeToRefs(usePhotosStore())
 const workspace = ref<Workspace>()
 
-const { isConnectionEnabled: hydroShareEnabled, isConnected: hydroShareConnected } =
-  useHydroShare()
+const {
+  isConnectionEnabled: hydroShareEnabled,
+  isConnected: hydroShareConnected,
+} = useHydroShare()
 const { hydroShareArchive } = storeToRefs(useHydroShareStore())
 
 const { hasPermission } = useWorkspacePermissions(workspace)
@@ -510,7 +529,8 @@ async function loadMonitoringSitePhotos() {
 }
 
 async function loadRatingCurveCount() {
-  const items = await hs.ratingCurves.listItemsForMonitoringSite(monitoringSiteId)
+  const items =
+    await hs.ratingCurves.listItemsForMonitoringSite(monitoringSiteId)
   ratingCurveCount.value = items.length
 }
 
@@ -595,7 +615,8 @@ onMounted(async () => {
   monitoringSite.value = monitoringSiteResponse ?? undefined
   try {
     workspace.value =
-      (await hs.workspaces.getItem(monitoringSite.value!.workspaceId)) ?? undefined
+      (await hs.workspaces.getItem(monitoringSite.value!.workspaceId)) ??
+      undefined
   } catch (error) {
     console.error('Error fetching workspace', error)
   }
