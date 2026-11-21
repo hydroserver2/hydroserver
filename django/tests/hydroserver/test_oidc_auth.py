@@ -333,6 +333,7 @@ COLLECTION_SCOPES = {
     "collections/z-references": (DATA_READ, DATA_WRITE),
     "collections/aggregation-statistics": (DATA_READ, DATA_WRITE),
     "collections/observations": (DATA_READ, DATA_WRITE),
+    "collections/latest-observations": (DATA_READ, DATA_WRITE),
     "collections/observed-properties": (DATA_READ, DATA_WRITE),
     "collections/observed-property-types": (DATA_READ, DATA_WRITE),
     "collections/units": (DATA_READ, DATA_WRITE),

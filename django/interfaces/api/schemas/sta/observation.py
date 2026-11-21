@@ -20,6 +20,7 @@ from interfaces.api.schemas import (
     split_sortby,
     sortby_array_schema,
 )
+from interfaces.api.schemas.sta.datastream import DatastreamType
 from interfaces.api.schemas.sta.result_qualifier import ResultQualifierResponse
 from interfaces.api.schemas.base import ItemId, NewItemId
 
@@ -104,6 +105,41 @@ class ObservationQueryParameters(ObservationFilterFields, CollectionQueryParamet
     )
     min_z: Optional[float] = Query(None, description="Observations with a z at or above this value.")
     max_z: Optional[float] = Query(None, description="Observations with a z at or below this value.")
+
+
+class LatestObservationQueryParameters(ObservationQueryParameters):
+    """
+    The observations filters, plus filters on the datastream each latest observation belongs to. The inherited
+    datetime filter matches datastreams whose latest observation falls in the interval.
+    """
+
+    datastream_id: list[uuid.UUID] = Query(
+        [], description="The latest observation(s) of this datastream. Matches `id` in `datastreams`."
+    )
+    workspace_id: list[uuid.UUID] = Query(
+        [], description="Latest observations of datastreams in this workspace. Matches `id` in `workspaces`."
+    )
+    monitoring_site_id: list[uuid.UUID] = Query(
+        [],
+        description="Latest observations of datastreams at this monitoring site. Matches `id` in `monitoring-sites`.",
+    )
+    observed_property_id: list[uuid.UUID] = Query(
+        [],
+        description="Latest observations of datastreams that observe this observed property. Matches `id` in "
+        "`observed-properties`.",
+    )
+    processing_level_id: list[uuid.UUID] = Query(
+        [],
+        description="Latest observations of datastreams at this processing level. Matches `id` in "
+        "`processing-levels`.",
+    )
+    method_id: list[uuid.UUID] = Query(
+        [], description="Latest observations of datastreams produced by this method. Matches `id` in `methods`."
+    )
+    unit_id: list[uuid.UUID] = Query(
+        [], description="Latest observations of datastreams in this unit. Matches `id` in `units`."
+    )
+    type: list[DatastreamType] = Query([], description="Latest observations of datastreams of this type.")
 
 
 class ObservationProperties(BaseGetResponse, ObservationFields):

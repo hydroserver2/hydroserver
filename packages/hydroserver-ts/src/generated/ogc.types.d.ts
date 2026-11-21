@@ -750,6 +750,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ogc/collections/latest-observations/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Latest Observations
+         * @description Get the latest observation of each datastream: one for a time series datastream, and one per z at the latest
+         *     phenomenon time for a profile coverage datastream. Use `datastreamId` to get a single datastream's latest
+         *     observation(s). `datetime` matches datastreams whose latest observation falls in the interval.
+         */
+        get: operations["interfaces_api_views_sta_latest_observation_get_latest_observations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ogc/collections/latest-observations/items/{observation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Latest Observation
+         * @description Get a latest observation. Returns 404 once a newer observation replaces it as its datastream's latest.
+         */
+        get: operations["interfaces_api_views_sta_latest_observation_get_latest_observation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ogc/collections/linked-resource-types/items": {
         parameters: {
             query?: never;
@@ -4593,6 +4635,109 @@ export interface components {
             links: components["schemas"]["Link"][];
             /** Title */
             title: string;
+        };
+        /**
+         * LatestObservationQueryParameters
+         * @description The observations filters, plus filters on the datastream each latest observation belongs to. The inherited
+         *     datetime filter matches datastreams whose latest observation falls in the interval.
+         */
+        LatestObservationQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
+            /**
+             * Datastreamid
+             * @description The latest observation(s) of this datastream. Matches `id` in `datastreams`.
+             * @default []
+             */
+            datastreamId: string[];
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
+            /**
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
+             */
+            include?: ("datastream" | "workspace" | "resultQualifiers")[];
+            /**
+             * Limit
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
+             * @default 100
+             */
+            limit: number;
+            /**
+             * Maxz
+             * @description Observations with a z at or below this value.
+             */
+            maxZ?: number | null;
+            /**
+             * Methodid
+             * @description Latest observations of datastreams produced by this method. Matches `id` in `methods`.
+             * @default []
+             */
+            methodId: string[];
+            /**
+             * Minz
+             * @description Observations with a z at or above this value.
+             */
+            minZ?: number | null;
+            /**
+             * Monitoringsiteid
+             * @description Latest observations of datastreams at this monitoring site. Matches `id` in `monitoring-sites`.
+             * @default []
+             */
+            monitoringSiteId: string[];
+            /**
+             * Observedpropertyid
+             * @description Latest observations of datastreams that observe this observed property. Matches `id` in `observed-properties`.
+             * @default []
+             */
+            observedPropertyId: string[];
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
+             * Processinglevelid
+             * @description Latest observations of datastreams at this processing level. Matches `id` in `processing-levels`.
+             * @default []
+             */
+            processingLevelId: string[];
+            /**
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
+             */
+            properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "z" | "result" | "resultQualifiers")[];
+            /**
+             * Resultqualifiers
+             * @description Observations with this result qualifier. Matches `name` in `result-qualifiers`.
+             * @default []
+             */
+            resultQualifiers: string[];
+            /**
+             * Sortby
+             * @description Select one or more fields to sort the response by.
+             * @default []
+             */
+            sortby: ("phenomenonTime" | "z" | "datastreamId" | "-phenomenonTime" | "-z" | "-datastreamId" | "+phenomenonTime" | "+z" | "+datastreamId")[];
+            /**
+             * Type
+             * @description Latest observations of datastreams of this type.
+             * @default []
+             */
+            type: ("timeSeriesCoverage" | "profileCoverage")[];
+            /**
+             * Unitid
+             * @description Latest observations of datastreams in this unit. Matches `id` in `units`.
+             * @default []
+             */
+            unitId: string[];
+            /**
+             * Workspaceid
+             * @description Latest observations of datastreams in this workspace. Matches `id` in `workspaces`.
+             * @default []
+             */
+            workspaceId: string[];
         };
         /** Link */
         Link: {
@@ -11597,6 +11742,152 @@ export interface operations {
             };
             /** @description Not Implemented */
             501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_latest_observation_get_latest_observations: {
+        parameters: {
+            query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "z" | "result" | "resultQualifiers")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: ("datastream" | "workspace" | "resultQualifiers")[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
+                /** @description The latest observation(s) of this datastream. Matches `id` in `datastreams`. */
+                datastreamId?: string[];
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("phenomenonTime" | "z" | "datastreamId" | "-phenomenonTime" | "-z" | "-datastreamId" | "+phenomenonTime" | "+z" | "+datastreamId")[];
+                /** @description Observations with this result qualifier. Matches `name` in `result-qualifiers`. */
+                resultQualifiers?: string[];
+                /** @description Observations with a z at or above this value. */
+                minZ?: number | null;
+                /** @description Observations with a z at or below this value. */
+                maxZ?: number | null;
+                /** @description Latest observations of datastreams in this workspace. Matches `id` in `workspaces`. */
+                workspaceId?: string[];
+                /** @description Latest observations of datastreams at this monitoring site. Matches `id` in `monitoring-sites`. */
+                monitoringSiteId?: string[];
+                /** @description Latest observations of datastreams that observe this observed property. Matches `id` in `observed-properties`. */
+                observedPropertyId?: string[];
+                /** @description Latest observations of datastreams at this processing level. Matches `id` in `processing-levels`. */
+                processingLevelId?: string[];
+                /** @description Latest observations of datastreams produced by this method. Matches `id` in `methods`. */
+                methodId?: string[];
+                /** @description Latest observations of datastreams in this unit. Matches `id` in `units`. */
+                unitId?: string[];
+                /** @description Latest observations of datastreams of this type. */
+                type?: ("timeSeriesCoverage" | "profileCoverage")[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json" | "geojson";
+                /** @description Profiles to represent the items in, by URI, in order of preference. Profiles the response format doesn't support are ignored, and without a supported profile the items are in the format's standard representation. Profiles: https://hydroserver.org/profiles/observations/row: Observations as rows grouped by datastream (json); https://hydroserver.org/profiles/observations/column: Observations as columns grouped by datastream (json). */
+                profile?: ("https://hydroserver.org/profiles/observations/row" | "https://hydroserver.org/profiles/observations/column")[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/geo+json": components["schemas"]["GeoJSONFeatureCollection_ObservationProperties_"];
+                    "application/json": components["schemas"]["PaginatedResponse_ObservationResponse_"] | components["schemas"]["PaginatedResponse_ObservationRowResponse_"] | components["schemas"]["PaginatedResponse_ObservationColumnResponse_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_latest_observation_get_latest_observation: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "z" | "result" | "resultQualifiers")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: ("datastream" | "workspace" | "resultQualifiers")[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json" | "geojson";
+            };
+            header?: never;
+            path: {
+                observation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/geo+json": components["schemas"]["GeoJSONFeatureDocument_ObservationProperties_"];
+                    "application/json": components["schemas"]["ItemResponse_ObservationResponse_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

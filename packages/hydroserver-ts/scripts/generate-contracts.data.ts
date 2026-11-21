@@ -33,6 +33,7 @@ const resources = [
   collection('result-qualifiers'),
   collection('sampled-mediums'),
   collection('observations'),
+  collection('latest-observations'),
 
   // ETL
   collection('etl-data-connections', 'data-connections'),

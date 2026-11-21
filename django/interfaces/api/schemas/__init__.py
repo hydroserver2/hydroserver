@@ -136,6 +136,7 @@ from interfaces.api.schemas.sta.datastream import (
 from interfaces.api.schemas.sta.observation import (
     ObservationResponse,
     ObservationQueryParameters,
+    LatestObservationQueryParameters,
     ObservationItemQueryParameters,
     ObservationRowResponse,
     ObservationColumnResponse,

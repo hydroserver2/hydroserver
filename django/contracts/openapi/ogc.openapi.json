@@ -6627,6 +6627,222 @@
         "title": "LandingPageResponse",
         "type": "object"
       },
+      "LatestObservationQueryParameters": {
+        "description": "The observations filters, plus filters on the datastream each latest observation belongs to. The inherited\ndatetime filter matches datastreams whose latest observation falls in the interval.",
+        "properties": {
+          "bbox": {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "items": {
+              "type": "number"
+            },
+            "oneOf": [
+              {
+                "maxItems": 4,
+                "minItems": 4
+              },
+              {
+                "maxItems": 6,
+                "minItems": 6
+              }
+            ],
+            "type": "array"
+          },
+          "datastreamId": {
+            "default": [],
+            "description": "The latest observation(s) of this datastream. Matches `id` in `datastreams`.",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Datastreamid",
+            "type": "array"
+          },
+          "datetime": {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "type": "string"
+          },
+          "include": {
+            "description": "Comma-separated list of related resources to include in the response.",
+            "items": {
+              "enum": [
+                "datastream",
+                "workspace",
+                "resultQualifiers"
+              ],
+              "type": "string"
+            },
+            "title": "Include",
+            "type": "array"
+          },
+          "limit": {
+            "default": 100,
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+            "maximum": 100000,
+            "minimum": 0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "maxZ": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Observations with a z at or below this value.",
+            "title": "Maxz"
+          },
+          "methodId": {
+            "default": [],
+            "description": "Latest observations of datastreams produced by this method. Matches `id` in `methods`.",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Methodid",
+            "type": "array"
+          },
+          "minZ": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Observations with a z at or above this value.",
+            "title": "Minz"
+          },
+          "monitoringSiteId": {
+            "default": [],
+            "description": "Latest observations of datastreams at this monitoring site. Matches `id` in `monitoring-sites`.",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Monitoringsiteid",
+            "type": "array"
+          },
+          "observedPropertyId": {
+            "default": [],
+            "description": "Latest observations of datastreams that observe this observed property. Matches `id` in `observed-properties`.",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Observedpropertyid",
+            "type": "array"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "description": "Number of items to skip.",
+            "title": "Offset"
+          },
+          "processingLevelId": {
+            "default": [],
+            "description": "Latest observations of datastreams at this processing level. Matches `id` in `processing-levels`.",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Processinglevelid",
+            "type": "array"
+          },
+          "properties": {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "items": {
+              "enum": [
+                "id",
+                "workspaceId",
+                "datastreamId",
+                "phenomenonTime",
+                "z",
+                "result",
+                "resultQualifiers"
+              ],
+              "type": "string"
+            },
+            "title": "Properties",
+            "type": "array"
+          },
+          "resultQualifiers": {
+            "default": [],
+            "description": "Observations with this result qualifier. Matches `name` in `result-qualifiers`.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Resultqualifiers",
+            "type": "array"
+          },
+          "sortby": {
+            "default": [],
+            "description": "Select one or more fields to sort the response by.",
+            "items": {
+              "enum": [
+                "phenomenonTime",
+                "z",
+                "datastreamId",
+                "-phenomenonTime",
+                "-z",
+                "-datastreamId",
+                "+phenomenonTime",
+                "+z",
+                "+datastreamId"
+              ],
+              "type": "string"
+            },
+            "title": "Sortby",
+            "type": "array"
+          },
+          "type": {
+            "default": [],
+            "description": "Latest observations of datastreams of this type.",
+            "items": {
+              "enum": [
+                "timeSeriesCoverage",
+                "profileCoverage"
+              ],
+              "type": "string"
+            },
+            "title": "Type",
+            "type": "array"
+          },
+          "unitId": {
+            "default": [],
+            "description": "Latest observations of datastreams in this unit. Matches `id` in `units`.",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Unitid",
+            "type": "array"
+          },
+          "workspaceId": {
+            "default": [],
+            "description": "Latest observations of datastreams in this workspace. Matches `id` in `workspaces`.",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Workspaceid",
+            "type": "array"
+          }
+        },
+        "title": "LatestObservationQueryParameters",
+        "type": "object"
+      },
       "Link": {
         "properties": {
           "href": {
@@ -25360,6 +25576,598 @@
         ]
       }
     },
+    "/api/ogc/collections/latest-observations/items": {
+      "get": {
+        "description": "Get the latest observation of each datastream: one for a time series datastream, and one per z at the latest\nphenomenon time for a profile coverage datastream. Use `datastreamId` to get a single datastream's latest\nobservation(s). `datetime` matches datastreams whose latest observation falls in the interval.",
+        "operationId": "interfaces_api_views_sta_latest_observation_get_latest_observations",
+        "parameters": [
+          {
+            "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+            "explode": false,
+            "in": "query",
+            "name": "bbox",
+            "required": false,
+            "schema": {
+              "description": "Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box.",
+              "items": {
+                "type": "number"
+              },
+              "oneOf": [
+                {
+                  "maxItems": 4,
+                  "minItems": 4
+                },
+                {
+                  "maxItems": 6,
+                  "minItems": 6
+                }
+              ],
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+            "explode": false,
+            "in": "query",
+            "name": "datetime",
+            "required": false,
+            "schema": {
+              "description": "Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime.",
+              "type": "string"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
+            "in": "query",
+            "name": "properties",
+            "required": false,
+            "schema": {
+              "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+              "items": {
+                "enum": [
+                  "id",
+                  "workspaceId",
+                  "datastreamId",
+                  "phenomenonTime",
+                  "z",
+                  "result",
+                  "resultQualifiers"
+                ],
+                "type": "string"
+              },
+              "title": "Properties",
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
+            "in": "query",
+            "name": "include",
+            "required": false,
+            "schema": {
+              "description": "Comma-separated list of related resources to include in the response.",
+              "items": {
+                "enum": [
+                  "datastream",
+                  "workspace",
+                  "resultQualifiers"
+                ],
+                "type": "string"
+              },
+              "title": "Include",
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Number of items to skip.",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 0,
+              "description": "Number of items to skip.",
+              "title": "Offset"
+            }
+          },
+          {
+            "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "description": "The maximum number of items to return. (default: 100, maximum: 100000)",
+              "maximum": 100000,
+              "minimum": 0,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The latest observation(s) of this datastream. Matches `id` in `datastreams`.",
+            "in": "query",
+            "name": "datastreamId",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "The latest observation(s) of this datastream. Matches `id` in `datastreams`.",
+              "items": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "title": "Datastreamid",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Select one or more fields to sort the response by.",
+            "explode": false,
+            "in": "query",
+            "name": "sortby",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Select one or more fields to sort the response by.",
+              "items": {
+                "enum": [
+                  "phenomenonTime",
+                  "z",
+                  "datastreamId",
+                  "-phenomenonTime",
+                  "-z",
+                  "-datastreamId",
+                  "+phenomenonTime",
+                  "+z",
+                  "+datastreamId"
+                ],
+                "type": "string"
+              },
+              "title": "Sortby",
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Observations with this result qualifier. Matches `name` in `result-qualifiers`.",
+            "in": "query",
+            "name": "resultQualifiers",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Observations with this result qualifier. Matches `name` in `result-qualifiers`.",
+              "items": {
+                "type": "string"
+              },
+              "title": "Resultqualifiers",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Observations with a z at or above this value.",
+            "in": "query",
+            "name": "minZ",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Observations with a z at or above this value.",
+              "title": "Minz"
+            }
+          },
+          {
+            "description": "Observations with a z at or below this value.",
+            "in": "query",
+            "name": "maxZ",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Observations with a z at or below this value.",
+              "title": "Maxz"
+            }
+          },
+          {
+            "description": "Latest observations of datastreams in this workspace. Matches `id` in `workspaces`.",
+            "in": "query",
+            "name": "workspaceId",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Latest observations of datastreams in this workspace. Matches `id` in `workspaces`.",
+              "items": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "title": "Workspaceid",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Latest observations of datastreams at this monitoring site. Matches `id` in `monitoring-sites`.",
+            "in": "query",
+            "name": "monitoringSiteId",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Latest observations of datastreams at this monitoring site. Matches `id` in `monitoring-sites`.",
+              "items": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "title": "Monitoringsiteid",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Latest observations of datastreams that observe this observed property. Matches `id` in `observed-properties`.",
+            "in": "query",
+            "name": "observedPropertyId",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Latest observations of datastreams that observe this observed property. Matches `id` in `observed-properties`.",
+              "items": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "title": "Observedpropertyid",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Latest observations of datastreams at this processing level. Matches `id` in `processing-levels`.",
+            "in": "query",
+            "name": "processingLevelId",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Latest observations of datastreams at this processing level. Matches `id` in `processing-levels`.",
+              "items": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "title": "Processinglevelid",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Latest observations of datastreams produced by this method. Matches `id` in `methods`.",
+            "in": "query",
+            "name": "methodId",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Latest observations of datastreams produced by this method. Matches `id` in `methods`.",
+              "items": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "title": "Methodid",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Latest observations of datastreams in this unit. Matches `id` in `units`.",
+            "in": "query",
+            "name": "unitId",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Latest observations of datastreams in this unit. Matches `id` in `units`.",
+              "items": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "title": "Unitid",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Latest observations of datastreams of this type.",
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "default": [],
+              "description": "Latest observations of datastreams of this type.",
+              "items": {
+                "enum": [
+                  "timeSeriesCoverage",
+                  "profileCoverage"
+                ],
+                "type": "string"
+              },
+              "title": "Type",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json",
+                "geojson"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "Profiles to represent the items in, by URI, in order of preference. Profiles the response format doesn't support are ignored, and without a supported profile the items are in the format's standard representation. Profiles: https://hydroserver.org/profiles/observations/row: Observations as rows grouped by datastream (json); https://hydroserver.org/profiles/observations/column: Observations as columns grouped by datastream (json).",
+            "explode": false,
+            "in": "query",
+            "name": "profile",
+            "required": false,
+            "schema": {
+              "items": {
+                "enum": [
+                  "https://hydroserver.org/profiles/observations/row",
+                  "https://hydroserver.org/profiles/observations/column"
+                ],
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "style": "form"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/geo+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeoJSONFeatureCollection_ObservationProperties_"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse_ObservationResponse_"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse_ObservationRowResponse_"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse_ObservationColumnResponse_"
+                    }
+                  ],
+                  "title": "Response"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Latest Observations",
+        "tags": [
+          "Latest Observations"
+        ]
+      }
+    },
+    "/api/ogc/collections/latest-observations/items/{observation_id}": {
+      "get": {
+        "description": "Get a latest observation. Returns 404 once a newer observation replaces it as its datastream's latest.",
+        "operationId": "interfaces_api_views_sta_latest_observation_get_latest_observation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "observation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Observation Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+            "explode": false,
+            "in": "query",
+            "name": "properties",
+            "required": false,
+            "schema": {
+              "description": "Comma-separated list of properties to include in the response. All properties are returned if omitted.",
+              "items": {
+                "enum": [
+                  "id",
+                  "workspaceId",
+                  "datastreamId",
+                  "phenomenonTime",
+                  "z",
+                  "result",
+                  "resultQualifiers"
+                ],
+                "type": "string"
+              },
+              "title": "Properties",
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Comma-separated list of related resources to include in the response.",
+            "explode": false,
+            "in": "query",
+            "name": "include",
+            "required": false,
+            "schema": {
+              "description": "Comma-separated list of related resources to include in the response.",
+              "items": {
+                "enum": [
+                  "datastream",
+                  "workspace",
+                  "resultQualifiers"
+                ],
+                "type": "string"
+              },
+              "title": "Include",
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Response format. Overrides the Accept header.",
+            "in": "query",
+            "name": "f",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json",
+                "geojson"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/geo+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeoJSONFeatureDocument_ObservationProperties_"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemResponse_ObservationResponse_"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          },
+          {
+            "OIDCAuth": []
+          },
+          {
+            "APIKeyAuth": []
+          },
+          {
+            "BasicAuth": []
+          }
+        ],
+        "summary": "Get Latest Observation",
+        "tags": [
+          "Latest Observations"
+        ]
+      }
+    },
     "/api/ogc/collections/linked-resource-types/items": {
       "get": {
         "description": "Get linked resource types.",
@@ -41917,6 +42725,14 @@
         "url": "https://hydroserver.org/introduction/key-concepts/observations"
       },
       "name": "Observations"
+    },
+    {
+      "description": "The most recent observation of each datastream, or every observation at the latest phenomenon time of a profile coverage datastream.",
+      "externalDocs": {
+        "description": "HydroServer documentation",
+        "url": "https://hydroserver.org/introduction/key-concepts/observations"
+      },
+      "name": "Latest Observations"
     },
     {
       "description": "Phenomena that datastreams observe, such as discharge or water temperature.",

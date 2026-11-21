@@ -164,6 +164,19 @@ COLLECTIONS: tuple[CollectionDefinition, ...] = (
         formats={"json": ("row", "column"), "geojson": ()},
     ),
     CollectionDefinition(
+        id="latest-observations",
+        title="Latest Observations",
+        description="The most recent observation of each datastream, or every observation at the latest "
+        "phenomenon time of a profile coverage datastream.",
+        docs_path="/introduction/key-concepts/observations",
+        router=f"{VIEWS}.sta.latest_observation.latest_observation_router",
+        feature=FeatureType(
+            f"{SCHEMAS}.sta.observation.ObservationProperties",
+            geometry=SiteLocation("datastreamId", site_lookup="datastreams__id"),
+        ),
+        formats={"json": ("row", "column"), "geojson": ()},
+    ),
+    CollectionDefinition(
         id="observed-properties",
         title="Observed Properties",
         description="Phenomena that datastreams observe, such as discharge or water temperature.",

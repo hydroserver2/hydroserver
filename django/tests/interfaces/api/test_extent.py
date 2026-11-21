@@ -200,7 +200,7 @@ def test_extent_parameters_are_declared_on_every_collection_items_list_and_no_ne
     ]
     markers = "/api/ogc/collections/monitoring-sites/markers"
 
-    assert len(items_lists) == 28
+    assert len(items_lists) == 29
     for name in ("bbox", "datetime"):
         assert [path for path in items_lists if not declares(path, name)] == []
         assert nested_lists and [path for path in nested_lists if declares(path, name)] == []

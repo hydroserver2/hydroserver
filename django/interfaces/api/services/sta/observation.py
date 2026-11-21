@@ -36,6 +36,16 @@ from interfaces.api.schemas.sta.observation import (
 User = get_user_model()
 datastream_service = DatastreamAPIService()
 
+DATASTREAM_FILTERS = {
+    "workspace_id": "datastream__monitoring_site__workspace_id",
+    "monitoring_site_id": "datastream__monitoring_site_id",
+    "observed_property_id": "datastream__observed_property_id",
+    "processing_level_id": "datastream__processing_level_id",
+    "method_id": "datastream__method_id",
+    "unit_id": "datastream__unit_id",
+    "type": "datastream__type",
+}
+
 
 class ObservationAPIService(APIService):
     INCLUDE_RELATIONS = OBSERVATION_INCLUDE_RELATIONS
@@ -47,8 +57,11 @@ class ObservationAPIService(APIService):
         action: Literal["view", "edit", "delete"],
         datastream_id: Optional[uuid.UUID] = None,
         select_related: Optional[list[str]] = None,
+        latest: bool = False,
     ):
         queryset = Observation.objects.select_related("datastream__monitoring_site")
+        if latest:
+            queryset = queryset.filter(phenomenon_time=F("datastream__phenomenon_end_time"))
 
         if select_related:
             queryset = queryset.select_related(*select_related)
@@ -164,11 +177,23 @@ class ObservationAPIService(APIService):
         include: Optional[list[str]] = None,
         bbox: Optional[BoundingBox] = None,
         datetime_interval: Optional[TimeInterval] = None,
+        latest: bool = False,
     ):
-        requested_includes = self.resolve_include_set(include)
-        queryset = Observation.objects
+        """
+        A page of the observations that match the filters, or with latest=True, of each datastream's latest
+        observation(s). A latest observation's phenomenon time equals its datastream's phenomenon_end_time, so then
+        the datetime filter matches datastreams whose latest observation falls in the interval.
+        """
 
-        datastream_ids = filtering.get("datastream_id") or []
+        requested_includes = self.resolve_include_set(include)
+
+        queryset = Observation.objects.all()
+        if latest:
+            queryset = queryset.filter(phenomenon_time=F("datastream__phenomenon_end_time"))
+
+        for name, lookup in DATASTREAM_FILTERS.items():
+            if filtering.get(name):
+                queryset = self.apply_filters(queryset, lookup, filtering[name])
 
         if "datastream_id" in filtering:
             queryset = self.apply_filters(queryset, "datastream_id", filtering["datastream_id"])
@@ -181,13 +206,10 @@ class ObservationAPIService(APIService):
                 code_filter |= Q(result_qualifiers__contains=[code])
             queryset = queryset.filter(code_filter)
 
-        has_z_filter = False
         if filtering.get("min_z") is not None:
             queryset = queryset.filter(z__gte=filtering["min_z"])
-            has_z_filter = True
         if filtering.get("max_z") is not None:
             queryset = queryset.filter(z__lte=filtering["max_z"])
-            has_z_filter = True
 
         if bbox is not None:
             queryset = queryset.filter(
@@ -198,10 +220,13 @@ class ObservationAPIService(APIService):
 
         queryset = principal.filter_by_permission(queryset, "can_view")
 
+        narrowed = latest or datetime_interval is not None or bool(filtering.get("result_qualifiers")) or (
+            filtering.get("min_z") is not None or filtering.get("max_z") is not None
+        )
         count = (
             self.resolve_count(queryset)
-            if datetime_interval is not None or filtering.get("result_qualifiers") or has_z_filter
-            else self.sum_datastream_value_count(principal, datastream_ids, bbox)
+            if narrowed
+            else self.sum_datastream_value_count(principal, filtering.get("datastream_id") or [], bbox)
         )
 
         # TODO: Can't really fix this until PostgreSQL 18 UUID v7 support
@@ -222,7 +247,7 @@ class ObservationAPIService(APIService):
             queryset,
             sortby,
             list(get_args(ObservationSortByFields)),
-            default_sortby=("datastream_id", "phenomenon_time", "z"),
+            default_sortby=("datastream_id", "z") if latest else ("datastream_id", "phenomenon_time", "z"),
         )
 
         select_paths = ["datastream__monitoring_site"]
@@ -322,6 +347,7 @@ class ObservationAPIService(APIService):
         uid: uuid.UUID,
         datastream_id: Optional[uuid.UUID] = None,
         include: Optional[list[str]] = None,
+        latest: bool = False,
     ):
         requested_includes = self.resolve_include_set(include)
         select_related = (
@@ -336,6 +362,7 @@ class ObservationAPIService(APIService):
             action="view",
             datastream_id=datastream_id,
             select_related=select_related,
+            latest=latest,
         )
 
         return {
