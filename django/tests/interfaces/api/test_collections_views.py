@@ -13,7 +13,7 @@ pytestmark = [pytest.mark.django_db, pytest.mark.usefixtures("proxy_base_url")]
 
 COLLECTIONS_PATH = "/api/ogc/collections"
 COLLECTION_IDS = [collection.id for collection in COLLECTIONS]
-FEATURE_COLLECTION_IDS = ["workspaces", "monitoring-sites", "datastreams", "observations"]
+FEATURE_COLLECTION_IDS = ["workspaces", "monitoring-sites", "datastreams", "observations", "latest-observations"]
 
 
 def test_get_collections_links_to_itself(client):

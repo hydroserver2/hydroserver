@@ -1,7 +1,10 @@
 from datetime import timezone as dt_timezone
+from decimal import Decimal
 
 import pytest
 from django.utils import timezone
+
+from core.sta.models import Observation
 
 from tests.core.iam.factories import UserFactory, WorkspaceFactory
 from tests.core.sta.factories import DatastreamFactory, ObservationFactory, MonitoringSiteFactory
@@ -191,3 +194,50 @@ def test_create_observations_succeeds_for_authenticated_owner(client):
     )
 
     assert response.status_code == 201
+
+
+# --- profile coverage datastreams --------------------------------------------------------
+
+
+def _profile_datastream(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    client.force_login(owner)
+    return DatastreamFactory(monitoring_site=MonitoringSiteFactory(workspace=workspace), profile=True)
+
+
+def test_post_observation_stores_parameters_z_on_profile(client):
+    datastream = _profile_datastream(client)
+
+    response = client.post(
+        OBSERVATIONS_URL,
+        data=_observation_post_body(datastream.id, parameters={"z": 2.5}),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
+    assert Observation.objects.get(datastream=datastream).z == Decimal("2.5")
+    datastream.refresh_from_db()
+    assert (datastream.z_min, datastream.z_max) == (Decimal("2.5"), Decimal("2.5"))
+
+
+def test_post_observation_returns_400_without_z_on_profile(client):
+    datastream = _profile_datastream(client)
+
+    response = client.post(
+        OBSERVATIONS_URL,
+        data=_observation_post_body(datastream.id),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+    assert not Observation.objects.exists()
+
+
+def test_get_observation_returns_parameters_z_on_profile(client):
+    datastream = _profile_datastream(client)
+    observation = ObservationFactory(datastream=datastream, z=Decimal("2.5"))
+
+    response = client.get(_detail_url(observation.id))
+
+    assert response.json()["parameters"] == {"z": 2.5}

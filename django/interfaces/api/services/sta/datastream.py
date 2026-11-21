@@ -17,6 +17,7 @@ from core.sta.models import (
     Observation,
     DatastreamLinkedResource,
 )
+from core.sta.models.datastream import PROFILE_COVERAGE
 from interfaces.api.http.errors import BadRequestError, ConflictError, NotFoundError, PermissionDeniedError
 from interfaces.api.service import APIService
 from interfaces.api.schemas import (
@@ -37,6 +38,24 @@ from .monitoring_site import MonitoringSiteAPIService
 User = get_user_model()
 
 monitoring_site_service = MonitoringSiteAPIService()
+
+ObservationStatisticsField = Literal[
+    "phenomenon_begin_time",
+    "phenomenon_end_time",
+    "result_begin_time",
+    "result_end_time",
+    "value_count",
+    "z_min",
+    "z_max",
+]
+
+OBSERVATION_STATISTICS_FIELDS: tuple[ObservationStatisticsField, ...] = (
+    "phenomenon_begin_time",
+    "phenomenon_end_time",
+    "value_count",
+    "z_min",
+    "z_max",
+)
 
 
 class DatastreamAPIService(APIService):
@@ -150,8 +169,10 @@ class DatastreamAPIService(APIService):
             "observed_property_id",
             "processing_level_id",
             "unit_id",
+            "z_unit_id",
             "observations__result_qualifier_id",
             "type",
+            "z_reference",
             "sampled_medium",
             "status",
             "is_private",
@@ -235,6 +256,7 @@ class DatastreamAPIService(APIService):
                 "observed_property",
                 "processing_level",
                 "unit",
+                "z_unit",
             )
             .order_by("id")
             .values(
@@ -254,6 +276,10 @@ class DatastreamAPIService(APIService):
                 "unit_id",
                 "unit__name",
                 "unit__symbol",
+                "type",
+                "z_reference",
+                "z_unit_id",
+                "z_unit__symbol",
                 "no_data_value",
                 "aggregation_statistic",
                 "time_aggregation_interval",
@@ -313,6 +339,10 @@ class DatastreamAPIService(APIService):
                     "unit_id": str(row["unit_id"]),
                     "unit_name": row["unit__name"],
                     "unit_symbol": row["unit__symbol"],
+                    "type": row["type"],
+                    "z_reference": row["z_reference"],
+                    "z_unit_id": str(row["z_unit_id"]) if row["z_unit_id"] else None,
+                    "z_unit_symbol": row["z_unit__symbol"],
                     "no_data_value": row["no_data_value"],
                     "aggregation_statistic": row["aggregation_statistic"],
                     "time_aggregation_interval": row["time_aggregation_interval"],
@@ -552,8 +582,15 @@ class DatastreamAPIService(APIService):
     def generate_csv(datastream: Datastream, observations=None):
         if observations is None:
             observations = Observation.objects.filter(datastream=datastream).order_by(
-                "phenomenon_time"
+                "phenomenon_time", "z"
             )
+
+        is_profile = datastream.type == PROFILE_COVERAGE
+        z_information = (
+            f"# ZReference: {datastream.z_reference}\n"
+            f"# ZUnit: {datastream.z_unit.name} ({datastream.z_unit.symbol})\n"
+            if is_profile else ""
+        )
 
         latitude = (
             round(datastream.monitoring_site.latitude, 6)
@@ -611,6 +648,7 @@ class DatastreamAPIService(APIService):
             f"# AggregationStatistic: {datastream.aggregation_statistic}\n"
             f"# TimeAggregationInterval: {datastream.time_aggregation_interval}\n"
             f"# TimeAggregationIntervalUnit: {datastream.time_aggregation_interval_unit}\n"
+            f"{z_information}"
             f"#\n"
             f"# Method Information:\n"
             f"# -------------------------------------\n"
@@ -652,15 +690,17 @@ class DatastreamAPIService(APIService):
             f"# =============================================================================\n"
         )
 
-        yield "ResultTime,Result,ResultQualifiers\n"
+        if is_profile:
+            yield "ResultTime,Z,Result,ResultQualifiers\n"
+        else:
+            yield "ResultTime,Result,ResultQualifiers\n"
 
-        for observation in observations.values_list(
-            "phenomenon_time", "result", "quality_code"
+        for phenomenon_time, z, result, quality_code in observations.values_list(
+            "phenomenon_time", "z", "result", "quality_code"
         ):
-            if observation[2]:
-                yield f'{observation[0].isoformat()},{observation[1]},"{observation[2]}"\n'
-            else:
-                yield f"{observation[0].isoformat()},{observation[1]},\n"
+            z_column = f"{float(z)}," if is_profile else ""
+            quality_column = f'"{quality_code}"' if quality_code else ""
+            yield f"{phenomenon_time.isoformat()},{z_column}{result},{quality_column}\n"
 
     def get_csv(self, principal: User | ServiceAccount | AnonymousPrincipal, uid: uuid.UUID):
         datastream = self.get_datastream_for_action(
@@ -670,7 +710,7 @@ class DatastreamAPIService(APIService):
             Observation.objects, "can_view"
         ).filter(
             datastream=datastream
-        ).order_by("phenomenon_time")
+        ).order_by("phenomenon_time", "z")
 
         response = StreamingHttpResponse(
             self.generate_csv(datastream, observations=visible_observations),
@@ -685,15 +725,7 @@ class DatastreamAPIService(APIService):
     @staticmethod
     def update_observation_statistics(
         datastream: Datastream,
-        fields: Sequence[
-            Literal[
-                "phenomenon_begin_time",
-                "phenomenon_end_time",
-                "result_begin_time",
-                "result_end_time",
-                "value_count",
-            ]
-        ],
+        fields: Sequence[ObservationStatisticsField],
     ) -> None:
         aggregations = {}
 
@@ -707,6 +739,10 @@ class DatastreamAPIService(APIService):
             aggregations["result_end_time"] = Max("result_time")
         if "value_count" in fields:
             aggregations["value_count"] = Count("id")
+        if "z_min" in fields:
+            aggregations["z_min"] = Min("z")
+        if "z_max" in fields:
+            aggregations["z_max"] = Max("z")
 
         if not aggregations:
             return
@@ -725,5 +761,9 @@ class DatastreamAPIService(APIService):
             datastream.result_end_time = aggregate.get("result_end_time")
         if "value_count" in fields:
             datastream.value_count = aggregate.get("value_count")
+        if "z_min" in fields:
+            datastream.z_min = aggregate.get("z_min")
+        if "z_max" in fields:
+            datastream.z_max = aggregate.get("z_max")
 
         datastream.save()

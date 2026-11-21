@@ -58,6 +58,8 @@ class EtlMapping(models.Model, ResourcePermissionMixin):
         except ObjectDoesNotExist:
             return
 
+        self.target_datastream.ensure_time_series("ETL targets")
+
         try:
             task_workspace_id = self.etl_task.data_connection.workspace_id
         except ObjectDoesNotExist:

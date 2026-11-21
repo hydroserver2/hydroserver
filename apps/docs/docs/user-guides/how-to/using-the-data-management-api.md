@@ -36,6 +36,7 @@ These are the collections you'll use most often:
 | `monitoring-sites` | Monitoring sites and their locations |
 | `datastreams` | Time series of observations of one observed property at a site |
 | `observations` | Individual timestamped results in datastreams |
+| `latest-observations` | The most recent observation of each datastream (read-only) |
 | `methods`, `observed-properties`, `processing-levels`, `units`, `result-qualifiers` | Datastream metadata |
 | `etl-data-connections`, `etl-tasks`, `etl-mappings` | Data ingestion with the [Job Orchestration System](/user-guides/how-to/using-job-orchestration.md) |
 | `data-product-tasks`, `data-product-transformations`, `data-product-rating-curves` | Derived data products |
@@ -190,6 +191,7 @@ curl "$HS/collections/monitoring-sites/items?bbox=-112.0,41.6,-111.7,41.8"
 The same collections accept a **datetime** in RFC 3339 format with a UTC offset. It can be an instant (`2025-01-01T00:00:00Z`), an interval (`2025-01-01T00:00:00Z/2025-02-01T00:00:00Z`), or an interval open at one end with `..` (`2025-01-01T00:00:00Z/..`). Interval ends are inclusive. What it matches depends on the collection:
 
 - **Observations** match on their `phenomenonTime`.
+- **Latest observations** match when a datastream's latest observation falls in the interval, so `datetime` picks datastreams that have been updated recently.
 - **Datastreams** match when the period from their first to last observation overlaps the interval.
 - **Monitoring sites and workspaces** match when they have a datastream you can see that matches.
 
@@ -256,6 +258,26 @@ curl "$HS/collections/observations/items?datastreamId=01a18907-0f22-7229-928d-23
 ```
 
 With the row profile, the same request returns `"fields": ["phenomenonTime", "result"]` and `"rows": [["2025-01-01T00:00:00+00:00", 11.57], ...]`. Paging works the same way in both profiles, counting observations rather than datastreams.
+
+## Getting Latest Observations
+
+The read-only `latest-observations` collection returns the most recent observation of each datastream in one request. Use **datastreamId** to get a single datastream's latest value:
+
+```sh
+curl "$HS/collections/latest-observations/items?datastreamId=01a18907-0f22-7229-928d-237d3ae39587"
+```
+
+Its items are observations, in the same formats and profiles as the `observations` collection, and it accepts the same parameters. It also filters on the datastream each observation belongs to: **workspaceId**, **monitoringSiteId**, **observedPropertyId**, **processingLevelId**, **methodId**, **unitId**, and **type**. For example, this returns the latest value of every datastream at a site that reported in the last day, as rows:
+
+```sh
+curl "$HS/collections/latest-observations/items?monitoringSiteId=01a18907-0f06-72ae-8d9e-9e577879a9c1&datetime=2025-01-01T00:00:00Z/..&profile=https://hydroserver.org/profiles/observations/row"
+```
+
+- **Profile coverage datastreams** return one observation for each z at their latest phenomenon time.
+- **Filters on observation values**, such as **resultQualifiers** and **minZ**, apply to the latest observations only. A datastream whose latest observation doesn't match is left out, rather than matched on an older observation.
+- **No-data values** are returned like any other result.
+- Items are sorted by `datastreamId` and then `z` unless you choose otherwise.
+- `/collections/latest-observations/items/{observationId}` returns an observation only while it's the latest of its datastream, and `404 Not Found` once a newer observation replaces it.
 
 ## Creating, Updating, and Deleting
 

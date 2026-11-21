@@ -19,6 +19,7 @@ from interfaces.api.views.sta.unit import unit_router
 from interfaces.api.views.sta.unit_type import unit_type_router
 from interfaces.api.views.sta.datastream import datastream_router
 from interfaces.api.views.sta.observation import observation_router
+from interfaces.api.views.sta.latest_observation import latest_observation_router
 
 from interfaces.api.views.etl.data_connection import data_connection_router
 from interfaces.api.views.etl.task import etl_task_router

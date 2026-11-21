@@ -750,6 +750,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ogc/collections/latest-observations/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Latest Observations
+         * @description Get the latest observation of each datastream: one for a time series datastream, and one per z at the latest
+         *     phenomenon time for a profile coverage datastream. Use `datastreamId` to get a single datastream's latest
+         *     observation(s). `datetime` matches datastreams whose latest observation falls in the interval.
+         */
+        get: operations["interfaces_api_views_sta_latest_observation_get_latest_observations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ogc/collections/latest-observations/items/{observation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Latest Observation
+         * @description Get a latest observation. Returns 404 once a newer observation replaces it as its datastream's latest.
+         */
+        get: operations["interfaces_api_views_sta_latest_observation_get_latest_observation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ogc/collections/linked-resource-types/items": {
         parameters: {
             query?: never;
@@ -2176,6 +2218,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ogc/collections/z-references/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Z References
+         * @description Get z references.
+         */
+        get: operations["interfaces_api_views_sta_z_reference_get_z_references"];
+        put?: never;
+        /**
+         * Create Z Reference
+         * @description Create a new z reference.
+         */
+        post: operations["interfaces_api_views_sta_z_reference_create_z_reference"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ogc/collections/z-references/items/{z_reference_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Z Reference
+         * @description Get a z reference.
+         */
+        get: operations["interfaces_api_views_sta_z_reference_get_z_reference"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Z Reference
+         * @description Delete a z reference.
+         */
+        delete: operations["interfaces_api_views_sta_z_reference_delete_z_reference"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Z Reference
+         * @description Update a z reference.
+         */
+        patch: operations["interfaces_api_views_sta_z_reference_update_z_reference"];
+        trace?: never;
+    };
     "/api/ogc/collections/{collection_id}": {
         parameters: {
             query?: never;
@@ -2991,12 +3085,12 @@ export interface components {
              * Include
              * @description Comma-separated list of related resources to include in the response.
              */
-            include?: ("workspace" | "monitoringSite" | "method" | "observedProperty" | "processingLevel" | "unit" | "sampledMedium" | "aggregationStatistic" | "status")[];
+            include?: ("workspace" | "monitoringSite" | "method" | "observedProperty" | "processingLevel" | "unit" | "zUnit" | "zReference" | "sampledMedium" | "aggregationStatistic" | "status")[];
             /**
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "workspaceId" | "name" | "description" | "type" | "sampledMedium" | "noDataValue" | "aggregationStatistic" | "timeAggregationInterval" | "status" | "isPrivate" | "isRestricted" | "timeAggregationIntervalUnit" | "intendedTimeSpacing" | "intendedTimeSpacingUnit" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "monitoringSiteId" | "methodId" | "observedPropertyId" | "processingLevelId" | "unitId" | "tags" | "linkedResources")[];
+            properties?: ("id" | "workspaceId" | "name" | "description" | "type" | "zReference" | "sampledMedium" | "noDataValue" | "aggregationStatistic" | "timeAggregationInterval" | "status" | "isPrivate" | "isRestricted" | "timeAggregationIntervalUnit" | "intendedTimeSpacing" | "intendedTimeSpacingUnit" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "zMin" | "zMax" | "monitoringSiteId" | "methodId" | "observedPropertyId" | "processingLevelId" | "unitId" | "zUnitId" | "tags" | "linkedResources")[];
         };
         /** DatastreamPatchBody */
         DatastreamPatchBody: {
@@ -3053,14 +3147,18 @@ export interface components {
             timeAggregationIntervalUnit?: "seconds" | "minutes" | "hours" | "days";
             /**
              * Type
-             * @constant
+             * @enum {string}
              */
-            type?: "timeSeriesCoverage";
+            type?: "timeSeriesCoverage" | "profileCoverage";
             /**
              * Unitid
              * Format: uuid
              */
             unitId?: string;
+            /** Zreference */
+            zReference?: string | null;
+            /** Zunitid */
+            zUnitId?: string | null;
         };
         /** DatastreamPostBody */
         DatastreamPostBody: {
@@ -3132,14 +3230,18 @@ export interface components {
             /**
              * Type
              * @default timeSeriesCoverage
-             * @constant
+             * @enum {string}
              */
-            type: "timeSeriesCoverage";
+            type: "timeSeriesCoverage" | "profileCoverage";
             /**
              * Unitid
              * Format: uuid
              */
             unitId: string;
+            /** Zreference */
+            zReference?: string | null;
+            /** Zunitid */
+            zUnitId?: string | null;
         };
         /** DatastreamProperties */
         DatastreamProperties: {
@@ -3216,9 +3318,9 @@ export interface components {
             /**
              * Type
              * @default timeSeriesCoverage
-             * @constant
+             * @enum {string}
              */
-            type: "timeSeriesCoverage";
+            type: "timeSeriesCoverage" | "profileCoverage";
             /**
              * Unitid
              * Format: uuid
@@ -3231,6 +3333,14 @@ export interface components {
              * Format: uuid
              */
             workspaceId: string;
+            /** Zmax */
+            zMax?: number | null;
+            /** Zmin */
+            zMin?: number | null;
+            /** Zreference */
+            zReference?: string | null;
+            /** Zunitid */
+            zUnitId?: string | null;
         };
         /** DatastreamQueryParameters */
         DatastreamQueryParameters: {
@@ -3242,7 +3352,7 @@ export interface components {
              * Include
              * @description Comma-separated list of related resources to include in the response.
              */
-            include?: ("workspace" | "monitoringSite" | "method" | "observedProperty" | "processingLevel" | "unit" | "sampledMedium" | "aggregationStatistic" | "status")[];
+            include?: ("workspace" | "monitoringSite" | "method" | "observedProperty" | "processingLevel" | "unit" | "zUnit" | "zReference" | "sampledMedium" | "aggregationStatistic" | "status")[];
             /**
              * Isprivate
              * @description `false` returns only datastreams that are public at every level: the datastream, its monitoring site, and its workspace. `true` returns only datastreams that are private at every level.
@@ -3298,7 +3408,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "workspaceId" | "name" | "description" | "type" | "sampledMedium" | "noDataValue" | "aggregationStatistic" | "timeAggregationInterval" | "status" | "isPrivate" | "isRestricted" | "timeAggregationIntervalUnit" | "intendedTimeSpacing" | "intendedTimeSpacingUnit" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "monitoringSiteId" | "methodId" | "observedPropertyId" | "processingLevelId" | "unitId" | "tags" | "linkedResources")[];
+            properties?: ("id" | "workspaceId" | "name" | "description" | "type" | "zReference" | "sampledMedium" | "noDataValue" | "aggregationStatistic" | "timeAggregationInterval" | "status" | "isPrivate" | "isRestricted" | "timeAggregationIntervalUnit" | "intendedTimeSpacing" | "intendedTimeSpacingUnit" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "zMin" | "zMax" | "monitoringSiteId" | "methodId" | "observedPropertyId" | "processingLevelId" | "unitId" | "zUnitId" | "tags" | "linkedResources")[];
             /**
              * Q
              * @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND.
@@ -3321,7 +3431,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("name" | "type" | "sampledMedium" | "status" | "isPrivate" | "isRestricted" | "aggregationStatistic" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "-name" | "-type" | "-sampledMedium" | "-status" | "-isPrivate" | "-isRestricted" | "-aggregationStatistic" | "-valueCount" | "-phenomenonBeginTime" | "-phenomenonEndTime" | "-resultBeginTime" | "-resultEndTime" | "+name" | "+type" | "+sampledMedium" | "+status" | "+isPrivate" | "+isRestricted" | "+aggregationStatistic" | "+valueCount" | "+phenomenonBeginTime" | "+phenomenonEndTime" | "+resultBeginTime" | "+resultEndTime")[];
+            sortby: ("name" | "type" | "zReference" | "sampledMedium" | "status" | "isPrivate" | "isRestricted" | "aggregationStatistic" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "-name" | "-type" | "-zReference" | "-sampledMedium" | "-status" | "-isPrivate" | "-isRestricted" | "-aggregationStatistic" | "-valueCount" | "-phenomenonBeginTime" | "-phenomenonEndTime" | "-resultBeginTime" | "-resultEndTime" | "+name" | "+type" | "+zReference" | "+sampledMedium" | "+status" | "+isPrivate" | "+isRestricted" | "+aggregationStatistic" | "+valueCount" | "+phenomenonBeginTime" | "+phenomenonEndTime" | "+resultBeginTime" | "+resultEndTime")[];
             /**
              * Status
              * @description Datastreams with this status. Matches `name` in `datastream-statuses`. `null` matches datastreams without a status.
@@ -3339,7 +3449,7 @@ export interface components {
              * @description Datastreams of this type.
              * @default []
              */
-            type: "timeSeriesCoverage"[];
+            type: ("timeSeriesCoverage" | "profileCoverage")[];
             /**
              * Unitid
              * @description Datastreams in this unit. Matches `id` in `units`.
@@ -3352,6 +3462,18 @@ export interface components {
              * @default []
              */
             workspaceId: string[];
+            /**
+             * Zreference
+             * @description Profile coverage datastreams measuring z from this datum. Matches `name` in `z-references`.
+             * @default []
+             */
+            zReference: string[];
+            /**
+             * Zunitid
+             * @description Profile coverage datastreams with z in this unit. Matches `id` in `units`.
+             * @default []
+             */
+            zUnitId: string[];
         };
         /** DatastreamResponse */
         DatastreamResponse: {
@@ -3434,9 +3556,9 @@ export interface components {
             /**
              * Type
              * @default timeSeriesCoverage
-             * @constant
+             * @enum {string}
              */
-            type: "timeSeriesCoverage";
+            type: "timeSeriesCoverage" | "profileCoverage";
             /**
              * Unitid
              * Format: uuid
@@ -3449,6 +3571,14 @@ export interface components {
              * Format: uuid
              */
             workspaceId: string;
+            /** Zmax */
+            zMax?: number | null;
+            /** Zmin */
+            zMin?: number | null;
+            /** Zreference */
+            zReference?: string | null;
+            /** Zunitid */
+            zUnitId?: string | null;
         };
         /** DatastreamStatusPatchBody */
         DatastreamStatusPatchBody: {
@@ -4475,6 +4605,19 @@ export interface components {
              */
             links: components["schemas"]["Link"][];
         };
+        /** ItemResponse[ZReferenceResponse] */
+        ItemResponse_ZReferenceResponse_: {
+            data: components["schemas"]["ZReferenceResponse"];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
+        };
         /** JSONPayloadPostBody */
         JSONPayloadPostBody: {
             dataIngestionWindow?: components["schemas"]["DataIngestionWindowPostBody"] | null;
@@ -4516,6 +4659,109 @@ export interface components {
             links: components["schemas"]["Link"][];
             /** Title */
             title: string;
+        };
+        /**
+         * LatestObservationQueryParameters
+         * @description The observations filters, plus filters on the datastream each latest observation belongs to. The inherited
+         *     datetime filter matches datastreams whose latest observation falls in the interval.
+         */
+        LatestObservationQueryParameters: {
+            /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+            bbox?: number[] & (unknown | unknown);
+            /**
+             * Datastreamid
+             * @description The latest observation(s) of this datastream. Matches `id` in `datastreams`.
+             * @default []
+             */
+            datastreamId: string[];
+            /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+            datetime?: string;
+            /**
+             * Include
+             * @description Comma-separated list of related resources to include in the response.
+             */
+            include?: ("datastream" | "workspace" | "resultQualifiers")[];
+            /**
+             * Limit
+             * @description The maximum number of items to return. (default: 100, maximum: 100000)
+             * @default 100
+             */
+            limit: number;
+            /**
+             * Maxz
+             * @description Observations with a z at or below this value.
+             */
+            maxZ?: number | null;
+            /**
+             * Methodid
+             * @description Latest observations of datastreams produced by this method. Matches `id` in `methods`.
+             * @default []
+             */
+            methodId: string[];
+            /**
+             * Minz
+             * @description Observations with a z at or above this value.
+             */
+            minZ?: number | null;
+            /**
+             * Monitoringsiteid
+             * @description Latest observations of datastreams at this monitoring site. Matches `id` in `monitoring-sites`.
+             * @default []
+             */
+            monitoringSiteId: string[];
+            /**
+             * Observedpropertyid
+             * @description Latest observations of datastreams that observe this observed property. Matches `id` in `observed-properties`.
+             * @default []
+             */
+            observedPropertyId: string[];
+            /**
+             * Offset
+             * @description Number of items to skip.
+             * @default 0
+             */
+            offset: number | null;
+            /**
+             * Processinglevelid
+             * @description Latest observations of datastreams at this processing level. Matches `id` in `processing-levels`.
+             * @default []
+             */
+            processingLevelId: string[];
+            /**
+             * Properties
+             * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
+             */
+            properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "z" | "result" | "resultQualifiers")[];
+            /**
+             * Resultqualifiers
+             * @description Observations with this result qualifier. Matches `name` in `result-qualifiers`.
+             * @default []
+             */
+            resultQualifiers: string[];
+            /**
+             * Sortby
+             * @description Select one or more fields to sort the response by.
+             * @default []
+             */
+            sortby: ("phenomenonTime" | "z" | "datastreamId" | "-phenomenonTime" | "-z" | "-datastreamId" | "+phenomenonTime" | "+z" | "+datastreamId")[];
+            /**
+             * Type
+             * @description Latest observations of datastreams of this type.
+             * @default []
+             */
+            type: ("timeSeriesCoverage" | "profileCoverage")[];
+            /**
+             * Unitid
+             * @description Latest observations of datastreams in this unit. Matches `id` in `units`.
+             * @default []
+             */
+            unitId: string[];
+            /**
+             * Workspaceid
+             * @description Latest observations of datastreams in this workspace. Matches `id` in `workspaces`.
+             * @default []
+             */
+            workspaceId: string[];
         };
         /** Link */
         Link: {
@@ -5572,6 +5818,11 @@ export interface components {
              * @default []
              */
             resultQualifiers: string[][];
+            /**
+             * Z
+             * @default []
+             */
+            z: (number | null)[];
         };
         /** ObservationBulkDeleteBody */
         ObservationBulkDeleteBody: {
@@ -5595,7 +5846,7 @@ export interface components {
              */
             datastreamId: string;
             /** Fields */
-            fields: ("phenomenonTime" | "result" | "resultQualifiers")[];
+            fields: ("phenomenonTime" | "z" | "result" | "resultQualifiers")[];
         };
         /** ObservationBulkPostQueryParameters */
         ObservationBulkPostQueryParameters: {
@@ -5636,6 +5887,8 @@ export interface components {
             result?: unknown[] | null;
             /** Resultqualifiers */
             resultQualifiers?: unknown[] | null;
+            /** Z */
+            z?: unknown[] | null;
         };
         /** ObservationItemQueryParameters */
         ObservationItemQueryParameters: {
@@ -5648,7 +5901,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "result" | "resultQualifiers")[];
+            properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "z" | "result" | "resultQualifiers")[];
         };
         /** ObservationPostBody */
         ObservationPostBody: {
@@ -5671,6 +5924,8 @@ export interface components {
              * @default []
              */
             resultQualifiers: string[];
+            /** Z */
+            z?: number | null;
         };
         /** ObservationProperties */
         ObservationProperties: {
@@ -5696,6 +5951,8 @@ export interface components {
              * Format: uuid
              */
             workspaceId: string;
+            /** Z */
+            z?: number | null;
         };
         /** ObservationQueryParameters */
         ObservationQueryParameters: {
@@ -5721,6 +5978,16 @@ export interface components {
              */
             limit: number;
             /**
+             * Maxz
+             * @description Observations with a z at or below this value.
+             */
+            maxZ?: number | null;
+            /**
+             * Minz
+             * @description Observations with a z at or above this value.
+             */
+            minZ?: number | null;
+            /**
              * Offset
              * @description Number of items to skip.
              * @default 0
@@ -5730,7 +5997,7 @@ export interface components {
              * Properties
              * @description Comma-separated list of properties to include in the response. All properties are returned if omitted.
              */
-            properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "result" | "resultQualifiers")[];
+            properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "z" | "result" | "resultQualifiers")[];
             /**
              * Resultqualifiers
              * @description Observations with this result qualifier. Matches `name` in `result-qualifiers`.
@@ -5742,7 +6009,7 @@ export interface components {
              * @description Select one or more fields to sort the response by.
              * @default []
              */
-            sortby: ("phenomenonTime" | "datastreamId" | "-phenomenonTime" | "-datastreamId" | "+phenomenonTime" | "+datastreamId")[];
+            sortby: ("phenomenonTime" | "z" | "datastreamId" | "-phenomenonTime" | "-z" | "-datastreamId" | "+phenomenonTime" | "+z" | "+datastreamId")[];
         };
         /** ObservationResponse */
         ObservationResponse: {
@@ -5774,6 +6041,8 @@ export interface components {
              * Format: uuid
              */
             workspaceId: string;
+            /** Z */
+            z?: number | null;
         };
         /** ObservationRowResponse */
         ObservationRowResponse: {
@@ -5783,7 +6052,7 @@ export interface components {
              */
             datastreamId: string;
             /** Fields */
-            fields: ("id" | "phenomenonTime" | "result" | "resultQualifiers")[];
+            fields: ("id" | "phenomenonTime" | "z" | "result" | "resultQualifiers")[];
             /** Rows */
             rows: unknown[][];
             /** Workspaceid */
@@ -6477,6 +6746,21 @@ export interface components {
             links: components["schemas"]["Link"][];
             meta: components["schemas"]["PaginationMeta"];
         };
+        /** PaginatedResponse[ZReferenceResponse] */
+        PaginatedResponse_ZReferenceResponse_: {
+            /** Data */
+            data: components["schemas"]["ZReferenceResponse"][];
+            /** Included */
+            included?: {
+                [key: string]: unknown[];
+            } | null;
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["Link"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
         /** PaginationMeta */
         PaginationMeta: {
             /** Limit */
@@ -6524,7 +6808,7 @@ export interface components {
              * Resource
              * @enum {string}
              */
-            resource: "*" | "Workspace" | "Role" | "ServiceAccount" | "Collaborator" | "MonitoringSite" | "MonitoringSiteType" | "LinkedResourceType" | "ObservedProperty" | "ObservedPropertyType" | "ProcessingLevel" | "ResultQualifier" | "Method" | "MethodType" | "Unit" | "UnitType" | "SampledMedium" | "AggregationStatistic" | "DatastreamStatus" | "Datastream" | "Observation" | "DataConnection" | "EtlTask" | "EtlMapping" | "RatingCurve" | "DataProductTask" | "DataProductTransformation" | "MonitoringTask" | "MonitoringRule";
+            resource: "*" | "Workspace" | "Role" | "ServiceAccount" | "Collaborator" | "MonitoringSite" | "MonitoringSiteType" | "LinkedResourceType" | "ObservedProperty" | "ObservedPropertyType" | "ProcessingLevel" | "ResultQualifier" | "Method" | "MethodType" | "Unit" | "UnitType" | "SampledMedium" | "AggregationStatistic" | "DatastreamStatus" | "ZReference" | "Datastream" | "Observation" | "DataConnection" | "EtlTask" | "EtlMapping" | "RatingCurve" | "DataProductTask" | "DataProductTransformation" | "MonitoringTask" | "MonitoringRule";
         };
         /** PlaceholderVariablePostBody */
         PlaceholderVariablePostBody: {
@@ -7837,6 +8121,11 @@ export interface components {
              */
             timeAggregationIntervalUnit: "seconds" | "minutes" | "hours" | "days";
             /**
+             * Type
+             * @enum {string}
+             */
+            type: "timeSeriesCoverage" | "profileCoverage";
+            /**
              * Unitid
              * Format: uuid
              */
@@ -7847,6 +8136,12 @@ export interface components {
             unitSymbol: string;
             /** Valuecount */
             valueCount?: number | null;
+            /** Zreference */
+            zReference?: string | null;
+            /** Zunitid */
+            zUnitId?: string | null;
+            /** Zunitsymbol */
+            zUnitSymbol?: string | null;
         };
         /** VisualizationMonitoringSiteResponse */
         VisualizationMonitoringSiteResponse: {
@@ -8059,6 +8354,38 @@ export interface components {
              * Format: email
              */
             newOwner: string;
+        };
+        /** ZReferencePatchBody */
+        ZReferencePatchBody: {
+            /** Description */
+            description?: string | null;
+            /** Name */
+            name?: string;
+        };
+        /** ZReferencePostBody */
+        ZReferencePostBody: {
+            /** Description */
+            description?: string | null;
+            /**
+             * Id
+             * @description The new item's identifier. Generated if omitted.
+             */
+            id?: string | null;
+            /** Name */
+            name: string;
+        };
+        /** ZReferenceResponse */
+        ZReferenceResponse: {
+            /** Description */
+            description?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             * @description The item's unique identifier.
+             */
+            id: string;
+            /** Name */
+            name: string;
         };
     };
     responses: never;
@@ -9706,15 +10033,15 @@ export interface operations {
                 /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
                 datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "name" | "description" | "type" | "sampledMedium" | "noDataValue" | "aggregationStatistic" | "timeAggregationInterval" | "status" | "isPrivate" | "isRestricted" | "timeAggregationIntervalUnit" | "intendedTimeSpacing" | "intendedTimeSpacingUnit" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "monitoringSiteId" | "methodId" | "observedPropertyId" | "processingLevelId" | "unitId" | "tags" | "linkedResources")[];
+                properties?: ("id" | "workspaceId" | "name" | "description" | "type" | "zReference" | "sampledMedium" | "noDataValue" | "aggregationStatistic" | "timeAggregationInterval" | "status" | "isPrivate" | "isRestricted" | "timeAggregationIntervalUnit" | "intendedTimeSpacing" | "intendedTimeSpacingUnit" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "zMin" | "zMax" | "monitoringSiteId" | "methodId" | "observedPropertyId" | "processingLevelId" | "unitId" | "zUnitId" | "tags" | "linkedResources")[];
                 /** @description Comma-separated list of related resources to include in the response. */
-                include?: ("workspace" | "monitoringSite" | "method" | "observedProperty" | "processingLevel" | "unit" | "sampledMedium" | "aggregationStatistic" | "status")[];
+                include?: ("workspace" | "monitoringSite" | "method" | "observedProperty" | "processingLevel" | "unit" | "zUnit" | "zReference" | "sampledMedium" | "aggregationStatistic" | "status")[];
                 /** @description Number of items to skip. */
                 offset?: number | null;
                 /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
                 limit?: number;
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("name" | "type" | "sampledMedium" | "status" | "isPrivate" | "isRestricted" | "aggregationStatistic" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "-name" | "-type" | "-sampledMedium" | "-status" | "-isPrivate" | "-isRestricted" | "-aggregationStatistic" | "-valueCount" | "-phenomenonBeginTime" | "-phenomenonEndTime" | "-resultBeginTime" | "-resultEndTime" | "+name" | "+type" | "+sampledMedium" | "+status" | "+isPrivate" | "+isRestricted" | "+aggregationStatistic" | "+valueCount" | "+phenomenonBeginTime" | "+phenomenonEndTime" | "+resultBeginTime" | "+resultEndTime")[];
+                sortby?: ("name" | "type" | "zReference" | "sampledMedium" | "status" | "isPrivate" | "isRestricted" | "aggregationStatistic" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "-name" | "-type" | "-zReference" | "-sampledMedium" | "-status" | "-isPrivate" | "-isRestricted" | "-aggregationStatistic" | "-valueCount" | "-phenomenonBeginTime" | "-phenomenonEndTime" | "-resultBeginTime" | "-resultEndTime" | "+name" | "+type" | "+zReference" | "+sampledMedium" | "+status" | "+isPrivate" | "+isRestricted" | "+aggregationStatistic" | "+valueCount" | "+phenomenonBeginTime" | "+phenomenonEndTime" | "+resultBeginTime" | "+resultEndTime")[];
                 /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
                 q?: string | null;
                 /** @description Datastreams in this workspace. Matches `id` in `workspaces`. */
@@ -9729,10 +10056,14 @@ export interface operations {
                 processingLevelId?: string[];
                 /** @description Datastreams in this unit. Matches `id` in `units`. */
                 unitId?: string[];
+                /** @description Profile coverage datastreams with z in this unit. Matches `id` in `units`. */
+                zUnitId?: string[];
+                /** @description Profile coverage datastreams measuring z from this datum. Matches `name` in `z-references`. */
+                zReference?: string[];
                 /** @description Not supported yet. Any value returns no datastreams. */
                 resultQualifier?: string[];
                 /** @description Datastreams of this type. */
-                type?: "timeSeriesCoverage"[];
+                type?: ("timeSeriesCoverage" | "profileCoverage")[];
                 /** @description Datastreams with this sampled medium. Matches `name` in `sampled-mediums`. */
                 sampledMedium?: string[];
                 /** @description Datastreams with this status. Matches `name` in `datastream-statuses`. `null` matches datastreams without a status. */
@@ -9839,9 +10170,9 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "name" | "description" | "type" | "sampledMedium" | "noDataValue" | "aggregationStatistic" | "timeAggregationInterval" | "status" | "isPrivate" | "isRestricted" | "timeAggregationIntervalUnit" | "intendedTimeSpacing" | "intendedTimeSpacingUnit" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "monitoringSiteId" | "methodId" | "observedPropertyId" | "processingLevelId" | "unitId" | "tags" | "linkedResources")[];
+                properties?: ("id" | "workspaceId" | "name" | "description" | "type" | "zReference" | "sampledMedium" | "noDataValue" | "aggregationStatistic" | "timeAggregationInterval" | "status" | "isPrivate" | "isRestricted" | "timeAggregationIntervalUnit" | "intendedTimeSpacing" | "intendedTimeSpacingUnit" | "valueCount" | "phenomenonBeginTime" | "phenomenonEndTime" | "resultBeginTime" | "resultEndTime" | "zMin" | "zMax" | "monitoringSiteId" | "methodId" | "observedPropertyId" | "processingLevelId" | "unitId" | "zUnitId" | "tags" | "linkedResources")[];
                 /** @description Comma-separated list of related resources to include in the response. */
-                include?: ("workspace" | "monitoringSite" | "method" | "observedProperty" | "processingLevel" | "unit" | "sampledMedium" | "aggregationStatistic" | "status")[];
+                include?: ("workspace" | "monitoringSite" | "method" | "observedProperty" | "processingLevel" | "unit" | "zUnit" | "zReference" | "sampledMedium" | "aggregationStatistic" | "status")[];
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json" | "geojson";
             };
@@ -11456,6 +11787,152 @@ export interface operations {
             };
             /** @description Not Implemented */
             501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_latest_observation_get_latest_observations: {
+        parameters: {
+            query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "z" | "result" | "resultQualifiers")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: ("datastream" | "workspace" | "resultQualifiers")[];
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
+                /** @description The latest observation(s) of this datastream. Matches `id` in `datastreams`. */
+                datastreamId?: string[];
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("phenomenonTime" | "z" | "datastreamId" | "-phenomenonTime" | "-z" | "-datastreamId" | "+phenomenonTime" | "+z" | "+datastreamId")[];
+                /** @description Observations with this result qualifier. Matches `name` in `result-qualifiers`. */
+                resultQualifiers?: string[];
+                /** @description Observations with a z at or above this value. */
+                minZ?: number | null;
+                /** @description Observations with a z at or below this value. */
+                maxZ?: number | null;
+                /** @description Latest observations of datastreams in this workspace. Matches `id` in `workspaces`. */
+                workspaceId?: string[];
+                /** @description Latest observations of datastreams at this monitoring site. Matches `id` in `monitoring-sites`. */
+                monitoringSiteId?: string[];
+                /** @description Latest observations of datastreams that observe this observed property. Matches `id` in `observed-properties`. */
+                observedPropertyId?: string[];
+                /** @description Latest observations of datastreams at this processing level. Matches `id` in `processing-levels`. */
+                processingLevelId?: string[];
+                /** @description Latest observations of datastreams produced by this method. Matches `id` in `methods`. */
+                methodId?: string[];
+                /** @description Latest observations of datastreams in this unit. Matches `id` in `units`. */
+                unitId?: string[];
+                /** @description Latest observations of datastreams of this type. */
+                type?: ("timeSeriesCoverage" | "profileCoverage")[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json" | "geojson";
+                /** @description Profiles to represent the items in, by URI, in order of preference. Profiles the response format doesn't support are ignored, and without a supported profile the items are in the format's standard representation. Profiles: https://hydroserver.org/profiles/observations/row: Observations as rows grouped by datastream (json); https://hydroserver.org/profiles/observations/column: Observations as columns grouped by datastream (json). */
+                profile?: ("https://hydroserver.org/profiles/observations/row" | "https://hydroserver.org/profiles/observations/column")[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/geo+json": components["schemas"]["GeoJSONFeatureCollection_ObservationProperties_"];
+                    "application/json": components["schemas"]["PaginatedResponse_ObservationResponse_"] | components["schemas"]["PaginatedResponse_ObservationRowResponse_"] | components["schemas"]["PaginatedResponse_ObservationColumnResponse_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_latest_observation_get_latest_observation: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "z" | "result" | "resultQualifiers")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: ("datastream" | "workspace" | "resultQualifiers")[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json" | "geojson";
+            };
+            header?: never;
+            path: {
+                observation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/geo+json": components["schemas"]["GeoJSONFeatureDocument_ObservationProperties_"];
+                    "application/json": components["schemas"]["ItemResponse_ObservationResponse_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -14134,7 +14611,7 @@ export interface operations {
                 /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
                 datetime?: string;
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "result" | "resultQualifiers")[];
+                properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "z" | "result" | "resultQualifiers")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("datastream" | "workspace" | "resultQualifiers")[];
                 /** @description Number of items to skip. */
@@ -14144,9 +14621,13 @@ export interface operations {
                 /** @description Observations in this datastream. Matches `id` in `datastreams`. */
                 datastreamId?: string[];
                 /** @description Select one or more fields to sort the response by. */
-                sortby?: ("phenomenonTime" | "datastreamId" | "-phenomenonTime" | "-datastreamId" | "+phenomenonTime" | "+datastreamId")[];
+                sortby?: ("phenomenonTime" | "z" | "datastreamId" | "-phenomenonTime" | "-z" | "-datastreamId" | "+phenomenonTime" | "+z" | "+datastreamId")[];
                 /** @description Observations with this result qualifier. Matches `name` in `result-qualifiers`. */
                 resultQualifiers?: string[];
+                /** @description Observations with a z at or above this value. */
+                minZ?: number | null;
+                /** @description Observations with a z at or below this value. */
+                maxZ?: number | null;
                 /** @description Response format. Overrides the Accept header. */
                 f?: "json" | "geojson";
                 /** @description Profiles to represent the items in, by URI, in order of preference. Profiles the response format doesn't support are ignored, and without a supported profile the items are in the format's standard representation. Profiles: https://hydroserver.org/profiles/observations/row: Observations as rows grouped by datastream (json); https://hydroserver.org/profiles/observations/column: Observations as columns grouped by datastream (json). */
@@ -14261,7 +14742,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
-                properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "result" | "resultQualifiers")[];
+                properties?: ("id" | "workspaceId" | "datastreamId" | "phenomenonTime" | "z" | "result" | "resultQualifiers")[];
                 /** @description Comma-separated list of related resources to include in the response. */
                 include?: ("datastream" | "workspace" | "resultQualifiers")[];
                 /** @description Response format. Overrides the Accept header. */
@@ -18088,6 +18569,258 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_z_reference_get_z_references: {
+        parameters: {
+            query?: {
+                /** @description Bounding box in WGS 84 longitude/latitude: min_lon,min_lat,max_lon,max_lat, or six values including min and max heights (heights are not used for filtering). A min_lon greater than max_lon crosses the antimeridian. Items without a location match any bounding box. */
+                bbox?: number[] & (unknown | unknown);
+                /** @description Date-time or interval in RFC 3339 with a UTC offset: an instant (2024-01-01T00:00:00Z), a bounded interval (start/end), or a half-bounded interval with '..' or an empty value for the open end (../end, start/..). Items without a time match any datetime. */
+                datetime?: string;
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "name" | "description")[];
+                /** @description Comma-separated list of related resources to include in the response. */
+                include?: string | null;
+                /** @description Number of items to skip. */
+                offset?: number | null;
+                /** @description The maximum number of items to return. (default: 100, maximum: 100000) */
+                limit?: number;
+                /** @description Select one or more fields to sort the response by. */
+                sortby?: ("name" | "-name" | "+name")[];
+                /** @description Full-text search query. Comma-separated terms are combined with OR; whitespace-separated words within a term are combined with AND. */
+                q?: string | null;
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_ZReferenceResponse_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_z_reference_create_z_reference: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ZReferencePostBody"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_z_reference_get_z_reference: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated list of properties to include in the response. All properties are returned if omitted. */
+                properties?: ("id" | "name" | "description")[];
+                /** @description Response format. Overrides the Accept header. */
+                f?: "json";
+            };
+            header?: never;
+            path: {
+                z_reference_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemResponse_ZReferenceResponse_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_z_reference_delete_z_reference: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                z_reference_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    interfaces_api_views_sta_z_reference_update_z_reference: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                z_reference_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ZReferencePatchBody"];
+                "application/merge-patch+json": components["schemas"]["ZReferencePatchBody"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

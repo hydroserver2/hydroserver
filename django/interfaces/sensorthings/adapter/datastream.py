@@ -30,7 +30,7 @@ class DatastreamMixin(SensorThingsUtils):
         if needs_unit or needs_properties:
             related.append("unit")
         if needs_properties:
-            related += ["processing_level", "monitoring_site__workspace"]
+            related += ["processing_level", "monitoring_site__workspace", "z_unit"]
         if related:
             datastreams = datastreams.select_related(*related)
         if needs_properties:
@@ -123,6 +123,17 @@ class DatastreamMixin(SensorThingsUtils):
                             "aggregation_statistic": datastream.aggregation_statistic,
                             "time_aggregation_interval": datastream.time_aggregation_interval,
                             "time_aggregation_interval_unit_of_measurement": datastream.time_aggregation_interval_unit,
+                            "z_reference": datastream.z_reference,
+                            "z_unit": (
+                                {
+                                    "id": datastream.z_unit.id,
+                                    "name": datastream.z_unit.name,
+                                    "symbol": datastream.z_unit.symbol,
+                                }
+                                if datastream.z_unit else None
+                            ),
+                            "z_min": float(datastream.z_min) if datastream.z_min is not None else None,
+                            "z_max": float(datastream.z_max) if datastream.z_max is not None else None,
                             "is_private": datastream.is_private,
                             "is_restricted": datastream.is_restricted,
                             "workspace": {

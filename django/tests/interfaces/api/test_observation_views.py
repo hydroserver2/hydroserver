@@ -869,7 +869,29 @@ def test_insert_observations_append_mode_succeeds(client):
     ).exists()
 
 
-def test_insert_observations_append_mode_returns_400_when_not_after_end_time(client):
+def test_insert_observations_append_mode_returns_400_before_end_time(client):
+    owner = UserFactory()
+    workspace = WorkspaceFactory(owner=owner)
+    datastream = _make_datastream(workspace)
+    end_time = timezone.now()
+    ObservationFactory(datastream=datastream, phenomenon_time=end_time)
+    datastream.phenomenon_end_time = end_time
+    datastream.save(update_fields=["phenomenon_end_time"])
+    client.force_login(owner)
+
+    response = client.post(
+        f"{_BULK_CREATE_URL}?mode=append",
+        data=_with_datastream(
+            datastream.id,
+            {"fields": ["phenomenonTime", "result"], "data": [[_iso(end_time - timedelta(hours=1)), 2.0]]},
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+
+
+def test_insert_observations_append_mode_returns_409_at_end_time_for_time_series(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     datastream = _make_datastream(workspace)
@@ -888,7 +910,7 @@ def test_insert_observations_append_mode_returns_400_when_not_after_end_time(cli
         content_type="application/json",
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 409
 
 
 def test_insert_observations_backfill_mode_succeeds(client):
@@ -920,7 +942,7 @@ def test_insert_observations_backfill_mode_succeeds(client):
     ).exists()
 
 
-def test_insert_observations_backfill_mode_returns_400_when_not_before_begin_time(client):
+def test_insert_observations_backfill_mode_returns_409_at_begin_time_for_time_series(client):
     owner = UserFactory()
     workspace = WorkspaceFactory(owner=owner)
     datastream = _make_datastream(workspace)
@@ -942,7 +964,7 @@ def test_insert_observations_backfill_mode_returns_400_when_not_before_begin_tim
         content_type="application/json",
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 409
 
 
 def test_insert_observations_replace_mode_succeeds(client):

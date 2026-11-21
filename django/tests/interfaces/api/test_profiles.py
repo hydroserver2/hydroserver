@@ -26,7 +26,7 @@ pytestmark = pytest.mark.django_db
 OBSERVATIONS_PATH = "/api/ogc/collections/observations/items"
 ROW = f"{PROFILE_URI_BASE}/observations/row"
 COLUMN = f"{PROFILE_URI_BASE}/observations/column"
-OBSERVATION_FIELDS = ["id", "phenomenonTime", "result", "resultQualifiers"]
+OBSERVATION_FIELDS = ["id", "phenomenonTime", "z", "result", "resultQualifiers"]
 
 
 def _datastream(workspace=None):

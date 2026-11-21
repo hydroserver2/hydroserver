@@ -334,13 +334,14 @@ def test_create_datastream_returns_400_for_invalid_type(client):
     response = client.post(
         DATASTREAMS_URL,
         data=_datastream_body(
-            monitoring_site, method, observed_property, processing_level, unit, type="profileCoverage"
+            monitoring_site, method, observed_property, processing_level, unit, type="gridCoverage"
         ),
         content_type="application/json",
     )
 
     assert response.status_code == 400
     assert "timeSeriesCoverage" in response.json()["message"]
+    assert "profileCoverage" in response.json()["message"]
 
 
 # --- get_datastream --------------------------------------------------------------------

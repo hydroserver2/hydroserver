@@ -12,9 +12,9 @@ from django.db.utils import IntegrityError
 
 from core.iam.models import ServiceAccount
 from core.iam.permissions.anonymous import AnonymousPrincipal
-from core.sta.models import Datastream, Observation, ResultQualifier
+from core.sta.models import Datastream, Observation, ResultQualifier, normalize_z_values
 from interfaces.api.service import APIService
-from interfaces.api.services.sta.datastream import DatastreamAPIService
+from interfaces.api.services.sta.datastream import DatastreamAPIService, OBSERVATION_STATISTICS_FIELDS
 from interfaces.api.http.errors import BadRequestError, ConflictError, PermissionDeniedError, NotFoundError
 from interfaces.api.schemas import BoundingBox, PaginatedResponse, TimeInterval
 from interfaces.api.schemas.sta.observation import (
@@ -36,6 +36,16 @@ from interfaces.api.schemas.sta.observation import (
 User = get_user_model()
 datastream_service = DatastreamAPIService()
 
+DATASTREAM_FILTERS = {
+    "workspace_id": "datastream__monitoring_site__workspace_id",
+    "monitoring_site_id": "datastream__monitoring_site_id",
+    "observed_property_id": "datastream__observed_property_id",
+    "processing_level_id": "datastream__processing_level_id",
+    "method_id": "datastream__method_id",
+    "unit_id": "datastream__unit_id",
+    "type": "datastream__type",
+}
+
 
 class ObservationAPIService(APIService):
     INCLUDE_RELATIONS = OBSERVATION_INCLUDE_RELATIONS
@@ -47,8 +57,11 @@ class ObservationAPIService(APIService):
         action: Literal["view", "edit", "delete"],
         datastream_id: Optional[uuid.UUID] = None,
         select_related: Optional[list[str]] = None,
+        latest: bool = False,
     ):
         queryset = Observation.objects.select_related("datastream__monitoring_site")
+        if latest:
+            queryset = queryset.filter(phenomenon_time=F("datastream__phenomenon_end_time"))
 
         if select_related:
             queryset = queryset.select_related(*select_related)
@@ -164,11 +177,23 @@ class ObservationAPIService(APIService):
         include: Optional[list[str]] = None,
         bbox: Optional[BoundingBox] = None,
         datetime_interval: Optional[TimeInterval] = None,
+        latest: bool = False,
     ):
-        requested_includes = self.resolve_include_set(include)
-        queryset = Observation.objects
+        """
+        A page of the observations that match the filters, or with latest=True, of each datastream's latest
+        observation(s). A latest observation's phenomenon time equals its datastream's phenomenon_end_time, so then
+        the datetime filter matches datastreams whose latest observation falls in the interval.
+        """
 
-        datastream_ids = filtering.get("datastream_id") or []
+        requested_includes = self.resolve_include_set(include)
+
+        queryset = Observation.objects.all()
+        if latest:
+            queryset = queryset.filter(phenomenon_time=F("datastream__phenomenon_end_time"))
+
+        for name, lookup in DATASTREAM_FILTERS.items():
+            if filtering.get(name):
+                queryset = self.apply_filters(queryset, lookup, filtering[name])
 
         if "datastream_id" in filtering:
             queryset = self.apply_filters(queryset, "datastream_id", filtering["datastream_id"])
@@ -181,6 +206,11 @@ class ObservationAPIService(APIService):
                 code_filter |= Q(result_qualifiers__contains=[code])
             queryset = queryset.filter(code_filter)
 
+        if filtering.get("min_z") is not None:
+            queryset = queryset.filter(z__gte=filtering["min_z"])
+        if filtering.get("max_z") is not None:
+            queryset = queryset.filter(z__lte=filtering["max_z"])
+
         if bbox is not None:
             queryset = queryset.filter(
                 datastream_id__in=DatastreamAPIService.apply_site_bbox(
@@ -190,10 +220,13 @@ class ObservationAPIService(APIService):
 
         queryset = principal.filter_by_permission(queryset, "can_view")
 
+        narrowed = latest or datetime_interval is not None or bool(filtering.get("result_qualifiers")) or (
+            filtering.get("min_z") is not None or filtering.get("max_z") is not None
+        )
         count = (
             self.resolve_count(queryset)
-            if datetime_interval is not None or filtering.get("result_qualifiers")
-            else self.sum_datastream_value_count(principal, datastream_ids, bbox)
+            if narrowed
+            else self.sum_datastream_value_count(principal, filtering.get("datastream_id") or [], bbox)
         )
 
         # TODO: Can't really fix this until PostgreSQL 18 UUID v7 support
@@ -214,7 +247,7 @@ class ObservationAPIService(APIService):
             queryset,
             sortby,
             list(get_args(ObservationSortByFields)),
-            default_sortby=("datastream_id", "phenomenon_time"),
+            default_sortby=("datastream_id", "z") if latest else ("datastream_id", "phenomenon_time", "z"),
         )
 
         select_paths = ["datastream__monitoring_site"]
@@ -255,6 +288,7 @@ class ObservationAPIService(APIService):
         """
 
         selected = [name for name in OBSERVATION_GROUP_FIELDS if properties is None or name in properties]
+        z_position = selected.index("z") if "z" in selected else None
         with_workspace = properties is None or "workspaceId" in properties
         included = None
 
@@ -283,6 +317,8 @@ class ObservationAPIService(APIService):
 
         groups: dict[uuid.UUID, tuple[Optional[uuid.UUID], list[list]]] = {}
         for datastream_id, workspace_id, values in entries:
+            if z_position is not None and values[z_position] is not None:
+                values[z_position] = float(values[z_position])
             groups.setdefault(datastream_id, (workspace_id, []))[1].append(values)
 
         returned = sum(len(rows) for _, rows in groups.values())
@@ -311,6 +347,7 @@ class ObservationAPIService(APIService):
         uid: uuid.UUID,
         datastream_id: Optional[uuid.UUID] = None,
         include: Optional[list[str]] = None,
+        latest: bool = False,
     ):
         requested_includes = self.resolve_include_set(include)
         select_related = (
@@ -325,6 +362,7 @@ class ObservationAPIService(APIService):
             action="view",
             datastream_id=datastream_id,
             select_related=select_related,
+            latest=latest,
         )
 
         return {
@@ -353,7 +391,8 @@ class ObservationAPIService(APIService):
         observation = Observation(
             pk=data.id,
             datastream=datastream,
-            **data.dict(include=set(ObservationFields.model_fields.keys()), exclude=["result_qualifiers"]),
+            z=normalize_z_values(datastream, [data.z])[0],
+            **data.dict(include=set(ObservationFields.model_fields.keys()), exclude=["z", "result_qualifiers"]),
         )
         observation.full_clean()
 
@@ -375,7 +414,7 @@ class ObservationAPIService(APIService):
         if update_datastream_statistics is True:
             datastream_service.update_observation_statistics(
                 datastream=datastream,
-                fields=["phenomenon_begin_time", "phenomenon_end_time", "value_count"],
+                fields=OBSERVATION_STATISTICS_FIELDS,
             )
 
         return {"id": observation.id}
@@ -399,7 +438,7 @@ class ObservationAPIService(APIService):
         if update_datastream_statistics is True:
             datastream_service.update_observation_statistics(
                 datastream=datastream,
-                fields=["phenomenon_begin_time", "phenomenon_end_time", "value_count"],
+                fields=OBSERVATION_STATISTICS_FIELDS,
             )
 
     def bulk_create(
@@ -436,13 +475,18 @@ class ObservationAPIService(APIService):
         field_map = {field: idx for idx, field in enumerate(data.fields)}
         idx_phenomenon = field_map["phenomenonTime"]
         idx_result = field_map["result"]
+        idx_z = field_map.get("z")
 
         no_data_value = datastream.no_data_value
+        z_values = normalize_z_values(
+            datastream, [row[idx_z] if idx_z is not None else None for row in data.data]
+        )
 
         observation_records = [
             Observation(
                 datastream_id=datastream_id,
                 phenomenon_time=row[idx_phenomenon],
+                z=z,
                 result=(
                     no_data_value
                     if isinstance(row[idx_result], float)
@@ -450,7 +494,7 @@ class ObservationAPIService(APIService):
                     else row[idx_result]
                 ),
             )
-            for row in data.data
+            for row, z in zip(data.data, z_values)
         ]
 
         if "resultQualifiers" in data.fields:
@@ -467,19 +511,19 @@ class ObservationAPIService(APIService):
         if mode == "append" and datastream.phenomenon_end_time:
             if (
                 min(obs.phenomenon_time for obs in observation_records)
-                <= datastream.phenomenon_end_time
+                < datastream.phenomenon_end_time
             ):
                 raise BadRequestError(
-                    "All observations must occur after the datastream's end time for append mode",
+                    "All observations must occur at or after the datastream's end time for append mode",
                 )
 
         elif mode == "backfill" and datastream.phenomenon_begin_time:
             if (
                 max(obs.phenomenon_time for obs in observation_records)
-                >= datastream.phenomenon_begin_time
+                > datastream.phenomenon_begin_time
             ):
                 raise BadRequestError(
-                    "All observations must occur before the datastream's begin time for backfill mode",
+                    "All observations must occur at or before the datastream's begin time for backfill mode",
                 )
 
         elif mode == "replace":
@@ -512,12 +556,12 @@ class ObservationAPIService(APIService):
             IntegrityError,
             UniqueViolation,
         ):
-            raise ConflictError("Duplicate phenomenonTime found on this datastream.")
+            raise ConflictError("Duplicate observation found on this datastream.")
 
         if update_datastream_statistics is True:
             datastream_service.update_observation_statistics(
                 datastream=datastream,
-                fields=["phenomenon_begin_time", "phenomenon_end_time", "value_count"],
+                fields=OBSERVATION_STATISTICS_FIELDS,
             )
 
     def bulk_delete(
@@ -550,7 +594,7 @@ class ObservationAPIService(APIService):
         if update_datastream_statistics is True:
             datastream_service.update_observation_statistics(
                 datastream=datastream,
-                fields=["phenomenon_begin_time", "phenomenon_end_time", "value_count"],
+                fields=OBSERVATION_STATISTICS_FIELDS,
             )
 
     @staticmethod

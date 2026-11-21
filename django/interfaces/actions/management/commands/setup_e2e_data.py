@@ -12,6 +12,7 @@ DEFAULT_FIXTURES = [
     "core/iam/fixtures/default_roles.yaml",
     "core/sta/fixtures/default_aggregation_statistics.yaml",
     "core/sta/fixtures/default_datastream_statuses.yaml",
+    "core/sta/fixtures/default_z_references.yaml",
     "core/sta/fixtures/default_linked_resource_types.yaml",
     "core/sta/fixtures/default_method_types.yaml",
     "core/sta/fixtures/default_processing_levels.yaml",

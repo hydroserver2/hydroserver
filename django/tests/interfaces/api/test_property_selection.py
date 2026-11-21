@@ -1,6 +1,7 @@
 import pytest
 
 from interfaces.api.collections import COLLECTIONS
+from interfaces.api.services.sta.datastream import DatastreamAPIService, OBSERVATION_STATISTICS_FIELDS
 from interfaces.api.urls import api
 from tests.core.iam.factories import UserFactory, WorkspaceFactory
 from tests.core.sta.factories import DatastreamFactory, MonitoringSiteFactory, ObservationFactory
@@ -80,8 +81,16 @@ def features():
         datastream=DatastreamFactory(monitoring_site=MonitoringSiteFactory(workspace=WorkspaceFactory()))
     )
     datastream = observation.datastream
+    # The observation is its datastream's only one, so once the statistics are current it is also the latest.
+    DatastreamAPIService.update_observation_statistics(datastream, OBSERVATION_STATISTICS_FIELDS)
     site = datastream.monitoring_site
-    return {"workspaces": site.workspace, "monitoring-sites": site, "datastreams": datastream, "observations": observation}
+    return {
+        "workspaces": site.workspace,
+        "monitoring-sites": site,
+        "datastreams": datastream,
+        "observations": observation,
+        "latest-observations": observation,
+    }
 
 
 @pytest.mark.parametrize("collection_id", FEATURE_COLLECTION_IDS)

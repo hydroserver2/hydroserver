@@ -124,7 +124,7 @@ COLLECTIONS: tuple[CollectionDefinition, ...] = (
     CollectionDefinition(
         id="datastreams",
         title="Datastreams",
-        description="Time series of observations of one observed property at a monitoring site.",
+        description="Time series or vertical profiles of observations of one observed property at a monitoring site.",
         docs_path="/introduction/key-concepts/datastreams",
         router=f"{VIEWS}.sta.datastream.datastream_router",
         feature=FeatureType(f"{SCHEMAS}.sta.datastream.DatastreamProperties", geometry=SiteLocation()),
@@ -136,6 +136,13 @@ COLLECTIONS: tuple[CollectionDefinition, ...] = (
         description="Controlled vocabulary of datastream statuses.",
         docs_path="/references/data-dictionary#controlled-vocabulary-tables",
         router=f"{VIEWS}.sta.datastream_status.datastream_status_router",
+    ),
+    CollectionDefinition(
+        id="z-references",
+        title="Z References",
+        description="Controlled vocabulary of vertical datums that profile coverage datastreams measure z from.",
+        docs_path="/references/data-dictionary#controlled-vocabulary-tables",
+        router=f"{VIEWS}.sta.z_reference.z_reference_router",
     ),
     CollectionDefinition(
         id="aggregation-statistics",
@@ -150,6 +157,19 @@ COLLECTIONS: tuple[CollectionDefinition, ...] = (
         description="Individual timestamped results recorded in datastreams.",
         docs_path="/introduction/key-concepts/observations",
         router=f"{VIEWS}.sta.observation.observation_router",
+        feature=FeatureType(
+            f"{SCHEMAS}.sta.observation.ObservationProperties",
+            geometry=SiteLocation("datastreamId", site_lookup="datastreams__id"),
+        ),
+        formats={"json": ("row", "column"), "geojson": ()},
+    ),
+    CollectionDefinition(
+        id="latest-observations",
+        title="Latest Observations",
+        description="The most recent observation of each datastream, or every observation at the latest "
+        "phenomenon time of a profile coverage datastream.",
+        docs_path="/introduction/key-concepts/observations",
+        router=f"{VIEWS}.sta.latest_observation.latest_observation_router",
         feature=FeatureType(
             f"{SCHEMAS}.sta.observation.ObservationProperties",
             geometry=SiteLocation("datastreamId", site_lookup="datastreams__id"),

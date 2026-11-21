@@ -64,6 +64,8 @@ class MonitoringRule(models.Model, ResourcePermissionMixin):
         except ObjectDoesNotExist:
             return
 
+        self.datastream.ensure_time_series("monitoring rule datastreams")
+
         try:
             task_site_id = self.task.monitoring_site_id
         except ObjectDoesNotExist:
